@@ -31,6 +31,11 @@ dev = [
     "respx==0.23.1",
     "ruff==0.17.3",
 ]
+# Not a default group: `make app` syncs it with `uv sync --frozen --inexact --group packaging`.
+packaging = [
+    "pyinstaller==6.22.3",
+    "pyinstaller-hooks-contrib==2026.9",
+]
 
 [build-system]
 requires = ["uv_build>=0.9.28,<0.10.0"]
