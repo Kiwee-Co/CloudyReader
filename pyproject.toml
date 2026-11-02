@@ -7,11 +7,13 @@ dependencies = [
     # spacy 3.7.5 imports click; typer 0.27 no longer installs it.
     "click==8.5.0",
     "httpx==0.28.1",
+    "inflect==7.6.0",
     "jdk4py==25.0.2.1",
     "piper-tts==1.8.0",
     "py2opsin==1.2.0",
     "pyside6-essentials==6.12.0",
     "scispacy==0.6.2",
+    "sounddevice==0.5.6",
     # `make models` installs en_ner_craft_md 0.5.4 (SHA256-pinned), which needs spacy>=3.7.4,<3.8.0.
     "spacy==3.7.5",
 ]
@@ -23,7 +25,10 @@ cloudyreader = "cloudyreader.__main__:main"
 dev = [
     "pytest==9.2.0",
     "pytest-cov==7.1.0",
+    "pytest-mock==3.17.0",
     "pytest-qt==4.5.0",
+    "pyyaml==6.0.3",
+    "respx==0.23.1",
     "ruff==0.17.3",
 ]
 
@@ -48,6 +53,9 @@ testpaths = ["tests"]
 addopts = ["-ra", "--strict-markers"]
 qt_api = "pyside6"
 markers = [
-    "slow: loads a model or voice, or starts a JVM",
+    "model: needs a scispaCy model from `make models`",
+    "voice: needs a Piper voice from `make voices`",
     "network: needs internet access",
+    "java: starts a JVM (OPSIN)",
+    "slow: takes more than about a second",
 ]

@@ -12,8 +12,10 @@ import pytest
 
 import cloudyreader
 
-VOICES_DIR = Path(__file__).resolve().parents[2] / ".data" / "voices"
-DEFAULT_VOICE = VOICES_DIR / "en_US-lessac-medium.onnx"
+DATA_DIR = Path(
+    os.environ.get("CLOUDYREADER_DATA_DIR", Path(__file__).resolve().parents[2] / ".data")
+)
+DEFAULT_VOICE = DATA_DIR / "voices" / "en_US-lessac-medium.onnx"
 PHARYNX_IPA = "fˈæɹɪŋks"  # [FAR-ingks] written as eSpeak-style IPA
 
 
@@ -36,7 +38,7 @@ def test_package_version_matches_metadata():
     assert cloudyreader.__version__ == importlib.metadata.version("cloudyreader")
 
 
-@pytest.mark.slow
+@pytest.mark.voice
 def test_piper_synthesizes_hello_wav(piper_voice, tmp_path):
     out = tmp_path / "hello.wav"
     with wave.open(str(out), "wb") as wav_file:
@@ -46,6 +48,7 @@ def test_piper_synthesizes_hello_wav(piper_voice, tmp_path):
         assert wav_file.getframerate() == piper_voice.config.sample_rate
 
 
+@pytest.mark.model
 @pytest.mark.slow
 def test_scispacy_tags_chemical_and_protein():
     require("spacy")
@@ -58,7 +61,7 @@ def test_scispacy_tags_chemical_and_protein():
     assert labels.get("insulin") == "GGP"
 
 
-@pytest.mark.slow
+@pytest.mark.java
 def test_opsin_parses_iupac_name_with_bundled_jre(monkeypatch, tmp_path):
     require("py2opsin")
     require("jdk4py")
@@ -97,7 +100,7 @@ def test_afplay_is_available():
     assert shutil.which("afplay")
 
 
-@pytest.mark.slow
+@pytest.mark.voice
 def test_piper_speaks_raw_phonemes(piper_voice):
     # Text inside [[ ]] bypasses eSpeak: each codepoint is one phoneme.
     sentences = piper_voice.phonemize(f"The [[ {PHARYNX_IPA} ]] is a tube.")

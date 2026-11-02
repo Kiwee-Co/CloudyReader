@@ -1,0 +1,94 @@
+{
+  "description": "Pinned non-PyPI assets. scripts/fetch_assets.py downloads each into a new temp dir, checks size and SHA256, then moves it into dest. The scispaCy model is the official sdist: upstream publishes no wheel.",
+  "version": 1,
+  "assets": [
+    {
+      "name": "en_ner_craft_md-0.5.4.tar.gz",
+      "group": "models",
+      "url": "https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_ner_craft_md-0.5.4.tar.gz",
+      "sha256": "63ddbc8320c968e419148e4c10dad595cc601aadc6f35187a1340d147f706ab7",
+      "size": 119777742,
+      "dest": ".data/models/en_ner_craft_md"
+    },
+    {
+      "name": "en_US-lessac-medium.onnx",
+      "group": "voices",
+      "url": "https://huggingface.co/rhasspy/piper-voices/resolve/b4e358ffcb232591bf73a540e70f7de528e4174a/en/en_US/lessac/medium/en_US-lessac-medium.onnx",
+      "sha256": "5efe09e69902187827af646e1a6e9d269dee769f9877d17b16b1b46eeaaf019f",
+      "size": 63201294,
+      "dest": ".data/voices"
+    },
+    {
+      "name": "en_US-lessac-medium.onnx.json",
+      "group": "voices",
+      "url": "https://huggingface.co/rhasspy/piper-voices/resolve/b4e358ffcb232591bf73a540e70f7de528e4174a/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json",
+      "sha256": "efe19c417bed055f2d69908248c6ba650fa135bc868b0e6abb3da181dab690a0",
+      "size": 4885,
+      "dest": ".data/voices"
+    },
+    {
+      "name": "en_US-amy-medium.onnx",
+      "group": "voices",
+      "url": "https://huggingface.co/rhasspy/piper-voices/resolve/b4e358ffcb232591bf73a540e70f7de528e4174a/en/en_US/amy/medium/en_US-amy-medium.onnx",
+      "sha256": "b3a6e47b57b8c7fbe6a0ce2518161a50f59a9cdd8a50835c02cb02bdd6206c18",
+      "size": 63201294,
+      "dest": ".data/voices"
+    },
+    {
+      "name": "en_US-amy-medium.onnx.json",
+      "group": "voices",
+      "url": "https://huggingface.co/rhasspy/piper-voices/resolve/b4e358ffcb232591bf73a540e70f7de528e4174a/en/en_US/amy/medium/en_US-amy-medium.onnx.json",
+      "sha256": "95a23eb4d42909d38df73bb9ac7f45f597dbfcde2d1bf9526fdeaf5466977d77",
+      "size": 4882,
+      "dest": ".data/voices"
+    },
+    {
+      "name": "en_US-ryan-medium.onnx",
+      "group": "voices",
+      "url": "https://huggingface.co/rhasspy/piper-voices/resolve/b4e358ffcb232591bf73a540e70f7de528e4174a/en/en_US/ryan/medium/en_US-ryan-medium.onnx",
+      "sha256": "abf4c274862564ed647ba0d2c47f8ee7c9b717d27bdad9219100eb310db4047a",
+      "size": 63201294,
+      "dest": ".data/voices"
+    },
+    {
+      "name": "en_US-ryan-medium.onnx.json",
+      "group": "voices",
+      "url": "https://huggingface.co/rhasspy/piper-voices/resolve/b4e358ffcb232591bf73a540e70f7de528e4174a/en/en_US/ryan/medium/en_US-ryan-medium.onnx.json",
+      "sha256": "44034c056cb15681b2ad494307c7f3f2e4499d1253c700c711fa0a4607ffe78d",
+      "size": 4883,
+      "dest": ".data/voices"
+    },
+    {
+      "name": "en_GB-alan-medium.onnx",
+      "group": "voices",
+      "url": "https://huggingface.co/rhasspy/piper-voices/resolve/b4e358ffcb232591bf73a540e70f7de528e4174a/en/en_GB/alan/medium/en_GB-alan-medium.onnx",
+      "sha256": "0a309668932205e762801f1efc2736cd4b0120329622adf62be09e56339d3330",
+      "size": 63201294,
+      "dest": ".data/voices"
+    },
+    {
+      "name": "en_GB-alan-medium.onnx.json",
+      "group": "voices",
+      "url": "https://huggingface.co/rhasspy/piper-voices/resolve/b4e358ffcb232591bf73a540e70f7de528e4174a/en/en_GB/alan/medium/en_GB-alan-medium.onnx.json",
+      "sha256": "c0f0d124e5895c00e7c03b35dcc8287f319a6998a365b182deb5c8e752ee8c1e",
+      "size": 4888,
+      "dest": ".data/voices"
+    },
+    {
+      "name": "en_GB-jenny_dioco-medium.onnx",
+      "group": "voices",
+      "url": "https://huggingface.co/rhasspy/piper-voices/resolve/b4e358ffcb232591bf73a540e70f7de528e4174a/en/en_GB/jenny_dioco/medium/en_GB-jenny_dioco-medium.onnx",
+      "sha256": "469c630d209e139dd392a66bf4abde4ab86390a0269c1e47b4e5d7ce81526b01",
+      "size": 63201294,
+      "dest": ".data/voices"
+    },
+    {
+      "name": "en_GB-jenny_dioco-medium.onnx.json",
+      "group": "voices",
+      "url": "https://huggingface.co/rhasspy/piper-voices/resolve/b4e358ffcb232591bf73a540e70f7de528e4174a/en/en_GB/jenny_dioco/medium/en_GB-jenny_dioco-medium.onnx.json",
+      "sha256": "a9a7a93a317c9a3cb6563e37eb057df9ef09c06188a8a4341b0fcb58cba54dd4",
+      "size": 4895,
+      "dest": ".data/voices"
+    }
+  ]
+}
