@@ -49,8 +49,8 @@ GOLDEN = ROOT / "tests" / "golden" / "corpus"
 MIN_PARSE_RATE = 0.995  # complete questions / expected (measured 99.92%)
 MAX_PHANTOM_RATE = 0.002  # parsed questions without an answer / parsed (measured 0.03%)
 MIN_WXYZ_RATE = 0.998  # multiple choice with exactly W, X, Y, Z (measured 99.91%)
-MIN_BRACKET_GUIDE_RATE = 0.98  # "[..]" respellings the parser extracts (measured 99.0%)
-MIN_IPA_RATE = 0.75  # corpus respellings that to_ipa places (measured 78%)
+MIN_GUIDE_RATE = 0.98  # respellings of every form the parser extracts (measured 99.1%)
+MIN_IPA_RATE = 0.88  # corpus respellings that to_ipa places (measured 88.6%)
 
 
 def _load_script(name: str) -> ModuleType:
@@ -416,6 +416,60 @@ def test_the_golden_respellings_are_placed_by_to_ipa_and_never_crash_it():
     assert placed / len(rows) >= MIN_IPA_RATE, f"{placed}/{len(rows)} placed"
 
 
+# Hand-labeled for the entity detector, written without running it. Rows: id, text, entity, label,
+# occurrence (n-th substring match, left to right), note; an empty entity marks a negative text.
+GOLD_HEADER = "id\ttext\tentity\tlabel\toccurrence\tnote"
+GOLD_LABELS = {"chemical", "formula", "protein", "gene", "skip"}
+GOLD_ID = re.compile(r"[^/:]+/[^:]+:\d+#(?:stem|[WXYZ]|answer)")
+
+
+def _gold_rows() -> list[list[str]]:
+    lines = (GOLDEN / "entities.tsv").read_text(encoding="utf-8").split("\n")
+    assert lines[0] == GOLD_HEADER and lines[-1] == ""
+    return [line.split("\t") for line in lines[1:-1]]
+
+
+def _gold_span(text: str, entity: str, occurrence: int) -> tuple[int, int]:
+    pos = -1
+    for _ in range(occurrence):
+        pos = text.find(entity, pos + 1)
+        assert pos >= 0, f"{entity!r} x{occurrence} not in {text!r}"
+    return pos, pos + len(entity)
+
+
+def test_the_entity_gold_set_is_well_formed_and_balanced():
+    rows = _gold_rows()
+    texts: dict[str, str] = {}
+    by_id: dict[str, list[list[str]]] = {}
+    for row in rows:
+        assert len(row) == 6, row
+        id_, text, entity, label, occurrence, _note = row
+        assert GOLD_ID.fullmatch(id_) and text and texts.setdefault(id_, text) == text, id_
+        assert (entity == "") == (label == "") == (occurrence == ""), row
+        assert label == "" or label in GOLD_LABELS, row
+        by_id.setdefault(id_, []).append(row)
+    spans = 0
+    for id_, group in by_id.items():
+        if group[0][2] == "":
+            assert len(group) == 1, f"{id_}: a negative text has exactly one row"
+            continue
+        taken: list[tuple[int, int]] = []
+        for _id, text, entity, label, occurrence, _note in group:
+            assert occurrence.isdigit() and int(occurrence) >= 1, (id_, entity)
+            start, end = _gold_span(text, entity, int(occurrence))
+            if label != "skip":
+                assert all(end <= s or start >= e for s, e in taken), f"{id_}: {entity!r} overlaps"
+                taken.append((start, end))
+                spans += 1
+        keys = [(r[2], r[4]) for r in group]
+        assert len(keys) == len(set(keys)), f"{id_}: duplicate entity row"
+    labels = {r[3] for r in rows}
+    negatives = [i for i, g in by_id.items() if g[0][2] == ""]
+    spaced = {r[0] for r in rows if r[5] == "spaced" and r[3] == "formula"}
+    assert len(by_id) >= 40 and len(negatives) >= 10 and len(spaced) >= 4 and spans >= 60
+    assert GOLD_LABELS <= labels and len({i.split("/")[0] for i in by_id}) >= 8
+
+
 # ------------------------------------------------------------------------ real corpus (slow)
 
 
@@ -499,14 +553,12 @@ def test_multiple_choice_has_w_x_y_z(parsed):
 
 @pytest.mark.slow
 @needs_corpus
-def test_square_bracket_guides_are_extracted_from_the_text(scored):
-    wanted = sum(
-        g.form == "square" and g.kind == "respelling" for *_, guides in scored for g in guides
-    )
-    missed = sum(g.form == "square" for _, _, missed, _ in scored for g in missed)
+def test_respellings_of_every_form_are_extracted_from_the_text(scored):
+    wanted = sum(g.kind == "respelling" for *_, guides in scored for g in guides)
+    missed = [g for _, _, missed, _ in scored for g in missed]
 
-    assert wanted > 1500
-    assert 1 - missed / wanted >= MIN_BRACKET_GUIDE_RATE, f"{missed} of {wanted} guides missed"
+    assert wanted > 1900
+    assert 1 - len(missed) / wanted >= MIN_GUIDE_RATE, f"{len(missed)} of {wanted} guides missed"
 
 
 @pytest.mark.slow
@@ -523,9 +575,6 @@ def test_spoken_script_never_holds_a_bracket_or_an_answer_marker(spoken):
 
 @pytest.mark.slow
 @needs_corpus
-@pytest.mark.xfail(
-    reason="page footers reach a stem or choice (2 scripts, 2026-11-01)", strict=False
-)
 def test_spoken_script_holds_no_page_footer(spoken):
     footer = re.compile(r"\bPage \d+|\bPAGE \d+|~{3,}")
     leaks = [(name, q.number) for name, q, text in spoken if footer.search(text)]
@@ -535,9 +584,6 @@ def test_spoken_script_holds_no_page_footer(spoken):
 
 @pytest.mark.slow
 @needs_corpus
-@pytest.mark.xfail(
-    reason="PDF math glyphs (private use, U+FFFD) survive (23 scripts)", strict=False
-)
 def test_spoken_script_holds_no_private_use_or_replacement_glyph(spoken):
     junk = re.compile("[\ue000-\uf8ff\ufffd]")
     leaks = [(name, q.number) for name, q, text in spoken if junk.search(text)]

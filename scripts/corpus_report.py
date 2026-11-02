@@ -23,7 +23,8 @@ _HEADER = re.compile(r"^\W*(?:toss[\s-]*up|bonus)\W*$", re.IGNORECASE)
 _ANSWER = re.compile(r"^\s*answer\s*(?::|(?=[WXYZ]\)))", re.IGNORECASE)
 # Page footers, rules and header words that must never reach a spoken stem or choice.
 _RESIDUE = re.compile(
-    r"[\[\]]|ANSWER|TOSS-?\s?UP|\bBONUS\b|\bPAGE\s*\d|\bPage\s*\d|~{3,}|\*{3,}|_{3,}",
+    r"[\[\]]|ANSWER|TOSS-?\s?UP|\bBONUS\b|\bPAGE\s*\d|\bPage\s*\d|~{3,}|\*{3,}|_{3,}"
+    r"|(?i:\bread as\s*:|\bpronounced\s*:)",
 )
 
 _SQUARE = re.compile(r"\[([^\[\]]{1,160})\]")

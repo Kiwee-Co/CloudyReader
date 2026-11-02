@@ -1,0 +1,106 @@
+id	text	entity	label	occurrence	note
+Sample-Set-3/Round-11C-MS.txt:297#stem	Name all of the following 3 pairs of elements that would be chemically bonded by a covalent bond: carbon and carbon; magnesium and chlorine; silicon and oxygen	carbon	chemical	1	
+Sample-Set-3/Round-11C-MS.txt:297#stem	Name all of the following 3 pairs of elements that would be chemically bonded by a covalent bond: carbon and carbon; magnesium and chlorine; silicon and oxygen	carbon	chemical	2	
+Sample-Set-3/Round-11C-MS.txt:297#stem	Name all of the following 3 pairs of elements that would be chemically bonded by a covalent bond: carbon and carbon; magnesium and chlorine; silicon and oxygen	magnesium	chemical	1	
+Sample-Set-3/Round-11C-MS.txt:297#stem	Name all of the following 3 pairs of elements that would be chemically bonded by a covalent bond: carbon and carbon; magnesium and chlorine; silicon and oxygen	chlorine	chemical	1	
+Sample-Set-3/Round-11C-MS.txt:297#stem	Name all of the following 3 pairs of elements that would be chemically bonded by a covalent bond: carbon and carbon; magnesium and chlorine; silicon and oxygen	silicon	chemical	1	
+Sample-Set-3/Round-11C-MS.txt:297#stem	Name all of the following 3 pairs of elements that would be chemically bonded by a covalent bond: carbon and carbon; magnesium and chlorine; silicon and oxygen	oxygen	chemical	1	
+Sample-Set-1/m_round09.txt:51#stem	A fifty-fifty solution of distilled water and pure ethanol will appear:	water	chemical	1	
+Sample-Set-1/m_round09.txt:51#stem	A fifty-fifty solution of distilled water and pure ethanol will appear:	ethanol	chemical	1	
+Sample-Set-3/Round-14C-MS.txt:470#stem	Order the following 4 elements from the MOST common in the universe to the LEAST common: carbon; helium; hydrogen; iron	carbon	chemical	1	
+Sample-Set-3/Round-14C-MS.txt:470#stem	Order the following 4 elements from the MOST common in the universe to the LEAST common: carbon; helium; hydrogen; iron	helium	chemical	1	
+Sample-Set-3/Round-14C-MS.txt:470#stem	Order the following 4 elements from the MOST common in the universe to the LEAST common: carbon; helium; hydrogen; iron	hydrogen	chemical	1	
+Sample-Set-3/Round-14C-MS.txt:470#stem	Order the following 4 elements from the MOST common in the universe to the LEAST common: carbon; helium; hydrogen; iron	iron	chemical	1	
+Sample-set-11/MS_2.txt:206#stem	A plant cell containing 0.1 molar sucrose and 0.2 molar glucose is placed in a 0.3 molar solution of sucrose. What type of solution is this?	sucrose	chemical	1	
+Sample-set-11/MS_2.txt:206#stem	A plant cell containing 0.1 molar sucrose and 0.2 molar glucose is placed in a 0.3 molar solution of sucrose. What type of solution is this?	glucose	chemical	1	
+Sample-set-11/MS_2.txt:206#stem	A plant cell containing 0.1 molar sucrose and 0.2 molar glucose is placed in a 0.3 molar solution of sucrose. What type of solution is this?	sucrose	chemical	2	
+Sample-Set-5/Round13.txt:304#stem	Given that the molecular weight of sodium hydroxide is 40 grams per mole, calculate to the nearest hundredth the molarity of a solution with 2 grams of sodium hydroxide dissolved in 5 liters of water.	sodium hydroxide	chemical	1	
+Sample-Set-5/Round13.txt:304#stem	Given that the molecular weight of sodium hydroxide is 40 grams per mole, calculate to the nearest hundredth the molarity of a solution with 2 grams of sodium hydroxide dissolved in 5 liters of water.	sodium hydroxide	chemical	2	
+Sample-Set-5/Round13.txt:304#stem	Given that the molecular weight of sodium hydroxide is 40 grams per mole, calculate to the nearest hundredth the molarity of a solution with 2 grams of sodium hydroxide dissolved in 5 liters of water.	water	chemical	1	
+Sample-Set-13/2019-NSB-MSR-Round-2A.txt:126#stem	What part of cellular respiration oxidizes the original carbon atoms from glucose and releases them as carbon dioxide?	carbon	skip	1	modifier of atoms
+Sample-Set-13/2019-NSB-MSR-Round-2A.txt:126#stem	What part of cellular respiration oxidizes the original carbon atoms from glucose and releases them as carbon dioxide?	glucose	chemical	1	
+Sample-Set-13/2019-NSB-MSR-Round-2A.txt:126#stem	What part of cellular respiration oxidizes the original carbon atoms from glucose and releases them as carbon dioxide?	carbon dioxide	chemical	1	
+Sample-Set-7/MS_Round-10.txt:432#stem	What are the three elements that compose glucose and fructose?	glucose	chemical	1	
+Sample-Set-7/MS_Round-10.txt:432#stem	What are the three elements that compose glucose and fructose?	fructose	chemical	1	
+Sample-Set-2/sample_questions_r10.txt:482#stem	Order the following from the most acidic to the most basic: household liquid ammonia, milk, tomato juice, pure water.	ammonia	chemical	1	
+Sample-Set-2/sample_questions_r10.txt:482#stem	Order the following from the most acidic to the most basic: household liquid ammonia, milk, tomato juice, pure water.	water	chemical	1	
+Sample-Set-2/sample_questions_r7.txt:3#Z	nitric acid	nitric acid	chemical	1	
+Sample-Set-1/m_round14.txt:398#W	sodium chloride	sodium chloride	chemical	1	
+Sample-Set-13/2019-NSB-MSR-Round-4A.txt:211#stem	Given that the chemical formula of glucose is C 6 H 12 O 6 , what is its empirical formula?	glucose	chemical	1	
+Sample-Set-13/2019-NSB-MSR-Round-4A.txt:211#stem	Given that the chemical formula of glucose is C 6 H 12 O 6 , what is its empirical formula?	C 6 H 12 O 6	formula	1	spaced
+Sample-set-11/MS_3A.txt:371#stem	How many atoms of magnesium are present in two molecules of the compound Mg 3 N 2 ?	magnesium	chemical	1	
+Sample-set-11/MS_3A.txt:371#stem	How many atoms of magnesium are present in two molecules of the compound Mg 3 N 2 ?	Mg 3 N 2	formula	1	spaced
+Sample-Set-9/RegionalMS_12A.txt:84#stem	What is the chemical name of Al 2 O 3 ?	Al 2 O 3	formula	1	spaced
+Sample-Set-12/MSRound-13.txt:128#stem	Identify all of the following four molecules that are polar: 1) CH 4 ; 2) NH 3 ; 3) H 2 O; 4) HF.	CH 4	formula	1	spaced
+Sample-Set-12/MSRound-13.txt:128#stem	Identify all of the following four molecules that are polar: 1) CH 4 ; 2) NH 3 ; 3) H 2 O; 4) HF.	NH 3	formula	1	spaced
+Sample-Set-12/MSRound-13.txt:128#stem	Identify all of the following four molecules that are polar: 1) CH 4 ; 2) NH 3 ; 3) H 2 O; 4) HF.	H 2 O	formula	1	spaced
+Sample-Set-12/MSRound-13.txt:128#stem	Identify all of the following four molecules that are polar: 1) CH 4 ; 2) NH 3 ; 3) H 2 O; 4) HF.	HF	formula	1	
+Sample-Set-12/MSRound-13.txt:281#stem	What is the formal charge on the central nitrogen atom in nitrous oxide, which has the formula N 2 O?	nitrogen	skip	1	modifier of atom
+Sample-Set-12/MSRound-13.txt:281#stem	What is the formal charge on the central nitrogen atom in nitrous oxide, which has the formula N 2 O?	nitrous oxide	chemical	1	
+Sample-Set-12/MSRound-13.txt:281#stem	What is the formal charge on the central nitrogen atom in nitrous oxide, which has the formula N 2 O?	N 2 O	formula	1	spaced
+Sample-Set-3/Round-10C-MS.txt:117#stem	Name all of the following 4 choices that contain ionic bonds: NaCl; O2; KBr; CO2	NaCl	formula	1	
+Sample-Set-3/Round-10C-MS.txt:117#stem	Name all of the following 4 choices that contain ionic bonds: NaCl; O2; KBr; CO2	O2	formula	1	
+Sample-Set-3/Round-10C-MS.txt:117#stem	Name all of the following 4 choices that contain ionic bonds: NaCl; O2; KBr; CO2	KBr	formula	1	
+Sample-Set-3/Round-10C-MS.txt:117#stem	Name all of the following 4 choices that contain ionic bonds: NaCl; O2; KBr; CO2	CO2	formula	1	
+Sample-Set-7/MS_Round-7.txt:348#Y	Provides H+ to reduce NADPH to NADP+	H+	formula	1	
+Sample-Set-7/MS_Round-7.txt:348#Y	Provides H+ to reduce NADPH to NADP+	NADPH	skip	1	acronym
+Sample-Set-7/MS_Round-7.txt:348#Y	Provides H+ to reduce NADPH to NADP+	NADP+	skip	1	acronym
+Sample-Set-5/Round2.txt:389#stem	What is the empirical formula of C6H12O6?	C6H12O6	formula	1	
+Sample-Set-1/m_round09.txt:63#X	HCl and hydrochloric acid	HCl	formula	1	
+Sample-Set-1/m_round09.txt:63#X	HCl and hydrochloric acid	hydrochloric acid	chemical	1	
+Sample-Set-12/MSRound-14.txt:332#answer	NITRO (ACCEPT: NO 2 )	NITRO	skip	1	group name
+Sample-Set-12/MSRound-14.txt:332#answer	NITRO (ACCEPT: NO 2 )	NO 2	formula	1	spaced
+Sample-Set-10/7A_MS_Reg_2016.txt:356#stem	What is the common name of the NH4+ ion?	NH4+	formula	1	
+Sample-Set-5/Round15.txt:161#X	NH4+ and NH3	NH4+	formula	1	
+Sample-Set-5/Round15.txt:161#X	NH4+ and NH3	NH3	formula	1	
+Sample-Rounds/rr5_for_web.txt:398#stem	How many molecules of CO2 are present in 1 mole of CO2?	CO2	formula	1	
+Sample-Rounds/rr5_for_web.txt:398#stem	How many molecules of CO2 are present in 1 mole of CO2?	CO2	formula	2	
+Sample-Set-3/Round-15C-MS.txt:500#stem	Which 2 of the following 5 molecules are most directly involved in muscle contraction in mammals: cellulose; albumin; actin; collagen; myosin	cellulose	chemical	1	
+Sample-Set-3/Round-15C-MS.txt:500#stem	Which 2 of the following 5 molecules are most directly involved in muscle contraction in mammals: cellulose; albumin; actin; collagen; myosin	albumin	protein	1	
+Sample-Set-3/Round-15C-MS.txt:500#stem	Which 2 of the following 5 molecules are most directly involved in muscle contraction in mammals: cellulose; albumin; actin; collagen; myosin	actin	protein	1	
+Sample-Set-3/Round-15C-MS.txt:500#stem	Which 2 of the following 5 molecules are most directly involved in muscle contraction in mammals: cellulose; albumin; actin; collagen; myosin	collagen	protein	1	
+Sample-Set-3/Round-15C-MS.txt:500#stem	Which 2 of the following 5 molecules are most directly involved in muscle contraction in mammals: cellulose; albumin; actin; collagen; myosin	myosin	protein	1	
+Sample-Set-1/m_round17.txt:106#stem	Name all of the following 4 proteins that are soluble in water: collagen; hemoglobin; insulin; DNA polymerase	water	chemical	1	
+Sample-Set-1/m_round17.txt:106#stem	Name all of the following 4 proteins that are soluble in water: collagen; hemoglobin; insulin; DNA polymerase	collagen	protein	1	
+Sample-Set-1/m_round17.txt:106#stem	Name all of the following 4 proteins that are soluble in water: collagen; hemoglobin; insulin; DNA polymerase	hemoglobin	protein	1	
+Sample-Set-1/m_round17.txt:106#stem	Name all of the following 4 proteins that are soluble in water: collagen; hemoglobin; insulin; DNA polymerase	insulin	protein	1	
+Sample-Set-1/m_round17.txt:106#stem	Name all of the following 4 proteins that are soluble in water: collagen; hemoglobin; insulin; DNA polymerase	DNA polymerase	protein	1	
+Sample-Set-12/MSRound-5.txt:254#stem	Hexokinase is an enzyme that catalyzes the first step of glycolysis. What functional group does it add to the glucose molecule?	Hexokinase	protein	1	
+Sample-Set-12/MSRound-5.txt:254#stem	Hexokinase is an enzyme that catalyzes the first step of glycolysis. What functional group does it add to the glucose molecule?	glucose	chemical	1	
+Sample-Set-13/2019-NSB-MSR-Round-16A.txt:411#stem	RNA polymerase "knows" where to start transcribing a gene because it binds what regions of DNA?	RNA polymerase	protein	1	
+Sample-Set-13/2019-NSB-MSR-Round-16A.txt:411#stem	RNA polymerase "knows" where to start transcribing a gene because it binds what regions of DNA?	DNA	skip	1	acronym
+Sample-set-11/MS_11A.txt:335#stem	Digestion begins in the mouth because saliva contains salivary amylase. What macromolecule does amylase digest?	amylase	protein	1	
+Sample-set-11/MS_11A.txt:335#stem	Digestion begins in the mouth because saliva contains salivary amylase. What macromolecule does amylase digest?	amylase	protein	2	
+Sample-Set-3/Round-9C-MS.txt:425#stem	What element is most directly involved with the binding of oxygen in the hemoglobin molecule?	oxygen	chemical	1	
+Sample-Set-3/Round-9C-MS.txt:425#stem	What element is most directly involved with the binding of oxygen in the hemoglobin molecule?	hemoglobin	protein	1	
+Sample-Set-4/Round14.txt:27#stem	What is the spongy, glandular organ that secretes digestive enzymes and hormones, including insulin?	insulin	protein	1	
+Sample-Set-6/Round9.txt:202#X	RNA polymerase	RNA polymerase	protein	1	
+Sample-Set-15/Set-5-MS-2021.txt:20#stem	Researchers at Argonne National Lab are studying the protein Nsp15, which is found in the viruses that cause SARS, MERS, and COVID-19. What subfamily are these viruses part of?	Nsp15	protein	1	
+Sample-Set-15/Set-5-MS-2021.txt:20#stem	Researchers at Argonne National Lab are studying the protein Nsp15, which is found in the viruses that cause SARS, MERS, and COVID-19. What subfamily are these viruses part of?	SARS	skip	1	acronym
+Sample-Set-15/Set-5-MS-2021.txt:20#stem	Researchers at Argonne National Lab are studying the protein Nsp15, which is found in the viruses that cause SARS, MERS, and COVID-19. What subfamily are these viruses part of?	MERS	skip	1	acronym
+Sample-Set-15/Set-5-MS-2021.txt:20#stem	Researchers at Argonne National Lab are studying the protein Nsp15, which is found in the viruses that cause SARS, MERS, and COVID-19. What subfamily are these viruses part of?	COVID-19	skip	1	acronym
+Sample-Set-12/MSRound-7.txt:130#stem	Cancer researchers at SLAC are studying the interaction of the peripheral protein Axl with serum protein Gas6, which signals to the cancer cell to break free of the original neoplasm and seed new tumors. What is the term for this process of migration and clonal expansion?	SLAC	skip	1	acronym
+Sample-Set-12/MSRound-7.txt:130#stem	Cancer researchers at SLAC are studying the interaction of the peripheral protein Axl with serum protein Gas6, which signals to the cancer cell to break free of the original neoplasm and seed new tumors. What is the term for this process of migration and clonal expansion?	Axl	protein	1	
+Sample-Set-12/MSRound-7.txt:130#stem	Cancer researchers at SLAC are studying the interaction of the peripheral protein Axl with serum protein Gas6, which signals to the cancer cell to break free of the original neoplasm and seed new tumors. What is the term for this process of migration and clonal expansion?	Gas6	protein	1	
+Sample-Set-12/MSRound-7.txt:209#stem	Researchers at Brookhaven National Lab have discovered that KIN10, a protein kinase, is responsible for controlling sugar homeostasis in plants and oil production. What functional group does KIN10 add to proteins?	KIN10	protein	1	
+Sample-Set-12/MSRound-7.txt:209#stem	Researchers at Brookhaven National Lab have discovered that KIN10, a protein kinase, is responsible for controlling sugar homeostasis in plants and oil production. What functional group does KIN10 add to proteins?	protein kinase	skip	1	enzyme class
+Sample-Set-12/MSRound-7.txt:209#stem	Researchers at Brookhaven National Lab have discovered that KIN10, a protein kinase, is responsible for controlling sugar homeostasis in plants and oil production. What functional group does KIN10 add to proteins?	KIN10	protein	2	
+Sample-Set-16/Set-7-HS-2021.txt:188#stem	Melissa synthesizes a DNA plasmid in which expression of green fluorescent protein is under the lac promoter and lacI is upstream of the promoter. Which of the following small molecules can she add to bacteria expressing this plasmid to induce expression of green fluorescent protein?	DNA	skip	1	acronym
+Sample-Set-16/Set-7-HS-2021.txt:188#stem	Melissa synthesizes a DNA plasmid in which expression of green fluorescent protein is under the lac promoter and lacI is upstream of the promoter. Which of the following small molecules can she add to bacteria expressing this plasmid to induce expression of green fluorescent protein?	green fluorescent protein	protein	1	
+Sample-Set-16/Set-7-HS-2021.txt:188#stem	Melissa synthesizes a DNA plasmid in which expression of green fluorescent protein is under the lac promoter and lacI is upstream of the promoter. Which of the following small molecules can she add to bacteria expressing this plasmid to induce expression of green fluorescent protein?	lac	skip	1	operon element
+Sample-Set-16/Set-7-HS-2021.txt:188#stem	Melissa synthesizes a DNA plasmid in which expression of green fluorescent protein is under the lac promoter and lacI is upstream of the promoter. Which of the following small molecules can she add to bacteria expressing this plasmid to induce expression of green fluorescent protein?	lacI	gene	1	
+Sample-Set-16/Set-7-HS-2021.txt:188#stem	Melissa synthesizes a DNA plasmid in which expression of green fluorescent protein is under the lac promoter and lacI is upstream of the promoter. Which of the following small molecules can she add to bacteria expressing this plasmid to induce expression of green fluorescent protein?	green fluorescent protein	protein	2	
+Sample-Set-1/m_round13.txt:496#stem	At the beginning of metaphase in mitosis, how many chromatids are in each chromosome?				
+Sample-Set-7/MS_Round-14.txt:306#stem	In an average home, which of the following end uses would be most likely to use three-phase power?				
+Sample-Set-15/Set-5-MS-2021.txt:278#stem	A certain engine operates from a hot reservoir with a temperature of 500 kelvins and a cold sink with a temperature of 300 kelvins. As a percentage, what is the Carnot efficiency of this engine?				
+Sample-Set-2/sample_questions_r1.txt:75#stem	Rickets, which was a common disease in the early twentieth century, is caused by a deficiency in what vitamin:				
+Sample-Set-8/Round-16-A.txt:23#stem	In base-3, what is the product of 100 and 110?				
+Sample-Set-14/2020-MS-Rd8.txt:131#stem	Charles Darwin suggested that evolution in the wild occurs by what process, in which environmental conditions determine what individuals will produce the most offspring?				
+Sample-Set-9/RegionalMS_14A.txt:134#stem	Identify all of the following three observations that are examples of qualitative data: 1) The bird flew in a zigzag motion; 2) The temperature decreased from 20 degrees Celsius to 15 degrees Celsius; 3) The population of robins hatched an average of three chicks each.				
+Sample-Set-5/Round1.txt:282#stem	Bob is building shelves 18 inches long. He uses a saw with a kerf, or cut width, of an eighth of an inch. Considering the kerf, how many shelves exactly 18 inches long can he make from a board that is 72 inches long?				
+Sample-Set-6/Round9.txt:90#stem	Place the following four phases of cell division in order from first to last: 1) anaphase, 2) prophase, 3) metaphase, 4) telophase.				
+Sample-Set-9/RegionalMS_15A.txt:241#stem	At the start of camp, Gracie scored 78 on her pre-test. At the end of the week, she scored 84 on her post test. Rounded to the nearest tenth of a percent, what is her percent increase?				
+Sample-Set-13/2019-NSB-MSR-Round-7A.txt:373#stem	In a group of pea plants, the tall trait is dominant over the short trait in a Mendelian manner. If two heterozygous plants breed and produce 24 offspring, what is the expected value of the number of tall plants within the offspring?				
+Sample-Set-13/2019-NSB-MSR-Round-15A.txt:202#answer	CUBE ROOT OF 2				
+Sample-Set-14/2020-MS-Rd17.txt:193#answer	X) INSERTION OF 3 BASES				
+Sample-Set-1/m_round15.txt:228#answer	Z) IF N IS A MULTIPLE OF 2, THEN N + 1 IS ALSO A MULTIPLE OF 2				
