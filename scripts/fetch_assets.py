@@ -22,6 +22,9 @@ DATA = ROOT / ".data"
 MANIFEST = DATA / "downloads.tsv"
 CHUNK = 1 << 20
 ATTEMPTS = 3
+GROUPS = ("models", "voices", "kokoro")
+# Pickle-capable formats can run code when loaded; the lock must never list them.
+PICKLE_SUFFIXES = (".pt", ".pth", ".pkl", ".pickle", ".ckpt", ".bin")
 
 
 class FetchError(Exception):
@@ -39,11 +42,13 @@ def validate(asset: dict) -> None:
     dest = Path(asset["dest"])
     safe = (
         asset["url"].startswith("https://")
+        and asset["group"] in GROUPS
         and re.fullmatch(r"[0-9a-f]{64}", asset["sha256"])
         and isinstance(asset["size"], int)
         and asset["size"] > 0
         and "/" not in asset["name"]
         and asset["name"] not in ("", ".", "..")
+        and not asset["name"].lower().endswith(PICKLE_SUFFIXES)
         and not dest.is_absolute()
         and dest.parts[:1] == (".data",)
         and ".." not in dest.parts
@@ -171,7 +176,7 @@ def report(assets: list[dict], deep: bool, paths: bool) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--group", action="append", choices=("models", "voices"))
+    parser.add_argument("--group", action="append", choices=GROUPS)
     parser.add_argument("--voices", nargs="+", default=[], metavar="ID")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--check", action="store_true", help="read-only: presence and size")

@@ -118,12 +118,24 @@ def test_offline_refuses_missing_asset(fa, monkeypatch):
         {"sha256": "abc"},
         {"name": "../v.onnx"},
         {"size": 0},
+        {"group": "plugins"},
+        {"name": "af_heart.pt"},
+        {"name": "model.PTH"},
     ],
 )
 def test_load_rejects_unsafe_lock_entries(fa, overrides):
     write_lock(fa, asset(**overrides))
     with pytest.raises(fa.FetchError, match="invalid entry"):
         fa.load([], [])
+
+
+def test_kokoro_group_lands_in_nested_dest(fa, monkeypatch):
+    serve(fa, monkeypatch, PAYLOAD)
+    voice = asset(name="af_heart.safetensors", group="kokoro", dest=".data/models/kokoro/voices")
+    write_lock(fa, asset(), voice)
+    assert fa.fetch(fa.load(["kokoro"], []), offline=False) == 0
+    assert (fa.DATA / "models" / "kokoro" / "voices" / "af_heart.safetensors").is_file()
+    assert not (fa.DATA / "voices" / "v.onnx").exists()
 
 
 def test_load_rejects_voice_missing_from_lock(fa):

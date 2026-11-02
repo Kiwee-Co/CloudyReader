@@ -36,7 +36,7 @@ FETCH_NET = $(if $(filter 1,$(OFFLINE)),--offline)
 GATE_MARKERS = not model and not voice and not network and not java
 FAST_MARKERS = not slow and not network and not model and not voice and not java
 
-run test test-fast: export CLOUDYREADER_DATA_DIR := $(CURDIR)/.data
+run test test-fast samples smoke-live: export CLOUDYREADER_DATA_DIR := $(CURDIR)/.data
 
 # doctor UV ONLINE VERIFY VOICE...: read-only checks; exit 1 when a required item is missing.
 define DOCTOR_SH
@@ -75,8 +75,12 @@ if [ "$$verify" = 1 ]; then mode=--verify; how="present, SHA256 verified"; fi
 if out=$$(assets "$$mode" --group models 2>&1); then ok models "$$how"; else need models "$$(grep -v '^ok' <<< "$$out" | head -3 | tr '\n' ' ')" "make models"; fi
 if out=$$(assets "$$mode" --group voices --voices "$$@" 2>&1); then ok voices "$$# voice(s) $$how"; else need voices "$$(grep -v '^ok' <<< "$$out" | head -3 | tr '\n' ' ')" "make voices"; fi
 if pyq 'import importlib.util, sys; sys.exit(importlib.util.find_spec("en_ner_craft_md") is None)'; then ok model-pkg "en_ner_craft_md installed in .venv"; else need model-pkg "en_ner_craft_md not installed" "make models"; fi
+if [ "$$arch" = arm64 ]; then
+  if out=$$(assets "$$mode" --group kokoro 2>&1); then ok kokoro "$$(grep -c '^ok' <<< "$$out") file(s) $$how"; else info kokoro "optional engine assets incomplete: make kokoro"; fi
+  if pyq 'import importlib.util, sys; sys.exit(importlib.util.find_spec("mlx_audio") is None)'; then ok kokoro-pkg "mlx-audio installed"; else info kokoro-pkg "mlx-audio not installed (optional kokoro extra, pending)"; fi
+fi
+if command -v pdftotext >/dev/null 2>&1; then ok pdftotext "$$(command -v pdftotext)"; else info pdftotext "optional, for make samples: brew install poppler"; fi
 if command -v pre-commit >/dev/null 2>&1; then ok pre-commit "$$(pre-commit --version)"; else info pre-commit "optional, not installed: brew install pre-commit"; fi
-info kokoro "pending kokoro-spike result"
 if [ "$$online" = 1 ]; then
   for pair in "pubchem|https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/water/cids/TXT" "uniprot|https://rest.uniprot.org/uniprotkb/search?query=insulin&size=1&fields=accession&format=tsv"; do
     code=$$(curl -s -o /dev/null --max-time 10 -w '%{http_code}' "$${pair#*|}" || true)
@@ -103,7 +107,7 @@ if [ -e tests/smoke/__pycache__ ]; then rm -r tests/smoke/__pycache__; fi
 endef
 
 .PHONY: help setup deps lock models voices kokoro doctor run test test-fast check fmt precommit \
-        ci app clean clean-all FORCE
+        ci app samples smoke-live clean clean-all FORCE
 
 help: ## Show targets and overridable variables
 	@echo "usage: make <target> [VAR=value ...]"
@@ -150,9 +154,9 @@ $(STAMPS)/voices: $(STAMPS)/deps assets.lock.json scripts/fetch_assets.py
 	$(FETCH) --group voices --voices $(VOICES) $(FETCH_NET)
 	@mkdir -p $(@D) && touch $@
 
-kokoro: ## Kokoro/MLX-Audio engine, Apple Silicon only (stub: installs nothing)
+kokoro: ## Kokoro assets (arm64 only) via scripts/fetch_assets.py into .data/models/kokoro
 	@if [ "$$(uname -m)" != arm64 ]; then echo "kokoro: needs Apple Silicon (arm64), found $$(uname -m)" >&2; exit 1; fi
-	@echo "pending kokoro-spike result"
+	$(FETCH) --group kokoro $(FETCH_NET)
 
 doctor: ## Read-only health report; exit 1 with the exact fix when a required item is missing
 	@bash -c "$$DOCTOR_SH" doctor "$(UV)" "$(ONLINE)" "$(VERIFY)" $(VOICES)
@@ -184,6 +188,13 @@ ci: ## Commit gate: check, then test, then precommit
 
 app: ## Build dist/cloudyreader.app via scripts/build_app.sh (stream E), else print pending
 	@if [ -f scripts/build_app.sh ]; then bash scripts/build_app.sh; else echo "pending: scripts/build_app.sh (stream E) not written yet"; fi
+
+samples: ## Extract NSB sample PDFs to .data/samples (scripts/extract_samples.py; needs pdftotext)
+	@if [ -f scripts/extract_samples.py ]; then $(UV_RUN) $(PYTHON) scripts/extract_samples.py; else echo "pending: scripts/extract_samples.py (corpus agent) not written yet"; fi
+
+smoke-live: ## Live PubChem + UniProt check (scripts/live_smoke.py); never in ci
+	@echo "smoke-live needs internet access to PubChem and UniProt: run it OUTSIDE the agent sandbox."
+	@if [ -f scripts/live_smoke.py ]; then $(UV_RUN) $(PYTHON) scripts/live_smoke.py; else echo "pending: scripts/live_smoke.py (s3o-opsin) not written yet"; fi
 
 clean: ## Remove caches and build artifacts; never .data/ or .venv/
 	$(CLEAN_CMDS)
