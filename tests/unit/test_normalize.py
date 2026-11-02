@@ -265,10 +265,10 @@ def test_answer_is_spoken_with_read_answer():
 
 
 def test_answer_gap_before_the_next_question():
-    a = question("One?", answer="DNA LIGASE")
+    a = question("One?", answer="LIGASE")
     b = question("Two?")
     s = script(a, b, opts=READ)
-    assert texts(s) == ["One?", "Answer. D N A Ligase.", "Two?"]
+    assert texts(s) == ["One?", "Answer. Ligase.", "Two?"]
     assert pauses(s) == [5000, 1500, 0]
 
 
@@ -281,9 +281,27 @@ def test_answer_gap_before_the_next_question():
         ("Y)Velocity", "Answer. Y. Velocity."),
         ("w) igneous", "Answer. W. igneous."),
         ("y) Igneous", "Answer. Y. Igneous."),
-        ("DNA LIGASE ACCEPT: LIGASE", "Answer. D N A Ligase."),
-        ("DNA LIGASE ACCEPT: LIGASE DO NOT ACCEPT: DNA POLYMERASE", "Answer. D N A Ligase."),
+        ("LIGASE ACCEPT: ENZYME", "Answer. Ligase."),
+        ("LIGASE ACCEPT: ENZYME DO NOT ACCEPT: POLYMERASE", "Answer. Ligase."),
         ("ESOPHAGUS (ACCEPT: GULLET)", "Answer. Esophagus."),
+        ("2 (Solution: 52 plus 122 equals c2; c equals 13)", "Answer. 2."),
+        ("18 OHMS (must give units)", "Answer. 18 Ohms."),
+        ("–6, 12 (must give both answers)", "Answer. –6, 12."),
+        ("ELLIPSE (ALSO ACCEPT ELLIPTICAL)", "Answer. Ellipse."),
+        ("VENUS (Also accept Uranus)", "Answer. Venus."),
+        ("MUSTARD", "Answer. Mustard."),
+        ("12.5 Grams/Milliliter (Accept 12.5 Grams/CM3)", "Answer. 12.5 Grams/Milliliter."),
+        ("5 (accept 2)", "Answer. 5."),
+        ("9 (Accept “9 to 1,” “9:1,” or “9 over 1”)", "Answer. 9."),
+        ("Students (Note: Students Must Give Both Terms)", "Answer. Students."),
+        ("X (note: if student interrupts,", "Answer. X."),
+        ("PHOTON (NOTE: ANY VARIABLE IS FINE)", "Answer. Photon."),
+        ("MATRIX (SOLUTION: none) (ACCEPT: X)", "Answer. Matrix."),
+        ("SOLUTION", "Answer. Solution."),
+        ("ACCEPTOR", "Answer. Acceptor."),
+        ("PROMPT RADIATION", "Answer. Prompt Radiation."),
+        ("NOTE", "Answer. Note."),
+        ("NOTES (MUSICAL)", "Answer. Notes (Musical)."),
         ("Y) ESOPHAGUS (do not accept: gullet)", "Answer. Y. Esophagus."),
         ("ACCEPTANCE", "Answer. Acceptance."),
         ("6 NEWTONS", "Answer. 6 Newtons."),
@@ -443,16 +461,19 @@ def test_phonetic_surface_is_shielded_from_every_later_stage():
     assert seg.overrides == (Override("Pharynx", "<FAR-ingks>", "respelling"),)
 
 
+SPELL_KIN10 = {"formulas": lambda t: t.replace("KIN10", "K I N ten")}
+
+
 def test_phonetic_surface_is_not_spelled_as_an_acronym():
     q = question("The KIN10 gene.", respellings=(Respelling("KIN10", "kin-ten"),))
-    seg = script(q).segments[0]
+    seg = script(q, norm=make(**SPELL_KIN10)).segments[0]
     assert seg.text == "The KIN10 gene."
     assert seg.overrides == (Override("KIN10", "<kin-ten>", "respelling"),)
 
 
 def test_phonetic_surface_without_ipa_gets_the_normal_stages():
     q = question("The KIN10 gene.", respellings=(Respelling("KIN10", "kin-ten"),))
-    s = script(q, norm=make(to_ipa=lambda r: None))
+    s = script(q, norm=make(to_ipa=lambda r: None, **SPELL_KIN10))
     assert s.segments[0].text == "The K I N ten gene."
     assert len(s.warnings) == 1 and "KIN10" in s.warnings[0]
 
@@ -694,59 +715,22 @@ def test_real_lexicon_builds_an_iupac_override_and_keeps_the_text():
     assert contract_problems(s) == []
 
 
-# --- acronyms, gene symbols and pH are spelled -----------------------------------------------
+# --- acronyms and gene symbols are spelled by the formula stage -------------------------------
 
 
-@pytest.mark.parametrize(
-    ("written", "spoken"),
-    [
-        ("DNA", "D N A"),
-        ("ATP", "A T P"),
-        ("TP53", "T P fifty-three"),
-        ("p53", "p fifty-three"),
-        ("BRCA1", "B R C A one"),
-        ("CFTR", "C F T R"),
-        ("HBB", "H B B"),
-        ("NSB", "N S B"),
-        ("mRNA", "m R N A"),
-        ("cDNA", "c D N A"),
-        ("pH", "p H"),
-        ("pOH", "p O H"),
-        ("B12", "B twelve"),
-        ("UV", "U V"),
-        ("DNA's", "D N A's"),
-        ("p53-dependent", "p fifty-three-dependent"),
-    ],
-)
-def test_acronyms_and_symbols_are_spelled(written, spoken):
-    assert texts(script(question(f"The {written} here.")))[0] == f"The {spoken} here."
-
-
-@pytest.mark.parametrize(
-    "word",
-    [
-        "NOT",
-        "EXCEPT",
-        "ONLY",
-        "WHICH",
-        "NASA",
-        "LASER",
-        "Which",
-        "DNAse",
-        "x",
-        "A",
-        "I",
-        "II",
-        "NaHCO3",
-    ],
-)
-def test_ordinary_and_pronounceable_words_stay_words(word):
-    assert texts(script(question(f"Of these {word} is it.")))[0] == f"Of these {word} is it."
-
-
-def test_spelling_runs_after_the_formula_stage_and_leaves_its_letters_alone():
-    norm = make(formulas=lambda t: t.replace("NaCl", "N A C L"))
-    assert texts(script(question("NaCl and DNA."), norm=norm))[0] == "N A C L and D N A."
+def test_real_stages_spell_acronyms_in_stem_choices_and_answer():
+    q = question(
+        "Does DNA bind p53?", choices=abcd("ATP", "BRCA1", "NOT", "NASA"), answer="DNA LIGASE"
+    )
+    s = ScriptNormalizer().to_script([q], NO_RESOLUTIONS, READ)
+    assert texts(s) == [
+        "Does D N A bind p fifty-three?",
+        "W. A T P",
+        "X. B R C A one",
+        "Y. NOT",
+        "Z. NASA",
+        "Answer. D N A Ligase.",
+    ]
 
 
 # --- lexicon overrides ------------------------------------------------------------------------

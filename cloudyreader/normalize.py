@@ -50,24 +50,20 @@ _IPA_PUNCT_RE = re.compile(r"[.;:,!?—…\"()“”\[\]{}]")
 # Whole all-caps words only: "CO2" must not become "Co2".
 _SHOUTED_RE = re.compile(r"(?<!\w)[^\W\d_]{2,}(?!\w)")
 _ANSWER_MARKER_RE = re.compile(r"\s*([WXYZwxyz])[).:]\s*")
-# A moderator reads the primary answer; ACCEPT / PROMPT notes are for challenges.
+# A moderator reads the primary answer; ACCEPT / PROMPT / NOTE / SOLUTION / MUST notes are for
+# judges. Everything from the first note on goes. "(Accept 2)" needs its parenthesis; a bare
+# SOLUTION or PROMPT is a real answer, and a colon makes a note explicit.
+_NOTE_WORDS = (
+    r"(?:also accept|do not accept|accept|do not prompt|prompt|solution|note|must|students?)"
+)
 _ANSWER_NOTE_RE = re.compile(
-    r"\s*\(?\s*\b(?:do not accept|accept|do not prompt|prompt)\s*:.*", re.IGNORECASE | re.DOTALL
+    rf"\s*(?:\(\s*{_NOTE_WORDS}\b|\b{_NOTE_WORDS}\s*:).*", re.IGNORECASE | re.DOTALL
 )
 # Bracketed moderator notes: "[NOTE: STUDENTS MUST GIVE BOTH ANSWERS]", "[must give both]".
 _ANSWER_BRACKET_NOTE_RE = re.compile(
     r"\s*\[\s*(?:note|must|do not|accept|prompt|students?)\b[^\]]*\]", re.IGNORECASE
 )
 _PRIVATE_USE = 0xE000
-
-# Acronyms with a vowel look like words; unlisted ones with a vowel (NASA, LASER) stay words.
-_ACRONYMS = frozenset(
-    "DNA RNA ATP ADP AMP GTP GDP NAD NADH NADP NADPH FAD FADH HIV PCR UV IR DC AC LED LCD CFC "
-    "GPS MRI EKG ECG CPU USA UK UN EU DOE".split()
-)
-_VOWELS = frozenset("AEIOUY")
-_TOKEN_RE = re.compile(r"(?<!\w)([A-Za-z]+)(\d{1,3})?(?!\w)")
-_PREFIXED_RE = re.compile(r"[a-z]{1,2}([A-Z]{2,6})")
 
 
 def _squash(text: str) -> str:
@@ -86,34 +82,6 @@ def _title_category(category: str) -> str:
         return category
     words = category.replace("&", "and").lower().split()
     return " ".join(w if i and w in _SMALL_WORDS else w.capitalize() for i, w in enumerate(words))
-
-
-def _is_spelled(letters: str, digits: str | None) -> bool:
-    """Gene symbols, acronyms and pH are said letter by letter, never as a word."""
-    if digits:
-        return letters.isupper() or (len(letters) == 1 and letters.islower())
-    if letters in ("pH", "pOH"):
-        return True
-    prefixed = _PREFIXED_RE.fullmatch(letters)  # mRNA, cDNA
-    if prefixed:
-        return prefixed.group(1) in _ACRONYMS
-    return (
-        letters.isupper()
-        and 2 <= len(letters) <= 6
-        and (letters in _ACRONYMS or _VOWELS.isdisjoint(letters))
-    )
-
-
-def _spell_acronyms(text: str) -> str:
-    """TP53 -> "T P fifty-three", DNA -> "D N A". NOT, NASA and ordinary words stay as they are."""
-
-    def spell(m: re.Match[str]) -> str:
-        letters, digits = m.groups()
-        if not _is_spelled(letters, digits):
-            return m.group()
-        return " ".join([*letters, *([units.cardinal(int(digits))] if digits else [])])
-
-    return _TOKEN_RE.sub(spell, text)
 
 
 def _unshout(text: str) -> str:
@@ -141,6 +109,22 @@ def _spell_out(content: str) -> str:
     """The letters a spell guide gives: "F.A.D." -> "F A D", "H-E-2-S-1" -> "H E two S one"."""
     parts = [p for p in re.split(r"[-.\s]+", content) if p]
     return " ".join(units.cardinal(int(p)) if p.isdecimal() else p for p in parts)
+
+
+def _trim_overlaps(guides: Sequence[Respelling]) -> Sequence[Respelling]:
+    """A phonetic guide printed right after another guided word can swallow that word.
+
+    "fluorescein [A] isothiocyanate [B C]" gives B C the surface "fluorescein isothiocyanate".
+    """
+    trimmed: list[Respelling] = []
+    for guide in guides:
+        surface = guide.surface
+        if guide.kind == "phonetic":
+            for earlier in trimmed:
+                if earlier.kind == "phonetic" and surface.startswith(earlier.surface + " "):
+                    surface = surface[len(earlier.surface) + 1 :]
+        trimmed.append(replace(guide, surface=surface))
+    return trimmed
 
 
 def _usable(override: Override | None, warnings: list[str]) -> Override | None:
@@ -262,6 +246,7 @@ class ScriptNormalizer:
         shouted: bool = False,
     ) -> tuple[str, tuple[Override, ...]]:
         text = _squash(_FOOTNOTE_RE.sub("", text))
+        respellings = _trim_overlaps(respellings)
         # A pasted guide, or an IUPAC name, says how its words sound, so the formula, unit and
         # acronym stages must not touch them: each becomes a private-use mark until the end.
         marks: dict[str, str] = {}
@@ -290,7 +275,7 @@ class ScriptNormalizer:
                 text = _hide(text, pattern, name, marks)
                 named[name] = names[name]
 
-        spoken = _spell_acronyms(_squash(self._formulas(self._units(text))))
+        spoken = _squash(self._formulas(self._units(text)))
         if shouted:
             spoken = _unshout(spoken)
         spoken = _squash(_BRACKET_RE.sub(" ", spoken))
