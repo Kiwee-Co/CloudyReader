@@ -187,6 +187,50 @@ def test_kokoro_rejects_other_values(fake_root: Path) -> None:
     assert "KOKORO must be auto, 0 or 1" in result.stderr
 
 
+def write_icon(root: Path, name: str) -> Path:
+    icns = root / "assets" / "icons" / name / "AppIcon.icns"
+    icns.parent.mkdir(parents=True)
+    icns.write_bytes(b"icns")
+    return icns
+
+
+def resolve_icon(root: Path, icon: str) -> subprocess.CompletedProcess[str]:
+    return bash_fn(root, 'resolve_icon && echo "ICON_PATH=$ICON_PATH"', ICON=icon)
+
+
+def test_icon_parameter_picks_that_folder(fake_root: Path) -> None:
+    write_icon(fake_root, "cloud-atom")
+    voice = write_icon(fake_root, "cloud-voice")
+    (fake_root / "assets" / "icons" / "default.txt").write_text("cloud-atom\n")
+
+    result = resolve_icon(fake_root, "cloud-voice")
+
+    assert result.stdout.splitlines()[-1] == f"ICON_PATH={voice}"
+
+
+def test_empty_icon_reads_default_txt(fake_root: Path) -> None:
+    atom = write_icon(fake_root, "cloud-atom")
+    (fake_root / "assets" / "icons" / "default.txt").write_text("cloud-atom\n")
+
+    assert resolve_icon(fake_root, "").stdout.splitlines()[-1] == f"ICON_PATH={atom}"
+
+
+def test_missing_icon_falls_back_to_pyinstaller_default(fake_root: Path) -> None:
+    result = resolve_icon(fake_root, "cloud-missing")
+
+    assert result.returncode == 0
+    assert "AppIcon.icns is missing" in result.stdout
+    assert result.stdout.splitlines()[-1] == "ICON_PATH="
+
+
+@pytest.mark.parametrize("icon", ["../secrets", "a/b", ".hidden"])
+def test_icon_must_be_a_plain_folder_name(fake_root: Path, icon: str) -> None:
+    result = resolve_icon(fake_root, icon)
+
+    assert result.returncode == 1
+    assert "must be a folder name under assets/icons/" in result.stderr
+
+
 # --- packaging/CloudyReader.spec -----------------------------------------------------------------
 
 

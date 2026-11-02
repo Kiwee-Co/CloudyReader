@@ -111,7 +111,7 @@ sys.exit(any(u.find_spec(m) is None for m in ("misaki", "en_core_web_sm")))' >/d
 }
 
 resolve_inputs() {
-  local main_py=$ROOT/cloudyreader/__main__.py icon_name=$ICON icon_re='^[A-Za-z0-9_-][A-Za-z0-9._-]*$'
+  local main_py=$ROOT/cloudyreader/__main__.py
   case $ENTRY in
     auto) if [[ -f $main_py ]] && grep -q -- '--self-test' "$main_py"; then ENTRY=app; else ENTRY=probe; fi ;;
     app) [[ -f $main_py ]] || die "ENTRY=app needs cloudyreader/__main__.py" ;;
@@ -119,7 +119,20 @@ resolve_inputs() {
     *) die "ENTRY must be auto, app or probe, got '$ENTRY'" ;;
   esac
   if [[ $ENTRY == app ]]; then ENTRY_SCRIPT=$ROOT/packaging/launcher.py; else ENTRY_SCRIPT=$ROOT/packaging/probe_app.py; fi
+  resolve_icon
+  resolve_kokoro
 
+  if [[ $OUT != /* ]]; then OUT=$ROOT/$OUT; fi
+  mkdir -p -- "$OUT"
+  OUT=$(cd -- "$OUT" && pwd -P)
+  STAGE_APP=$ROOT/build/dist/$APP_NAME.app
+  FINAL_APP=$OUT/$APP_NAME.app
+}
+
+# ICON (a folder under assets/icons/, else the name in default.txt) -> ICON_PATH; empty means
+# PyInstaller's default icon.
+resolve_icon() {
+  local icon_name=$ICON icon_re='^[A-Za-z0-9_-][A-Za-z0-9._-]*$'
   if [[ -z $icon_name && -f $ROOT/assets/icons/default.txt ]]; then
     icon_name=$(head -n 1 "$ROOT/assets/icons/default.txt" | tr -d '[:space:]')
   fi
@@ -133,14 +146,6 @@ resolve_inputs() {
   else
     say "warning: assets/icons/$icon_name/AppIcon.icns is missing: using PyInstaller's default icon"
   fi
-
-  resolve_kokoro
-
-  if [[ $OUT != /* ]]; then OUT=$ROOT/$OUT; fi
-  mkdir -p -- "$OUT"
-  OUT=$(cd -- "$OUT" && pwd -P)
-  STAGE_APP=$ROOT/build/dist/$APP_NAME.app
-  FINAL_APP=$OUT/$APP_NAME.app
 }
 
 # KOKORO=auto|0|1 -> 0|1. auto includes Kokoro only when the extra and every pinned file exist.
