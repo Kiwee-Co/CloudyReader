@@ -34,24 +34,28 @@ die() {
   exit 1
 }
 
-# Deletes one file or folder, and only inside $ROOT/dist or $ROOT/build. A symlink loses itself only.
-remove_path() {
-  local target=$1 name parent real
+# A new empty folder build/<prefix>.XXXXXX; prints its path.
+fresh_dir() {
+  mkdir -p -- "$ROOT/build"
+  mktemp -d "$ROOT/build/$1.XXXXXX"
+}
+
+# Moves one file or folder from $ROOT/dist or $ROOT/build into a fresh build/trash.XXXXXX/:
+# a same-volume rename, never a delete. A symlink moves itself, not its target.
+move_aside() {
+  local target=$1 name parent real trash
   name=$(basename -- "$target")
-  case $name in '' | . | ..) die "refusing to delete '$target'" ;; esac
+  case $name in '' | . | ..) die "refusing to move '$target'" ;; esac
   if [[ ! -e $target && ! -L $target ]]; then return 0; fi
   parent=$(cd -- "$(dirname -- "$target")" && pwd -P) || die "cannot resolve '$target'"
   real="$parent/$name"
   case $real in
     "$ROOT/dist/"* | "$ROOT/build/"*) ;;
-    *) die "refusing to delete outside $ROOT/dist and $ROOT/build: $real (remove it yourself)" ;;
+    *) die "refusing to move outside $ROOT/dist and $ROOT/build: $real (move it yourself)" ;;
   esac
-  if [[ -L $real ]]; then
-    rm -- "$real"
-    return 0
-  fi
-  chmod -R u+w "$real" # $real is absolute; BSD chmod takes no `--` after the mode
-  rm -r -- "$real"
+  trash=$(fresh_dir trash)
+  mv -- "$real" "$trash/"
+  say "moved the previous $name to ${trash#"$ROOT"/}/ (make clean-app frees build/)"
 }
 
 # APFS clone when possible (instant, no extra disk), else a plain copy.
@@ -211,7 +215,7 @@ sign_bundle() {
 }
 
 install_bundle() {
-  remove_path "$FINAL_APP"
+  move_aside "$FINAL_APP"
   mv -- "$STAGE_APP" "$FINAL_APP"
   local log=$ROOT/build/codesign-verify.log
   if ! codesign --verify --deep --strict --verbose=2 "$FINAL_APP" >"$log" 2>&1; then
@@ -220,11 +224,11 @@ install_bundle() {
   fi
 }
 
-# Runs the bundle headless with --self-test against a throwaway data folder, offline.
+# Runs the bundle headless with --self-test against this build's own data folder, offline.
 self_test() {
   local run=$1 log=$ROOT/build/selftest-$1.log t0 pid rc=0 ticks=0
   t0=$(now)
-  CLOUDYREADER_DATA_DIR=$ROOT/build/selftest-data CLOUDYREADER_OFFLINE=1 QT_QPA_PLATFORM=offscreen \
+  CLOUDYREADER_DATA_DIR=$SELFTEST_DATA CLOUDYREADER_OFFLINE=1 QT_QPA_PLATFORM=offscreen \
     "$FINAL_APP/Contents/MacOS/$APP_NAME" --self-test >"$log" 2>&1 &
   pid=$!
   while kill -0 "$pid" 2>/dev/null; do
@@ -273,7 +277,8 @@ main() {
   sign_bundle
   install_bundle
   say "codesign: ad-hoc signature verified (--deep --strict)"
-  remove_path "$ROOT/build/selftest-data"
+  # Both runs share one fresh folder: the second exercises links that already exist.
+  SELFTEST_DATA=$(fresh_dir selftest-data)
   self_test 1
   self_test 2
   summary

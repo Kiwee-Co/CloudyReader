@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import plistlib
+import re
 import shutil
 import subprocess
 import sys
@@ -36,7 +37,7 @@ def test_script_is_shellcheck_clean() -> None:
 
 @pytest.fixture
 def fake_root(tmp_path: Path) -> Path:
-    """A copy of the script in a throwaway repo root, so remove_path guards tmp_path instead."""
+    """A copy of the script in a throwaway repo root, so move_aside guards tmp_path instead."""
     (tmp_path / "scripts").mkdir()
     shutil.copy(SCRIPT, tmp_path / "scripts" / "build_app.sh")
     shutil.copy(ROOT / "assets.lock.json", tmp_path / "assets.lock.json")
@@ -61,68 +62,97 @@ def bash_fn(root: Path, snippet: str, *args: str, **env: str) -> subprocess.Comp
     )
 
 
-def remove_path(root: Path, target: str) -> subprocess.CompletedProcess[str]:
-    return bash_fn(root, 'remove_path "$1"', target)
+def move_aside(root: Path, target: str) -> subprocess.CompletedProcess[str]:
+    return bash_fn(root, 'move_aside "$1"', target)
 
 
-def test_remove_path_deletes_inside_dist_even_read_only(fake_root: Path) -> None:
+def trash_dirs(root: Path) -> list[Path]:
+    return sorted((root / "build").glob("trash.*"))
+
+
+def test_script_never_deletes_recursively() -> None:
+    # CLAUDE.md Command Execution Safety check 1: no `rm -r`/`rm -rf`/`rm -fr`, in any spelling.
+    text = SCRIPT.read_text()
+    assert not re.search(r"\brm\s+(-\w*[rR]|--recursive)", text)
+    assert not re.search(r"\brm\s", text), "the script moves old output aside, never deletes"
+
+
+def test_rerun_moves_the_old_bundle_aside(fake_root: Path) -> None:
     app = fake_root / "dist" / "Cloudy Reader.app"
-    (app / "Contents").mkdir(parents=True)
-    locked = app / "Contents" / "locked.txt"
-    locked.write_text("x")
-    locked.chmod(0o444)
-    (app / "Contents").chmod(0o555)
+    for build in ("first", "second"):
+        (app / "Contents").mkdir(parents=True)
+        locked = app / "Contents" / "build.txt"
+        locked.write_text(build)
+        locked.chmod(0o444)
+        (app / "Contents").chmod(0o555)  # read-only inside: a rename does not care
 
-    result = remove_path(fake_root, str(app))
+        result = move_aside(fake_root, str(app))
 
-    assert result.returncode == 0, result.stderr
-    assert not app.exists()
+        assert result.returncode == 0, result.stderr
+        assert not app.exists()
+        assert "make clean-app frees build/" in result.stdout
+
+    kept = [t / "Cloudy Reader.app" / "Contents" / "build.txt" for t in trash_dirs(fake_root)]
+    assert sorted(k.read_text() for k in kept) == ["first", "second"]
 
 
-def test_remove_path_deletes_inside_build(fake_root: Path) -> None:
+def test_move_aside_inside_build(fake_root: Path) -> None:
     work = fake_root / "build" / "work"
     work.mkdir()
-    assert remove_path(fake_root, str(work)).returncode == 0
-    assert not work.exists()
+    assert move_aside(fake_root, str(work)).returncode == 0
+    assert not work.exists() and (trash_dirs(fake_root)[0] / "work").is_dir()
 
 
-def test_remove_path_missing_target_is_fine(fake_root: Path) -> None:
-    assert remove_path(fake_root, str(fake_root / "dist" / "nothing.app")).returncode == 0
+def test_move_aside_missing_target_is_fine(fake_root: Path) -> None:
+    assert move_aside(fake_root, str(fake_root / "dist" / "nothing.app")).returncode == 0
+    assert trash_dirs(fake_root) == []
 
 
 @pytest.mark.parametrize("rel", ["dist", "build", "dist/..", "dist/.", "elsewhere/file.txt"])
-def test_remove_path_refuses_outside_dist_and_build(fake_root: Path, rel: str) -> None:
+def test_move_aside_refuses_outside_dist_and_build(fake_root: Path, rel: str) -> None:
     (fake_root / "elsewhere").mkdir()
     (fake_root / "elsewhere" / "file.txt").write_text("keep")
 
-    result = remove_path(fake_root, str(fake_root / rel))
+    result = move_aside(fake_root, str(fake_root / rel))
 
     assert result.returncode == 1
-    assert "refusing to delete" in result.stderr
+    assert "refusing to move" in result.stderr
     assert (fake_root / "dist").is_dir() and (fake_root / "elsewhere" / "file.txt").exists()
+    assert trash_dirs(fake_root) == []
 
 
-def test_remove_path_refuses_a_symlinked_way_out(fake_root: Path, tmp_path: Path) -> None:
+def test_move_aside_refuses_a_symlinked_way_out(fake_root: Path, tmp_path: Path) -> None:
     outside = tmp_path.parent / f"{tmp_path.name}-outside"
     outside.mkdir()
     (fake_root / "dist" / "out").symlink_to(outside, target_is_directory=True)
     (outside / "victim.app").mkdir()
 
-    result = remove_path(fake_root, str(fake_root / "dist" / "out" / "victim.app"))
+    result = move_aside(fake_root, str(fake_root / "dist" / "out" / "victim.app"))
 
     assert result.returncode == 1
     assert (outside / "victim.app").is_dir()
 
 
-def test_remove_path_removes_only_the_link(fake_root: Path, tmp_path: Path) -> None:
+def test_move_aside_moves_only_the_link(fake_root: Path, tmp_path: Path) -> None:
     outside = tmp_path.parent / f"{tmp_path.name}-target"
     outside.mkdir()
     (outside / "keep.txt").write_text("keep")
     link = fake_root / "dist" / "link.app"
     link.symlink_to(outside, target_is_directory=True)
 
-    assert remove_path(fake_root, str(link)).returncode == 0
+    assert move_aside(fake_root, str(link)).returncode == 0
     assert not link.is_symlink() and (outside / "keep.txt").exists()
+    assert (trash_dirs(fake_root)[0] / "link.app").is_symlink()
+
+
+def test_fresh_dir_gives_each_run_its_own_folder(fake_root: Path) -> None:
+    result = bash_fn(fake_root, "fresh_dir selftest-data && fresh_dir selftest-data")
+
+    first, second = (Path(line) for line in result.stdout.splitlines())
+    assert first != second
+    for folder in (first, second):
+        assert folder.parent == fake_root / "build" and folder.is_dir()
+        assert folder.name.startswith("selftest-data.") and not any(folder.iterdir())
 
 
 def write_voice(voices: Path, name: str, *, config: bool = True) -> None:
@@ -198,21 +228,31 @@ def resolve_icon(root: Path, icon: str) -> subprocess.CompletedProcess[str]:
     return bash_fn(root, 'resolve_icon && echo "ICON_PATH=$ICON_PATH"', ICON=icon)
 
 
-def test_icon_parameter_picks_that_folder(fake_root: Path) -> None:
-    write_icon(fake_root, "cloud-atom")
-    voice = write_icon(fake_root, "cloud-voice")
-    (fake_root / "assets" / "icons" / "default.txt").write_text("cloud-atom\n")
+def test_icon_parameter_overrides_default_txt(fake_root: Path) -> None:
+    write_icon(fake_root, "cloud-voice")
+    atom = write_icon(fake_root, "cloud-atom")
+    (fake_root / "assets" / "icons" / "default.txt").write_text("cloud-voice\n")
 
-    result = resolve_icon(fake_root, "cloud-voice")
+    result = resolve_icon(fake_root, "cloud-atom")
 
-    assert result.stdout.splitlines()[-1] == f"ICON_PATH={voice}"
+    assert result.stdout.splitlines()[-1] == f"ICON_PATH={atom}"
 
 
 def test_empty_icon_reads_default_txt(fake_root: Path) -> None:
-    atom = write_icon(fake_root, "cloud-atom")
-    (fake_root / "assets" / "icons" / "default.txt").write_text("cloud-atom\n")
+    voice = write_icon(fake_root, "cloud-voice")
+    (fake_root / "assets" / "icons" / "default.txt").write_text("cloud-voice\n")
 
-    assert resolve_icon(fake_root, "").stdout.splitlines()[-1] == f"ICON_PATH={atom}"
+    assert resolve_icon(fake_root, "").stdout.splitlines()[-1] == f"ICON_PATH={voice}"
+
+
+def test_plain_make_app_uses_the_chosen_icon() -> None:
+    # The user picked cloud-voice: `make app` with no ICON must build it (reads the real repo).
+    result = resolve_icon(ROOT, "")
+
+    assert result.returncode == 0, result.stderr
+    icon = ROOT / "assets" / "icons" / "cloud-voice" / "AppIcon.icns"
+    assert result.stdout.splitlines()[-1] == f"ICON_PATH={icon}"
+    assert icon.is_file()
 
 
 def test_missing_icon_falls_back_to_pyinstaller_default(fake_root: Path) -> None:
