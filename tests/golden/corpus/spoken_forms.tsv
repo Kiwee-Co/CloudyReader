@@ -1,0 +1,257 @@
+expression	spoken	set	file	line
+6!	4 factorial divided by 6 factorial	Sample-Rounds	rr2_for_web.txt	51
+−10	parentheses ten to the tenth power close parentheses to the negative tenth power	Sample-Rounds	rr2_for_web.txt	468
+5]	open parenthesis, negative 10, comma, 5, close bracket	Sample-Set-1	m_round05.txt	99
+5]	open bracket, negative 10, comma, 5, close bracket	Sample-Set-1	m_round05.txt	100
+5	open bracket, negative 10, comma, 5, close parenthesis	Sample-Set-1	m_round05.txt	101
+5	open parenthesis, negative 10, comma, 5, close parenthesis	Sample-Set-1	m_round05.txt	102
+MgSO4•7H2O	Mg, S, O, 4, dot, 7, H, 2, O	Sample-Set-1	m_round07.txt	334
+10)]	10 plus, open bracket, 8 plus, open parenthesis, 2 minus 10, close parenthesis, close bracket	Sample-Set-1	m_round07.txt	370
+|	the absolute value of negative x	Sample-Set-1	m_round09.txt	97
+0	if a is less than or equal to 0	Sample-Set-1	m_round09.txt	196
+5	the cube root of 5	Sample-Set-1	m_round14.txt	438
+1020?	log base 10, of 10 to the 20th power	Sample-Set-1	m_round15.txt	434
+0.055	two point five plus zero point five zero plus zero point zero five five	Sample-Set-10	3A_MS_Reg_2016.txt	19
+O2–	Oh two-minus	Sample-Set-13	2019-NSB-MSR-Round-7A.txt	258
+2/7	4 and two-sevenths	Sample-Set-14	2020-MS-Rd1.txt	365
+0	a does not equal 0	Sample-Set-2	sample_questions_r1.txt	449
+0	a does not equal 0	Sample-Set-2	sample_questions_r2.txt	452
+10	less than or equal to 10	Sample-Set-2	sample_questions_r8.txt	5
+2y	y times, parentheses, five plus two y, close parentheses, equals y times five plus y times two y	Sample-Set-2	sample_questions_r9.txt	395
+9	open absolute value, 2x minus 3, close absolute value, is less than 9	Sample-Set-3	Round-11C-MS.txt	143
+than 1: W) –(–k)3	negative - open parenthesis - negative k - closed parenthesis - to the third power	Sample-Set-3	Round-11C-MS.txt	232
+power X) –(k)3	negative - open parenthesis - k - closed parenthesis - to the third power	Sample-Set-3	Round-11C-MS.txt	233
+(k ) 3	open parenthesis - k - closed parenthesis - to the negative one-third power	Sample-Set-3	Round-11C-MS.txt	236
+Z) ! k	negative - open absolute value - k - closed absolute value - to the third power	Sample-Set-3	Round-11C-MS.txt	238
+	square root of open parenthesis 18 to the 18th power closed parenthesis	Sample-Set-3	Round-11C-MS.txt	336
+16	the negative square root of the square root of 16	Sample-Set-3	Round-13C-MS.txt	487
+20⏐	open absolute value 20 minus 30 close absolute value, plus open absolute value 30 minus 20, close absolute value	Sample-Set-3	Round-1C-MS.txt	383
+1	6 + 2, open parenthesis, 5 plus 4 minus 1, close parenthesis	Sample-Set-3	Round-5C-MS.txt	95
+–7	the absolute value of, parenthesis, x – 3, close parenthesis, equals negative 7	Sample-Set-3	Round-7C-MS.txt	315
+1	the square root of open parenthesis 8 times 5 times 3 plus 1 close parenthesis	Sample-Set-4	Round1.txt	291
+3	open absolute value, open parenthesis 6x + 3 close parenthesis divided by − 5x -5x, close absolute value	Sample-Set-4	Round1.txt	300
+Express	open parenthesis one fifth plus 3.4 close 2 parenthesis divided by two	Sample-Set-4	Round1.txt	365
+2	4 times the quantity z plus 3	Sample-Set-4	Round10.txt	170
+3	2.5 times the quantity t plus 3	Sample-Set-4	Round10.txt	179
+3	3.5 times the quantity t plus 3	Sample-Set-4	Round10.txt	181
+	6 to the fourth times the quantity 3 plus 2 cubed times 6 cubed	Sample-Set-4	Round11.txt	80
+2	0 point repeated 2	Sample-Set-4	Round11.txt	324
+8	4 x cubed minus 6, open parenthesis, x squared plus 2, close parenthesis, minus 3 pi plus 3x times x squared plus 6 pi minus 8	Sample-Set-4	Round11.txt	525
+3	the quantity a minus two over 9 equals two thirds	Sample-Set-4	Round12.txt	337
+a	a over b equals 1 over b times a	Sample-Set-4	Round12.txt	436
+-3	y squared times y to the power of negative 3	Sample-Set-4	Round13.txt	150
+(-16)2	open parenthesis negative 16 close parenthesis squared	Sample-Set-4	Round13.txt	211
+142	14 squared	Sample-Set-4	Round13.txt	212
+	open parentheis120 over 8 close parenthesis squared	Sample-Set-4	Round13.txt	214
+meters	6.4 times 10 to the sixth	Sample-Set-4	Round13.txt	221
+|1|	the absolute value of negative 3 times the absolute value of 1	Sample-Set-4	Round14.txt	52
+23	2 cubed	Sample-Set-4	Round14.txt	53
+16	the square root of negative 16	Sample-Set-4	Round14.txt	54
+2	the square root of 4 squared	Sample-Set-4	Round14.txt	55
+7	f of x equals 7	Sample-Set-4	Round14.txt	200
+10	the quantity 5 n squared minus 500 divided by the quantity n plus 10	Sample-Set-4	Round14.txt	308
+3	a squared minus 4 over a plus 3	Sample-Set-4	Round14.txt	557
+1	3 a squared minus a to the minus 2 plus one	Sample-Set-4	Round14.txt	559
+3	15 a squared minus a to the 1.5 minus three	Sample-Set-4	Round14.txt	562
+4!	four factorial	Sample-Set-4	Round16.txt	300
+|√625|	the absolute value of the square root of 625	Sample-Set-4	Round16.txt	320
+10	7 x squared y to the fourth plus 6 x plus 7 y plus 10	Sample-Set-4	Round16.txt	371
+hyperbola	the quantity x minus 3 squared over 25 minus the quantity y plus 1 squared over 49 equals 1	Sample-Set-4	Round16.txt	500
+49	the quantity x minus 3 squared over 25 minus the quantity y plus 1 squared over 49	Sample-Set-4	Round16.txt	523
+16	open parenthesis n squared plus 7n minus 8 close parenthesis over open parenthesis	Sample-Set-4	Round17.txt	252
+0.00009	zero point zero zero zero zero nine	Sample-Set-4	Round2.txt	199
+1.00001	one point zero zero zero zero one	Sample-Set-4	Round2.txt	199
+0.00009	zero point zero zero zero zero nine	Sample-Set-4	Round2.txt	211
+2c	the quantity of 2a plus 2b plus 2c divided by 4	Sample-Set-4	Round2.txt	269
+5	8 times 23 plus 8 times 7 plus 8 times 5	Sample-Set-4	Round2.txt	289
+ANSWER	one, one thousand seventy-five ten thousandths, or 1 over 1075	Sample-Set-4	Round2.txt	347
+-7	x is less than negative 7	Sample-Set-4	Round4.txt	51
+(-8)|	open absolute value, 4 minus negative 8, close absolute value	Sample-Set-4	Round5.txt	78
+r2	4 pi r squared	Sample-Set-4	Round5.txt	218
+-	99 hun-DREDTHS minus three fourths	Sample-Set-4	Round6.txt	28
+- 0.0099	99 hun-DREDTHS minus 99 ten thous-ANDTHS	Sample-Set-4	Round6.txt	40
+Simplify	one third divided by one sixth	Sample-Set-4	Round7.txt	431
+15|	3 minus the absolute value of the quantity 6 minus 15	Sample-Set-4	Round9.txt	108
+2	the absolute value of the product of negative 7 and negative 5 minus 2	Sample-Set-4	Round9.txt	115
+4	f of x equals the square root of the quantity x squared minus 4	Sample-Set-5	Round1.txt	383
+3	y equals 2 x cubed minus the absolute value of 5 x plus 3? W	Sample-Set-5	Round1.txt	391
+4	the absolute value of the quantity x plus 2 is greater than 4	Sample-Set-5	Round10.txt	214
+→	yields	Sample-Set-5	Round11.txt	154
+3i	the quantity 2 plus 3 i times the quantity 2 minus 3 i	Sample-Set-5	Round11.txt	285
++	x x 3 plus 1 over x equals 3 plus one third	Sample-Set-5	Round13.txt	6
+→	yields	Sample-Set-5	Round13.txt	79
+1	3 to the power of the quantity 3x minus 2 is greater than 1	Sample-Set-5	Round14.txt	32
+(x)	f inverse of x	Sample-Set-5	Round14.txt	183
+→	yields	Sample-Set-5	Round14.txt	235
+5|	y equals the absolute value of the quantity x minus three minus the absolute value of the quantity x minus 5	Sample-Set-5	Round15.txt	214
+y	5x to the fourth y to the seventh times zy times 11 x squared z squared y	Sample-Set-5	Round2.txt	469
+=	f of x equals x over open parenthesis x squared plus 3x x2 + 3x 10 minus 10 close parenthesis	Sample-Set-5	Round3.txt	15
+xy2	open parenthesis x cubed plus 2 x squared y plus x y squared close x2 + yx parenthesis over open parenthesis x squared plus yx close parenthesis	Sample-Set-5	Round4.txt	198
+ClO4	C-L-O-4 minus	Sample-Set-5	Round7.txt	30
+x2	y equals 1 over open parenthesis 3 minus x squared close parenthesis	Sample-Set-5	Round7.txt	106
+3	the absolute value of the quantity x minus 2 equals 3	Sample-Set-5	Round7.txt	468
+Evaluate	10 factorial over the quantity 8 factorial times 8!3! 3 factorial	Sample-Set-5	Round8.txt	217
+0	the square root of the quantity 9x minus x squared is greater than 0	Sample-Set-5	Round8.txt	384
+	12 plus open parenthesis the square root of 25 minus the square root of 16 close parenthesis squared	Sample-Set-5	Round9.txt	298
+0.001	the absolute value of the quantity t minus 2 is less than or equal to 0.001	Sample-Set-6	Round1.txt	30
+→	yields	Sample-Set-6	Round10.txt	59
+=	2 to the power of x equals one eighth	Sample-Set-6	Round11.txt	222
+9	6 plus the absolute value of x equals 9	Sample-Set-6	Round11.txt	492
+eV/d	e V over d	Sample-Set-6	Round13.txt	71
+eVd/A	e V d over A	Sample-Set-6	Round13.txt	73
+sin-1(2/3)	inverse sine of two thirds	Sample-Set-6	Round13.txt	477
+cos-1(2/3)	inverse cosine of two thirds	Sample-Set-6	Round13.txt	478
+cos-1(3/2)	inverse cosine of three halves	Sample-Set-6	Round13.txt	479
+sin-1(3/2)	inverse sine of three halves	Sample-Set-6	Round13.txt	480
+625	log base 5 of 625	Sample-Set-6	Round14.txt	196
+=	f of x equals 4 over the quantity x plus 1	Sample-Set-6	Round14.txt	338
+852	85 squared	Sample-Set-6	Round15.txt	101
+is	the square root of 4 over the 2√20 quantity 2 times the square root of 20	Sample-Set-6	Round15.txt	230
+1	the fraction with numerator x plus 1 and denominator x cubed plus 1	Sample-Set-6	Round15.txt	403
+X	the fraction with numerator 15 and denominator x plus 1	Sample-Set-6	Round15.txt	406
+Y	the fraction with numerator x squared plus 3 x plus 5 and denominator x x2 + 3x - 4 squared plus 3 x minus 4	Sample-Set-6	Round15.txt	409
+7	the square root of the quantity x cubed minus 7	Sample-Set-6	Round15.txt	413
+=	tangent 4 of theta equals 3 over 4	Sample-Set-6	Round16.txt	215
+cscθ	cosecant of theta	Sample-Set-6	Round16.txt	217
+40sin(π/4)/sin(3π/8)	40 sine of, open parenthesis, pi over 4, close parenthesis, over sine of, open parenthesis, 3 pi over 8, close parenthesis	Sample-Set-6	Round16.txt	342
+40sin(2/3)	40 sine of two thirds	Sample-Set-6	Round16.txt	344
+40sin(π/8)/sin(7π/16)	40 sine of, open parenthesis, pi over 8, close parenthesis, over sine of, open parenthesis, 7 pi over 16, close parenthesis	Sample-Set-6	Round16.txt	346
+q)2	p squared plus 2 p q plus q squared equals, open parenthesis, p plus q, close parenthesis, squared	Sample-Set-6	Round16.txt	387
+3	3 prime	Sample-Set-6	Round17.txt	376
+𝑏	3 to the power of x plus 3 to the power of negative x equals b	Sample-Set-6	Round17.txt	467
+𝑏	a to the power of x plus a to the power of negative x equals b	Sample-Set-6	Round17.txt	480
+2:7	2 to 7	Sample-Set-6	Round2.txt	446
+10	the absolute value of the quantity 200 minus x equals 10	Sample-Set-6	Round3.txt	196
+0	negative 5 plus the absolute value of the quantity p plus 2 is greater than or equal to 0	Sample-Set-6	Round3.txt	203
+Evaluate	the fraction with numerator 12 y and denominator 5 5𝑥 x	Sample-Set-6	Round3.txt	360
+√515	the cube root of 515	Sample-Set-6	Round3.txt	368
+2	the fraction with numerator x to the sixth minus x cubed and denominator x squared	Sample-Set-6	Round3.txt	491
+HCl	yields	Sample-Set-6	Round4.txt	132
+=	y equals open 𝑥2 parenthesis 24 x minus 36 close parenthesis over x squared	Sample-Set-6	Round5.txt	70
+66	y equals 5 times the quantity x plus 66	Sample-Set-6	Round5.txt	199
+1	x squared over 4 plus y squared over 4 9 9 equals 1	Sample-Set-6	Round5.txt	312
+1012	101 to the power of one half	Sample-Set-6	Round5.txt	448
+-27	negative x to the power of three halves equals negative 27	Sample-Set-6	Round6.txt	72
+�	the first row is 1, 2 −11 negative 5 and second row is 2, negative 11	Sample-Set-6	Round7.txt	19
+2	V 1 over n 1 equals V 2 over n 2	Sample-Set-6	Round7.txt	35
+BB	Big b big b	Sample-Set-6	Round7.txt	452
+bB	Little b big b	Sample-Set-6	Round7.txt	453
+Bb	Big b little b	Sample-Set-6	Round7.txt	454
+bb	Little b little b	Sample-Set-6	Round7.txt	455
+1,000,0001/6	one million to the power of one sixth	Sample-Set-6	Round8.txt	376
+7	f of x equals negative x cubed plus 6 x plus 7	Sample-Set-6	Round8.txt	382
+2	yields	Sample-Set-6	Round8.txt	403
+2	y equals 5 plus the square root of the quantity x minus 2	Sample-Set-6	Round8.txt	457
+g(1)	g of 1	Sample-Set-6	Round9.txt	63
+33𝑎−2	g of a equals 3 to the power of the quantity 3 a minus 2	Sample-Set-6	Round9.txt	63
+�	first row 4 2 negative 5, 3 and second row 4, 2	Sample-Set-6	Round9.txt	180
+Aa	big A, little a	Sample-Set-6	Round9.txt	239
+7	the absolute value of the quantity 3 minus 2 x is greater than 7	Sample-Set-7	MS_Round-1.txt	327
+B	Big B	Sample-Set-7	MS_Round-10.txt	313
+b	little b	Sample-Set-7	MS_Round-10.txt	313
+bb	little B little B	Sample-Set-7	MS_Round-10.txt	314
+Bb	big B little b	Sample-Set-7	MS_Round-10.txt	314
+3	the square root of the quantity 72 a to the fourth b cubed	Sample-Set-7	MS_Round-11.txt	5
+z	open parenthesis x minus y close parenthesis open parenthesis x minus z close parenthesis open parenthesis y minus z close parenthesis	Sample-Set-7	MS_Round-11.txt	13
+2×10−6	240 thousand over open parenthesis 2 times 10 to the power of negative 6 close parenthesis	Sample-Set-7	MS_Round-11.txt	135
+	cosine of 60 degrees times sine of 45 degrees	Sample-Set-7	MS_Round-11.txt	272
+(4)	f over g of 4	Sample-Set-7	MS_Round-11.txt	400
+(rr)	little r little r	Sample-Set-7	MS_Round-11.txt	542
+(RR)	big R big R	Sample-Set-7	MS_Round-11.txt	542
+DD	big D big D	Sample-Set-7	MS_Round-12.txt	371
+Dd	big D little d	Sample-Set-7	MS_Round-12.txt	371
+Dd	big D little d	Sample-Set-7	MS_Round-12.txt	372
+AaBBccddEe	big A little a, big B big B, little c little c, little d little d, big E little e	Sample-Set-7	MS_Round-13.txt	131
+3)3	open parenthesis 2 x minus 3 close parenthesis cubed	Sample-Set-7	MS_Round-13.txt	437
+(1/2)20	one half to the power of 20	Sample-Set-7	MS_Round-14.txt	47
+(1/2)10	one half to the power of 10	Sample-Set-7	MS_Round-14.txt	48
+1/2(20)	the product of one half and 20	Sample-Set-7	MS_Round-14.txt	49
+16	8 to the power of x equals 16	Sample-Set-7	MS_Round-14.txt	279
+Chat	KREE doo SHAT	Sample-Set-7	MS_Round-14.txt	408
+(15)�	g inverse of f inverse of 15	Sample-Set-7	MS_Round-15.txt	184
+1	y over open parenthesis y minus 1 close parenthesis minus 1 over the quantity y minus 1	Sample-Set-7	MS_Round-4.txt	172
+notation	the fraction (3 × 108 ) with numerator 6 times 10 to the 7th times 6 times 10 to the 11th and denominator 3 times 10 to the 8th	Sample-Set-7	MS_Round-4.txt	325
+	4 times 10 to the 8th times 8 times 10 to the negative 3	Sample-Set-7	MS_Round-5.txt	25
+→	yields	Sample-Set-7	MS_Round-7.txt	164
+	Q equals m times C sub p times the quantity T sub r minus T sub s	Sample-Set-7	MS_Round-8.txt	199
+𝑎	a star b equals a to the b minus b to the a	Sample-Set-7	MS_Round-8.txt	326
+2*5	2 star 5	Sample-Set-7	MS_Round-8.txt	329
+3*2	3 star 2	Sample-Set-7	MS_Round-8.txt	330
+3*4	3 star 4	Sample-Set-7	MS_Round-8.txt	331
+4*3	4 star 3	Sample-Set-7	MS_Round-8.txt	332
+1/8	4 to the power of x x divided by one eighth	Sample-Set-7	MS_Round-9.txt	418
+SSS	side, side, side	Sample-Set-8	Round-1-A.txt	400
+AAA	angle, angle, angle	Sample-Set-8	Round-1-A.txt	401
+SSA	side, side, angle	Sample-Set-8	Round-1-A.txt	402
+SAS	side, angle, side	Sample-Set-8	Round-1-A.txt	403
+1	theta sub 1	Sample-Set-8	Round-10-A.txt	5
+2	theta sub 2	Sample-Set-8	Round-10-A.txt	5
+tan2	tangent of theta sub 1 equals negative tangent of theta sub 2	Sample-Set-8	Round-10-A.txt	8
+2	sine of theta sub 1 equals sine of theta sub 2	Sample-Set-8	Round-10-A.txt	9
+2	sine of theta sub 1 equals cosine of theta sub 2	Sample-Set-8	Round-10-A.txt	10
+2	cosine of theta sub 1 equals cosine of theta sub 2	Sample-Set-8	Round-10-A.txt	11
+5	y equals negative x over 6 plus 5	Sample-Set-8	Round-11-A.txt	133
+-14	y equals one-sixth x minus 14	Sample-Set-8	Round-11-A.txt	136
+256	the square root of open parenthesis 617 plus the square root of open parenthesis 48 plus the square root of 256 close parenthesis close parenthesis	Sample-Set-8	Round-11-A.txt	142
+1	a over b equals negative 1	Sample-Set-8	Round-11-A.txt	258
+	the quantity x squared cubed	Sample-Set-8	Round-12-A.txt	102
+((4r-7)/3)2/7	open parenthesis, the fraction with numerator 4 r minus 7 and denominator 3, close parenthesis, squared, divided by 7	Sample-Set-8	Round-12-A.txt	209
+0	x is less than 0	Sample-Set-8	Round-12-A.txt	218
+5	y is less than 5	Sample-Set-8	Round-12-A.txt	218
+4	y is less than negative 2 x plus 4	Sample-Set-8	Round-12-A.txt	218
+-2x	y Is greater than negative 2 x	Sample-Set-8	Round-12-A.txt	219
+I	quadrant one	Sample-Set-8	Round-13-A.txt	204
+=	2 to the 4x power equals 1/16	Sample-Set-8	Round-13-A.txt	343
+41	5 tangent 41	Sample-Set-8	Round-14-A.txt	61
+49	5 tangent 49	Sample-Set-8	Round-14-A.txt	62
+49	5 sine 49	Sample-Set-8	Round-14-A.txt	63
+41	5 sine 41	Sample-Set-8	Round-14-A.txt	64
+6	6 raised to the power of 4	Sample-Set-8	Round-14-A.txt	205
+25	x squared plus y squared equals 25	Sample-Set-8	Round-14-A.txt	310
++√b	the square root of x equals the square root of a plus the square root of b	Sample-Set-8	Round-15-A.txt	233
+2√	a plus b plus two times the square root of the product of a and b	Sample-Set-8	Round-15-A.txt	236
++2ab	a plus b plus two a b	Sample-Set-8	Round-15-A.txt	237
++ab	a plus b plus a b	Sample-Set-8	Round-15-A.txt	238
+b	a plus b	Sample-Set-8	Round-15-A.txt	239
+14	absolute value of the quantity 7 plus 8d is less than 14	Sample-Set-8	Round-15-A.txt	372
+to 3	5-prime to 3-prime	Sample-Set-8	Round-16-A.txt	6
+to 3	5-prime to 3-prime	Sample-Set-8	Round-16-A.txt	206
+(70)	1 over the cosine of 70	Sample-Set-8	Round-16-A.txt	262
+(70)	1 over the sine of 70	Sample-Set-8	Round-16-A.txt	263
+cos(70)	sine of 70 over the cosine of 70	Sample-Set-8	Round-16-A.txt	264
+sin(70)	cosine of 70 over the sine of 70	Sample-Set-8	Round-16-A.txt	265
+12	5 is less than or equal to x is less than or equal to 12	Sample-Set-8	Round-16-A.txt	393
+7)2	y equals 17 minus the square of the quantity x plus 7	Sample-Set-8	Round-16-A.txt	394
+(2)-3	negative 3 times x raised to the power of 0 minus 2 raised to the power of negative 3	Sample-Set-8	Round-17-A.txt	214
+3πr2	3 times pi times r squared	Sample-Set-8	Round-17-A.txt	474
+r/2	r divided by 2	Sample-Set-8	Round-17-A.txt	476
+7	6t times the quantity 4s minus 3t plus 7	Sample-Set-8	Round-2-A.txt	126
+81x	81 raised to the power of x	Sample-Set-8	Round-3-A.txt	311
+c2)−2	open parenthesis, 12 times a cubed times b raised to the 4th times c squared, close parenthesis, raised to the negative 2 power	Sample-Set-8	Round-3-A.txt	422
+-7	the square root of the quantity x minus 4 equals negative 7	Sample-Set-8	Round-4-A.txt	424
+∅	Null set	Sample-Set-8	Round-4-A.txt	430
+0	7 x minus 5 over y equals 0	Sample-Set-8	Round-6-A.txt	126
+9	3 x squared plus 4 y cubed equals 9	Sample-Set-8	Round-6-A.txt	127
+12	3 x y equals 12	Sample-Set-8	Round-6-A.txt	129
+e2	e raised to the second power	Sample-Set-8	Round-6-A.txt	263
+4/5	10 and four-fifths	Sample-Set-8	Round-7-A.txt	124
+1/3	12 and one-third	Sample-Set-8	Round-7-A.txt	125
+y	the ordered pair 3, y	Sample-Set-8	Round-7-A.txt	472
+3	a over b equals 3	Sample-Set-8	Round-8-A.txt	76
+7	b over c equals 7	Sample-Set-8	Round-8-A.txt	77
+(b+c)	the quantity a plus b over the quantity b plus c	Sample-Set-8	Round-8-A.txt	77
+7/2	seven halves	Sample-Set-8	Round-8-A.txt	80
+(1/2)-2	one-half raised to the negative two power	Sample-Set-8	Round-8-A.txt	324
+log2166	log base two hundred sixteen of 6	Sample-Set-8	Round-8-A.txt	336
+5	two x plus three is less than y is less than negative one half x minus five	Sample-Set-8	Round-8-A.txt	443
+expression	3 divided by the quantity 5 minus the √ square root of 10	Sample-Set-8	Round-9-A.txt	221
+4	the fraction with numerator x times the square root of 8 minus the square root of 32, and denominator x squared minus 4	Sample-Set-8	Round-9-A.txt	325
+(x√2)	the fraction with numerator x plus 2 and denominator x times the square root of 2	Sample-Set-8	Round-9-A.txt	328
+(2√2)/(x+2)	the fraction with numerator 2 times the square root of 2 and denominator x plus 2	Sample-Set-8	Round-9-A.txt	330
+(2-x)/(2√2)	the fraction with numerator 2 minus x and denominator 2 times the square root of 2	Sample-Set-8	Round-9-A.txt	332
+(x-2)/(2√2)	the fraction with numerator x minus 2 and denominator 2 times the square root of 2	Sample-Set-8	Round-9-A.txt	334
+5k	5 raised to the power of n times 5 raised to the power of k	Sample-Set-8	Round-9-A.txt	447
+5n+k	5 raised to the power of the quantity n plus k	Sample-Set-8	Round-9-A.txt	449
+5nk	5 raised to the power of the quantity n times k	Sample-Set-8	Round-9-A.txt	450
+5n-k	5 raised to the power of the quantity n minus k	Sample-Set-8	Round-9-A.txt	451
+5n/k	5 raised to the power of the quantity n over k	Sample-Set-8	Round-9-A.txt	452
