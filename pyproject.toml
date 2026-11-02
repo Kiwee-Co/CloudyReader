@@ -18,6 +18,18 @@ dependencies = [
     "spacy==3.7.5",
 ]
 
+[project.optional-dependencies]
+# Kokoro engine, Apple Silicon only; `make kokoro` installs it. Plain misaki: misaki[en] pulls torch.
+kokoro = [
+    "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "espeakng-loader==0.2.4 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "misaki==0.9.4 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "mlx==0.32.4 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "mlx-audio==0.6.3 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "num2words==0.5.14 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "phonemizer-fork==3.3.2 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+]
+
 [project.scripts]
 cloudyreader = "cloudyreader.__main__:main"
 
