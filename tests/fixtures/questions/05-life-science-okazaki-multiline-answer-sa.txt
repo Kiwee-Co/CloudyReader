@@ -1,0 +1,7 @@
+TOSS-UP
+5) LIFE SCIENCE Short Answer During DNA replication, which enzyme joins the
+Okazaki [oh-kuh-ZAH-kee] fragments on the lagging strand into a continuous
+strand?
+ANSWER: DNA LIGASE
+ACCEPT: LIGASE
+DO NOT ACCEPT: DNA POLYMERASE

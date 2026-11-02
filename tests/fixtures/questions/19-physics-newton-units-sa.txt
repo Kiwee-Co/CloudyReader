@@ -1,0 +1,2 @@
+PHYSICS Short Answer A 2 kg block is accelerated at 3 m/s^2 by a single net force. What is the magnitude of that net force, in newtons?
+ANSWER: 6 NEWTONS

@@ -1,0 +1,7 @@
+TOSS-UP
+16) MATH Multiple Choice Which of the following gives all of the solutions of x^2 − 5x + 6 = 0?
+W) x = 1 and x = 6
+X) x = 2 and x = 3
+Y) x = −2 and x = −3
+Z) x = −1 and x = 6
+ANSWER: X) x = 2 and x = 3

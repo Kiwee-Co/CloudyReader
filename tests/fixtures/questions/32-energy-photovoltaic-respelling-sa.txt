@@ -1,0 +1,3 @@
+TOSS-UP
+12) ENERGY Short Answer Photovoltaic [foh-toh-vol-TAY-ik] cells made from crystalline silicon have a band gap of about 1.1 eV. What word describes a material, like silicon, whose electrical conductivity lies between that of a conductor and an insulator?
+ANSWER: SEMICONDUCTOR

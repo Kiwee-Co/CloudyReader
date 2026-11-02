@@ -1,0 +1,7 @@
+TOSS-UP
+9)	ENERGY	Multiple Choice	Which renewable energy source uses heat from within the Earth?
+W)	Solar
+X)	Wind
+Y)	Geothermal [jee-oh-THUR-mul]
+Z)	Tidal
+ANSWER:	Y) GEOTHERMAL

@@ -1,0 +1,7 @@
+BONUS
+17) PHYSICS Multiple Choice Which of the following is a vector quantity?
+W)Speed
+X)Distance
+Y)Velocity
+Z)Mass
+ANSWER: Y)Velocity

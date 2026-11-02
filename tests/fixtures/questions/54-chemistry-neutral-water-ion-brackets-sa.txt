@@ -1,0 +1,3 @@
+TOSS-UP
+10) CHEMISTRY Short Answer In pure water at 25 °C, the concentrations [H+] and [OH-] are equal. What is the value of [H+], in mol/L, to one significant figure?
+ANSWER: 1 × 10^-7

@@ -1,0 +1,4 @@
+BONUS
+1) ENERGY Short Answer A sample of gas is at a temperature of 300 K. What is this temperature in °C, rounded to the nearest whole number?
+ANSWER: 27
+ACCEPT: 26.85

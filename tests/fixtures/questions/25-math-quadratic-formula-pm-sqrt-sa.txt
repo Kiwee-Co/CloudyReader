@@ -1,0 +1,5 @@
+BONUS
+17) MATH Short Answer The solutions of ax^2 + bx + c = 0 are given by
+x = (−b ± √(b^2 − 4ac)) / 2a. What is the common name for the quantity
+b^2 − 4ac?
+ANSWER: DISCRIMINANT

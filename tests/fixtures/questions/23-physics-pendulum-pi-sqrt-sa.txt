@@ -1,0 +1,3 @@
+TOSS-UP
+15) PHYSICS Short Answer The period of a simple pendulum is T = 2π√(L/g). If the length L is quadrupled, by what factor does the period change?
+ANSWER: 2 (ACCEPT: IT DOUBLES)

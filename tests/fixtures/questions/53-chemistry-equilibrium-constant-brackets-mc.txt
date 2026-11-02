@@ -1,0 +1,7 @@
+BONUS
+19) CHEMISTRY Multiple Choice Which of the following is the equilibrium constant expression for the reaction N2 + 3H2 ⇌ 2NH3?
+W) K = [NH3]^2 / ([N2][H2]^3)
+X) K = ([N2][H2]^3) / [NH3]^2
+Y) K = [NH3] / ([N2][H2])
+Z) K = [NH3]^2 / ([N2][H2])
+ANSWER: W) K = [NH3]^2 / ([N2][H2]^3)

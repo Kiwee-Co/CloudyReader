@@ -1,0 +1,6 @@
+BONUS
+6) BIOLOGY Short Answer In a population that is in Hardy-Weinberg
+[HAR-dee WYN-berg] equilibrium, the frequency of allele p is 0.3 and the
+frequency of allele q is 0.7. What is the expected frequency of heterozygous
+individuals, expressed as a decimal?
+ANSWER: 0.42

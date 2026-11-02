@@ -1,0 +1,809 @@
+# Golden parse cases. One entry per paste in tests/fixtures/questions/ (id = file name without .txt).
+# Implementation-agnostic: compare the parsed fields below to these values.
+#
+# number       int or null. The N) number; null when absent.
+# kind         "toss-up" | "bonus" | null. null = no TOSS-UP/BONUS header (any letter case).
+# category     Title Case label as printed (EARTH AND SPACE SCIENCE -> "Earth and Space Science"); null when
+#              absent. Compare case-insensitively.
+# fmt          "multiple-choice" | "short-answer" | null. The printed label; null when the paste prints none
+#              (choices, if any, are still listed in `choices`).
+# stem         Text after the header, number, category and format label, up to the first choice marker (or the
+#              ANSWER line). Whitespace-normalized: each run of Unicode whitespace (space, tab, CR, LF, NBSP)
+#              becomes one space and the ends are trimmed. Every other character is kept as printed (curly
+#              quotes, Greek letters, the multiplication and minus signs, superscripts). Respelling guides
+#              ([FAR-ingks] style) are REMOVED together with the space before them; `respellings` carries them.
+#              Other bracketed text ([H+], [Ca2+], [A], [NH3], [1]) is not a guide and stays verbatim.
+# choices      Mapping W..Z -> choice text, same normalization, marker removed, guides removed. The markers
+#              W) w) W. W: and W)text all map to the upper-case key. {} when the paste has no choices.
+# respellings  [{surface, respelling}] in reading order. surface = the printed word(s) the guide belonged to; it
+#              still appears in the stem or a choice. respelling = guide text without brackets, as printed.
+#              Brackets that are not respellings never appear here. A guide inside the answer is NOT extracted
+#              and stays in `answer` (the answer is not spoken unless read_answer is true).
+# answer       Whitespace-normalized text after the ANSWER marker (the "ANSWER:" prefix excluded) up to the end
+#              of that question, ACCEPT / DO NOT ACCEPT lines included; null when absent.
+#
+# Multi-question pastes (fixtures 60, 61, 62): the entry has `questions` (a list in paste order) instead of the
+# flat keys. Each item has the keys above. A question starts at a TOSS-UP/BONUS header or at a line-initial N)
+# that follows a blank line, an ANSWER line or the start of the paste.
+# tests/fixtures/tossup_earth_science.txt is byte-identical to fixture 01 (the first sample only).
+
+version: 2
+cases:
+  - id: "01-earth-science-crustal-plates-mc"
+    number: 2
+    kind: "toss-up"
+    category: "Earth Science"
+    fmt: "multiple-choice"
+    stem: "The source of energy for the movements of crustal plates is currently thought to be the result of:"
+    choices:
+      "W": "tidal motion that produces a net westward movement of landmasses"
+      "X": "the pulling apart of the poles resulting from the Earth’s rotation"
+      "Y": "convection currents produced within the mantle"
+      "Z": "remnant magnetism"
+    respellings: []
+    answer: null
+  - id: "02-life-science-respiratory-respelling-mc"
+    number: 1
+    kind: null
+    category: "Life Science"
+    fmt: "multiple-choice"
+    stem: "Which of the following is NOT part of the human respiratory system?"
+    choices:
+      "W": "Pharynx"
+      "X": "Larynx"
+      "Y": "Esophagus"
+      "Z": "Trachea"
+    respellings:
+      - surface: "Pharynx"
+        respelling: "FAR-ingks"
+      - surface: "Larynx"
+        respelling: "LAR-ingks"
+      - surface: "Esophagus"
+        respelling: "i-SOF-uh-guhs"
+      - surface: "Trachea"
+        respelling: "TRAY-kee-uh"
+    answer: "Y) ESOPHAGUS"
+  - id: "03-biology-krebs-cycle-respelling-sa"
+    number: 3
+    kind: "toss-up"
+    category: "Biology"
+    fmt: "short-answer"
+    stem: "In eukaryotic cells, the reactions of the Krebs cycle take place in which part of the mitochondrion?"
+    choices: {}
+    respellings:
+      - surface: "Krebs cycle"
+        respelling: "KREBZ SY-kul"
+    answer: "MITOCHONDRIAL MATRIX (ACCEPT: MATRIX)"
+  - id: "04-biology-glycolysis-enzymes-bonus-mc"
+    number: 4
+    kind: "bonus"
+    category: "Biology"
+    fmt: "multiple-choice"
+    stem: "Which of the following enzymes catalyzes the committed step of glycolysis, the conversion of fructose-6-phosphate to fructose-1,6-bisphosphate?"
+    choices:
+      "W": "Hexokinase"
+      "X": "Phosphofructokinase"
+      "Y": "Pyruvate kinase"
+      "Z": "Aldolase"
+    respellings:
+      - surface: "Hexokinase"
+        respelling: "hek-soh-KY-nays"
+      - surface: "Phosphofructokinase"
+        respelling: "fos-foh-fruk-toh-KY-nays"
+      - surface: "Pyruvate kinase"
+        respelling: "py-ROO-vayt KY-nays"
+      - surface: "Aldolase"
+        respelling: "AL-duh-lays"
+    answer: "X) PHOSPHOFRUCTOKINASE"
+  - id: "05-life-science-okazaki-multiline-answer-sa"
+    number: 5
+    kind: "toss-up"
+    category: "Life Science"
+    fmt: "short-answer"
+    stem: "During DNA replication, which enzyme joins the Okazaki fragments on the lagging strand into a continuous strand?"
+    choices: {}
+    respellings:
+      - surface: "Okazaki"
+        respelling: "oh-kuh-ZAH-kee"
+    answer: "DNA LIGASE ACCEPT: LIGASE DO NOT ACCEPT: DNA POLYMERASE"
+  - id: "06-biology-hardy-weinberg-hyphen-headword-sa"
+    number: 6
+    kind: "bonus"
+    category: "Biology"
+    fmt: "short-answer"
+    stem: "In a population that is in Hardy-Weinberg equilibrium, the frequency of allele p is 0.3 and the frequency of allele q is 0.7. What is the expected frequency of heterozygous individuals, expressed as a decimal?"
+    choices: {}
+    respellings:
+      - surface: "Hardy-Weinberg"
+        respelling: "HAR-dee WYN-berg"
+    answer: "0.42"
+  - id: "07-life-science-p53-gene-protein-sa"
+    number: 7
+    kind: "toss-up"
+    category: "Life Science"
+    fmt: "short-answer"
+    stem: "Mutations in the tumor suppressor gene TP53, which encodes the protein p53, are found in about half of all human cancers. What term describes the programmed cell death that p53 can trigger?"
+    choices: {}
+    respellings: []
+    answer: "APOPTOSIS"
+  - id: "08-biology-brca1-cftr-genes-mc"
+    number: 8
+    kind: null
+    category: "Biology"
+    fmt: "multiple-choice"
+    stem: "Mutations in which of the following genes are the primary cause of cystic fibrosis?"
+    choices:
+      "W": "BRCA1"
+      "X": "CFTR"
+      "Y": "HBB"
+      "Z": "DMD"
+    respellings: []
+    answer: "X) CFTR"
+  - id: "09-biology-atp-synthase-bonus-sa"
+    number: 9
+    kind: "bonus"
+    category: "Biology"
+    fmt: "short-answer"
+    stem: "ATP synthase uses a gradient of which ion across the inner mitochondrial membrane to drive the phosphorylation of ADP?"
+    choices: {}
+    respellings: []
+    answer: "HYDROGEN ION (ACCEPT: PROTON; H+)"
+  - id: "10-life-science-hemoglobin-oxygen-mc"
+    number: 10
+    kind: "toss-up"
+    category: "Life Science"
+    fmt: "multiple-choice"
+    stem: "Each molecule of hemoglobin can reversibly bind how many molecules of oxygen, O2?"
+    choices:
+      "W": "1"
+      "X": "2"
+      "Y": "4"
+      "Z": "8"
+    respellings: []
+    answer: "Y) 4"
+  - id: "11-chemistry-water-h2o-exact-sa"
+    number: 11
+    kind: "toss-up"
+    category: "Chemistry"
+    fmt: "short-answer"
+    stem: "Water, H2O, has a bent molecular geometry. What type of intermolecular force is primarily responsible for its unusually high boiling point?"
+    choices: {}
+    respellings: []
+    answer: "HYDROGEN BONDING"
+  - id: "12-chemistry-glucose-formulas-bonus-sa"
+    number: 12
+    kind: "bonus"
+    category: "Chemistry"
+    fmt: "short-answer"
+    stem: "Cellular respiration oxidizes glucose, C6H12O6, to produce CO2, H2O, and ATP. How many moles of CO2 are produced per mole of glucose completely oxidized?"
+    choices: {}
+    respellings: []
+    answer: "6"
+  - id: "13-chemistry-nacl-ions-mc"
+    number: 13
+    kind: null
+    category: "Chemistry"
+    fmt: "multiple-choice"
+    stem: "When solid NaCl dissolves in water, which of the following pairs of ions is produced?"
+    choices:
+      "W": "Na+ and Cl-"
+      "X": "Na- and Cl+"
+      "Y": "Na2+ and Cl2-"
+      "Z": "Na+ and Cl2-"
+    respellings: []
+    answer: "W) Na+ and Cl-"
+  - id: "14-chemistry-sulfate-ion-bonus-sa"
+    number: 14
+    kind: "bonus"
+    category: "Chemistry"
+    fmt: "short-answer"
+    stem: "Gypsum is a mineral built from Ca2+ and SO4 2- ions along with water of hydration. Give the name of the polyatomic ion SO4 2-."
+    choices: {}
+    respellings: []
+    answer: "SULFATE (ACCEPT: SULPHATE)"
+  - id: "15-chemistry-neutralization-formulas-mc"
+    number: 15
+    kind: "toss-up"
+    category: "Chemistry"
+    fmt: "multiple-choice"
+    stem: "What are the products of the complete neutralization of Ca(OH)2 with H2SO4?"
+    choices:
+      "W": "CaSO4 and H2O"
+      "X": "CaS and H2O2"
+      "Y": "CaO and H2SO3"
+      "Z": "Ca2SO4 and H2"
+    respellings: []
+    answer: "W) CaSO4 and H2O"
+  - id: "16-chemistry-iupac-isobutyl-mc"
+    number: 16
+    kind: "bonus"
+    category: "Chemistry"
+    fmt: "multiple-choice"
+    stem: "Which of the following is the IUPAC name of isobutyl alcohol?"
+    choices:
+      "W": "butan-1-ol"
+      "X": "2-methylpropan-1-ol"
+      "Y": "2-methylpropan-2-ol"
+      "Z": "butan-2-ol"
+    respellings: []
+    answer: "X) 2-methylpropan-1-ol"
+  - id: "17-chemistry-dichloroethane-sa"
+    number: 17
+    kind: "toss-up"
+    category: "Chemistry"
+    fmt: "short-answer"
+    stem: "Ethene reacts with chlorine gas, Cl2, to produce 1,2-dichloroethane. What general type of organic reaction is this?"
+    choices: {}
+    respellings: []
+    answer: "ADDITION (ACCEPT: HALOGENATION)"
+  - id: "18-chemistry-avogadro-scientific-notation-sa"
+    number: 18
+    kind: "bonus"
+    category: "Chemistry"
+    fmt: "short-answer"
+    stem: "Avogadro's number is approximately 6.02 × 10^23 per mole. Approximately how many helium atoms are in 0.5 mole of helium gas?"
+    choices: {}
+    respellings: []
+    answer: "3.01 × 10^23"
+  - id: "19-physics-newton-units-sa"
+    number: null
+    kind: null
+    category: "Physics"
+    fmt: "short-answer"
+    stem: "A 2 kg block is accelerated at 3 m/s^2 by a single net force. What is the magnitude of that net force, in newtons?"
+    choices: {}
+    respellings: []
+    answer: "6 NEWTONS"
+  - id: "20-physics-electron-volt-mc"
+    number: 20
+    kind: "bonus"
+    category: "Physics"
+    fmt: "multiple-choice"
+    stem: "One electron volt, eV, is approximately equal to how many joules?"
+    choices:
+      "W": "1.6 × 10^-19"
+      "X": "1.6 × 10^-10"
+      "Y": "6.02 × 10^23"
+      "Z": "9.1 × 10^-31"
+    respellings: []
+    answer: "W) 1.6 × 10^-19"
+  - id: "21-physics-first-law-delta-sa"
+    number: 13
+    kind: "toss-up"
+    category: "Physics"
+    fmt: "short-answer"
+    stem: "According to the first law of thermodynamics, ΔU = Q − W. If a gas absorbs 500 joules of heat and does 200 joules of work on its surroundings, what is ΔU, in joules?"
+    choices: {}
+    respellings: []
+    answer: "300"
+  - id: "22-physics-bragg-initials-line-start-mc"
+    number: 14
+    kind: "bonus"
+    category: "Physics"
+    fmt: "multiple-choice"
+    stem: "The father-and-son team of W. H. Bragg and W. L. Bragg shared the 1915 Nobel Prize in Physics for determining crystal structures using which type of radiation?"
+    choices:
+      "W": "X-rays"
+      "X": "Neutrons"
+      "Y": "Alpha particles"
+      "Z": "Visible light"
+    respellings: []
+    answer: "W) X-RAYS"
+  - id: "23-physics-pendulum-pi-sqrt-sa"
+    number: 15
+    kind: "toss-up"
+    category: "Physics"
+    fmt: "short-answer"
+    stem: "The period of a simple pendulum is T = 2π√(L/g). If the length L is quadrupled, by what factor does the period change?"
+    choices: {}
+    respellings: []
+    answer: "2 (ACCEPT: IT DOUBLES)"
+  - id: "24-math-quadratic-roots-mc"
+    number: 16
+    kind: "toss-up"
+    category: "Math"
+    fmt: "multiple-choice"
+    stem: "Which of the following gives all of the solutions of x^2 − 5x + 6 = 0?"
+    choices:
+      "W": "x = 1 and x = 6"
+      "X": "x = 2 and x = 3"
+      "Y": "x = −2 and x = −3"
+      "Z": "x = −1 and x = 6"
+    respellings: []
+    answer: "X) x = 2 and x = 3"
+  - id: "25-math-quadratic-formula-pm-sqrt-sa"
+    number: 17
+    kind: "bonus"
+    category: "Math"
+    fmt: "short-answer"
+    stem: "The solutions of ax^2 + bx + c = 0 are given by x = (−b ± √(b^2 − 4ac)) / 2a. What is the common name for the quantity b^2 − 4ac?"
+    choices: {}
+    respellings: []
+    answer: "DISCRIMINANT"
+  - id: "26-math-hexagon-glued-header-sa"
+    number: 18
+    kind: "bonus"
+    category: "Math"
+    fmt: "short-answer"
+    stem: "What is the sum of the interior angles of a hexagon, in degrees?"
+    choices: {}
+    respellings: []
+    answer: "720"
+  - id: "27-earth-space-co2-troposphere-sa"
+    number: 19
+    kind: "toss-up"
+    category: "Earth and Space Science"
+    fmt: "short-answer"
+    stem: "Carbon dioxide, CO2, is a major greenhouse gas. Which layer of Earth's atmosphere contains most of its CO2 and nearly all of its weather?"
+    choices: {}
+    respellings: []
+    answer: "TROPOSPHERE"
+  - id: "28-earth-space-outer-core-respelling-mc"
+    number: 20
+    kind: "bonus"
+    category: "Earth and Space Science"
+    fmt: "multiple-choice"
+    stem: "Which layer of Earth is liquid and generates the planet's magnetic field through convection?"
+    choices:
+      "W": "Inner core"
+      "X": "Outer core"
+      "Y": "Lower mantle"
+      "Z": "Asthenosphere"
+    respellings:
+      - surface: "Asthenosphere"
+        respelling: "as-THEN-uh-sfeer"
+    answer: "X) OUTER CORE"
+  - id: "29-earth-space-stefan-boltzmann-sa"
+    number: 23
+    kind: "toss-up"
+    category: "Earth and Space Science"
+    fmt: "short-answer"
+    stem: "The Sun's photosphere has an effective temperature of about 5800 K. According to the Stefan-Boltzmann law, the energy radiated per unit area by a blackbody is proportional to its temperature raised to what power?"
+    choices: {}
+    respellings:
+      - surface: "Stefan-Boltzmann"
+        respelling: "STEF-un BOHLTS-mahn"
+    answer: "FOURTH (ACCEPT: 4)"
+  - id: "30-energy-methane-enthalpy-sa"
+    number: 7
+    kind: "bonus"
+    category: "Energy"
+    fmt: "short-answer"
+    stem: "The standard enthalpy change, ΔH, for the combustion of methane is approximately −890 kJ/mol. Using the term for heat flow, what word describes any reaction that has a negative ΔH?"
+    choices: {}
+    respellings: []
+    answer: "EXOTHERMIC"
+  - id: "31-energy-uranium-isotope-mc"
+    number: 4
+    kind: "toss-up"
+    category: "Energy"
+    fmt: "multiple-choice"
+    stem: "Which isotope serves as the primary fissile fuel in most commercial nuclear power reactors?"
+    choices:
+      "W": "uranium-238"
+      "X": "uranium-235"
+      "Y": "thorium-232"
+      "Z": "plutonium-244"
+    respellings: []
+    answer: "X) URANIUM-235"
+  - id: "32-energy-photovoltaic-respelling-sa"
+    number: 12
+    kind: "toss-up"
+    category: "Energy"
+    fmt: "short-answer"
+    stem: "Photovoltaic cells made from crystalline silicon have a band gap of about 1.1 eV. What word describes a material, like silicon, whose electrical conductivity lies between that of a conductor and an insulator?"
+    choices: {}
+    respellings:
+      - surface: "Photovoltaic"
+        respelling: "foh-toh-vol-TAY-ik"
+    answer: "SEMICONDUCTOR"
+  - id: "33-energy-geothermal-tabs-mc"
+    number: 9
+    kind: "toss-up"
+    category: "Energy"
+    fmt: "multiple-choice"
+    stem: "Which renewable energy source uses heat from within the Earth?"
+    choices:
+      "W": "Solar"
+      "X": "Wind"
+      "Y": "Geothermal"
+      "Z": "Tidal"
+    respellings:
+      - surface: "Geothermal"
+        respelling: "jee-oh-THUR-mul"
+    answer: "Y) GEOTHERMAL"
+  - id: "34-energy-kelvin-celsius-sa"
+    number: 1
+    kind: "bonus"
+    category: "Energy"
+    fmt: "short-answer"
+    stem: "A sample of gas is at a temperature of 300 K. What is this temperature in °C, rounded to the nearest whole number?"
+    choices: {}
+    respellings: []
+    answer: "27 ACCEPT: 26.85"
+  - id: "35-general-science-barrier-reef-footnote-sa"
+    number: 5
+    kind: "toss-up"
+    category: "General Science"
+    fmt: "short-answer"
+    stem: "The Great Barrier Reef [1] is the largest coral reef system on Earth. Off the coast of which country does it lie?"
+    choices: {}
+    respellings: []
+    answer: "AUSTRALIA"
+  - id: "36-general-science-barometer-mc"
+    number: null
+    kind: null
+    category: "General Science"
+    fmt: "multiple-choice"
+    stem: "Which instrument is used to measure atmospheric pressure?"
+    choices:
+      "W": "Anemometer"
+      "X": "Barometer"
+      "Y": "Hygrometer"
+      "Z": "Thermometer"
+    respellings: []
+    answer: null
+  - id: "37-general-science-bare-stem-sa"
+    number: null
+    kind: null
+    category: null
+    fmt: null
+    stem: "What is the name of the process by which plants lose water vapor through their stomata?"
+    choices: {}
+    respellings: []
+    answer: null
+  - id: "38-general-science-number-only-mc"
+    number: 3
+    kind: null
+    category: null
+    fmt: null
+    stem: "Which gas makes up most of Earth's atmosphere?"
+    choices:
+      "W": "Oxygen"
+      "X": "Carbon dioxide"
+      "Y": "Nitrogen"
+      "Z": "Argon"
+    respellings: []
+    answer: "Y) NITROGEN"
+  - id: "39-general-science-header-only-sa"
+    number: null
+    kind: "bonus"
+    category: null
+    fmt: null
+    stem: "Name the planet in our solar system with the shortest orbital period."
+    choices: {}
+    respellings: []
+    answer: "MERCURY"
+  - id: "40-life-science-chloroplast-crlf-sa"
+    number: 6
+    kind: "toss-up"
+    category: "Life Science"
+    fmt: "short-answer"
+    stem: "Name the organelle in plant cells that contains chlorophyll and is the site of photosynthesis."
+    choices: {}
+    respellings: []
+    answer: "CHLOROPLAST"
+  - id: "41-chemistry-electronegativity-double-spaces-mc"
+    number: 8
+    kind: "toss-up"
+    category: "Chemistry"
+    fmt: "multiple-choice"
+    stem: "Which element has the highest electronegativity?"
+    choices:
+      "W": "Oxygen"
+      "X": "Fluorine"
+      "Y": "Chlorine"
+      "Z": "Nitrogen"
+    respellings: []
+    answer: "X) FLUORINE"
+  - id: "42-math-square-root-nbsp-mc"
+    number: 11
+    kind: "toss-up"
+    category: "Math"
+    fmt: "multiple-choice"
+    stem: "What is the value of the square root of 144?"
+    choices:
+      "W": "10"
+      "X": "12"
+      "Y": "14"
+      "Z": "72"
+    respellings: []
+    answer: "X) 12"
+  - id: "43-biology-darwin-curly-quotes-sa"
+    number: 2
+    kind: "bonus"
+    category: "Biology"
+    fmt: "short-answer"
+    stem: "Charles Darwin’s book “On the Origin of Species” introduced which mechanism of evolution, often summarized as “survival of the fittest”?"
+    choices: {}
+    respellings: []
+    answer: "NATURAL SELECTION"
+  - id: "44-earth-science-igneous-lowercase-markers-mc"
+    number: 13
+    kind: "toss-up"
+    category: "Earth Science"
+    fmt: "multiple-choice"
+    stem: "Which type of rock forms from cooled magma or lava?"
+    choices:
+      "W": "Sedimentary"
+      "X": "Metamorphic"
+      "Y": "Igneous"
+      "Z": "Clastic"
+    respellings:
+      - surface: "Igneous"
+        respelling: "IG-nee-us"
+    answer: "y) igneous"
+  - id: "45-biology-mitochondrion-dot-markers-mc"
+    number: 18
+    kind: "bonus"
+    category: "Biology"
+    fmt: "multiple-choice"
+    stem: "Which organelle is the main site of ATP production in eukaryotic cells?"
+    choices:
+      "W": "Golgi apparatus"
+      "X": "Lysosome"
+      "Y": "Mitochondrion"
+      "Z": "Ribosome"
+    respellings: []
+    answer: "Y. MITOCHONDRION"
+  - id: "46-chemistry-ph-colon-markers-mc"
+    number: 6
+    kind: "toss-up"
+    category: "Chemistry"
+    fmt: "multiple-choice"
+    stem: "What is the pH of a neutral aqueous solution at 25 °C?"
+    choices:
+      "W": "0"
+      "X": "7"
+      "Y": "10"
+      "Z": "14"
+    respellings: []
+    answer: "X: 7"
+  - id: "47-physics-vector-missing-space-mc"
+    number: 17
+    kind: "bonus"
+    category: "Physics"
+    fmt: "multiple-choice"
+    stem: "Which of the following is a vector quantity?"
+    choices:
+      "W": "Speed"
+      "X": "Distance"
+      "Y": "Velocity"
+      "Z": "Mass"
+    respellings: []
+    answer: "Y)Velocity"
+  - id: "48-biology-phagocytosis-trailing-whitespace-sa"
+    number: 4
+    kind: "toss-up"
+    category: "Biology"
+    fmt: "short-answer"
+    stem: "What is the name for the process by which a cell engulfs large particles by wrapping its membrane around them?"
+    choices: {}
+    respellings: []
+    answer: "PHAGOCYTOSIS"
+  - id: "49-chemistry-haber-kitchen-sink-mc"
+    number: 7
+    kind: "toss-up"
+    category: "Chemistry"
+    fmt: "multiple-choice"
+    stem: "In the Haber process, nitrogen and hydrogen react to form ammonia. Which of the following is the correct “balanced” equation?"
+    choices:
+      "W": "N2 + 3H2 ⇌ 2NH3"
+      "X": "N2 + H2 ⇌ NH3"
+      "Y": "N + H ⇌ NH"
+      "Z": "2N2 + 3H2 ⇌ 4NH3"
+    respellings: []
+    answer: "w) N2 + 3H2 ⇌ 2NH3"
+  - id: "50-life-science-chromosomes-inline-choices-mc"
+    number: 12
+    kind: "toss-up"
+    category: "Life Science"
+    fmt: "multiple-choice"
+    stem: "How many chromosomes are in a typical human somatic cell?"
+    choices:
+      "W": "23"
+      "X": "46"
+      "Y": "48"
+      "Z": "92"
+    respellings: []
+    answer: "X) 46"
+  - id: "51-energy-power-blank-lines-indent-sa"
+    number: 16
+    kind: "toss-up"
+    category: "Energy"
+    fmt: "short-answer"
+    stem: "Name the unit of power equal to one joule per second."
+    choices: {}
+    respellings: []
+    answer: "WATT"
+  - id: "52-physics-capacitance-category-own-line-sa"
+    number: 8
+    kind: "toss-up"
+    category: "Physics"
+    fmt: "short-answer"
+    stem: "What is the name of the unit used to measure electrical capacitance?"
+    choices: {}
+    respellings: []
+    answer: "FARAD"
+  - id: "53-chemistry-equilibrium-constant-brackets-mc"
+    number: 19
+    kind: "bonus"
+    category: "Chemistry"
+    fmt: "multiple-choice"
+    stem: "Which of the following is the equilibrium constant expression for the reaction N2 + 3H2 ⇌ 2NH3?"
+    choices:
+      "W": "K = [NH3]^2 / ([N2][H2]^3)"
+      "X": "K = ([N2][H2]^3) / [NH3]^2"
+      "Y": "K = [NH3] / ([N2][H2])"
+      "Z": "K = [NH3]^2 / ([N2][H2])"
+    respellings: []
+    answer: "W) K = [NH3]^2 / ([N2][H2]^3)"
+  - id: "54-chemistry-neutral-water-ion-brackets-sa"
+    number: 10
+    kind: "toss-up"
+    category: "Chemistry"
+    fmt: "short-answer"
+    stem: "In pure water at 25 °C, the concentrations [H+] and [OH-] are equal. What is the value of [H+], in mol/L, to one significant figure?"
+    choices: {}
+    respellings: []
+    answer: "1 × 10^-7"
+  - id: "55-life-science-calcium-signaling-mixed-brackets-sa"
+    number: 2
+    kind: "bonus"
+    category: "Life Science"
+    fmt: "short-answer"
+    stem: "In skeletal muscle, the sarcoplasmic reticulum releases Ca2+ and raises the cytosolic concentration [Ca2+]. To which regulatory protein on the thin filament does the calcium then bind?"
+    choices: {}
+    respellings:
+      - surface: "sarcoplasmic reticulum"
+        respelling: "sar-koh-PLAZ-mik ri-TIK-yuh-lum"
+    answer: "TROPONIN [TROH-puh-nin]"
+  - id: "56-chemistry-le-chatelier-possessive-respelling-sa"
+    number: 6
+    kind: "bonus"
+    category: "Chemistry"
+    fmt: "short-answer"
+    stem: "According to Le Chatelier’s principle, adding more reactant to a system at equilibrium shifts the equilibrium in which direction?"
+    choices: {}
+    respellings:
+      - surface: "Le Chatelier"
+        respelling: "luh shat-el-YAY"
+    answer: "TOWARD THE PRODUCTS (ACCEPT: TO THE RIGHT; FORWARD)"
+  - id: "57-chemistry-rate-law-concentration-bracket-sa"
+    number: 11
+    kind: "toss-up"
+    category: "Chemistry"
+    fmt: "short-answer"
+    stem: "For the first-order reaction A → products, the rate law is rate = k[A]. If the concentration [A] is doubled, by what factor does the reaction rate change?"
+    choices: {}
+    respellings: []
+    answer: "2 (ACCEPT: IT DOUBLES)"
+  - id: "58-chemistry-barium-sulfate-unicode-subscripts-sa"
+    number: 9
+    kind: "toss-up"
+    category: "Chemistry"
+    fmt: "short-answer"
+    stem: "Barium ions, Ba²⁺, react with SO₄²⁻ ions in solution to form an insoluble white precipitate. Name this precipitate."
+    choices: {}
+    respellings: []
+    answer: "BARIUM SULFATE (BaSO₄)"
+  - id: "59-general-science-vaccine-partial-respellings-mc"
+    number: 14
+    kind: "bonus"
+    category: "General Science"
+    fmt: "multiple-choice"
+    stem: "Which scientist developed the first successful vaccine, which protected against smallpox?"
+    choices:
+      "W": "Louis Pasteur"
+      "X": "Edward Jenner"
+      "Y": "Robert Koch"
+      "Z": "Alexander Fleming"
+    respellings:
+      - surface: "Louis Pasteur"
+        respelling: "loo-EE pas-TUR"
+      - surface: "Jenner"
+        respelling: "JEN-er"
+      - surface: "Fleming"
+        respelling: "FLEM-ing"
+    answer: "X) EDWARD JENNER"
+  - id: "60-multi-toss-up-bonus-pair-physics"
+    questions:
+      - number: 7
+        kind: "toss-up"
+        category: "Physics"
+        fmt: "short-answer"
+        stem: "What is the name of the force that opposes the relative motion of two surfaces in contact?"
+        choices: {}
+        respellings: []
+        answer: "FRICTION"
+      - number: 7
+        kind: "bonus"
+        category: "Physics"
+        fmt: "multiple-choice"
+        stem: "Which of the following changes would increase the gravitational force between two masses?"
+        choices:
+          "W": "Doubling the distance between them"
+          "X": "Doubling one of the masses"
+          "Y": "Halving one of the masses"
+          "Z": "Removing the air between them"
+        respellings: []
+        answer: "X) DOUBLING ONE OF THE MASSES"
+  - id: "61-multi-numbered-no-kind-three"
+    questions:
+      - number: 1
+        kind: null
+        category: "Earth Science"
+        fmt: "short-answer"
+        stem: "What type of plate boundary exists where two tectonic plates move away from each other?"
+        choices: {}
+        respellings: []
+        answer: "DIVERGENT"
+      - number: 2
+        kind: null
+        category: "Energy"
+        fmt: "multiple-choice"
+        stem: "Which of the following is a nonrenewable energy source?"
+        choices:
+          "W": "Wind"
+          "X": "Natural gas"
+          "Y": "Geothermal"
+          "Z": "Hydroelectric"
+        respellings: []
+        answer: "X) NATURAL GAS"
+      - number: 3
+        kind: null
+        category: "Math"
+        fmt: "short-answer"
+        stem: "What is the smallest positive integer that is divisible by both four and six?"
+        choices: {}
+        respellings: []
+        answer: "12"
+  - id: "62-multi-crlf-respellings-formulas-three"
+    questions:
+      - number: 8
+        kind: "toss-up"
+        category: "Life Science"
+        fmt: "multiple-choice"
+        stem: "Which structure closes over the trachea during swallowing to keep food out of the airway?"
+        choices:
+          "W": "Epiglottis"
+          "X": "Alveolus"
+          "Y": "Diaphragm"
+          "Z": "Bronchus"
+        respellings:
+          - surface: "trachea"
+            respelling: "TRAY-kee-uh"
+          - surface: "Epiglottis"
+            respelling: "ep-uh-GLOT-is"
+          - surface: "Alveolus"
+            respelling: "al-VEE-uh-lus"
+          - surface: "Diaphragm"
+            respelling: "DY-uh-fram"
+          - surface: "Bronchus"
+            respelling: "BRONG-kus"
+        answer: "W) EPIGLOTTIS"
+      - number: 8
+        kind: "bonus"
+        category: "Chemistry"
+        fmt: "short-answer"
+        stem: "Name the process represented by 6CO2 + 6H2O → C6H12O6 + 6O2, in which plants convert light energy into chemical energy."
+        choices: {}
+        respellings: []
+        answer: "PHOTOSYNTHESIS"
+      - number: 9
+        kind: "toss-up"
+        category: "General Science"
+        fmt: "short-answer"
+        stem: "Name the scientist whose three laws of motion form the foundation of classical mechanics."
+        choices: {}
+        respellings: []
+        answer: "ISAAC NEWTON"
+  - id: "63-r5-nahco3-letters-not-common-name-sa"
+    number: null
+    kind: null
+    category: null
+    fmt: null
+    stem: "Which gas is released when NaHCO3 reacts with acetic acid?"
+    choices: {}
+    respellings: []
+    answer: null

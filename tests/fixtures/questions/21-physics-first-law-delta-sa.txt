@@ -1,0 +1,3 @@
+TOSS-UP
+13) PHYSICS Short Answer According to the first law of thermodynamics, ΔU = Q − W. If a gas absorbs 500 joules of heat and does 200 joules of work on its surroundings, what is ΔU, in joules?
+ANSWER: 300

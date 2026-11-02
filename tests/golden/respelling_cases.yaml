@@ -1,0 +1,557 @@
+# Golden respelling -> General American IPA cases.
+# Input: bracket text without brackets, as printed. CAPS = stressed syllable, hyphen = syllable break, space = word break.
+# Output: IPA with no syllable dots, one primary-stress mark (ˈ) immediately before each CAPS syllable, words joined
+# by one space.
+#   surface  the printed word the respelling belongs to (descriptive; the conversion keys on `respelling`).
+#   ipa      Reference output. Uses U+0261 (ɡ) and U+0279 (ɹ), the eSpeak and Piper en_US inventory. Compare after
+#            mapping ASCII g -> ɡ and ASCII r -> ɹ.
+#   alt_ipa  Other acceptable outputs: rhotic spelling (ɚ and ɝ vs əɹ and ɜɹ), a one-syllable word without the
+#            stress mark, and common dictionary variants. A result passes when it is in {ipa} + alt_ipa.
+#   fixtures Fixture ids whose stem or choices contain this respelling (empty = conversion-only case).
+# Key used for this corpus (greedy longest match, case-insensitive; stress = syllable written in CAPS):
+#   vowels     a æ | ah ɑ | aw ɔ | ay eɪ | e ɛ | eh ɛ | ee i | eye aɪ | y aɪ (vowel y: not before a vowel letter) |
+#              i ɪ | ih ɪ | o ɑ | oh oʊ | oo u | ow aʊ | oy ɔɪ | u ʌ (stressed) or ə (unstressed) | uh ə
+#   r-vowels   ar ɑɹ | air ɛɹ | eer ɪɹ | or ɔɹ | oor ʊɹ | er and ur ɝ (stressed) or ɚ (unstressed)
+#   consonants b d f h k l m n p s t v w z as written | g ɡ | j dʒ | r ɹ | y before a vowel letter j | ch tʃ | sh ʃ |
+#              zh ʒ | th θ | dh ð | ng ŋ | kw kw | ks ks
+# The three examples from the brief hold: FAR-ingks -> ˈfɑɹɪŋks, i-SOF-uh-guhs -> ɪˈsɑfəɡəs, TRAY-kee-uh -> ˈtɹeɪkiə.
+
+version: 2
+cases:
+  - id: "r01"
+    surface: "Pharynx"
+    respelling: "FAR-ingks"
+    ipa: "ˈfɑɹɪŋks"
+    alt_ipa:
+      - "ˈfæɹɪŋks"
+      - "ˈfɛɹɪŋks"
+    fixtures:
+      - "02-life-science-respiratory-respelling-mc"
+  - id: "r02"
+    surface: "Larynx"
+    respelling: "LAR-ingks"
+    ipa: "ˈlɑɹɪŋks"
+    alt_ipa:
+      - "ˈlæɹɪŋks"
+      - "ˈlɛɹɪŋks"
+    fixtures:
+      - "02-life-science-respiratory-respelling-mc"
+  - id: "r03"
+    surface: "Esophagus"
+    respelling: "i-SOF-uh-guhs"
+    ipa: "ɪˈsɑfəɡəs"
+    alt_ipa:
+      - "iˈsɑfəɡəs"
+    fixtures:
+      - "02-life-science-respiratory-respelling-mc"
+  - id: "r04"
+    surface: "Trachea"
+    respelling: "TRAY-kee-uh"
+    ipa: "ˈtɹeɪkiə"
+    alt_ipa: []
+    fixtures:
+      - "02-life-science-respiratory-respelling-mc"
+      - "62-multi-crlf-respellings-formulas-three"
+  - id: "r05"
+    surface: "Krebs cycle"
+    respelling: "KREBZ SY-kul"
+    ipa: "ˈkɹɛbz ˈsaɪkəl"
+    alt_ipa:
+      - "kɹɛbz ˈsaɪkəl"
+    fixtures:
+      - "03-biology-krebs-cycle-respelling-sa"
+  - id: "r06"
+    surface: "Hexokinase"
+    respelling: "hek-soh-KY-nays"
+    ipa: "hɛksoʊˈkaɪneɪs"
+    alt_ipa: []
+    fixtures:
+      - "04-biology-glycolysis-enzymes-bonus-mc"
+  - id: "r07"
+    surface: "Phosphofructokinase"
+    respelling: "fos-foh-fruk-toh-KY-nays"
+    ipa: "fɑsfoʊfɹəktoʊˈkaɪneɪs"
+    alt_ipa:
+      - "fɑsfoʊfɹʌktoʊˈkaɪneɪs"
+      - "fɑsfoʊˌfɹʌktoʊˈkaɪneɪs"
+    fixtures:
+      - "04-biology-glycolysis-enzymes-bonus-mc"
+  - id: "r08"
+    surface: "Pyruvate kinase"
+    respelling: "py-ROO-vayt KY-nays"
+    ipa: "paɪˈɹuveɪt ˈkaɪneɪs"
+    alt_ipa: []
+    fixtures:
+      - "04-biology-glycolysis-enzymes-bonus-mc"
+  - id: "r09"
+    surface: "Aldolase"
+    respelling: "AL-duh-lays"
+    ipa: "ˈældəleɪs"
+    alt_ipa: []
+    fixtures:
+      - "04-biology-glycolysis-enzymes-bonus-mc"
+  - id: "r10"
+    surface: "Okazaki"
+    respelling: "oh-kuh-ZAH-kee"
+    ipa: "oʊkəˈzɑki"
+    alt_ipa: []
+    fixtures:
+      - "05-life-science-okazaki-multiline-answer-sa"
+  - id: "r11"
+    surface: "Hardy-Weinberg"
+    respelling: "HAR-dee WYN-berg"
+    ipa: "ˈhɑɹdi ˈwaɪnbɚɡ"
+    alt_ipa:
+      - "ˈhɑɹdi ˈwaɪnbəɹɡ"
+      - "ˈhɑɹdi ˈwaɪnbɝɡ"
+    fixtures:
+      - "06-biology-hardy-weinberg-hyphen-headword-sa"
+  - id: "r12"
+    surface: "Asthenosphere"
+    respelling: "as-THEN-uh-sfeer"
+    ipa: "æsˈθɛnəsfɪɹ"
+    alt_ipa: []
+    fixtures:
+      - "28-earth-space-outer-core-respelling-mc"
+  - id: "r13"
+    surface: "Stefan-Boltzmann"
+    respelling: "STEF-un BOHLTS-mahn"
+    ipa: "ˈstɛfən ˈboʊltsmɑn"
+    alt_ipa: []
+    fixtures:
+      - "29-earth-space-stefan-boltzmann-sa"
+  - id: "r14"
+    surface: "sarcoplasmic reticulum"
+    respelling: "sar-koh-PLAZ-mik ri-TIK-yuh-lum"
+    ipa: "sɑɹkoʊˈplæzmɪk ɹɪˈtɪkjələm"
+    alt_ipa:
+      - "sɑɹkoʊˈplæzmɪk ɹəˈtɪkjələm"
+      - "sɑɹkəˈplæzmɪk ɹɪˈtɪkjələm"
+    fixtures:
+      - "55-life-science-calcium-signaling-mixed-brackets-sa"
+  - id: "r15"
+    surface: "troponin"
+    respelling: "TROH-puh-nin"
+    ipa: "ˈtɹoʊpənɪn"
+    alt_ipa: []
+    fixtures: []
+  - id: "r16"
+    surface: "Photovoltaic"
+    respelling: "foh-toh-vol-TAY-ik"
+    ipa: "foʊtoʊvɑlˈteɪɪk"
+    alt_ipa:
+      - "foʊtoʊvoʊlˈteɪɪk"
+    fixtures:
+      - "32-energy-photovoltaic-respelling-sa"
+  - id: "r17"
+    surface: "Geothermal"
+    respelling: "jee-oh-THUR-mul"
+    ipa: "dʒioʊˈθɝməl"
+    alt_ipa:
+      - "dʒioʊˈθɜɹməl"
+    fixtures:
+      - "33-energy-geothermal-tabs-mc"
+  - id: "r18"
+    surface: "Igneous"
+    respelling: "IG-nee-us"
+    ipa: "ˈɪɡniəs"
+    alt_ipa: []
+    fixtures:
+      - "44-earth-science-igneous-lowercase-markers-mc"
+  - id: "r19"
+    surface: "Le Chatelier"
+    respelling: "luh shat-el-YAY"
+    ipa: "lə ʃætɛlˈjeɪ"
+    alt_ipa:
+      - "lə ʃɑtɛlˈjeɪ"
+      - "lə ʃætəlˈjeɪ"
+    fixtures:
+      - "56-chemistry-le-chatelier-possessive-respelling-sa"
+  - id: "r20"
+    surface: "Louis Pasteur"
+    respelling: "loo-EE pas-TUR"
+    ipa: "luˈi pæsˈtɝ"
+    alt_ipa:
+      - "luˈi pæsˈtɜɹ"
+    fixtures:
+      - "59-general-science-vaccine-partial-respellings-mc"
+  - id: "r21"
+    surface: "Jenner"
+    respelling: "JEN-er"
+    ipa: "ˈdʒɛnɚ"
+    alt_ipa:
+      - "ˈdʒɛnəɹ"
+      - "ˈdʒɛnɝ"
+    fixtures:
+      - "59-general-science-vaccine-partial-respellings-mc"
+  - id: "r22"
+    surface: "Fleming"
+    respelling: "FLEM-ing"
+    ipa: "ˈflɛmɪŋ"
+    alt_ipa: []
+    fixtures:
+      - "59-general-science-vaccine-partial-respellings-mc"
+  - id: "r23"
+    surface: "Alveolus"
+    respelling: "al-VEE-uh-lus"
+    ipa: "ælˈviələs"
+    alt_ipa: []
+    fixtures:
+      - "62-multi-crlf-respellings-formulas-three"
+  - id: "r24"
+    surface: "Bronchus"
+    respelling: "BRONG-kus"
+    ipa: "ˈbɹɑŋkəs"
+    alt_ipa: []
+    fixtures:
+      - "62-multi-crlf-respellings-formulas-three"
+  - id: "r25"
+    surface: "Michaelis-Menten"
+    respelling: "mi-KAY-lis MEN-tun"
+    ipa: "mɪˈkeɪlɪs ˈmɛntən"
+    alt_ipa: []
+    fixtures: []
+  - id: "r26"
+    surface: "Mitochondria"
+    respelling: "my-toh-KON-dree-uh"
+    ipa: "maɪtoʊˈkɑndɹiə"
+    alt_ipa: []
+    fixtures: []
+  - id: "r27"
+    surface: "Meiosis"
+    respelling: "my-OH-sis"
+    ipa: "maɪˈoʊsɪs"
+    alt_ipa: []
+    fixtures: []
+  - id: "r28"
+    surface: "Mitosis"
+    respelling: "my-TOH-sis"
+    ipa: "maɪˈtoʊsɪs"
+    alt_ipa: []
+    fixtures: []
+  - id: "r29"
+    surface: "Cytochrome"
+    respelling: "SY-toh-krohm"
+    ipa: "ˈsaɪtoʊkɹoʊm"
+    alt_ipa: []
+    fixtures: []
+  - id: "r30"
+    surface: "Ribosome"
+    respelling: "RY-boh-sohm"
+    ipa: "ˈɹaɪboʊsoʊm"
+    alt_ipa: []
+    fixtures: []
+  - id: "r31"
+    surface: "Glycolysis"
+    respelling: "gly-KOL-uh-sis"
+    ipa: "ɡlaɪˈkɑləsɪs"
+    alt_ipa: []
+    fixtures: []
+  - id: "r32"
+    surface: "Epiglottis"
+    respelling: "ep-uh-GLOT-is"
+    ipa: "ɛpəˈɡlɑtɪs"
+    alt_ipa:
+      - "ɛpɪˈɡlɑtɪs"
+    fixtures:
+      - "62-multi-crlf-respellings-formulas-three"
+  - id: "r33"
+    surface: "Bronchi"
+    respelling: "BRONG-ky"
+    ipa: "ˈbɹɑŋkaɪ"
+    alt_ipa: []
+    fixtures: []
+  - id: "r34"
+    surface: "Alveoli"
+    respelling: "al-VEE-uh-ly"
+    ipa: "ælˈviəlaɪ"
+    alt_ipa: []
+    fixtures: []
+  - id: "r35"
+    surface: "Diaphragm"
+    respelling: "DY-uh-fram"
+    ipa: "ˈdaɪəfɹæm"
+    alt_ipa: []
+    fixtures:
+      - "62-multi-crlf-respellings-formulas-three"
+  - id: "r36"
+    surface: "Cerebellum"
+    respelling: "sair-uh-BEL-um"
+    ipa: "sɛɹəˈbɛləm"
+    alt_ipa:
+      - "sɛɹɪˈbɛləm"
+    fixtures: []
+  - id: "r37"
+    surface: "Chlorophyll"
+    respelling: "KLOR-uh-fil"
+    ipa: "ˈklɔɹəfɪl"
+    alt_ipa: []
+    fixtures: []
+  - id: "r38"
+    surface: "Xylem"
+    respelling: "ZY-lum"
+    ipa: "ˈzaɪləm"
+    alt_ipa: []
+    fixtures: []
+  - id: "r39"
+    surface: "Phloem"
+    respelling: "FLOH-em"
+    ipa: "ˈfloʊɛm"
+    alt_ipa: []
+    fixtures: []
+  - id: "r40"
+    surface: "Stomata"
+    respelling: "STOH-muh-tuh"
+    ipa: "ˈstoʊmətə"
+    alt_ipa: []
+    fixtures: []
+  - id: "r41"
+    surface: "Eukaryote"
+    respelling: "yoo-KAIR-ee-oht"
+    ipa: "juˈkɛɹioʊt"
+    alt_ipa: []
+    fixtures: []
+  - id: "r42"
+    surface: "Prokaryote"
+    respelling: "proh-KAIR-ee-oht"
+    ipa: "pɹoʊˈkɛɹioʊt"
+    alt_ipa: []
+    fixtures: []
+  - id: "r43"
+    surface: "Metamorphic"
+    respelling: "met-uh-MOR-fik"
+    ipa: "mɛtəˈmɔɹfɪk"
+    alt_ipa: []
+    fixtures: []
+  - id: "r44"
+    surface: "Sedimentary"
+    respelling: "sed-uh-MEN-tuh-ree"
+    ipa: "sɛdəˈmɛntəɹi"
+    alt_ipa: []
+    fixtures: []
+  - id: "r45"
+    surface: "Cretaceous"
+    respelling: "kri-TAY-shus"
+    ipa: "kɹɪˈteɪʃəs"
+    alt_ipa: []
+    fixtures: []
+  - id: "r46"
+    surface: "Jurassic"
+    respelling: "joo-RAS-ik"
+    ipa: "dʒuˈɹæsɪk"
+    alt_ipa: []
+    fixtures: []
+  - id: "r47"
+    surface: "Perihelion"
+    respelling: "pair-uh-HEE-lee-un"
+    ipa: "pɛɹəˈhiliən"
+    alt_ipa: []
+    fixtures: []
+  - id: "r48"
+    surface: "Aphelion"
+    respelling: "uh-FEE-lee-un"
+    ipa: "əˈfiliən"
+    alt_ipa: []
+    fixtures: []
+  - id: "r49"
+    surface: "Parsec"
+    respelling: "PAR-sek"
+    ipa: "ˈpɑɹsɛk"
+    alt_ipa: []
+    fixtures: []
+  - id: "r50"
+    surface: "Quark"
+    respelling: "KWORK"
+    ipa: "ˈkwɔɹk"
+    alt_ipa:
+      - "ˈkwɑɹk"
+      - "kwɔɹk"
+    fixtures: []
+  - id: "r51"
+    surface: "Fermion"
+    respelling: "FUR-mee-on"
+    ipa: "ˈfɝmiɑn"
+    alt_ipa:
+      - "ˈfɜɹmiɑn"
+    fixtures: []
+  - id: "r52"
+    surface: "Neutrino"
+    respelling: "noo-TREE-noh"
+    ipa: "nuˈtɹinoʊ"
+    alt_ipa: []
+    fixtures: []
+  - id: "r53"
+    surface: "Muon"
+    respelling: "MYOO-on"
+    ipa: "ˈmjuɑn"
+    alt_ipa: []
+    fixtures: []
+  - id: "r54"
+    surface: "Joule"
+    respelling: "JOOL"
+    ipa: "ˈdʒul"
+    alt_ipa:
+      - "dʒul"
+    fixtures: []
+  - id: "r55"
+    surface: "Coulomb"
+    respelling: "KOO-lom"
+    ipa: "ˈkulɑm"
+    alt_ipa: []
+    fixtures: []
+  - id: "r56"
+    surface: "Becquerel"
+    respelling: "bek-REL"
+    ipa: "bɛkˈɹɛl"
+    alt_ipa: []
+    fixtures: []
+  - id: "r57"
+    surface: "Schrödinger"
+    respelling: "SHROH-ding-er"
+    ipa: "ˈʃɹoʊdɪŋɚ"
+    alt_ipa:
+      - "ˈʃɹoʊdɪŋəɹ"
+      - "ˈʃɹoʊdɪŋɝ"
+    fixtures: []
+  - id: "r58"
+    surface: "Heisenberg"
+    respelling: "HY-zun-burg"
+    ipa: "ˈhaɪzənbɚɡ"
+    alt_ipa:
+      - "ˈhaɪzənbəɹɡ"
+      - "ˈhaɪzənbɝɡ"
+    fixtures: []
+  - id: "r59"
+    surface: "Fibonacci"
+    respelling: "fib-uh-NAH-chee"
+    ipa: "fɪbəˈnɑtʃi"
+    alt_ipa: []
+    fixtures: []
+  - id: "r60"
+    surface: "Pythagorean"
+    respelling: "pih-thag-uh-REE-un"
+    ipa: "pɪθæɡəˈɹiən"
+    alt_ipa: []
+    fixtures: []
+  - id: "r61"
+    surface: "Logarithm"
+    respelling: "LOG-uh-rih-dhum"
+    ipa: "ˈlɑɡəɹɪðəm"
+    alt_ipa:
+      - "ˈlɔɡəɹɪðəm"
+    fixtures: []
+  - id: "r62"
+    surface: "Isosceles"
+    respelling: "eye-SOS-uh-leez"
+    ipa: "aɪˈsɑsəliz"
+    alt_ipa: []
+    fixtures: []
+  - id: "r63"
+    surface: "Hyperbola"
+    respelling: "hy-PUR-buh-luh"
+    ipa: "haɪˈpɝbələ"
+    alt_ipa:
+      - "haɪˈpɜɹbələ"
+    fixtures: []
+  - id: "r64"
+    surface: "Parabola"
+    respelling: "puh-RAB-uh-luh"
+    ipa: "pəˈɹæbələ"
+    alt_ipa: []
+    fixtures: []
+  - id: "r65"
+    surface: "Eigenvalue"
+    respelling: "EYE-gun-val-yoo"
+    ipa: "ˈaɪɡənvælju"
+    alt_ipa: []
+    fixtures: []
+  - id: "r66"
+    surface: "Stoichiometry"
+    respelling: "stoy-kee-OM-uh-tree"
+    ipa: "stɔɪkiˈɑmətɹi"
+    alt_ipa: []
+    fixtures: []
+  - id: "r67"
+    surface: "Sulfuric"
+    respelling: "sul-FYOOR-ik"
+    ipa: "səlˈfjʊɹɪk"
+    alt_ipa:
+      - "sʌlˈfjʊɹɪk"
+    fixtures: []
+  - id: "r68"
+    surface: "Enthalpy"
+    respelling: "EN-thal-pee"
+    ipa: "ˈɛnθælpi"
+    alt_ipa: []
+    fixtures: []
+  - id: "r69"
+    surface: "Catalyst"
+    respelling: "KAT-uh-list"
+    ipa: "ˈkætəlɪst"
+    alt_ipa: []
+    fixtures: []
+  - id: "r70"
+    surface: "Pangaea"
+    respelling: "pan-JEE-uh"
+    ipa: "pænˈdʒiə"
+    alt_ipa: []
+    fixtures: []
+  - id: "r71"
+    surface: "Tectonic"
+    respelling: "tek-TON-ik"
+    ipa: "tɛkˈtɑnɪk"
+    alt_ipa: []
+    fixtures: []
+  - id: "r72"
+    surface: "Subduction"
+    respelling: "sub-DUK-shun"
+    ipa: "səbˈdʌkʃən"
+    alt_ipa: []
+    fixtures: []
+  - id: "r73"
+    surface: "Supernova"
+    respelling: "soo-per-NOH-vuh"
+    ipa: "supɚˈnoʊvə"
+    alt_ipa:
+      - "supəɹˈnoʊvə"
+      - "supɝˈnoʊvə"
+    fixtures: []
+  - id: "r74"
+    surface: "Pulsar"
+    respelling: "PUL-sar"
+    ipa: "ˈpʌlsɑɹ"
+    alt_ipa: []
+    fixtures: []
+  - id: "r75"
+    surface: "Zenith"
+    respelling: "ZEE-nith"
+    ipa: "ˈzinɪθ"
+    alt_ipa: []
+    fixtures: []
+  - id: "r76"
+    surface: "Nadir"
+    respelling: "NAY-der"
+    ipa: "ˈneɪdɚ"
+    alt_ipa:
+      - "ˈneɪdəɹ"
+      - "ˈneɪdɝ"
+    fixtures: []
+  - id: "r77"
+    surface: "Gauss"
+    respelling: "GOWS"
+    ipa: "ˈɡaʊs"
+    alt_ipa:
+      - "ɡaʊs"
+    fixtures: []
+  - id: "r78"
+    surface: "Benzene"
+    respelling: "BEN-zeen"
+    ipa: "ˈbɛnzin"
+    alt_ipa: []
+    fixtures: []
+  - id: "r79"
+    surface: "Acetylene"
+    respelling: "uh-SET-uh-leen"
+    ipa: "əˈsɛtəlin"
+    alt_ipa: []
+    fixtures: []

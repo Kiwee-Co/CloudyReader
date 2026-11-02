@@ -1,0 +1,3 @@
+TOSS-UP
+23) EARTH AND SPACE SCIENCE Short Answer The Sun's photosphere has an effective temperature of about 5800 K. According to the Stefan-Boltzmann [STEF-un BOHLTS-mahn] law, the energy radiated per unit area by a blackbody is proportional to its temperature raised to what power?
+ANSWER: FOURTH (ACCEPT: 4)
