@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import importlib.util
 import logging
 import random
@@ -761,3 +762,45 @@ def test_real_model_trims_the_spans_it_gets_wrong(real_detector):
 def test_real_model_adds_ner_hits_the_regexes_cannot_find(real_detector):
     spans = real_detector.detect("Cells burn glucose in response to hunger.")
     assert [(s.text, s.label, s.source) for s in spans] == [("glucose", "chemical", "ner")]
+
+
+# Blind labels written by the corpus agent without seeing the detector. Held out: never tune
+# detector constants against this file. `skip` entities are not scored either way.
+BLIND_GOLD = Path(__file__).resolve().parents[1] / "golden" / "corpus" / "entities.tsv"
+
+
+def _blind_gold_f1(detector: SciEntityDetector) -> float:
+    """Strict F1: a prediction counts only with the gold extent and the gold label."""
+    texts: dict[tuple[str, str], list[dict[str, str]]] = {}
+    with BLIND_GOLD.open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle, delimiter="\t", quoting=csv.QUOTE_NONE):
+            texts.setdefault((row["id"], row["text"]), []).append(row)
+    hits = predictions = gold_total = 0
+    for (_, text), rows in texts.items():
+        gold: dict[tuple[int, int], str] = {}
+        skipped: set[tuple[int, int]] = set()
+        for row in rows:
+            if not row["entity"]:
+                continue
+            start = -1
+            for _ in range(int(row["occurrence"] or 1)):
+                start = text.find(row["entity"], start + 1)
+            assert start >= 0, f"gold entity {row['entity']!r} is not in its text"
+            span = (start, start + len(row["entity"]))
+            if row["label"] == "skip":
+                skipped.add(span)
+            else:
+                gold[span] = row["label"]
+        found = {(s.start, s.end): s.label for s in detector.detect(text)}
+        found = {span: label for span, label in found.items() if span not in skipped}
+        hits += sum(found.get(span) == label for span, label in gold.items())
+        predictions += len(found)
+        gold_total += len(gold)
+    return 2 * hits / (predictions + gold_total)
+
+
+@pytest.mark.model
+@pytest.mark.skipif(not BLIND_GOLD.exists(), reason="blind entity gold set is missing")
+def test_blind_corpus_gold_stays_above_a_loose_floor(real_detector):
+    # Measured 0.78 strict F1 on the first run; the floor sits about ten points below it.
+    assert _blind_gold_f1(real_detector) >= 0.68
