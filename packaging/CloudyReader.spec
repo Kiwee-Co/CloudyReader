@@ -1,0 +1,108 @@
+# PyInstaller spec for "Cloudy Reader.app" (one-folder BUNDLE, arm64, ad-hoc signed later).
+# scripts/build_app.sh drives it through env vars: CR_ENTRY (script), CR_APP_NAME, CR_ICON
+# (an .icns path or empty for PyInstaller's default), CR_KOKORO (1 = bundle mlx-audio).
+import os
+import tomllib
+from pathlib import Path
+
+from PyInstaller.utils.hooks import collect_all, collect_data_files, collect_submodules, copy_metadata
+
+ROOT = Path(SPECPATH).parent  # noqa: F821 (PyInstaller injects SPECPATH)
+APP_NAME = os.environ.get("CR_APP_NAME", "Cloudy Reader")
+ENTRY = os.environ.get("CR_ENTRY", str(ROOT / "packaging" / "launcher.py"))
+ICON = os.environ.get("CR_ICON") or None
+KOKORO = os.environ.get("CR_KOKORO") == "1"
+VERSION = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
+
+# Compiled spaCy/thinc extensions import each other from C, invisible to the import scan;
+# the rest carry data (models, espeak-ng-data, the JRE, the OPSIN jar) or dist-info metadata.
+# onnxruntime is left to its contrib hook: collect_all would add its model-export tools, which
+# import Hugging Face transformers, torch and friends.
+COLLECT_ALL = [
+    "cloudyreader", "spacy", "thinc", "srsly", "cymem", "preshed", "blis", "murmurhash",
+    "catalogue", "confection", "wasabi", "langcodes", "en_ner_craft_md", "piper",
+    "jdk4py", "py2opsin", "sounddevice", "inflect",
+]
+if KOKORO:
+    # misaki's English G2P: espeak fallback via phonemizer, whose deps load JSON data at import.
+    COLLECT_ALL += [
+        "en_core_web_sm", "espeakng_loader", "phonemizer", "num2words", "segments", "csvw",
+        "language_tags", "dlinfo",
+    ]
+
+# The NER model loads without scispacy (no registry entries in its config), so neither it nor its
+# sklearn/nmslib stack ships (scipy only with Kokoro: mlx-audio needs it). Test-only packages never ship.
+EXCLUDES = [
+    "scispacy", "sklearn", "nmslib", "threadpoolctl",
+    "onnxruntime.transformers", "onnxruntime.quantization", "onnxruntime.tools",
+    "pytest", "_pytest", "pytestqt", "pytest_cov", "pytest_mock", "respx", "coverage", "ruff",
+    "tkinter", "_tkinter", "IPython", "matplotlib",
+]
+if not KOKORO:
+    EXCLUDES += ["mlx", "mlx_audio", "misaki", "scipy"]
+
+
+def _not_tests(name: str) -> bool:
+    return ".tests" not in name and not name.endswith(".tests")
+
+
+datas, binaries, hiddenimports = [], [], []
+for package in COLLECT_ALL:
+    d, b, h = collect_all(package, filter_submodules=_not_tests)
+    datas += d
+    binaries += b
+    hiddenimports += h
+
+if KOKORO:
+    # Kokoro + English only. Importing every mlx-audio/misaki submodule (collect_all) drags in
+    # the other TTS/STT models, and some of them fetch weights from the Hugging Face Hub.
+    d, b, h = collect_all("mlx", exclude_datas=["include/**"])
+    datas += d + collect_data_files("misaki") + copy_metadata("mlx-audio") + copy_metadata("misaki")
+    binaries += b
+    hiddenimports += h + collect_submodules("mlx_audio.tts.models.kokoro")
+    hiddenimports += ["mlx_audio.tts.utils", "misaki.en", "misaki.espeak"]
+a = Analysis(  # noqa: F821
+    [ENTRY],
+    pathex=[str(ROOT)],
+    binaries=binaries,
+    datas=datas,
+    hiddenimports=hiddenimports,
+    excludes=EXCLUDES,
+    # mlx-audio finds its model types by listing its own package folder: ship that as files too.
+    module_collection_mode={"mlx_audio": "pyz+py"} if KOKORO else {},
+    noarchive=False,
+)
+pyz = PYZ(a.pure)  # noqa: F821
+exe = EXE(  # noqa: F821
+    pyz,
+    a.scripts,
+    [],
+    exclude_binaries=True,
+    name=APP_NAME,
+    console=False,
+    debug=False,
+    strip=False,
+    upx=False,
+    argv_emulation=False,
+    target_arch="arm64",
+    codesign_identity=None,
+    entitlements_file=None,
+)
+coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name=APP_NAME)  # noqa: F821
+app = BUNDLE(  # noqa: F821
+    coll,
+    name=f"{APP_NAME}.app",
+    icon=ICON,
+    bundle_identifier="com.cloudyreader.CloudyReader",
+    version=VERSION,
+    info_plist={
+        "CFBundleName": APP_NAME,
+        "CFBundleDisplayName": APP_NAME,
+        "CFBundleShortVersionString": VERSION,
+        "CFBundleVersion": VERSION,
+        "NSHighResolutionCapable": True,
+        "NSPrincipalClass": "NSApplication",
+        "LSMinimumSystemVersion": "14.0",
+        "LSApplicationCategoryType": "public.app-category.education",
+    },
+)
