@@ -531,7 +531,7 @@ def test_real_phonetic_guides_in_a_stem(text, stem, guides):
 @pytest.mark.parametrize(
     ("line", "text", "guide"),
     [
-        ("Z) Curium-258 [KYOOR-ee-uhm]", "Curium-258", ("Curium-258", "KYOOR-ee-uhm")),
+        ("Z) Curium-258 [KYOOR-ee-uhm]", "Curium-258", ("Curium", "KYOOR-ee-uhm")),
         ("Z) Tay-Sachs [saks] disease", "Tay-Sachs disease", ("Sachs", "saks")),
         ("Z) Joule [jool]", "Joule", ("Joule", "jool")),
         ("Z) Arachnid (read as: ah-RAHK-nid)", "Arachnid", ("Arachnid", "ah-RAHK-nid")),
@@ -1004,7 +1004,7 @@ def test_guide_after_a_long_compound_covers_the_last_part():
             "sub-bituminous",
             "sub-by-TYUH-mi-nuhs",
         ),
-        ("Name D-alanine [AL-n-een].", "D-alanine", "AL-n-een"),
+        ("Name D-alanine [AL-n-een].", "alanine", "AL-n-een"),
         ("Name the Saffir-Simpson [SAH-fur-SIMP-sun] scale.", "Saffir-Simpson", "SAH-fur-SIMP-sun"),
     ],
 )
@@ -1136,3 +1136,321 @@ def test_read_as_whose_closing_parenthesis_was_lost_is_still_a_guide():
 def test_a_read_as_label_with_nothing_after_it_is_left_alone():
     assert extract_guides("Which is it? Read as:") == ("Which is it? Read as:", ())
     assert extract_guides("Which is it? Read as: )") == ("Which is it? Read as: )", ())
+
+
+# --- review findings 1-3: answers that must stay silent, questions that must stay apart --------
+
+LIFE_NO_NEWLINES = (
+    "1) LIFE SCIENCE Multiple Choice Which is NOT part of the respiratory system? "
+    "W) Pharynx X) Larynx Y) Esophagus Z) Trachea {marker} Y) ESOPHAGUS"
+)
+
+
+@pytest.mark.parametrize("marker", ["Answer:", "ANSWER:", "Answer :", "ANSWER：", "Answer："])
+def test_inline_answer_marker_after_lost_newlines_ends_the_choices(marker):
+    q = one(LIFE_NO_NEWLINES.format(marker=marker))
+    assert q.answer == "Y) ESOPHAGUS"
+    assert [c.text for c in q.choices] == ["Pharynx", "Larynx", "Esophagus", "Trachea"]
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "TOSS-UP 1) PHYSICS Short Answer: What is a joule?",
+        "1) PHYSICS Multiple Choice Short Answer: what unit? W) a X) b Y) c Z) d",
+        "1) MATH Short answer: How many sides has a hexagon?",
+    ],
+)
+def test_short_answer_label_is_not_an_inline_answer_marker(raw):
+    q = one(raw)
+    assert q.answer is None
+    assert q.fmt is not None
+
+
+@pytest.mark.parametrize(
+    ("raw", "answer"),
+    [
+        (
+            "1) PHYSICS Short Answer Give the SI base unit for each: 1) length; 2) mass; "
+            "3) temperature; 4) time.\nANSWER: 1) LENGTH = METER, 2) MASS = KILOGRAM, "
+            "3) TEMPERATURE = KELVIN,\n4) TIME = SECOND",
+            "1) LENGTH = METER, 2) MASS = KILOGRAM, 3) TEMPERATURE = KELVIN, 4) TIME = SECOND",
+        ),
+        (
+            "5) CHEMISTRY Short Answer Name two alkali metals.\nANSWER:\n1) SODIUM\n2) POTASSIUM",
+            "1) SODIUM 2) POTASSIUM",
+        ),
+        (
+            "TOSS-UP\n5) CHEMISTRY Multiple Choice Which?\nW) a\nX) b\nY) c\nZ) d\n"
+            "ANSWER: Y) c\n1) because of the first reason\n2) because of the second reason",
+            "Y) c 1) because of the first reason 2) because of the second reason",
+        ),
+    ],
+)
+def test_numbered_lines_after_the_answer_marker_stay_in_the_answer(raw, answer):
+    q = one(raw)
+    assert q.answer == answer
+
+
+def test_next_consecutive_number_after_an_answer_still_starts_a_question():
+    qs = parse("1) MATH Short Answer One?\nANSWER: 1\n2) What is two?\nANSWER: 2\n")
+    assert [(q.number, q.answer) for q in qs] == [(1, "1"), (2, "2")]
+
+
+def test_blank_line_then_any_number_after_an_answer_starts_a_question():
+    qs = parse("3) MATH Short Answer Three?\nANSWER: 3\n\n7) What is seven?\nANSWER: 7\n")
+    assert [(q.number, q.answer) for q in qs] == [(3, "3"), (7, "7")]
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        (
+            "EARTH SCIENCE Short Answer What is the outermost layer of the Earth?\n"
+            "ANSWER: CRUST\n\n"
+            "LIFE SCIENCE Short Answer What organelle makes ATP?\nANSWER: MITOCHONDRION",
+            [(None, "EARTH SCIENCE", "CRUST"), (None, "LIFE SCIENCE", "MITOCHONDRION")],
+        ),
+        (
+            "46 MATH Short Answer What is two plus two?\nANSWER: 4\n"
+            "47 MATH Short Answer What is three plus three?\nANSWER: 6",
+            [(46, "MATH", "4"), (47, "MATH", "6")],
+        ),
+        (
+            "1) CHEMISTRY Short Answer What is the unit of energy?\nANSWER: JOULE\n\n"
+            "2) pH is a measure of what property of a solution?\nANSWER: ACIDITY",
+            [(1, "CHEMISTRY", "JOULE"), (2, None, "ACIDITY")],
+        ),
+        (
+            "TOSS-UP\n1) BIOLOGY Multiple Choice Which?\nW) a\nX) b\nY) c\nZ) d\n\n"
+            "PHYSICS Short Answer What is a joule?\nANSWER: UNIT OF ENERGY",
+            [(1, "BIOLOGY", None), (None, "PHYSICS", "UNIT OF ENERGY")],
+        ),
+    ],
+)
+def test_every_pasted_question_is_its_own_question(raw, expected):
+    qs = parse(raw)
+    assert [(q.number, q.category, q.answer) for q in qs] == expected
+
+
+def test_label_words_alone_after_an_answer_do_not_open_a_question():
+    q = one("1) MATH Short Answer Name the format.\nANSWER: MULTIPLE CHOICE\nSHORT ANSWER")
+    assert q.answer == "MULTIPLE CHOICE SHORT ANSWER"
+
+
+def test_lowercase_numbered_list_in_an_open_stem_is_still_text():
+    q = one("1) MATH Short Answer Name all of the following:\n\n1) a square\n2) a circle\n")
+    assert q.stem.endswith("1) a square 2) a circle")
+
+
+def test_lowercase_numbered_line_right_after_an_answer_stays_in_the_answer():
+    q = one(
+        "1) CHEMISTRY Short Answer What is the unit of energy?\nANSWER: JOULE\n"
+        "2) because it is named for a physicist"
+    )
+    assert q.answer == "JOULE 2) because it is named for a physicist"
+
+
+# --- review findings 4-7: surfaces of guides --------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("raw", "surface", "spoken"),
+    [
+        (
+            "TOSS-UP\n\n2) MATH Multiple Choice Express in decimal form: 0.99 - (read as: 99 "
+            "hun-DREDTHS minus\nthree fourths).\n",
+            "0.99 -",
+            "99 hun-DREDTHS minus three fourths",
+        ),
+        (
+            "BONUS\n\n2) MATH Short Answer Simplify: 0.99 - 0.0099 (read as: 99 hun-DREDTHS minus "
+            "99 ten\nthous-ANDTHS).\n",
+            "0.99 - 0.0099",
+            "99 hun-DREDTHS minus 99 ten thous-ANDTHS",
+        ),
+    ],
+)
+def test_spoken_reading_holding_a_respelled_word_is_a_say_as_guide(raw, surface, spoken):
+    q = one(raw)
+    assert q.respellings == (Respelling(surface, spoken, "spoken"),)
+    assert surface in q.stem
+
+
+def test_a_dangling_dash_is_never_the_surface_of_a_guide():
+    q = stem_case("Take foo - (read as: FOO-bar) now.", "9) MATH Short Answer ")
+    assert q.respellings == (Respelling("foo", "FOO-bar"),)
+    assert q.stem == "Take foo - now."
+
+
+@pytest.mark.parametrize(
+    ("written", "text", "surface", "guide"),
+    [
+        ("Curium-258 [KYOOR-ee-uhm]", "Curium-258", "Curium", "KYOOR-ee-uhm"),
+        ("L-alanine and D-alanine [AL-n-een]", "L-alanine and D-alanine", "alanine", "AL-n-een"),
+        (
+            "a non-Newtonian [noo-TOH-nee-un] fluid",
+            "a non-Newtonian fluid",
+            "Newtonian",
+            "noo-TOH-nee-un",
+        ),
+        (
+            "The Bence-Jones [BENS JOHNZ] protein",
+            "The Bence-Jones protein",
+            "Bence-Jones",
+            "BENS JOHNZ",
+        ),
+        (
+            "N-acetylglucosamine [N-ah-setil-glue-KOH-sah-meen]",
+            "N-acetylglucosamine",
+            "N-acetylglucosamine",
+            "N-ah-setil-glue-KOH-sah-meen",
+        ),
+        (
+            "technetium-99m [tek-NEE-shee-um 99 M]",
+            "technetium-99m",
+            "technetium-99m",
+            "tek-NEE-shee-um 99 M",
+        ),
+        ("Tay-Sachs [TAY-saks] disease", "Tay-Sachs disease", "Tay-Sachs", "TAY-saks"),
+        ("Tay-Sachs [saks] disease", "Tay-Sachs disease", "Sachs", "saks"),
+        ("Hypotenuse-leg [hy-POT-n-oos]", "Hypotenuse-leg", "Hypotenuse", "hy-POT-n-oos"),
+    ],
+)
+def test_a_compound_keeps_every_part_the_guide_does_not_respell(written, text, surface, guide):
+    q = one(f"TOSS-UP\n\n7) CHEMISTRY Multiple Choice Which?\nW) a\nX) b\nY) c\nZ) {written}")
+    assert q.choices[3].text == text
+    assert q.choices[3].respellings == (Respelling(surface, guide),)
+
+
+def test_determinant_matrix_is_not_a_unit_so_the_two_by_two_is_not_a_surface():
+    q = one(
+        "TOSS-UP\n\n−5 3\n10) MATH Short Answer What is the determinant of the 2 by 2 matrix � � "
+        "[first row\n4 2\nnegative 5, 3 and second row 4, 2]?\n\nANSWER: -22\n"
+    )
+    assert q.respellings == ()
+    assert q.stem == (
+        "What is the determinant of the 2 by 2 matrix first row 4 2 negative 5, 3 and second row "
+        "4, 2?"
+    )
+
+
+@pytest.mark.parametrize(
+    ("text", "stem", "guides"),
+    [
+        (
+            "approximately 5 meters (read as: five)",
+            "approximately 5 meters five",
+            (),
+        ),
+        (
+            "about 6.4 x 106 meters (read as: 6.4 times 10 to the sixth) in all",
+            "about 6.4 x 106 meters in all",
+            (Respelling("6.4 x 106", "6.4 times 10 to the sixth", "spoken"),),
+        ),
+        (
+            "of a 2 by 2 matrix (read as: two by two)",
+            "of a 2 by 2 matrix two by two",
+            (),
+        ),
+    ],
+)
+def test_only_a_real_unit_word_may_sit_between_an_expression_and_its_reading(text, stem, guides):
+    q = stem_case(text, "11) MATH Short Answer ")
+    assert (q.stem, q.respellings) == (stem, guides)
+
+
+@pytest.mark.parametrize(
+    ("raw", "text", "surface", "guide"),
+    [
+        (
+            "5) EARTH AND SPACE Short Answer Which atmospheric element is converted into a\n"
+            "bioavailable form through the Haber-Bosch process [HA-buhr BOSH]?\n",
+            None,
+            "Haber-Bosch",
+            "HA-buhr BOSH",
+        ),
+        (
+            "8) EARTH AND SPACE Short Answer What is the name for igneous rock [IG-nee-uhs] that "
+            "cuts across the structure of adjoining rock?\n",
+            None,
+            "igneous",
+            "IG-nee-uhs",
+        ),
+        (
+            "TOSS-UP\n\n9) EARTH AND SPACE Multiple Choice Which?\nW) Kuiper Belt [KY-per]\n"
+            "X) Oort Cloud\nY) c\nZ) d\n",
+            "Kuiper Belt",
+            "Kuiper",
+            "KY-per",
+        ),
+    ],
+)
+def test_guide_attaches_to_the_word_it_respells_not_to_the_noun_after_it(raw, text, surface, guide):
+    q = one(raw if raw.startswith(("TOSS", "BONUS")) else f"TOSS-UP\n\n{raw}")
+    found = q.choices[0] if text else q
+    assert found.respellings == (Respelling(surface, guide),)
+    if text:
+        assert found.text == text
+    else:
+        assert "process" in q.stem or "rock" in q.stem
+
+
+@pytest.mark.parametrize(
+    ("text", "surface", "guide"),
+    [
+        ("A self--made [self-MAYD] man", "self--made", "self-MAYD"),
+        ("Grade A-1 [AY-wun] beef", "A-1", "AY-wun"),
+    ],
+)
+def test_compound_without_a_usable_part_keeps_the_whole_token(text, surface, guide):
+    q = stem_case(text, "3) MATH Short Answer ")
+    assert q.respellings == (Respelling(surface, guide),)
+
+
+def test_brackets_alone_before_a_reading_are_not_a_headword():
+    q = stem_case("( ) (read as: FOO-bar) is odd.", "3) MATH Short Answer ")
+    assert [r.kind for r in q.respellings] == ["spoken"]
+
+
+# --- delta review: an answer list must survive any open question number -----------------------
+
+
+@pytest.mark.parametrize("n", [1, 2, 5])
+def test_numbered_answer_list_survives_any_open_question_number(n):
+    q = one(
+        f"TOSS-UP\n{n}) CHEMISTRY Short Answer Name the alkali metals.\nANSWER:\n"
+        "1) SODIUM\n2) POTASSIUM\n3) LITHIUM"
+    )
+    assert q.number == n
+    assert q.answer == "1) SODIUM 2) POTASSIUM 3) LITHIUM"
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        "ANSWER: 1) LENGTH = METER, 2) MASS = KILOGRAM,\n3) TEMPERATURE = KELVIN,\n"
+        "4) TIME = SECOND",
+        "ANSWER:\n1) Sodium\n2) Potassium\n3) Lithium",
+        "ANSWER: THE LAWS OF MOTION ARE THREE\n2) NEWTON'S SECOND LAW STATES THAT FORCE EQUALS "
+        "MASS TIMES ACCELERATION",
+    ],
+)
+def test_short_or_all_caps_numbered_lines_stay_in_the_answer_at_any_number(answer):
+    for n in (1, 2, 3):
+        q = one(f"TOSS-UP\n{n}) PHYSICS Short Answer Name them.\n{answer}")
+        assert q.answer == " ".join(answer.removeprefix("ANSWER:").split())
+
+
+@pytest.mark.parametrize(
+    "second",
+    [
+        "7) What is seven?",
+        "2) Name the first prime number",
+        "2) Which gas is a measure of what property of a solution?",
+    ],
+)
+def test_a_line_that_reads_like_a_question_right_after_an_answer_starts_one(second):
+    qs = parse(f"3) MATH Short Answer Three?\nANSWER: 3\n{second}\nANSWER: 7\n")
+    assert [q.answer for q in qs] == ["3", "7"]
+    assert qs[1].stem == second.split(") ", 1)[1]

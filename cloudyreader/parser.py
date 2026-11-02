@@ -9,8 +9,11 @@ from __future__ import annotations
 import re
 import unicodedata
 from dataclasses import dataclass, replace
+from difflib import SequenceMatcher
+from functools import cache
 
 from cloudyreader.models import Choice, Fmt, Kind, Question, Respelling
+from cloudyreader.units import load_entries
 
 __all__ = ["QuestionParser", "extract_guides", "parse"]
 
@@ -61,8 +64,9 @@ _WORD_RE = re.compile(rf"{_LETTER}{{4,}}")
 
 # `ANWER:` is a typo that occurs in a real round.
 _ANSWER_LINE_RE = re.compile(r"\s*(?:(?i:ans?wer)\s*[:：]|ANSWER\b[:：]?)\s*")
-# Clipboards lose newlines, so a capitalised `ANSWER:` is also recognised mid-line.
-_ANSWER_INLINE_RE = re.compile(r"(?<=\s)ANSWER\s*[:：]\s*")
+# Clipboards lose newlines, so `ANSWER:` and `Answer:` are also recognised mid-line, but not the
+# label `Short Answer:`.
+_ANSWER_INLINE_RE = re.compile(r"(?<=\s)(?<![Ss][Hh][Oo][Rr][Tt]\s)(?:ANSWER|Answer)\s*[:：]\s*")
 
 _CATEGORY_TOKEN_RE = re.compile(r"[A-Z][A-Z'’/-]*|&")
 _TITLE_TOKEN_RE = re.compile(rf"{_LETTER}[^\W\d_'’/-]*(?:['’/-]{_LETTER}+)*|&")
@@ -461,6 +465,8 @@ def _is_guide(content: str) -> bool:
     words = [t for t in tokens if not t.isdigit()]
     if not words or not all(_GUIDE_WORD_RE.fullmatch(w) for w in words):
         return False
+    if len(words) > 1 and any(w.lower() in _SPOKEN_MATH for w in words):
+        return False  # "99 hun-DREDTHS minus three fourths" is a reading, not a respelling
     hyphenated = [w for w in words if "-" in w]
     if hyphenated:
         if all(_is_number_phrase(w) for w in hyphenated):
@@ -488,44 +494,97 @@ def _word_count(content: str) -> int:
     return max(1, len(named))
 
 
-def _syllables(word: str) -> int:
-    """Rough syllable count: vowel runs, less a silent final e (`glycine` has two)."""
-    letters = re.sub(r"[^a-z]", "", word.lower())
-    runs = len(re.findall(r"[aeiouy]+", letters))
-    silent = bool(re.search(r"[^aeiouy]e$", letters)) and not letters.endswith("le")
-    return runs - 1 if silent and runs > 1 else runs
+def _letters(text: str) -> str:
+    return re.sub(r"[^a-z]", "", text.lower())
 
 
-def _guide_syllables(content: str) -> int:
-    """Syllable units a guide spells out; numbers inside it are spoken, not respelled."""
+def _similarity(content: str, text: str) -> float:
+    """How alike a respelling and a printed word are, letter by letter (0 to 1)."""
+    guide, word = _letters(_ALTERNATIVE_RE.split(content)[0]), _letters(text)
+    return SequenceMatcher(None, guide, word).ratio() if guide and word else 0.0
+
+
+def _guide_units(content: str) -> set[str]:
     first = _ALTERNATIVE_RE.split(content)[0].split()
-    words = [t for t in first if not t.isdigit() and t.lower() not in _NUMBER_WORDS]
-    return sum(bool(unit) for word in words for unit in word.split("-"))
+    return {unit.lower() for token in first for unit in token.split("-") if unit}
 
 
-def _compound_tail(word: str, content: str) -> str:
-    """`proline-glycine [GLY-seen]`: a guide often covers only the last parts of a compound."""
-    parts = word.split("-")
+def _compound_surface(token: str, content: str) -> str:
+    """`non-Newtonian [noo-TOH-nee-un]`: the parts of a compound the guide respells.
+
+    A part the guide does not spell and that is a bare number or letter (`258`, `D`) stays out;
+    of the spans that fit about equally well the narrowest wins, because speaking the part the
+    guide leaves alone is harmless and dropping it is not.
+    """
+    parts = token.split("-")
     if len(parts) < 2 or not all(parts):
-        return word
-    target = _guide_syllables(content)
-    tails = ["-".join(parts[i:]) for i in range(len(parts))]  # the whole word first
-    return min(tails, key=lambda t: (abs(_syllables(t) - target), -len(t)))
+        return token
+    units = _guide_units(content)
+    said_number = any(u.isdigit() or u in _NUMBER_WORDS for u in units)
+
+    def spelled(part: str) -> bool:  # `2-thiopyridone [two-thigh-oh-...]`: the guide says the 2
+        digits = bool(re.fullmatch(r"[\d.,]+", part))
+        return (
+            part.lower() in units
+            or (digits and said_number)
+            or any(u.isdigit() and u in part for u in units)
+        )
+
+    def stub(part: str) -> bool:
+        return bool(re.fullmatch(r"[\d.,]+|[^\W\d_]", part)) and not spelled(part)
+
+    last = len(parts)
+    spans = [
+        "-".join(parts[i:j])
+        for i in range(last)
+        for j in range(i + 1, last + 1)
+        if not stub(parts[i])
+        and not stub(parts[j - 1])
+        and not (spelled(parts[0]) and i > 0)
+        and not (spelled(parts[-1]) and j < last)
+    ]
+    if not spans:
+        return token
+    scores = {span: _similarity(content, span) for span in spans}
+    near = [span for span, score in scores.items() if score >= max(scores.values()) - 0.05]
+    return min(near, key=lambda span: (span.count("-"), -token.rfind(span)))
 
 
 def _headword(prefix: str, content: str) -> str:
-    """The words the guide belongs to: as many as the guide has words, hyphen units included."""
-    count = _word_count(content)
+    """The word the guide respells: as many words as the guide has, else the likeliest nearby one.
+
+    A guide may follow the noun it qualifies (`Haber-Bosch process [HA-buhr BOSH]`), so words up
+    to two back compete on letter likeness; the word just before the guide wins unless another
+    one fits clearly better.
+    """
     tokens = prefix.split()
-    word = _trim(tokens[-1])
+    while tokens and not re.search(r"[^\W_]", tokens[-1]):
+        tokens.pop()  # a dangling dash is no word
+    if not tokens:
+        return ""
+    if _trim(tokens[-1]).isdigit() and len(tokens) > 1:  # `Maffei 1 [MAF-eye-one]`
+        tokens[-2:] = [f"{tokens[-2]} {tokens[-1]}"]
+    count = _word_count(content)
     for k in range(1, min(count, len(tokens)) + 1):
         phrase = " ".join(tokens[-k:])
-        if len(re.split(r"[\s-]+", phrase)) == count:
-            word = _trim(phrase)
-            break
-    if word.isdigit() and len(tokens) > len(word.split()):  # `Maffei 1 [MAF-eye-one]`
-        return _trim(" ".join(tokens[-(len(word.split()) + 1) :]))
-    return _compound_tail(word, content)
+        if count > 1 and len(re.split(r"[\s-]+", phrase)) == count:
+            return _trim(phrase)
+    near = _trim(tokens[-1])
+    best_score, best = _similarity(content, near), near
+    base_score = best_score
+    first = _ALTERNATIVE_RE.split(content)[0].split()
+    said_number = bool(first) and re.split(r"[-\s]+", first[-1])[-1].lower() in _NUMBER_WORDS
+    for far in range(min(3, len(tokens))):
+        for length in range(1, count + int(said_number) + 1):  # `meiosis I [my-OH-sis one]`
+            if len(tokens) - far - length < 0:
+                break
+            window = _trim(" ".join(tokens[len(tokens) - far - length : len(tokens) - far]))
+            score = _similarity(content, window) - 0.1 * far
+            if score > best_score:
+                best_score, best = score, window
+    if best_score - base_score < 0.15:
+        best = near
+    return best if " " in best or "-" not in best else _compound_surface(best, content)
 
 
 def _trim(phrase: str) -> str:
@@ -571,12 +630,26 @@ def _math_run(before: str) -> str:
     return " ".join(tokens[start:])
 
 
+@cache
+def _unit_names() -> frozenset[str]:
+    """Spelled-out unit names from units.json ("meters", "kilograms"), lowercase."""
+    names: set[str] = set()
+    for entry in load_entries("units").values():
+        names.update(str(entry.get(key, "")).lower() for key in ("singular", "plural"))
+        names.update(str(alias).lower() for alias in entry.get("aliases", ()))
+    return frozenset(names - {""})
+
+
 def _math_run_before_unit(before: str) -> str:
-    """The expression before a trailing unit word: `6.4 x 106` in `6.4 x 106 meters`."""
+    """The expression before a trailing unit word: `6.4 x 106` in `6.4 x 106 meters`.
+
+    The word must be a unit and the run more than a bare integer: `the 2 by 2 matrix` is not one.
+    """
     tokens = before.split()
-    unit = tokens[-1] if tokens else ""
-    if len(tokens) > 1 and unit.isalpha() and unit.islower() and len(unit) <= 12:
-        return _math_run(" ".join(tokens[:-1]))
+    if len(tokens) > 1 and tokens[-1].lower() in _unit_names():
+        run = _math_run(" ".join(tokens[:-1]))
+        if run and not run.isdigit():
+            return run
     return ""
 
 
@@ -648,8 +721,8 @@ def _judge(before: str, content: str, *, paren: bool) -> Respelling | str | None
             (_is_guide(tight) or lone)
             and before.strip()
             and (paren or _AFTER_WORD_RE.search(before))
-        ):
-            return Respelling(_headword(before, tight), tight)
+        ) and (head := _headword(before, tight)):
+            return Respelling(head, tight)
     surface = _math_run(before)
     if not surface:
         surface = last if _letter_surface(last, content) else _math_run_before_unit(before)
@@ -724,11 +797,24 @@ def extract_guides(text: str) -> tuple[str, tuple[Respelling, ...]]:
     return _squash(built + text[pos:]), tuple(guides)
 
 
+def _answered(lines: list[str]) -> bool:
+    return any(_ANSWER_LINE_RE.match(line) or _ANSWER_INLINE_RE.search(line) for line in lines)
+
+
 def _is_complete(lines: list[str]) -> bool:
     """True once a question has its answer line or its W-X-Y-Z choices."""
-    if any(_ANSWER_LINE_RE.match(line) or _ANSWER_INLINE_RE.search(line) for line in lines):
-        return True
-    return _find_choices("\n".join(lines)) is not None
+    return _answered(lines) or _find_choices("\n".join(lines)) is not None
+
+
+def _reads_like_stem(text: str) -> bool:
+    """A question, not an answer item: a `?`, or a longer mixed-case sentence (answers are caps)."""
+    return "?" in text or (len(text.split()) > 4 and text != text.upper())
+
+
+def _opens_question(line: str) -> bool:
+    """`LIFE SCIENCE Short Answer What ...`: a category or stem after a format label, no number."""
+    category, fmt, stem = _scan_label(line, structured=True)
+    return fmt is not None and bool(category or stem)
 
 
 def _has_body(lines: list[str]) -> bool:
@@ -756,22 +842,25 @@ def _starts_question(line: str, current: list[str]) -> bool:
         return False
     if _match_header(line):
         return True
+    complete = _is_complete(current)
     m = _NUMBER_RE.match(line)
-    if not m:
-        return False
+    if not m:  # a label without `N)`: "LIFE SCIENCE Short Answer ...", "47 MATH Short Answer ..."
+        return complete and (_label_head(line) or _opens_question(line))
     rest = line[m.end() :]
     if _scan_label(rest, structured=True)[1] is not None:
         return True  # a category and a format label are unmistakable
-    if not rest.strip() or rest[0].islower():
-        return False  # `4)` alone ends an answer; `1) a square is ...` is a list in the stem
-    # A bare `N)` starts a question once the open one is complete, or after a blank line; but in
-    # a header-opened stem only the next number counts: the stem may hold a blank-separated list.
+    blank_before = not current[-1].strip()
+    if not rest.strip():
+        return False  # `4)` alone ends an answer
+    if rest[0].islower():  # `1) a square is ...` is a list in the stem, unless a new block starts
+        return complete and blank_before
     number = _open_number(current)
     next_number = number is not None and int(m.group("num")) == number + 1
-    blank_before = not current[-1].strip()
-    return _is_complete(current) or (
-        blank_before and (next_number or not _opened_by_header(current))
-    )
+    if _answered(current):  # numbered lines inside a multi-line answer are answer text
+        return blank_before or _reads_like_stem(rest)
+    # A bare `N)` starts a question once the choices are complete, or after a blank line; but in
+    # a header-opened stem only the next number counts: the stem may hold a blank-separated list.
+    return complete or (blank_before and (next_number or not _opened_by_header(current)))
 
 
 def _split_blocks(lines: list[str]) -> list[list[str]]:
