@@ -129,6 +129,23 @@ def test_render_longest_surface_first_and_whole_words(engine: KokoroEngine) -> N
     assert engine.last_warnings == []
 
 
+def test_render_unglues_a_mass_number_from_the_markup(engine: KokoroEngine) -> None:
+    # Regression: spaCy keeps "Strontium-90" one token, so misaki shifted later overrides.
+    seg = Segment(
+        "Strontium-90 and glucose-6-phosphate; Potassium-argon dating.",
+        overrides=(
+            Override("Strontium", "ˈstɹɑnʃiəm", "lexicon"),
+            Override("glucose", "ˈɡlukoʊs", "lexicon"),
+            Override("phosphate", "ˈfɑsfeɪt", "lexicon"),
+            Override("Potassium", "pəˈtæsiəm", "lexicon"),
+        ),
+    )
+    assert engine.render(seg, _voice(engine)) == (
+        "[Strontium](/stɹˈɑnʃiəm/) 90 and [glucose](/ɡlˈukOs/) 6-[phosphate](/fˈɑsfAt/); "
+        "[Potassium](/pətˈæsiəm/)-argon dating."
+    )
+
+
 def test_render_drops_rejected_symbols_with_warning(engine: KokoroEngine) -> None:
     seg = Segment("Pharynx", overrides=(Override("Pharynx", "ˈfæɹ-ɪŋks", "respelling"),))
     assert engine.render(seg, _voice(engine)) == "[Pharynx](/fˈæɹɪŋks/)"

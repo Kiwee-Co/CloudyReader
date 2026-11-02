@@ -207,7 +207,7 @@ class KokoroEngine:
     """TtsEngine for Kokoro-82M. Overrides reach the model as misaki `[surface](/phonemes/)`."""
 
     key = "kokoro"
-    version = f"kokoro-82m@{KOKORO_REVISION[:8]}+misaki-ipa-1"
+    version = f"kokoro-82m@{KOKORO_REVISION[:8]}+misaki-ipa-2"
 
     def __init__(
         self, models_dir: Path, backend: KokoroBackend | None = None, *, all_voices: bool = False
@@ -303,12 +303,17 @@ class KokoroEngine:
             return text
         # One pass, longest surface first, whole words only: no markup nests inside markup.
         alternatives = sorted(marks, key=len, reverse=True)
-        pattern = re.compile("|".join(rf"(?<!\w){re.escape(s)}(?!\w)" for s in alternatives))
+        words = "|".join(re.escape(s) for s in alternatives)
+        # spaCy keeps "Strontium-90" one token and misaki then shifts later overrides onto the
+        # wrong words, so a hyphen between the markup and a digit becomes a space.
+        pattern = re.compile(rf"(?<!\w)(?P<surface>{words})(?!\w)(?P<hyphen>-(?=\d))?")
         found: set[str] = set()
 
         def mark(match: re.Match[str]) -> str:
-            found.add(match.group(0))
-            return f"[{match.group(0)}](/{marks[match.group(0)]}/)"
+            surface = match.group("surface")
+            found.add(surface)
+            gap = " " if match.group("hyphen") else ""
+            return f"[{surface}](/{marks[surface]}/){gap}"
 
         text = pattern.sub(mark, text)
         for surface in alternatives:
