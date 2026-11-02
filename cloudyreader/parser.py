@@ -98,9 +98,10 @@ _OPEN_PAREN_GUIDE_RE = re.compile(
 # A guide is `[...]`, `(read as: ...)` or `(pronounced: ...)`; a trailing `Read as: ...` joins them.
 _BRACKET_RE = re.compile(
     r"\[([^\[\]]*)\]"
-    r"|\(\s*(?:read\s+as\s*:?|pronounced\s*:?|pronunciation\s*:|read(?=\s*[\"“]))\s*([^()]*?)\s*\)",
+    r"|\(\s*(?:read\s+as\s*:?|pronounced\s*:?|pronunciation\s*:|read(?=\s*[\"“]))\s*((?:[^()]|\([^()]*\))*?)\s*\)",
     re.IGNORECASE,
 )
+_OPEN_READ_AS_RE = re.compile(r"\(\s*(?:read\s+as\s*:?|pronounced\s*:?)\s*[^()]+$", re.IGNORECASE)
 _BARE_READ_AS_RE = re.compile(r"(?<![(\w])read\s+as\s*:\s*", re.IGNORECASE)
 # A lowercase one-word bracket ("[jool]") is a guide unless it is a bracketed editorial note.
 _NOTE_WORDS = frozenset({"sic", "note", "see", "ibid", "emphasis", "added", "edited"})
@@ -126,8 +127,10 @@ _NUMBER_WORDS = frozenset(
 _ION_RE = re.compile(rf"({_LETTER}+)-(?:one|two|three|four|five|six|seven)", re.IGNORECASE)
 # One-word say-as brackets: "x2 [squared]" is how to say x2, not how to pronounce it.
 _SAY_AS_WORDS = frozenset({"squared", "cubed", "prime", "degrees", "percent"})
+_MATHY_RE = re.compile(r"[()\[\]=<>+]")
+_CHOICE_MARKER_RE = re.compile(r"[WXYZ]\)")
 _ARROWS = frozenset("→⟶⇒⟹↔⇌")
-_MATH_CHARS = frozenset("+−–-×÷*/^=<>≤≥≠≈±≧≦|│⏐()[]{}√π∅∞→⟶⇒·•%!°∘")
+_MATH_CHARS = frozenset("+−–-×÷*/^=<>≤≥≠≈±≧≦|│⏐()[]{}√π∅∞→⟶⇒·•%!°∘\u2010\u2011\u2012")
 _OPERATOR_CHARS = frozenset("+−×÷*/^=<>≤≥≠≈±≧≦√")
 # Words that mark a bracket as spoken maths; two of them and no printed expression: say them.
 _SPOKEN_MATH = frozenset(
@@ -485,6 +488,31 @@ def _word_count(content: str) -> int:
     return max(1, len(named))
 
 
+def _syllables(word: str) -> int:
+    """Rough syllable count: vowel runs, less a silent final e (`glycine` has two)."""
+    letters = re.sub(r"[^a-z]", "", word.lower())
+    runs = len(re.findall(r"[aeiouy]+", letters))
+    silent = bool(re.search(r"[^aeiouy]e$", letters)) and not letters.endswith("le")
+    return runs - 1 if silent and runs > 1 else runs
+
+
+def _guide_syllables(content: str) -> int:
+    """Syllable units a guide spells out; numbers inside it are spoken, not respelled."""
+    first = _ALTERNATIVE_RE.split(content)[0].split()
+    words = [t for t in first if not t.isdigit() and t.lower() not in _NUMBER_WORDS]
+    return sum(bool(unit) for word in words for unit in word.split("-"))
+
+
+def _compound_tail(word: str, content: str) -> str:
+    """`proline-glycine [GLY-seen]`: a guide often covers only the last parts of a compound."""
+    parts = word.split("-")
+    if len(parts) < 2 or not all(parts):
+        return word
+    target = _guide_syllables(content)
+    tails = ["-".join(parts[i:]) for i in range(len(parts))]  # the whole word first
+    return min(tails, key=lambda t: (abs(_syllables(t) - target), -len(t)))
+
+
 def _headword(prefix: str, content: str) -> str:
     """The words the guide belongs to: as many as the guide has words, hyphen units included."""
     count = _word_count(content)
@@ -497,7 +525,7 @@ def _headword(prefix: str, content: str) -> str:
             break
     if word.isdigit() and len(tokens) > len(word.split()):  # `Maffei 1 [MAF-eye-one]`
         return _trim(" ".join(tokens[-(len(word.split()) + 1) :]))
-    return word
+    return _compound_tail(word, content)
 
 
 def _trim(phrase: str) -> str:
@@ -538,7 +566,18 @@ def _math_run(before: str) -> str:
         tokens[start - 1], tokens[start] if start < len(tokens) else None
     ):
         start -= 1
+    if start == 0 and tokens and _CHOICE_MARKER_RE.fullmatch(tokens[0]):
+        start = 1  # an answer such as `Y) 6 (read as: six)` opens with the choice letter
     return " ".join(tokens[start:])
+
+
+def _math_run_before_unit(before: str) -> str:
+    """The expression before a trailing unit word: `6.4 x 106` in `6.4 x 106 meters`."""
+    tokens = before.split()
+    unit = tokens[-1] if tokens else ""
+    if len(tokens) > 1 and unit.isalpha() and unit.islower() and len(unit) <= 12:
+        return _math_run(" ".join(tokens[:-1]))
+    return ""
 
 
 def _letter_surface(token: str, content: str) -> bool:
@@ -586,6 +625,8 @@ def _judge(before: str, content: str, *, paren: bool) -> Respelling | str | None
     if not content:
         return None
     tight = _tighten(content)
+    if paren:
+        tight = re.sub(r"[()]", "", tight)  # `(H)URR-bi-vohr`: an optional sound is still a sound
     last = before.split()[-1] if before.split() else ""
     if not paren and " " in content and _NOTE_RE.match(content):
         return ""
@@ -609,24 +650,40 @@ def _judge(before: str, content: str, *, paren: bool) -> Respelling | str | None
             and (paren or _AFTER_WORD_RE.search(before))
         ):
             return Respelling(_headword(before, tight), tight)
-    run = _math_run(before)
-    surface = run or (last if _letter_surface(last, content) else "")
+    surface = _math_run(before)
+    if not surface:
+        surface = last if _letter_surface(last, content) else _math_run_before_unit(before)
     wordy = " " in content and bool(_WORD2_RE.search(content))
     if surface and (paren or wordy or _is_number_phrase(tight) or content.lower() in _SAY_AS_WORDS):
         return Respelling(surface, content, "spoken")
-    if not paren and len(_SPOKEN_MATH & set(content.lower().split())) >= 2:
-        return content
+    if paren or len(_SPOKEN_MATH & set(content.lower().split())) >= 2:
+        return content  # the printed expression is lost (a stacked fraction): say the words
     return None
 
 
 def _wrap_trailing_read_as(text: str) -> str:
-    """`... Read as: words` at the end of the text becomes `... (read as: words)`."""
+    """`... Read as: words` (parentheses lost, or just the `(`) becomes `... (read as: words)`."""
     found = list(_BARE_READ_AS_RE.finditer(text))  # only the final one can reach the end
     last = found[-1] if found else None
-    tail = text[last.end() :].strip() if last else ""
-    if not tail or "(" in tail or ")" in tail:
+    tail = text[last.end() :] if last else ""
+    if last is None or "(" in tail or tail.count(")") > 1:
         return text
-    return f"{text[: last.start()]}(read as: {tail})"
+    head = text[: last.start()]
+    if head.count("(") > head.count(")"):
+        return text  # already inside a parenthesis: "(also read as: 3)"
+    words, _, rest = tail.partition(")")  # a lone `)` closes the guide: "... equals 1)?"
+    if not words.strip():
+        return text
+    return f"{text[: last.start()]}(read as: {words.strip()}){rest}"
+
+
+def _close_open_read_as(text: str) -> str:
+    """`(read as: words?`: the closing parenthesis was lost; close it before the final mark."""
+    if not _OPEN_READ_AS_RE.search(text):
+        return text
+    body = text.rstrip()
+    tail = body[len(body.rstrip(".?!,;:")) :]
+    return f"{body[: len(body) - len(tail)]}){tail}"
 
 
 def _close_open_bracket(text: str) -> str:
@@ -635,12 +692,17 @@ def _close_open_bracket(text: str) -> str:
         return text
     body = text.rstrip()
     tail = body[len(body.rstrip(".?!,;:")) :]
+    inside = body[body.rfind("[") + 1 : len(body) - len(tail)]
+    if _MATHY_RE.search(inside):
+        return text  # `[–10, 5)` is a half-open interval, not a guide
     return f"{body[: len(body) - len(tail)]}]{tail}"
 
 
 def extract_guides(text: str) -> tuple[str, tuple[Respelling, ...]]:
     """Strip guides (phonetic, say-as, spelled) and notes from `text`; return text and guides."""
-    text = _close_open_bracket(re.sub(r"\[\s*\[", "[", _wrap_trailing_read_as(text)))
+    text = _close_open_read_as(
+        _close_open_bracket(re.sub(r"\[\s*\[", "[", _wrap_trailing_read_as(text)))
+    )
     guides: list[Respelling] = []
     built = ""
     pos = 0
@@ -650,13 +712,14 @@ def extract_guides(text: str) -> tuple[str, tuple[Respelling, ...]]:
         prefix = built + text[pos : m.start()]
         before = prefix.rstrip()
         verdict = _judge(before, content, paren=paren)
+        gap = " " if text[m.end() : m.end() + 1].isalnum() else ""  # `[LIH-gund]binding`
         if verdict is None:
             built = prefix + m.group(0)
         elif isinstance(verdict, Respelling):
             guides.append(verdict)
-            built = before
+            built = before + gap
         else:
-            built = prefix + verdict if verdict else before
+            built = prefix + verdict + gap if verdict else before + gap
         pos = m.end()
     return _squash(built + text[pos:]), tuple(guides)
 

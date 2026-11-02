@@ -7,7 +7,7 @@ The excerpts are inline copies (never read from .data/), so the default gate nee
 import pytest
 
 from cloudyreader.models import Fmt, Kind, Respelling
-from cloudyreader.parser import parse
+from cloudyreader.parser import extract_guides, parse
 
 MC, SA = Fmt.MULTIPLE_CHOICE, Fmt.SHORT_ANSWER
 
@@ -532,7 +532,7 @@ def test_real_phonetic_guides_in_a_stem(text, stem, guides):
     ("line", "text", "guide"),
     [
         ("Z) Curium-258 [KYOOR-ee-uhm]", "Curium-258", ("Curium-258", "KYOOR-ee-uhm")),
-        ("Z) Tay-Sachs [saks] disease", "Tay-Sachs disease", ("Tay-Sachs", "saks")),
+        ("Z) Tay-Sachs [saks] disease", "Tay-Sachs disease", ("Sachs", "saks")),
         ("Z) Joule [jool]", "Joule", ("Joule", "jool")),
         ("Z) Arachnid (read as: ah-RAHK-nid)", "Arachnid", ("Arachnid", "ah-RAHK-nid")),
         (
@@ -915,3 +915,224 @@ def test_header_opened_question_splits_on_the_next_consecutive_number_after_a_bl
 def test_header_with_the_number_on_its_own_line_counts_for_the_consecutive_rule():
     qs = parse("TOSS-UP 4) What is two plus two?\n\n5) What is three plus three?\n")
     assert [q.number for q in qs] == [4, 5]
+
+
+# --- surfaces must be whole words of their text (found by running normalize on the corpus) ------
+
+
+def test_half_open_interval_keeps_its_bracket_and_gets_no_stray_closer():
+    q = one(
+        "TOSS-UP\n\n5) MATH Multiple Choice Which is the interval notation:\n\n"
+        "W) (–10, 5] (read as: open parenthesis, negative 10, comma, 5, close bracket)\n"
+        "X) [–10, 5] (read as: open bracket, negative 10, comma, 5, close bracket)\n"
+        "Y) [–10, 5) (read as: open bracket, negative 10, comma, 5, close parenthesis)\n"
+        "Z) (–10, 5) (read as: open parenthesis, negative 10, comma, 5, close parenthesis)\n"
+    )
+    assert [c.text for c in q.choices] == ["(–10, 5]", "[–10, 5]", "[–10, 5)", "(–10, 5)"]
+    assert q.choices[2].respellings == (
+        Respelling("[–10, 5)", "open bracket, negative 10, comma, 5, close parenthesis", "spoken"),
+    )
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Y) [–10, 5)",
+        "Y) [–10, 5) (note: if student interrupts, accept: “bracket, negative or minus 10, 5 "
+        "parenthesis) (Solution: bracket for numbers included in the set)",
+    ],
+)
+def test_an_unclosed_bracket_that_holds_maths_is_left_alone(text):
+    assert extract_guides(text) == (text, ())
+
+
+def test_letter_glued_to_a_removed_guide_gets_a_space():
+    q = one(
+        "TOSS-UP\n\n15) Energy – Multiple Choice Which?\nW) a\nX) Protein crystallography cannot "
+        "study ligand [LIH-gund]binding\nY) b\nZ) c\n"
+    )
+    assert q.choices[1].text == "Protein crystallography cannot study ligand binding"
+    assert q.choices[1].respellings == (Respelling("ligand", "LIH-gund"),)
+
+
+def test_hyphen_after_a_removed_guide_stays():
+    q = stem_case("A ligand [LIH-gund]-binding site is shown.", "9) LIFE SCIENCE Short Answer ")
+    assert q.stem == "A ligand-binding site is shown."
+
+
+def test_guide_between_the_parts_of_a_compound_covers_one_part_each():
+    q = one(
+        "TOSS-UP\n\n9) EARTH SCIENCE Multiple Choice Which period?\nW) a\nX) b\nY) c\n"
+        "Z) Ordovician [OR-doh-VIH-shin]-Silurian [sihl-UR-ee-an]\n"
+    )
+    assert q.choices[3].text == "Ordovician-Silurian"
+    assert [(r.surface, r.respelling) for r in q.choices[3].respellings] == [
+        ("Ordovician", "OR-doh-VIH-shin"),
+        ("Silurian", "sihl-UR-ee-an"),
+    ]
+
+
+def test_guide_after_a_long_compound_covers_the_last_part():
+    q = one(
+        "TOSS-UP\n\n19) LIFE SCIENCE Multiple Choice A peptide sequence with the amino acid "
+        "composition\nproline-glycine [GLY-seen]-glycine-tyrosine [TY-ruh-seen] would have what "
+        "percentage of\naromaticity?\nW) a\nX) b\nY) c\nZ) d\n"
+    )
+    assert q.stem.endswith(
+        "proline-glycine-glycine-tyrosine would have what percentage of aromaticity?"
+    )
+    assert [(r.surface, r.respelling) for r in q.respellings] == [
+        ("glycine", "GLY-seen"),
+        ("tyrosine", "TY-ruh-seen"),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("text", "surface", "guide"),
+    [
+        (
+            "They study alpha-catenin\n[KAT-ah-nin] and its ability to bind.",
+            "catenin",
+            "KAT-ah-nin",
+        ),
+        ("3) Gay-Lussac's [LOO-sax].", "Lussac's", "LOO-sax"),
+        ("Tay-Sachs [saks] disease is rare.", "Sachs", "saks"),
+        ("Tay-Sachs [TAY-saks] disease is rare.", "Tay-Sachs", "TAY-saks"),
+        ("Name the poly-hydroxy-butyrate [BYOO-tur-ate].", "butyrate", "BYOO-tur-ate"),
+        (
+            "Which is sub-bituminous [sub-by-TYUH-mi-nuhs] coal?",
+            "sub-bituminous",
+            "sub-by-TYUH-mi-nuhs",
+        ),
+        ("Name D-alanine [AL-n-een].", "D-alanine", "AL-n-een"),
+        ("Name the Saffir-Simpson [SAH-fur-SIMP-sun] scale.", "Saffir-Simpson", "SAH-fur-SIMP-sun"),
+    ],
+)
+def test_compound_headword_is_the_part_the_guide_has_syllables_for(text, surface, guide):
+    q = stem_case(text, "9) PHYSICAL SCIENCE Short Answer ")
+    assert q.respellings == (Respelling(surface, guide),)
+
+
+def test_a_marker_like_token_is_never_the_surface_of_a_say_as_guide():
+    assert extract_guides("Y) 6 (read as: six)") == ("Y) 6", (Respelling("6", "six", "spoken"),))
+
+
+# --- the last "(read as: ..." leftovers of the corpus -----------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("line", "text", "guide"),
+    [
+        (
+            "Z) Herbivore (read as: (H)URR-bi-vohr)",
+            "Herbivore",
+            ("Herbivore", "HURR-bi-vohr"),
+        ),
+        ("Z) Breccia (read as: BREH-ch(ee)ah)", "Breccia", ("Breccia", "BREH-cheeah")),
+        (
+            "Z) Nucleolus (read as: n(y)uh-KLEE-oh-lus)",
+            "Nucleolus",
+            ("Nucleolus", "nyuh-KLEE-oh-lus"),
+        ),
+        (
+            "Z) Amphiboles (read as: AHM(P)-fi-bōels)",
+            "Amphiboles",
+            ("Amphiboles", "AHMP-fi-bōels"),
+        ),
+    ],
+)
+def test_an_optional_sound_in_parentheses_is_part_of_the_respelling(line, text, guide):
+    q = one(f"TOSS-UP\n\n7) LIFE SCIENCE Multiple Choice Which?\nW) a\nX) b\nY) c\n{line}")
+    assert q.choices[3].text == text
+    assert q.choices[3].respellings == (Respelling(*guide, "phonetic"),)
+
+
+def test_optional_sound_guide_in_a_stem_with_a_following_word_and_a_wrapped_hyphen():
+    q = stem_case(
+        "What is the most stable isotope of rutherfordium (read as: ruh-the(r)-\nFOHR-dee-uhm)?",
+        "7) PHYSICAL SCIENCE Short Answer ",
+    )
+    assert q.stem == "What is the most stable isotope of rutherfordium?"
+    assert q.respellings == (Respelling("rutherfordium", "ruh-ther-FOHR-dee-uhm"),)
+
+
+@pytest.mark.parametrize(
+    ("text", "stem"),
+    [
+        (
+            "Simplify (read as: one third divided by one sixth)",
+            "Simplify one third divided by one sixth",
+        ),
+        (
+            "Express (read as: open parenthesis one fifth plus 3.4 close 2 parenthesis divided by "
+            "two) as a fraction in lowest terms.",
+            "Express open parenthesis one fifth plus 3.4 close 2 parenthesis divided by two as a "
+            "fraction in lowest terms.",
+        ),
+        (
+            "What is the center of the hyperbola (read as: the quantity x minus 3 squared over 25 "
+            "minus the quantity y plus 1 squared over 49 equals 1)?",
+            "What is the center of the hyperbola the quantity x minus 3 squared over 25 minus the "
+            "quantity y plus 1 squared over 49 equals 1?",
+        ),
+        (
+            "Evaluate: (read as: 10 factorial over the quantity 8 factorial times 8!3! 3 "
+            "factorial).",
+            "Evaluate: 10 factorial over the quantity 8 factorial times 8!3! 3 factorial.",
+        ),
+        ("the item (read as: x squared plus two x) was", "the item x squared plus two x was"),
+        ("the item (read as: 1) was", "the item 1 was"),
+    ],
+)
+def test_read_as_with_no_printed_expression_is_said_in_place(text, stem):
+    q = stem_case(text, "20) MATH Short Answer ")
+    assert q.stem == stem
+    assert q.respellings == ()
+
+
+def test_unit_word_after_the_expression_stays_out_of_the_surface():
+    q = stem_case(
+        "The radius of the Earth is approximately 6.4 x 106 meters (read as: 6.4 times 10 to the "
+        "sixth). Giving your answer in scientific notation, what is it?",
+        "11) MATH Short Answer ",
+    )
+    assert q.stem == (
+        "The radius of the Earth is approximately 6.4 x 106 meters. Giving your answer in "
+        "scientific notation, what is it?"
+    )
+    assert q.respellings == (Respelling("6.4 x 106", "6.4 times 10 to the sixth", "spoken"),)
+
+
+def test_bare_read_as_whose_opening_parenthesis_was_lost_is_still_a_guide():
+    q = stem_case(
+        "What is the asymptote of the hyperbola -‐ = 1 25 49 read as: the quantity x minus 3 "
+        "squared over 25 equals 1)?",
+        "24) MATH Short Answer ",
+    )
+    assert q.stem == "What is the asymptote of the hyperbola -‐ = 1 25 49?"
+    assert q.respellings == (
+        Respelling("-‐ = 1 25 49", "the quantity x minus 3 squared over 25 equals 1", "spoken"),
+    )
+
+
+def test_read_as_whose_closing_parenthesis_was_lost_is_still_a_guide():
+    q = stem_case(
+        "Which of the following points lies on the curve with equation y = 2x3 |5x | + 3 (read as: "
+        "y equals 2 x cubed minus the absolute value of 5 x plus 3?",
+        "21) MATH Multiple Choice ",
+    )
+    assert (
+        q.stem == "Which of the following points lies on the curve with equation y = 2x3 |5x | + 3?"
+    )
+    assert q.respellings == (
+        Respelling(
+            "y = 2x3 |5x | + 3",
+            "y equals 2 x cubed minus the absolute value of 5 x plus 3",
+            "spoken",
+        ),
+    )
+
+
+def test_a_read_as_label_with_nothing_after_it_is_left_alone():
+    assert extract_guides("Which is it? Read as:") == ("Which is it? Read as:", ())
+    assert extract_guides("Which is it? Read as: )") == ("Which is it? Read as: )", ())

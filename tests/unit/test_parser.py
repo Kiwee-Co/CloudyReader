@@ -633,8 +633,6 @@ def test_real_world_guide_forms(written, guide):
         "the item [sic] was",
         "the item [aq] was",
         "the item [see note] was",
-        "the item (read as: x squared plus two x) was",
-        "the item (read as: 1) was",
         "the item (also read as: 3) was",
     ],
 )
