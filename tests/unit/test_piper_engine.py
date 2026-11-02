@@ -127,7 +127,7 @@ def engine(voices_dir: Path, fake: FakePiperVoice) -> PiperEngine:
 
 def test_engine_key_and_version(engine):
     assert engine.key == "piper"
-    assert engine.version == f"piper-tts-{importlib.metadata.version('piper-tts')}+r3"
+    assert engine.version == f"piper-tts-{importlib.metadata.version('piper-tts')}+r4"
 
 
 def test_available_when_piper_is_importable(engine, monkeypatch):
@@ -549,6 +549,22 @@ def test_render_keeps_words_apart_around_a_block(engine, voice, raw, expected):
     text = engine.render(seg(raw, Override("pharynx", *PHARYNX_IPA)), voice)
 
     assert " ".join(text.split()) == expected
+
+
+POTASSIUM = Override("Potassium", "pəˈtæsiəm", "lexicon")
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("Potassium-40 decays.", "[[pətˈæsiəm]] 40 decays."),
+        ("W) Potassium-40, X) Potassium-39", "W) [[pətˈæsiəm]] 40, X) [[pətˈæsiəm]] 39"),
+        ("Potassium-argon dating", "[[pətˈæsiəm]] -argon dating"),
+    ],
+)
+def test_render_drops_the_hyphen_between_a_block_and_a_mass_number(engine, voice, raw, expected):
+    # Regression: espeak reads a text part that opens with "-40" as "minus forty".
+    assert engine.render(seg(raw, POTASSIUM), voice) == expected
 
 
 def test_render_leaves_possessives_to_espeak_instead_of_spelling_out_the_s(engine, voice):

@@ -23,7 +23,7 @@ from cloudyreader.voices import KEY_PREFIX, is_safe_name, scan_installed
 _LOG = logging.getLogger(__name__)
 
 # Bump when rendering or silence logic changes, so cached WAVs from older code are not reused.
-_RENDER_REVISION = 3
+_RENDER_REVISION = 4
 # espeak-ng keeps process-wide state, so one lock covers every engine instance.
 _SYNTH_LOCK = threading.Lock()
 # Voice maps carry the IPA letter U+0261, never ASCII "g", which hand-written IPA tends to use.
@@ -169,14 +169,17 @@ def _substitute(text: str, blocks: dict[str, str], symbols: frozenset[str]) -> t
     """Swap whole-word surfaces for `[[ipa]]` blocks in one pass, longest surface first."""
     surfaces = "|".join(re.escape(s) for s in sorted(blocks, key=len, reverse=True))
     # No match before apostrophe + letter: Piper cannot carry a spoken "'s" after a block.
-    pattern = re.compile(rf"(?<!\w)(?P<surface>{surfaces})(?!\w)(?!['’]\w)(?P<tail>{_TRAILING})")
+    # The hyphen of "Potassium-40" goes: espeak reads a part opening with "-40" as "minus forty".
+    pattern = re.compile(
+        rf"(?<!\w)(?P<surface>{surfaces})(?!\w)(?!['’]\w)(?:-(?=\d)|(?P<tail>{_TRAILING}))"
+    )
     used: set[str] = set()
 
     def swap(match: re.Match[str]) -> str:
         surface = match.group("surface")
         used.add(surface)
         start, end = match.span()
-        marks = "".join(c for c in match.group("tail") if c in _MARKS and c in symbols)
+        marks = "".join(c for c in (match.group("tail") or "") if c in _MARKS and c in symbols)
         # Piper only separates a block from its neighbours when a space sits beside it.
         prev = text[start - 1] if start else " "
         following = text[end] if end < len(text) else " "
