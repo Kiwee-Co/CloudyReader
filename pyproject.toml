@@ -1,0 +1,46 @@
+[project]
+name = "cloudyreader"
+version = "0.1.0"
+description = "Reads US DOE National Science Bowl questions aloud with science-aware pronunciation."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # spacy 3.7.5 (forced by the v0.5.4 models) imports click; typer 0.27 no longer installs it.
+    "click==8.5.0",
+    "en-ner-craft-md @ https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_ner_craft_md-0.5.4.tar.gz",
+    "httpx==0.28.1",
+    "jdk4py==25.0.2.1",
+    "piper-tts==1.8.0",
+    "py2opsin==1.2.0",
+    "pyside6-essentials==6.12.0",
+    "scispacy==0.6.2",
+]
+
+[project.scripts]
+cloudyreader = "cloudyreader.__main__:main"
+
+[dependency-groups]
+dev = [
+    "pytest==9.2.0",
+    "pytest-cov==7.1.0",
+    "pytest-qt==4.5.0",
+    "ruff==0.17.3",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.28,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra"]
+qt_api = "pyside6"

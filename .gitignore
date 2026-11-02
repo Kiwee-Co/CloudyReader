@@ -1,0 +1,12 @@
+.venv/
+.data/
+.cache/
+__pycache__/
+*.pyc
+*.wav
+.pytest_cache/
+.ruff_cache/
+.coverage
+dist/
+build/
+.DS_Store
