@@ -22,6 +22,14 @@ CONFIRM ?= no
 ONLINE ?= 0
 ## 1 = `make doctor` also checks each asset's SHA256
 VERIFY ?= 0
+## app bundle name for `make app`
+APP_NAME ?= Cloudy Reader
+## icon candidate for `make app` (empty: build_app.sh reads assets/icons/default.txt)
+ICON ?=
+## bundle the Kokoro engine in `make app`: auto, 0 or 1
+KOKORO ?= auto
+## output dir for `make app`
+OUT ?= dist
 
 export UV_CACHE_DIR := $(CURDIR)/.cache/uv
 STAMPS := .cache/stamps
@@ -36,7 +44,7 @@ FETCH_NET = $(if $(filter 1,$(OFFLINE)),--offline)
 GATE_MARKERS = not model and not voice and not network and not java
 FAST_MARKERS = not slow and not network and not model and not voice and not java
 
-run test test-fast samples smoke-live: export CLOUDYREADER_DATA_DIR := $(CURDIR)/.data
+run test test-fast samples smoke-live app: export CLOUDYREADER_DATA_DIR := $(CURDIR)/.data
 
 # doctor UV ONLINE VERIFY VOICE...: read-only checks; exit 1 when a required item is missing.
 define DOCTOR_SH
@@ -98,25 +106,31 @@ if [ -e .pytest_cache ]; then rm -r .pytest_cache; fi
 if [ -e .ruff_cache ]; then rm -r .ruff_cache; fi
 if [ -e .coverage ]; then rm .coverage; fi
 if [ -e htmlcov ]; then rm -r htmlcov; fi
-if [ -e build ]; then rm -r build; fi
 if [ -e dist ]; then rm -r dist; fi
 if [ -e .cache/pycache ]; then rm -r .cache/pycache; fi
 if [ -e cloudyreader/__pycache__ ]; then rm -r cloudyreader/__pycache__; fi
 if [ -e tests/__pycache__ ]; then rm -r tests/__pycache__; fi
 if [ -e tests/smoke/__pycache__ ]; then rm -r tests/smoke/__pycache__; fi
+if [ -e scripts/__pycache__ ]; then rm -r scripts/__pycache__; fi
+endef
+
+# Literal paths: the default bundle only, whatever APP_NAME or OUT say.
+define CLEAN_APP_CMDS
+if [ -e "dist/Cloudy Reader.app" ]; then rm -r "dist/Cloudy Reader.app"; fi
+if [ -e build ]; then rm -r build; fi
 endef
 
 .PHONY: help setup deps lock models voices kokoro doctor run test test-fast check fmt precommit \
-        ci app samples smoke-live clean clean-all FORCE
+        ci app icons open-icons samples smoke-live clean clean-app clean-all FORCE
 
 help: ## Show targets and overridable variables
 	@echo "usage: make <target> [VAR=value ...]"
 	@echo
 	@echo "targets:"
-	@awk 'BEGIN {FS = ":.*## "} /^[a-z][a-z-]*:.*## / {printf "  %-10s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*## "} /^[a-z][a-z-]*:.*## / {printf "  %-11s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo
 	@echo "variables:"
-	@awk '/^## / {doc = substr($$0, 4); next} /^[A-Z_]+ [?]= / {split($$0, kv, " [?]= "); printf "  %-8s %s (default: %s)\n", kv[1], doc, kv[2]} {doc = ""}' $(MAKEFILE_LIST)
+	@awk '/^## / {doc = substr($$0, 4); next} /^[A-Z_]+ [?]=/ {val = substr($$0, index($$0, "?=") + 2); sub(/^ +/, "", val); printf "  %-9s %s (default: %s)\n", $$1, doc, (val == "" ? "empty" : val)} {doc = ""}' $(MAKEFILE_LIST)
 
 setup: $(STAMPS)/deps $(STAMPS)/models $(STAMPS)/voices ## deps + models + voices, idempotent via .cache/stamps/
 
@@ -186,8 +200,20 @@ ci: ## Commit gate: check, then test, then precommit
 	$(MAKE) --no-print-directory test
 	$(MAKE) --no-print-directory precommit
 
-app: ## Build dist/cloudyreader.app via scripts/build_app.sh (stream E), else print pending
-	@if [ -f scripts/build_app.sh ]; then bash scripts/build_app.sh; else echo "pending: scripts/build_app.sh (stream E) not written yet"; fi
+app: $(STAMPS)/deps $(STAMPS)/models $(STAMPS)/packaging ## Build dist/Cloudy Reader.app (self-contained, ad-hoc signed); ICON=<name> KOKORO=auto|0|1
+	@case "$(KOKORO)" in auto|0|1) ;; *) echo "KOKORO must be auto, 0 or 1 (got '$(KOKORO)')" >&2; exit 1 ;; esac
+	@if [ -f scripts/build_app.sh ]; then APP_NAME="$(APP_NAME)" ICON="$(ICON)" KOKORO="$(KOKORO)" OUT="$(OUT)" bash scripts/build_app.sh; else echo "pending: scripts/build_app.sh (pkg agent) not written yet; it builds \"$(OUT)/$(APP_NAME).app\""; fi
+
+# After models, so two uv processes never write .venv at once under make -j.
+$(STAMPS)/packaging: $(STAMPS)/models pyproject.toml uv.lock
+	$(UV) sync --frozen --inexact --group packaging $(UV_NET)
+	@mkdir -p $(@D) && touch $@
+
+icons: ## Regenerate the 4 icon candidates and assets/icons/preview.png
+	@if [ -f scripts/make_icons.py ]; then $(UV_RUN) $(PYTHON) scripts/make_icons.py; else echo "pending: scripts/make_icons.py (icons agent) not written yet"; fi
+
+open-icons: ## Open assets/icons/preview.png
+	@if [ -f assets/icons/preview.png ]; then open assets/icons/preview.png; else echo "assets/icons/preview.png missing: run make icons"; fi
 
 samples: ## Extract NSB sample PDFs to .data/samples (scripts/extract_samples.py; needs pdftotext)
 	@if [ -f scripts/extract_samples.py ]; then $(UV_RUN) $(PYTHON) scripts/extract_samples.py; else echo "pending: scripts/extract_samples.py (corpus agent) not written yet"; fi
@@ -196,13 +222,17 @@ smoke-live: ## Live PubChem + UniProt check (scripts/live_smoke.py); never in ci
 	@echo "smoke-live needs internet access to PubChem and UniProt: run it OUTSIDE the agent sandbox."
 	@if [ -f scripts/live_smoke.py ]; then $(UV_RUN) $(PYTHON) scripts/live_smoke.py; else echo "pending: scripts/live_smoke.py (s3o-opsin) not written yet"; fi
 
-clean: ## Remove caches and build artifacts; never .data/ or .venv/
+clean: clean-app ## Remove caches and build artifacts (runs clean-app); never .data/ or .venv/
 	$(CLEAN_CMDS)
 
+clean-app: ## Remove only "dist/Cloudy Reader.app" and build/
+	$(CLEAN_APP_CMDS)
+
 clean-all: ## clean, plus .venv and .cache; needs CONFIRM=yes; never .data/
-	@echo "clean-all removes: .pytest_cache .ruff_cache .coverage htmlcov build dist .venv .cache"
+	@echo "clean-all removes: .pytest_cache .ruff_cache .coverage htmlcov dist build .venv .cache"
 	@if [ -d .cache ]; then echo "  .cache holds: $$(ls -A .cache | tr '\n' ' ')"; fi
 	@if [ "$(CONFIRM)" != yes ]; then echo "refusing: re-run as 'make clean-all CONFIRM=yes'" >&2; exit 1; fi
+	$(CLEAN_APP_CMDS)
 	$(CLEAN_CMDS)
 	if [ -e .venv ]; then rm -r .venv; fi
 	if [ -e .cache ]; then rm -r .cache; fi
