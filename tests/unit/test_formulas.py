@@ -146,8 +146,6 @@ NOT_FORMULAS = [
     "As-is and In-depth",
     "H-bond and O-ring",
     "pH is 7",
-    "mRNA and tRNA",
-    "HIV, DNA and ATP",
     "X-ray and 5K run",
     "Vitamin A1 and Q10",
     "Pb-206 decays",
@@ -504,8 +502,341 @@ def test_no_spaced_formula_is_ever_named() -> None:
         assert name not in spoken
 
 
+ACRONYMS = [
+    ("ATP", "A T P"),
+    ("ADP and AMP", "A D P and A M P"),
+    ("GTP", "G T P"),
+    ("DNA", "D N A"),
+    ("RNA", "R N A"),
+    ("mRNA", "m R N A"),
+    ("tRNA", "t R N A"),
+    ("rRNA", "r R N A"),
+    ("cAMP", "c A M P"),
+    ("NADH", "N A D H"),
+    ("NADPH", "N A D P H"),
+    ("PCR", "P C R"),
+    ("HIV", "H I V"),
+    ("UV light", "U V light"),
+    ("CFC", "C F C"),
+    ("LED", "L E D"),
+    ("DNA's helix", "D N A's helix"),
+    ("DNA-binding", "D N A-binding"),
+    ("HIV, DNA and ATP", "H I V, D N A and A T P"),
+    # A plural keeps the letter's apostrophe so the engine says "pees", not "P s".
+    ("ATPs", "A T P's"),
+    ("LEDs", "L E D's"),
+    # The oxidized coenzymes carry a charge.
+    ("NAD+", "N A D plus"),
+    ("NADP+", "N A D P plus"),
+]
+
+
+@pytest.mark.parametrize(("raw", "spoken"), ACRONYMS)
+def test_acronyms_are_spelled(raw: str, spoken: str) -> None:
+    assert speak_formulas(raw) == spoken
+    assert both(raw) == spoken
+
+
+LETTERS_AND_DIGITS = [
+    ("BRCA1", "B R C A one"),
+    ("TP53", "T P fifty-three"),
+    ("CD4", "C D four"),
+    ("SAR11", "S A R eleven"),
+    ("PRC2", "P R C two"),
+    ("CA1", "C A one"),
+    ("FE2", "F E two"),
+    ("G3P", "G three P"),
+    ("E3SM", "E three S M"),
+    ("AK47", "A K forty-seven"),
+    ("WW2", "W W two"),
+    ("MP3", "M P three"),
+]
+
+
+@pytest.mark.parametrize(("raw", "spoken"), LETTERS_AND_DIGITS)
+def test_capitals_with_digits_are_spelled_with_number_words(raw: str, spoken: str) -> None:
+    assert speak_formulas(raw) == spoken
+    assert both(raw) == spoken
+
+
+def test_a_charge_after_capitals_and_digits_is_spoken() -> None:
+    assert speak_formulas("FE2+ and NH4+") == "F E two plus and N H four plus"
+    assert speak_formulas("PRC2") == "P R C two"
+
+
+def test_a_syllable_of_a_respelling_is_not_an_acronym() -> None:
+    assert speak_formulas("core-UN-dum") == "core-UN-dum"
+    assert speak_formulas("UV-B and DNA-binding") == "U V-B and D N A-binding"
+    assert speak_formulas("anti-DNA antibodies") == "anti-D N A antibodies"
+
+
+def test_p_protein_names() -> None:
+    assert speak_formulas("p53") == "p fifty-three"
+    assert speak_formulas("p21") == "p twenty-one"
+    assert speak_formulas("the p53 protein") == "the p fifty-three protein"
+    assert speak_formulas("p53-dependent") == "p fifty-three-dependent"
+
+
+GENE_SYMBOLS = (
+    "CFTR HBB DMD APOE HTT MYC KRAS HRAS NRAS EGFR PTEN SRY ACTB GAPDH LDLR HEXA VHL ABO".split()
+)
+
+
+@pytest.mark.parametrize("symbol", GENE_SYMBOLS)
+def test_gene_symbols_are_spelled(symbol: str) -> None:
+    assert speak_formulas(f"the {symbol} gene") == f"the {' '.join(symbol)} gene"
+
+
+# Ordinary words, words made of capitals, names with a digit and pH are not spelled.
+NOT_ACRONYMS = [
+    "US",
+    "IS",
+    "OF",
+    "HOW",
+    "NO",
+    "NOT",
+    "ANSWER",
+    "THE",
+    "TOSS-UP",
+    "BONUS",
+    "NASA",
+    "LASER",
+    "COVID19",
+    "pH",
+    "Vitamin A1 and Q10",
+    "the P450 enzyme",
+    "mp3 and p. 53",
+    "p5 and p530 and pp53",
+    "p value",
+    "Page 3 of 12",
+]
+
+
+@pytest.mark.parametrize("text", NOT_ACRONYMS)
+def test_ordinary_words_are_not_spelled_as_acronyms(text: str) -> None:
+    assert speak_formulas(text) == text
+
+
+# R5: an acronym or gene symbol is said as letters, never swapped for what it stands for.
+R5_ACRONYMS = {
+    "ATP": ["adenosine", "triphosphate", "energy"],
+    "DNA": ["deoxyribonucleic", "acid", "genetic"],
+    "TP53": ["tumor", "suppressor", "protein"],
+    "BRCA1": ["breast", "cancer"],
+    "NADH": ["nicotinamide", "dinucleotide"],
+    "PCR": ["polymerase", "chain", "reaction"],
+    "CFTR": ["cystic", "fibrosis", "regulator"],
+    "p53": ["tumor", "guardian"],
+}
+
+
+@pytest.mark.parametrize(("symbol", "names"), R5_ACRONYMS.items())
+def test_acronym_is_never_replaced_by_a_name(symbol: str, names: list[str]) -> None:
+    spoken = both(symbol).lower()
+    for name in names:
+        assert name not in spoken
+    assert re.fullmatch(r"[A-Za-z' -]+", both(symbol))
+
+
+# The six golden cases that need acronym spelling (05, 07, 08, 09, 12 and 45).
+ACRONYM_GOLDEN = [
+    (
+        "During DNA replication, which enzyme joins the Okazaki fragments into a strand?",
+        "During D N A replication, which enzyme joins the Okazaki fragments into a strand?",
+    ),
+    (
+        "Mutations in the gene TP53, which encodes the protein p53, are found in cancers. "
+        "What term describes the cell death that p53 can trigger?",
+        "Mutations in the gene T P fifty-three, which encodes the protein p fifty-three, are "
+        "found in cancers. What term describes the cell death that p fifty-three can trigger?",
+    ),
+    (
+        "ATP synthase uses a gradient of which ion to drive the phosphorylation of ADP?",
+        "A T P synthase uses a gradient of which ion to drive the phosphorylation of A D P?",
+    ),
+    (
+        "Which organelle is the main site of ATP production in eukaryotic cells?",
+        "Which organelle is the main site of A T P production in eukaryotic cells?",
+    ),
+    ("BRCA1", "B R C A one"),
+    ("CFTR", "C F T R"),
+    ("HBB", "H B B"),
+    ("DMD", "D M D"),
+]
+
+
+@pytest.mark.parametrize(("raw", "spoken"), ACRONYM_GOLDEN)
+def test_golden_acronym_cases(raw: str, spoken: str) -> None:
+    assert both(raw) == spoken
+
+
+# Real excerpts: PDF text flattens "x squared" to "x2" and "(x - 5) squared" to "(x - 5)2".
+FLAT_POWERS = [
+    ("x2 + 3y", "x squared plus 3y"),
+    (f"(x {EN_DASH} 5)2", "(x minus 5) squared"),
+    (f"5x2 {EN_DASH} x {EN_DASH} 12yz2 + 9", "5 x squared minus x minus 12 y z squared plus 9"),
+    ("9xy2 + 4", "9 x y squared plus 4"),
+    ("4πr2", "4 pi r squared"),
+    ("x3", "x cubed"),
+    ("x4", "x to the fourth"),
+    ("E=mc2", "E equals m c squared"),
+    ("(a + b)2", "(a plus b) squared"),
+    ("f(x)2", "f(x) squared"),
+    # Real excerpts with h as a variable: "2h" is not two hours, and "x2 close" is not prose.
+    (f"h2 + 2h {EN_DASH} 120", "h squared plus 2h minus 120"),
+    ("6h = 36 + n", "6h equals 36 plus n"),
+    (
+        f"open parenthesis 36 {EN_DASH} x2 close parenthesis",
+        "open parenthesis 36 minus x squared close parenthesis",
+    ),
+]
+
+
+@pytest.mark.parametrize(("raw", "spoken"), FLAT_POWERS)
+def test_flattened_powers(raw: str, spoken: str) -> None:
+    assert both(raw) == spoken
+    assert both(spoken) == spoken
+
+
+# Names with a digit, subscript pairs, a bare 1, and an answer note keep the digit.
+@pytest.mark.parametrize(
+    ("raw", "spoken"),
+    [
+        ("x1 and x2", "x1 and x2"),
+        ("(x1, y1) and (x2, y2)", "(x1, y1) and (x2, y2)"),
+        ("a1 and a2", "a1 and a2"),
+        ("G1 and G2", "G1 and G2"),
+        ("F2 generation", "F two generation"),
+        ("Q10 and KIN10", "Q10 and K I N ten"),
+        ("mp3 and p53x", "mp3 and p53x"),
+        ("x1", "x1"),
+        ("(Solution: x2 + 3)", "(Solution: x2 plus 3)"),
+        ("(1)2 and (see Figure 1)2", "(1)2 and (see Figure 1)2"),
+        (
+            "Ca(OH)2 and (NH4)2SO4",
+            "C A open parenthesis O H close parenthesis two and "
+            "open parenthesis N H four close parenthesis two S O four",
+        ),
+    ],
+)
+def test_digits_that_are_not_powers_stay(raw: str, spoken: str) -> None:
+    assert both(raw) == spoken
+
+
+# Item 2: a size is "N by M". The same token with no such noun is a power ("ANSWER: 4x4" is 4x^4).
+@pytest.mark.parametrize(
+    ("raw", "spoken"),
+    [
+        ("a 2x2 matrix", "a 2 by 2 matrix"),
+        ("a 3x3 Punnett square", "a 3 by 3 Punnett square"),
+        ("a 4x4 grid", "a 4 by 4 grid"),
+        ("a 10x10 board", "a 10 by 10 board"),
+        ("2X2 table", "2 by 2 table"),
+        ("two 2x3 matrices", "two 2 by 3 matrices"),
+        ("the 3x3 magic square", "the 3 by 3 magic square"),
+        # A bare "square" takes no dimensions: these are 4x^2 and 9x^2.
+        ("Is 4x2 a perfect square?", "Is 4 x squared a perfect square?"),
+        ("Is 9x2 a perfect square trinomial?", "Is 9 x squared a perfect square trinomial?"),
+        # No dimension noun: a power, as before.
+        ("ANSWER: 4x4", "ANSWER: 4 x to the fourth"),
+        ("2x2 + 3x", "2 x squared plus 3x"),
+        ("a 2x2 plus 3x matrix", "a 2 x squared plus 3x matrix"),
+    ],
+)
+def test_a_size_is_not_a_power(raw: str, spoken: str) -> None:
+    assert both(raw) == spoken
+
+
+def test_poh_is_spelled_because_the_voice_drops_its_h() -> None:
+    # Measured through the Piper voice: "pOH" came out "pee oh". "pH" and NSB, STP, NMR, CSF,
+    # TNT and CCC are already read letter by letter, so they stay as written.
+    assert speak_formulas("What is the pOH?") == "What is the p O H?"
+    for text in ["pH", "NSB", "STP", "NMR", "CSF", "TNT", "CCC"]:
+        assert speak_formulas(text) == text
+
+
+# A dash flattened into a power of ten is the exponent's sign. The last four are real corpus lines
+# (Round-10A #239, Round-9A choices, Round-17A answer).
+TEN_POWERS = [
+    (f"Kw = 10{EN_DASH}14", "Kw equals ten to the minus fourteen"),
+    (f"[H+] = 10{EN_DASH}3 M", "H plus equals ten to the minus three molar"),
+    (f"pH = {EN_DASH}log 10{EN_DASH}3", "pH equals minus log ten to the minus three"),
+    (f"10{EN_DASH}3 = 0.001", "ten to the minus three equals 0.001"),
+    (f"Kw = 10{EN_DASH}14.", "Kw equals ten to the minus fourteen."),
+    (f"Kw = 10{MINUS}14", "Kw equals ten to the minus fourteen"),
+    (
+        f"the concentration of hydroxide ions is 10 {EN_DASH}4 molar?",
+        "the concentration of hydroxide ions is ten to the minus four molar?",
+    ),
+    (f"10 {EN_DASH}16", "ten to the minus sixteen"),
+    (f"10 {EN_DASH}13", "ten to the minus thirteen"),
+    (f"10 {EN_DASH}10", "ten to the minus ten"),
+    (f"10 {EN_DASH}7", "ten to the minus seven"),
+    (f"ANSWER: 10 {EN_DASH}16", "ANSWER: ten to the minus sixteen"),
+    (f"10 {MINUS}7", "ten to the minus seven"),
+    (f"[H+] = 10{EN_DASH}12 M", "H plus equals ten to the minus twelve molar"),
+]
+
+
+@pytest.mark.parametrize(("raw", "spoken"), TEN_POWERS)
+def test_a_flattened_power_of_ten_with_a_negative_exponent(raw: str, spoken: str) -> None:
+    assert both(raw) == spoken
+    assert both(spoken) == spoken
+
+
+# A range beside a range word, a subtraction with spaces, and a hyphen range stay as written.
+@pytest.mark.parametrize(
+    ("raw", "spoken"),
+    [
+        (f"ages 10{EN_DASH}14", f"ages 10{EN_DASH}14"),
+        (f"10{EN_DASH}15 minutes", f"10{EN_DASH}15 minutes"),
+        (f"grades 10{EN_DASH}12", f"grades 10{EN_DASH}12"),
+        (f"between 10{EN_DASH}14 and 20", f"between 10{EN_DASH}14 and 20"),
+        # A tight 10-N with no cue (N of two digits, no "=", no unit) is a range, not 10^-N.
+        (f"pH 10{EN_DASH}12", f"pH 10{EN_DASH}12"),
+        (
+            f"Questions 10{EN_DASH}12 refer to the graph.",
+            f"Questions 10{EN_DASH}12 refer to the graph.",
+        ),
+        (f"Store it at 10{EN_DASH}15 °C.", f"Store it at 10{EN_DASH}15 degrees Celsius."),
+        (f"It grows 10{EN_DASH}12 cm long.", f"It grows 10{EN_DASH}12 centimeters long."),
+        (f"10 {EN_DASH} 4", f"10 {EN_DASH} 4"),
+        ("10-14 days", "10-14 days"),
+        (f"10 {EN_DASH} 4 = 6", "10 minus 4 equals 6"),
+        (f"3.28 × 10{EN_DASH}10", "three point two eight times ten to the minus ten"),
+    ],
+)
+def test_ranges_and_subtractions_beside_a_ten_stay(raw: str, spoken: str) -> None:
+    assert both(raw) == spoken
+
+
+def test_equations_with_a_wingdings_arrow_and_a_fraction_slash() -> None:
+    grave_a, slash = "\u00e0", "\u2044"
+    assert both(f"reaction: 2CaO {grave_a} 2Ca + O2") == (
+        "reaction: two C A O yields two C A plus O two"
+    )
+    assert both(f"Mg + ZnBr2 {grave_a} Zn + MgBr2") == (
+        "M G plus Z N B R two yields Z N plus M G B R two"
+    )
+    assert both(f"(3 times the square root of 3) {slash} 4") == (
+        "(3 times the square root of 3) over 4"
+    )
+
+
+def test_a_word_after_a_charge_word_is_not_a_formula_on_a_second_pass() -> None:
+    once = speak_formulas("CONCENTRATION OF H+ IONS)")
+    assert once == "CONCENTRATION OF H plus IONS)"
+    assert speak_formulas(once) == once
+    # An equation partner of up to three symbols is still spelled.
+    assert speak_formulas("NO + O3 → NO2 + O2") == "N O plus O three yields N O two plus O two"
+    assert speak_formulas("KOH + HCl") == "K O H plus H C L"
+
+
 def test_speak_formulas_is_idempotent() -> None:
-    text = "Ca(OH)2 and H2SO4 give Ca2+ and SO4 2-, so [H+] rises to 6.02 × 10^23 per x^2."
+    text = (
+        "Ca(OH)2 and H2SO4 give Ca2+ and SO4 2-, so [H+] rises to 6.02 × 10^23 per x^2. "
+        "NAD+ makes ATPs; TP53, p53 and mRNA stay letters. Cu(s) + HCl(aq) technetium-99m"
+    )
     once = speak_formulas(text)
     assert speak_formulas(once) == once
 
@@ -527,7 +858,7 @@ GOLDEN_STEMS = [
     (
         "Cellular respiration oxidizes glucose, C6H12O6, to produce CO2, H2O, and ATP.",
         "Cellular respiration oxidizes glucose, C six H twelve O six, to produce C O two, "
-        "H two O, and ATP.",
+        "H two O, and A T P.",
     ),
     (
         "When solid NaCl dissolves in water, which of the following pairs of ions is produced?",

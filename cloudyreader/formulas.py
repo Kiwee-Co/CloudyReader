@@ -94,7 +94,7 @@ def _accepted(m: re.Match[str], body: str, spelled: tuple[list[str], int, bool, 
     if m["charge"] or counted or (count_elements >= 2 and mixed):
         return True
     if next_to_operator(text, start, end):
-        return True
+        return count_elements <= 3  # "NO + O3", "KOH + HCl", but not the word IONS after "plus"
     # All caps, no digit: only a known formula, and never a syllable of a hyphenated word
     # ("my-OH-sis").
     return (
@@ -163,6 +163,30 @@ _FLAT_SCIENTIFIC = re.compile(
     r"(?<![\w.^])(?P<mantissa>\d+(?:\.\d+)?)\s*(?:×|times)\s*10(?P<sign>[-−–]?)(?P<exp>\d+)"
     r"(?!\w|\.\d)"
 )
+# PDF text flattens 10^-4 to "10–4" or "10 –4". "10 –4" (a space before the dash, none after)
+# is the exponent. A tight one is only with a cue: a single-digit exponent, "=", "times", "log" or a
+# concentration unit beside it. "pH 10–12", "Questions 10–12", "10–15 °C" stay ranges.
+_TEN_POWER = re.compile(
+    r"(?<![\w.])10(?P<tight>[\u2013\u2212]|\s+[\u2013\u2212-])(?P<exp>\d+)(?!\w|\.\d)"
+)
+_EXPONENT_CUE_BEFORE = re.compile(r"(?:=|\bequals|\u00d7|\btimes|\blog|\bln)\s*$")
+_EXPONENT_UNIT_AFTER = re.compile(
+    r"\s+(?:M|mM|molar|millimolar|micromolar|mol|moles?|L|liters?)\b", re.IGNORECASE
+)
+
+
+def _speak_ten_power(m: re.Match[str]) -> str:
+    if not m["tight"][0].isspace():
+        cue = (
+            int(m["exp"]) < 10
+            or _EXPONENT_CUE_BEFORE.search(m.string[: m.start()])
+            or _EXPONENT_UNIT_AFTER.match(m.string, m.end())
+        )
+        if not cue:
+            return m.group()
+    return f"ten {_power('-', m['exp'])}"
+
+
 _EXPONENT = re.compile(
     r"(?P<base>[A-Za-z0-9)]+)\^(?P<sign>[-−]?)(?P<exp>\d+|[A-Za-z](?![A-Za-z0-9]))"
 )
@@ -187,6 +211,51 @@ def _speak_exponent(m: re.Match[str]) -> str:
         base = " ".join(base)  # "ax" would be read as a word
     power = _power(sign, exp) if exp.isdigit() else f"to the {'minus ' if sign else ''}{exp}"
     return f"{base} {power}"
+
+
+# PDF text flattens "x squared" to "x2". A lowercase variable and a digit 2-9 is a power; capitals
+# are names (F2, G1, Q10). A text that also holds "x1" uses subscripts, and an answer note stays.
+_FLAT_POWER = re.compile(
+    r"(?<![\w.])(?P<coef>\d*)(?P<letters>[a-z]{0,2}[xyzabcrh])(?P<digit>[2-9])(?![\w.])"
+)
+# "a 2x2 matrix" and "a 3x3 Punnett square" are sizes. A noun that takes dimensions follows, up to
+# two words on; "4x4" alone stays 4 x to the fourth. A bare "square" is not one: "Is 4x2 a perfect
+# square?" is 4 x squared.
+_DIMENSION_NOUN = (
+    r"(?:matrix|matrices|grids?|arrays?|boards?|tables?|box(?:es)?|cross(?:es)?|designs?"
+    r"|(?:Punnett|magic)\s+squares?)"
+)
+_DIMENSIONS = re.compile(
+    r"(?<![\w.])(?P<a>\d+)[x\u00d7](?P<b>\d+)(?![\w.])"
+    rf"(?=(?:\s+(?!perfect\b)[A-Za-z-]+){{0,2}}\s+{_DIMENSION_NOUN}\b)",
+    re.IGNORECASE,
+)
+_BRACKET_POWER = re.compile(r"\((?P<inner>[^()]*)\)(?P<digit>[2-9])(?![\w.])")
+_ANSWER_NOTE = re.compile(r"\(?\bSolution\s*:", re.IGNORECASE)
+_GROUP_WORDS = frozenset(
+    "plus minus times over divided by squared cubed to the of square root absolute value".split()
+)
+
+
+def _in_answer_note(m: re.Match[str]) -> bool:
+    note = _ANSWER_NOTE.search(m.string)
+    return bool(note) and m.start() > note.start()
+
+
+def _speak_flat_power(m: re.Match[str]) -> str:
+    letters, text = m["letters"], m.string
+    if _in_answer_note(m) or re.search(rf"(?<![\w.]){letters[-1]}1(?![\w.])", text):
+        return m.group()  # "x1 and x2" are subscripts
+    lead = f"{m['coef']} " if m["coef"] else ""
+    return f"{lead}{' '.join(letters)} {_power('', m['digit'])}"
+
+
+def _speak_bracket_power(m: re.Match[str]) -> str:
+    words = re.findall(r"[A-Za-z]+", m["inner"])
+    mathy = bool(words) and all(len(w) == 1 or w in _GROUP_WORDS for w in words)
+    if not mathy or _in_answer_note(m):
+        return m.group()  # "(1)2" and "(see Figure 1)2" are not powers
+    return f"({m['inner']}) {_power('', m['digit'])}"
 
 
 _PAREN_SLASH = re.compile(r"(?<=\))\s*/\s*(?=[\w(\[])")
@@ -248,6 +317,67 @@ def _speak_state(m: re.Match[str]) -> str:
     return f"{_render(formula, force=True)} {_STATES[m['state'].lower()]}"
 
 
+# Initialisms said letter by letter. NASA and LASER are words, so they are not listed. This is the
+# only list: normalize.py no longer spells acronyms. The voice already spells vowel-less capitals
+# (NSB, STP, NMR, CSF, TNT, CCC) and says "pH" right, so those need no entry.
+_ACRONYMS = frozenset(
+    "DNA RNA ATP ADP AMP GMP CMP UMP GTP GDP CTP UTP NAD NADH NADP NADPH FAD FADH HIV PCR UV IR "
+    "DC AC LED LCD CFC GPS MRI EKG ECG CPU USA UK UN EU DOE".split()
+)
+# Gene symbols entities.py labels as bare letters (copied, not imported). Letters, never a name.
+_GENE_SYMBOLS = frozenset(
+    "CFTR HBB DMD APOE HTT MYC KRAS HRAS NRAS EGFR PTEN SRY ACTB GAPDH LDLR HEXA VHL ABO".split()
+)
+# Measured through the Piper voice: "pOH" comes out "pee oh", the H is dropped.
+_MISREAD = frozenset({"pOH"})
+_LISTED = re.compile(
+    r"(?<![\w.])(?P<prefix>[a-z]{1,2})?(?P<word>"
+    + "|".join(sorted(_ACRONYMS | _GENE_SYMBOLS | _MISREAD, key=lambda w: (-len(w), w)))
+    + r")(?P<tail>s|\+)?(?!\w)"
+)
+# Capitals and digits: TP53, BRCA1, CD4, SAR11, G3P, E3SM. Two capitals and a digit at least.
+_LETTERS_DIGITS = re.compile(
+    r"(?<![\w.])(?=[A-Z0-9]*[A-Z][A-Z0-9]*[A-Z])(?P<token>[A-Z]+(?:\d{1,3}[A-Z]*)+)"
+    r"(?P<charge>[+\u2212](?!\w))?(?!\w)"
+)
+_WORDS_WITH_DIGITS = frozenset({"COVID"})
+_P_PROTEIN = re.compile(r"(?<![\w.])p(?P<digits>\d{2})(?!\w)")
+
+
+_BEFORE_SYLLABLE = re.compile(r"[A-Za-z]-$")
+_AFTER_SYLLABLE = re.compile(r"-[A-Za-z]")
+
+
+def _speak_listed(m: re.Match[str]) -> str:
+    prefix, word, tail = m["prefix"] or "", m["word"], m["tail"]
+    if prefix and word not in _ACRONYMS:
+        return m.group()  # a prefix belongs to nucleic acids and nucleotides: mRNA, cAMP
+    if _BEFORE_SYLLABLE.search(m.string[: m.start()]) and _AFTER_SYLLABLE.match(m.string, m.end()):
+        return m.group()  # "core-UN-dum": a syllable of a respelling, not an initialism
+    letters = " ".join(prefix + word)
+    if tail == "s":
+        return f"{letters}'s"  # ATPs -> A T P's, so the engine says the plural of P
+    return f"{letters} plus" if tail == "+" else letters
+
+
+def _speak_letters_digits(m: re.Match[str]) -> str:
+    token = m["token"]
+    if re.match(r"[A-Z]+", token).group() in _WORDS_WITH_DIGITS:
+        return m.group()
+    parts = re.findall(r"[A-Z]|\d+", token)
+    spoken = " ".join(cardinal(int(p)) if p.isdigit() else p for p in parts)
+    return f"{spoken} {_SIGN_WORD[m['charge']]}" if m["charge"] else spoken
+
+
+def spell_acronyms(text: str) -> str:
+    """Acronyms and gene symbols as letters, digits as number words: DNA -> "D N A", TP53 -> "T P
+    fifty-three", p53 -> "p fifty-three". Ordinary all-caps words (US, IS, OF, HOW, NO) and pH stay.
+    """
+    text = _LISTED.sub(_speak_listed, text)
+    text = _LETTERS_DIGITS.sub(_speak_letters_digits, text)
+    return _P_PROTEIN.sub(lambda m: f"p {cardinal(int(m['digits']))}", text)
+
+
 def _speak_electron(m: re.Match[str]) -> str:
     n = f"{m['n']} " if m["n"] else ""
     return f"{n}e {_SIGN_WORD[m['sign']]}"
@@ -268,18 +398,23 @@ def _speak_reaction_symbols(text: str) -> str:
 
 
 def speak_formulas(text: str) -> str:
-    """Formulas, ions, scientific notation, exponents and ratios to words."""
+    """Formulas, ions, acronyms, scientific notation, exponents and ratios to words."""
     text = _speak_hydrate_dots(prepare_text(text))
     text = re.sub(r"(?<=\])\s*(?=\[[A-Z])", " times ", text)  # [N2][H2] -> [N2] times [H2]
     text = _SPECIES_BRACKET.sub(_unwrap_species, text)
     text = _SCIENTIFIC.sub(_speak_scientific, text)
     text = _FLAT_SCIENTIFIC.sub(_speak_flat_scientific, text)
+    text = _TEN_POWER.sub(_speak_ten_power, text)
     text = _STATE_SYMBOL.sub(_speak_state, text)
     text = _FORMULA.sub(_render, text)
+    text = spell_acronyms(text)
     text = _ELECTRON.sub(_speak_electron, text)
     text = _speak_reaction_symbols(text)
     text = _PAREN_SLASH.sub(" over ", text)
     text = _SPACED_SLASH.sub(" over ", text)
     text = _LETTER_RATIO.sub(_speak_ratio, text)
     text = _EXPONENT.sub(_speak_exponent, text)
+    text = _DIMENSIONS.sub(lambda m: f"{m['a']} by {m['b']}", text)
+    text = _BRACKET_POWER.sub(_speak_bracket_power, text)
+    text = _FLAT_POWER.sub(_speak_flat_power, text)
     return _CARET.sub(" to the power of ", text)

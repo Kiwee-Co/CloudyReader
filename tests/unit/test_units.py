@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+
 import pytest
 
 from cloudyreader.units import (
@@ -434,6 +436,70 @@ def test_spelled_formula_output_is_not_read_as_units(text: str) -> None:
     assert speak_units(text) == text
 
 
+# The m of "technetium-99m" marks a metastable state. It is not a unit and never "meters".
+METASTABLE = [
+    ("technetium-99m", "technetium ninety-nine m"),
+    ("Technetium-99m scans", "Technetium ninety-nine m scans"),
+    ("TECHNETIUM-99m", "TECHNETIUM ninety-nine m"),
+    ("Tc-99m", "T C ninety-nine m"),
+    ("Kr-81m", "K R eighty-one m"),
+    ("In-113m", "I N one hundred thirteen m"),
+    ("99mTc", "ninety-nine m T C"),
+    ("81mKr", "eighty-one m K R"),
+    (f"technetium{EN_DASH}99m", "technetium ninety-nine m"),
+    (f"Tc{MINUS}99m", "T C ninety-nine m"),
+    ("uses technetium-99m, a tracer", "uses technetium ninety-nine m, a tracer"),
+]
+
+
+@pytest.mark.parametrize(("raw", "spoken"), METASTABLE)
+def test_metastable_isotopes_are_not_meters(raw: str, spoken: str) -> None:
+    assert speak_units(raw) == spoken
+    assert speak_units(spoken) == spoken  # idempotent
+    assert "meter" not in speak_units(raw)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "carbon-14 dating",
+        "uranium-235",
+        "uranium-238 and uranium-235",
+        "Pb-206",
+        "iodine-131",
+        "cobalt-60",
+        "C-14",
+        "U-238",
+        "nickel-78",
+        "helium-3",
+    ],
+)
+def test_other_isotope_notation_is_left_alone(text: str) -> None:
+    assert speak_units(text) == text
+
+
+@pytest.mark.parametrize(
+    ("raw", "spoken"),
+    [
+        ("5 m", "5 meters"),
+        ("5m", "5 meters"),
+        ("99 m/s", "99 meters per second"),
+        ("a 5-m rope", "a 5-meter rope"),
+        ("5mH", "5 millihenries"),
+        ("3mV", "3 millivolts"),
+        # A space breaks the notation: that is a quantity.
+        ("technetium 99 m", "technetium 99 meters"),
+    ],
+)
+def test_metastable_rule_leaves_real_meters_alone(raw: str, spoken: str) -> None:
+    assert speak_units(raw) == spoken
+
+
+def test_a_metastable_symbol_is_spelled_never_named() -> None:
+    assert "technetium" not in speak_units("Tc-99m").lower()
+    assert "krypton" not in speak_units("81mKr").lower()
+
+
 def test_units_do_not_read_spaced_subscripts_as_henries_or_siemens() -> None:
     # Regression: "6 H" was spoken "6 henries" and "2 S" "2 siemens" in PDF-flattened formulas.
     assert speak_units("C 6 H 12 O 2") == "C6H12O2"
@@ -489,6 +555,233 @@ EN_DASH_KEPT = [
 @pytest.mark.parametrize("text", EN_DASH_KEPT)
 def test_en_dash_that_is_a_dash_is_kept(text: str) -> None:
     assert speak_units(text) == text
+
+
+GRAVE_A = "\u00e0"  # a Wingdings arrow decoded as a letter
+FRACTION_SLASH = "\u2044"
+LESS_EQUAL_VARIANT = "\u2266"
+GREATER_EQUAL_VARIANT = "\u2267"
+
+# Real excerpts (m_round04, m_round06, m_round15): a dash between terms is a minus sign.
+EN_DASH_TERMS = [
+    (f"3(2x {EN_DASH} 6y + 3)", "3(2x minus 6y plus 3)"),
+    (
+        f"(6x2 {EN_DASH} 7x + 13) {EN_DASH} ({EN_DASH}x2 + 4x {EN_DASH} 3)",
+        "(6x2 minus 7x plus 13) minus (minus x2 plus 4x minus 3)",
+    ),
+    (f"6x + 18y {EN_DASH} 9", "6x plus 18y minus 9"),
+    (f"300 {EN_DASH} 200 = $100", "300 minus 200 equals 100 dollars"),
+    (f"(0 {EN_DASH} 0) =", "(0 minus 0) equals"),
+    (f"x {EN_DASH} a + b", "x minus a plus b"),
+    (f"x = 6 {EN_DASH} 2", "x equals 6 minus 2"),
+    (f"y {EN_DASH} 3.", "y minus 3."),
+    # Real lines the first version missed: a number and a variable, two variables, a bracket,
+    # and two numbers beside an operator word, "pi" or "log".
+    (f"4 {EN_DASH} x < 6 + 3x.", "4 minus x is less than 6 plus 3x."),
+    (f"15 {EN_DASH} x \u2265 3x + 6", "15 minus x is greater than or equal to 3x plus 6"),
+    (
+        f"the values of x {EN_DASH} y and 2x {MINUS} y are",
+        "the values of x minus y and 2x minus y are",
+    ),
+    (f"What is a {EN_DASH} c in terms of b?", "What is a minus c in terms of b?"),
+    (
+        f"1 over ( m {EN_DASH} n close parenthesis".replace("( m", "open parenthesis m"),
+        "1 over open parenthesis m minus n close parenthesis",
+    ),
+    (f"3x2 + 4 {EN_DASH} (3x + 2 {EN_DASH} x2)", "3x2 plus 4 minus (3x plus 2 minus x2)"),
+    (f"10 {EN_DASH} 2 times 3", "10 minus 2 times 3"),
+    (f"the value of 30 + 2 {EN_DASH} 1 {EN_DASH} 3?", "the value of 30 plus 2 minus 1 minus 3?"),
+    (f"What is 83 {EN_DASH} 19 + 17?", "What is 83 minus 19 plus 17?"),
+    (f"100 {EN_DASH} 25\u03c0", "100 minus 25 pi"),
+    (f"2 log 32 + log 40 {EN_DASH} 3 log 8", "2 log 32 plus log 40 minus 3 log 8"),
+    # A chain: each dash needs the term the previous one used as its right operand.
+    (f"y = 2x2 {EN_DASH} 5x {EN_DASH} 1", "y equals 2x2 minus 5x minus 1"),
+    (f"(x + 1) {EN_DASH} (x + 2) {EN_DASH} 3", "(x plus 1) minus (x plus 2) minus 3"),
+    (f"6 {EN_DASH} 2 {EN_DASH} 1 = 3", "6 minus 2 minus 1 equals 3"),
+    # A long chain: every dash goes, however many there are.
+    (
+        f"What is 30 + 2 {EN_DASH} 1 {EN_DASH} 3 {EN_DASH} 4 {EN_DASH} 5 {EN_DASH} 6?",
+        "What is 30 plus 2 minus 1 minus 3 minus 4 minus 5 minus 6?",
+    ),
+    # A bracket of plain numbers is math too, so the minus before it is spoken.
+    (f"What is 5 {EN_DASH} ({EN_DASH}3)?", "What is 5 minus (minus 3)?"),
+    (f"What is 8 {EN_DASH} (2)?", "What is 8 minus (2)?"),
+    (f"What is 10 {EN_DASH} (6 \u00f7 2)?", "What is 10 minus (6 divided by 2)?"),
+    (f"Evaluate: |4 {EN_DASH} (-8)|", "Evaluate: |4 minus (-8)|"),
+    (f"{EN_DASH}log 5", "minus log 5"),
+]
+
+
+@pytest.mark.parametrize(("raw", "spoken"), EN_DASH_TERMS)
+def test_en_dash_between_algebra_terms_is_a_minus(raw: str, spoken: str) -> None:
+    assert speak_units(raw) == spoken
+    assert speak_units(spoken) == spoken
+
+
+# Genuine ranges and page dashes keep their dash.
+@pytest.mark.parametrize(
+    "text",
+    [
+        f"5 {EN_DASH} 10 minutes",
+        f"Round 3 {EN_DASH} 10 points",
+        f"Page 2 {EN_DASH} Score",
+        f"Figure 3 {EN_DASH} a graph",
+        f"Repeat 5 {EN_DASH} 10 times a day",
+        f"Page 2 {EN_DASH} (continued)",
+        # A noun after the number makes the bracket a label, not arithmetic.
+        f"Round 3 {EN_DASH} (10 points)",
+        f"Figure 2 {EN_DASH} (2019 data)",
+        f"Chapter 5 {EN_DASH} (3 of 5)",
+        # A suffixed number is still a number: these are ranges, not subtractions.
+        # "over" is a preposition here, not a division.
+        # Weak cues are gone: prose "plus", "over" and "squared" never turn a range into a minus.
+        f"The trip takes 4 hours plus 1 {EN_DASH} 2 hours of rest.",
+        f"3 over 4 {EN_DASH} 1",
+        f"5 {EN_DASH} 3 squared",
+        f"Repeat 5 {EN_DASH} 10 times a day",
+        f"The drug acts over 5 {EN_DASH} 10 minutes.",
+        f"Prices rose over 2 {EN_DASH} 3 years.",
+        f"open 9am {EN_DASH} 5pm daily",
+        f"open 9 am {EN_DASH} 5 pm daily",
+        f"the 1960s {EN_DASH} 1970s",
+        f"grades 10th {EN_DASH} 12th",
+        f"the 3rd {EN_DASH} 5th centuries",
+        f"open 9:00 {EN_DASH} 17:00",
+        f"the Earth {EN_DASH} a planet",
+        f"pH 2{EN_DASH}3",
+    ],
+)
+def test_ranges_and_page_dashes_stay_dashes(text: str) -> None:
+    assert speak_units(text) == text
+
+
+@pytest.mark.parametrize(
+    ("raw", "spoken"),
+    [
+        (f"2CaO {GRAVE_A} 2Ca + O2", "2CaO yields 2Ca plus O2"),
+        # The parser leaves the grave glued to the arrow, or the paste prints "yields" after it.
+        (f"2CaO {GRAVE_A}\u2192 2Ca + O2", "2CaO yields 2Ca plus O2"),
+        # A raw private-use arrow stays (the parser maps it first); only the echo goes.
+        (f"4Fe + 3O2 {GRAVE_A}\uf0e0 2Fe2O3", "4Fe plus 3O2 \uf0e0 2Fe2O3"),
+        (f"2CaO {GRAVE_A} yields 2Ca", "2CaO yields 2Ca"),
+        (f"4Fe + 3O2 {GRAVE_A} 2Fe2O3", "4Fe plus 3O2 yields 2Fe2O3"),
+        (f"Mg + ZnBr2 {GRAVE_A} Zn + MgBr2", "Mg plus ZnBr2 yields Zn plus MgBr2"),
+        (f"atomic # of 16 {GRAVE_A} loss of 1", "atomic # of 16 yields loss of 1"),
+        (f"2 chromatids {GRAVE_A} 46 x 2 = 92", "2 chromatids yields 46 x 2 equals 92"),
+        # French and other words with no digit beside them are not arrows.
+        (f"{GRAVE_A} la carte", f"{GRAVE_A} la carte"),
+        (f"cafe {GRAVE_A} Paris", f"cafe {GRAVE_A} Paris"),
+    ],
+)
+def test_wingdings_arrow_read_as_a_letter_is_an_arrow(raw: str, spoken: str) -> None:
+    assert speak_units(raw) == spoken
+
+
+def test_glyphs_that_change_meaning_when_read_raw() -> None:
+    both = f"x {GREATER_EQUAL_VARIANT} {MINUS}2 and x {LESS_EQUAL_VARIANT} 12"
+    assert speak_units(both) == (
+        "x is greater than or equal to minus 2 and x is less than or equal to 12"
+    )
+    assert prepare_text(f"1{FRACTION_SLASH} 144") == "1/ 144"
+    assert prepare_text(f"3) {FRACTION_SLASH} 4") == "3) / 4"
+
+
+@pytest.mark.parametrize(
+    ("raw", "spoken"),
+    [
+        ("apple ~ 125", "apple approximately 125"),
+        ("Earth ~ 78%", "Earth approximately 78 percent"),
+        ("~5 m", "approximately 5 meters"),
+        ("liver ~ 7; lard", "liver approximately 7; lard"),
+        ("a ~ b", "a ~ b"),
+    ],
+)
+def test_tilde_before_a_number_is_approximately(raw: str, spoken: str) -> None:
+    assert speak_units(raw) == spoken
+
+
+CURRENCY = [
+    ("$16.50", "16 dollars 50 cents"),
+    ("$16.00", "16 dollars"),
+    ("$5", "5 dollars"),
+    ("$1", "1 dollar"),
+    ("$1,200", "1,200 dollars"),
+    ("$1,200.50", "1,200 dollars 50 cents"),
+    ("$0.50", "50 cents"),
+    ("$1.01", "1 dollar 1 cent"),
+    ("$1.5 million", "1.5 million dollars"),
+    ("$16.5", "16.5 dollars"),
+    ("costs $16.50.", "costs 16 dollars 50 cents."),
+    ("$50K salary", "50 thousand dollars salary"),
+    ("$5 MILLION", "5 million dollars"),
+    ("a $2B deal", "a 2 billion dollars deal"),
+    ("$2bn", "2 billion dollars"),
+    ("$1.2M", "1.2 million dollars"),
+    ("worth $750k.", "worth 750 thousand dollars."),
+    ("(Solution: 50 bags × $6 = $300)", "(Solution: 50 bags times 6 dollars equals 300 dollars)"),
+]
+
+
+@pytest.mark.parametrize(("raw", "spoken"), CURRENCY)
+def test_dollar_amounts(raw: str, spoken: str) -> None:
+    assert speak_units(raw) == spoken
+    assert speak_units(spoken) == spoken
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["the $ sign", "in $ and cents", "A$5 and US$ 5", "cost $x", "$5MB of data", "$50Kx"],
+)
+def test_dollar_sign_without_an_amount_is_left_alone(text: str) -> None:
+    assert speak_units(text) == text
+
+
+@pytest.mark.parametrize(
+    ("raw", "spoken"),
+    [
+        # A unit or range noun after the right number keeps the dash, even beside a cue word.
+        (f"5 {EN_DASH} 10 grams", f"5 {EN_DASH} 10 grams"),
+        (f"1 {EN_DASH} 2 cm of rain", f"1 {EN_DASH} 2 centimeters of rain"),
+        (f"Take 4 + 1 {EN_DASH} 2 hours", f"Take 4 plus 1 {EN_DASH} 2 hours"),
+        # The corpus-backed cues still read as a minus.
+        (f"10 {EN_DASH} 2 times 3", "10 minus 2 times 3"),
+        (f"What is 83 {EN_DASH} 19 + 17?", "What is 83 minus 19 plus 17?"),
+        (f"100 {EN_DASH} 25\u03c0", "100 minus 25 pi"),
+        (f"2 log 32 + log 40 {EN_DASH} 3 log 8", "2 log 32 plus log 40 minus 3 log 8"),
+        (f"(6 {EN_DASH} 2)(180) =", "(6 minus 2)(180) equals"),
+        (f"5 {EN_DASH} 3^2", "5 minus 3^2"),
+    ],
+)
+def test_two_plain_numbers_need_a_cue_or_a_unit_veto(raw: str, spoken: str) -> None:
+    assert speak_units(raw) == spoken
+
+
+def test_a_long_dash_chain_is_linear_in_time() -> None:
+    # Regression: the fixed-point loop was cubic. N=800 took 30 s; one pass takes ~10 ms.
+    started = time.perf_counter()
+    spoken = speak_units("What is 30 + " + f"1 {EN_DASH} " * 800 + "1?")
+    assert time.perf_counter() - started < 2.0
+    assert spoken.count("minus") == 800
+    assert EN_DASH not in spoken
+    started = time.perf_counter()
+    assert speak_units("What is 30 + " + f"1 {EN_DASH} " * 5000 + "1?").count("minus") == 5000
+    assert time.perf_counter() - started < 5.0
+
+
+def test_a_dash_straight_after_a_ten_is_an_exponent_sign_not_a_minus() -> None:
+    # speak_units leaves these for speak_formulas: "Kw = 10-14" is 10^-14, "is 10 -4 molar" 10^-4.
+    for text, spoken in [
+        (f"Kw = 10{EN_DASH}14", f"Kw equals 10{EN_DASH}14"),
+        (f"10{EN_DASH}3 = 0.001", f"10{EN_DASH}3 equals 0.001"),
+        (f"is 10 {EN_DASH}4 molar?", f"is 10 {EN_DASH}4 molar?"),
+        (f"W) 10 {EN_DASH}16", f"W) 10 {EN_DASH}16"),
+        (f"is 10 {MINUS}4", f"is 10 {MINUS}4"),
+        (f"Kw = 10{MINUS}14", f"Kw equals 10{MINUS}14"),
+        # Spaces on both sides keep it a subtraction.
+        (f"10 {EN_DASH} 4 = 6", "10 minus 4 equals 6"),
+        (f"10 {MINUS} 4", "10 minus 4"),
+    ]:
+        assert speak_units(text) == spoken
 
 
 def test_flattened_exponent_signs_are_left_for_the_formula_pass() -> None:

@@ -147,9 +147,15 @@ def elements() -> dict[str, str]:
     return {symbol: entry["spoken_symbol"] for symbol, entry in load_entries("elements").items()}
 
 
+@cache
+def element_names() -> frozenset[str]:
+    """Lowercase element names. Used only to recognise a printed word, never to speak one."""
+    return frozenset(entry["name"].lower() for entry in load_entries("elements").values())
+
+
 # Single letters that may touch the number ("5m", "3g"); other letters would hit "2N" ploidy,
-# "5V", "3A", or decades like "1960s", so they need a space.
-_ATTACH_OK = frozenset({"m", "g", "h"})
+# "5V", "3A", decades like "1960s", or algebra like "2h", so they need a space.
+_ATTACH_OK = frozenset({"m", "g"})
 # Bare symbols with no tell-tale shape, still safe to speak without a number before them.
 _STRONG_WORDS = frozenset(
     "atm ppm ppb mol mmol rpm psi mph kph bpm torr kcal amu Hz kyr Myr Gyr kbp MPa GPa".split()
@@ -193,12 +199,14 @@ class _Matchers:
     quantity: re.Pattern[str]
     cued: re.Pattern[str]
     bare: re.Pattern[str]
+    unit_words: re.Pattern[str]  # a spoken unit name right after a number: "centimeters"
 
 
 def _compile(units: Mapping[str, UnitName]) -> _Matchers:
     everything = _alternation(units) or "(?!)"
     cue_words = _alternation([s for s in units if _is_cue_word(s)]) or "(?!)"
     strong = _alternation([s for s in units if _is_strong(s)]) or "(?!)"
+    names = _alternation({n for u in units.values() for n in (u.singular, u.plural)}) or "(?!)"
     return _Matchers(
         quantity=re.compile(
             rf"(?<![\w.^:])(?P<num>{_SCI}|{_NUM})(?P<sep>[ ]?|-)(?P<unit>{everything}){_AFTER}"
@@ -208,6 +216,7 @@ def _compile(units: Mapping[str, UnitName]) -> _Matchers:
             rf"(?P<unit>{cue_words}){_AFTER}"
         ),
         bare=re.compile(rf"(?<![\w./^\-−])(?P<unit>{strong}){_AFTER}"),
+        unit_words=re.compile(rf"\s+(?:{names})\b", re.IGNORECASE),
     )
 
 
@@ -315,9 +324,99 @@ def collapse_spaced_formulas(text: str) -> str:
     return _SPACED.sub(_collapse_spaced, _SPACED_GROUP.sub(_collapse_group, text))
 
 
+# PDF glyphs that change meaning when read raw: the "less/greater or equal" variants and the
+# fraction slash, which a voice drops ("1\u2044144" would be said as two numbers).
+_GLYPH_ALIASES = str.maketrans({"\u2266": "\u2264", "\u2267": "\u2265", "\u2044": "/"})
+# A Wingdings arrow arrives as "a grave", usually glued to the arrow itself. Then the grave is an
+# echo and goes. Alone between spaces with a digit beside it ("2CaO a-grave 2Ca"), it is the arrow.
+_WINGDINGS_ARROW = re.compile(r"(?<!\w)\u00e0(?=\s|\u2192|\uf0e0|$)")
+_ARROW_FOLLOWS = re.compile(r"\s*(?:\u2192|\uf0e0|yields\b)")
+
+
+def _wingdings_arrow(m: re.Match[str]) -> str:
+    if _ARROW_FOLLOWS.match(m.string, m.end()):
+        return ""
+    if m.start() and not m.string[m.start() - 1].isspace():
+        return m.group()
+    before = re.search(r"(\S+)\s+$", m.string[: m.start()])
+    after = re.match(r"\s+(\S+)", m.string[m.end() :])
+    near = (before.group(1) if before else "") + (after.group(1) if after else "")
+    return "\u2192" if re.search(r"\d", near) else m.group()
+
+
+def fix_pdf_glyphs(text: str) -> str:
+    return _WINGDINGS_ARROW.sub(_wingdings_arrow, text.translate(_GLYPH_ALIASES))
+
+
 def prepare_text(text: str) -> str:
-    """The first step of both stages: fold scripts and look-alikes, close spaced subscripts."""
-    return collapse_spaced_formulas(fold_compat(normalize_scripts(text)))
+    """The first step of both stages: fold scripts, look-alikes and PDF glyphs, close subscripts."""
+    return collapse_spaced_formulas(fix_pdf_glyphs(fold_compat(normalize_scripts(text))))
+
+
+_DASHES = "-\u2212\u2013"
+
+
+@cache
+def _isotope_patterns() -> tuple[re.Pattern[str], re.Pattern[str], re.Pattern[str]]:
+    names = "|".join(sorted(element_names(), key=len, reverse=True))
+    named = re.compile(
+        rf"(?<![A-Za-z])(?P<name>(?i:{names}))[{_DASHES}](?P<mass>\d{{1,3}})m(?![A-Za-z0-9])"
+    )
+    symbol = re.compile(
+        rf"(?<![A-Za-z0-9])(?P<symbol>[A-Z][a-z]?)[{_DASHES}](?P<mass>\d{{1,3}})m(?![A-Za-z0-9])"
+    )
+    # "99mTc": two digits or more and a two-letter symbol, so "5mH" and "3mV" stay units.
+    prefixed = re.compile(
+        r"(?<![A-Za-z0-9.])(?P<mass>\d{2,3})m(?P<symbol>[A-Z][a-z])(?![A-Za-z0-9])"
+    )
+    return named, symbol, prefixed
+
+
+def speak_isotopes(text: str) -> str:
+    """Metastable isotopes: "technetium-99m" -> "technetium ninety-nine m", never "99 meters".
+
+    The m is a marker, not a unit. A printed name stays as printed; a symbol is spelled.
+    """
+    named, symbol, prefixed = _isotope_patterns()
+    table, units = elements(), default_tables().units
+
+    def mass(m: re.Match[str]) -> str:
+        return cardinal(int(m["mass"]))
+
+    def spelled(m: re.Match[str], pattern: str) -> str:
+        sym = m["symbol"]
+        if sym not in table or (pattern == "prefixed" and f"m{sym}" in units):
+            return m.group()
+        return f"{table[sym]} {mass(m)} m" if pattern == "symbol" else f"{mass(m)} m {table[sym]}"
+
+    text = named.sub(lambda m: f"{m['name']} {mass(m)} m", text)
+    text = symbol.sub(lambda m: spelled(m, "symbol"), text)
+    return prefixed.sub(lambda m: spelled(m, "prefixed"), text)
+
+
+_CURRENCY = re.compile(
+    r"(?<![\w$])\$(?P<amount>\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)"
+    r"(?P<scale> ?(?i:thousand|million|billion|trillion)|bn|BN|Bn|[KkMmBb])?(?!\w)"
+)
+_MONEY_SCALES = {"k": "thousand", "m": "million", "b": "billion", "bn": "billion"}
+
+
+def _speak_currency(m: re.Match[str]) -> str:
+    """ "$16.50" -> "16 dollars 50 cents", "$50K" -> "50 thousand dollars", "$1,200" too."""
+    amount = m["amount"]
+    scale = (m["scale"] or "").strip().lower()
+    if scale:
+        return f"{amount} {_MONEY_SCALES.get(scale, scale)} dollars"
+    whole, _, fraction = amount.partition(".")
+    if len(fraction) == 2:
+        dollars, cents = int(whole.replace(",", "")), int(fraction)
+        parts = []
+        if dollars or not cents:
+            parts.append(f"{whole} dollar{'' if dollars == 1 else 's'}")
+        if cents:
+            parts.append(f"{cents} cent{'' if cents == 1 else 's'}")
+        return " ".join(parts)
+    return f"{amount} dollar{'' if amount == '1' else 's'}"
 
 
 _INITIAL = re.compile(r"\.\s+[A-Z]\.")
@@ -374,6 +473,8 @@ def _is_operand_start(ch: str) -> bool:
 
 
 # "10−3" after a times sign is a flattened exponent: the sign stays for the formula pass.
+# A real minus right after a 10 and before a digit is that exponent's sign too (10 minus-7).
+_TEN_BEFORE = re.compile(r"(?<![\w.])10\s*$")
 _FLAT_EXPONENT_SIGN = re.compile(r"(?:\u00d7|\btimes|\bx)\s*10$")
 
 
@@ -395,34 +496,110 @@ def _applies(key: str, text: str, start: int, end: int) -> bool:
         sign = (not prev or prev.isspace() or prev in "([") and nxt.isalnum()  # " +Na2SO4", "+5"
         return spaced or sign or (_is_operand_end(prev) and _is_operand_start(nxt))
     if key == "−":
-        if prev == "^" or _FLAT_EXPONENT_SIGN.search(text[:start]) or _is_isotope_sign(text, start):
+        if (
+            prev == "^"
+            or _FLAT_EXPONENT_SIGN.search(text[:start])
+            or _is_isotope_sign(text, start)
+            or (nxt.isdigit() and _TEN_BEFORE.search(text[:start]))
+        ):
             return False  # exponent sign: 10^−3, 4 × 10−3
         return not (_is_operand_end(prev) and not _is_operand_start(nxt))  # not a charge: Cl−
     if key == "~":
-        return nxt.isdigit()
+        return nxt.isdigit() or (nxt == " " and text[end + 1 : end + 2].isdigit())
     return spaced  # "<", ">" and ASCII arrows must stand alone
 
 
-# The en dash is also PDF text's minus. It is one only where a minus sign must stand: before a
-# number or variable after "=", "(", "[", "," or a space, or between algebra operands ("x – 3").
-# "5 – 10" and "Page 2 – Score" stay a range and a dash.
-_EN_DASH_SIGN = re.compile(r"(?<![^\s(\[=,;])–(?=\.?\d|[a-z](?!\w))")
-_EN_DASH_BETWEEN = re.compile(
-    r"(?<![\w.])(?P<l>[a-z]|\d+(?:\.\d+)?)\s?–\s?(?P<r>[a-z](?!\w)|\d+(?:\.\d+)?|\()"
+# The en dash is also PDF text's minus. It is one where a minus sign must stand: before a number
+# or variable after "=", "(", "[", "," or a space, and between algebra terms
+# ("2x – 6y", "18y – 9"). Two plain numbers are a range ("5 – 10") unless arithmetic sits
+# right beside them: an operator word after a number, "equals", "times", "pi", "log", "^", or a
+# bracket around both. A kept dash beats an invented minus, so "over" and "squared" are no cues.
+_NUMBER = r"\d+(?:\.\d+)?"
+_TERM = r"(?:\d+(?:\.\d+)?[a-z]{0,3}\d{0,2}|[a-z]\d{0,2})"
+# The article "a" before a prose word ("Figure 3 \u2013 a graph") is no variable; other letters are.
+_MATH_WORDS = r"(?:plus|minus|times|equals|over|divided|squared|cubed|to)\b"
+_RIGHT = (
+    r"(?:\d+(?:\.\d+)?[a-z]{0,3}\d{0,2}(?!\w|\.\d)"
+    rf"|a(?!\w|\.\d)(?![ ]+(?!{_MATH_WORDS})[a-z]{{2}})"
+    r"|[b-z](?!\w|\.\d)|[a-z]\d{1,2}(?!\w|\.\d)|\()"
 )
-_EN_DASH_AFTER_PAREN = re.compile(r"\) – (?P<r>[a-z](?!\w)|\d+(?:\.\d+)?|\()")
+_EN_DASH_SIGN = re.compile(r"(?<![^\s(\[=,;])\u2013(?=\.?\d|log\b|[a-z]{1,2}\d{0,2}(?![A-Za-z]))")
+_AFTER_TEN = re.compile(r"(?<![\w.])10\s+$")
 
 
-def _en_dash_between(m: re.Match[str]) -> str:
-    if m["l"][0].isdigit() and m["r"][0].isdigit():
-        return m.group()
-    return f"{m['l']} minus {m['r']}"
+def _en_dash_sign(m: re.Match[str]) -> str:
+    if _AFTER_TEN.search(m.string[: m.start()]):
+        return m.group()  # "is 10 \u20134 molar": an exponent, said by speak_formulas
+    return "minus "
 
 
-def _speak_en_dash_minus(text: str) -> str:
-    text = _EN_DASH_AFTER_PAREN.sub(lambda m: f") minus {m['r']}", text)
-    text = _EN_DASH_BETWEEN.sub(_en_dash_between, text)
-    return _EN_DASH_SIGN.sub("minus ", text)
+# The right operand is a lookahead: in a chain of dashes it stays free to start the next match.
+_EN_DASH_BETWEEN = re.compile(
+    rf"(?<![\w.])(?P<l>{_TERM})(?!\w|\.\d)(?P<gap>\s?)\u2013(?P<tail>\s?)(?=(?P<r>{_RIGHT}))"
+)
+_EN_DASH_AFTER_PAREN = re.compile(rf"\) \u2013 (?=(?P<r>{_RIGHT}))")
+_WINDOW = 24  # how far from the dash a cue may sit
+_OPERATOR_WORD = r"(?:plus|minus|times|divided by)"  # the spoken + - \u00d7 \u00f7
+_CUE_BEFORE = re.compile(rf"(?:(?:\d|\)|\b[a-z])\s+{_OPERATOR_WORD}|\bequals|\blog)\s+$")
+_CUE_AFTER = re.compile(
+    rf"\s+{_OPERATOR_WORD}\s+[\d(]|[\s)(\d.\u2013]{{0,24}}\bequals\b|\s+(?:pi|log)\b|\^"
+    r"|\s+is (?:less|greater|not|approximately)\b"
+)
+_BRACKET_BEFORE = re.compile(r"\(\s*$")
+_BRACKET_AFTER = re.compile(r"\s*\)")
+# A range noun after the right number vetoes a minus: "1 \u2013 2 hours", "5 \u2013 10 grams".
+_RANGE_NOUNS = re.compile(
+    r"\s+(?:years?|days?|weeks?|months?|hours?|minutes?|seconds?|people|students|questions|points"
+    r"|pages?|chapters?|rounds?|items?|grades?)\b",
+    re.IGNORECASE,
+)
+# A bracket after a dash is math when a number or an operator opens it, or a variable sits
+# inside: "8 \u2013 (2)", "5 \u2013 (\u20133)", "10 \u2013 (6 \u00f7 2)".
+# A noun after the number is a label, so "Round 3 \u2013 (10 points)" keeps its dash.
+_MATH_GROUP = re.compile(
+    r"\(\s*(?:[\u2013\u2212-]?\d+(?:\.\d+)?"
+    r"(?!\d|\.\d|\s+(?!(?:plus|minus|times|over|divided)\b)[a-z]{2})"
+    r"|[+\u00d7\u00f7]"
+    r"|[^()]{0,30}?(?:(?<![\w.])(?:\d+[a-z]{1,3}\d{0,2}|[a-z]\d{0,2})(?![\w.])"
+    r"|\b(?:plus|minus|times|over|divided)\b))"
+)
+# "9am", "10th" and "1960s" are numbers with a suffix: "9am \u2013 5pm" is a range, not a minus.
+_PLAIN_NUMBER = re.compile(rf"{_NUMBER}(?:st|nd|rd|th|am|pm)?|\d{{2,}}s")
+
+
+def _is_minus(m: re.Match[str], *, chained: bool, tables: Tables) -> bool:
+    text, left, right = m.string, m["l"], m["r"]
+    if left == "10" and not m["gap"] and not m["tail"] and right.isdigit():
+        return False  # "Kw = 10\u201314": the exponent's sign, said by speak_formulas
+    plain = _PLAIN_NUMBER.fullmatch(left) and (_PLAIN_NUMBER.fullmatch(right) or right == "(")
+    if not plain:
+        return True  # a variable or an algebra term stands on a side
+    if right == "(":
+        return bool(_MATH_GROUP.match(text, m.end()))
+    end = m.end() + len(right)
+    if _RANGE_NOUNS.match(text, end) or tables.matchers.unit_words.match(text, end):
+        return False
+    before = text[max(0, m.start() - _WINDOW) : m.start()]
+    return (
+        chained  # the previous dash was a minus and this number is its right operand
+        or bool(_CUE_BEFORE.search(before))
+        or bool(_CUE_AFTER.match(text, end))
+        or bool(_BRACKET_BEFORE.search(before) and _BRACKET_AFTER.match(text, end))
+    )
+
+
+def _speak_en_dash_minus(text: str, tables: Tables) -> str:
+    """One left-to-right pass: a dash that is a minus vouches for the next one in a chain."""
+    text = _EN_DASH_AFTER_PAREN.sub(") minus ", text)
+    pieces: list[str] = []
+    position, chained_at = 0, -1
+    for m in _EN_DASH_BETWEEN.finditer(text):
+        minus = _is_minus(m, chained=m.start() == chained_at, tables=tables)
+        pieces.append(text[position : m.start()])
+        pieces.append(f"{m['l']} minus " if minus else m.group())
+        position, chained_at = m.end(), (m.end() if minus else -1)
+    pieces.append(text[position:])
+    return _EN_DASH_SIGN.sub(_en_dash_sign, "".join(pieces))
 
 
 def speak_symbols(
@@ -456,12 +633,13 @@ def speak_symbols(
 
     text = pattern.sub(repl, text)
     if only is None:
-        text = _speak_en_dash_minus(text)
+        text = _speak_en_dash_minus(text, tables or default_tables())
     return re.sub(r" {2,}", " ", text)
 
 
 def speak_units(text: str, *, tables: Tables | None = None) -> str:
     """Quantities ("5 m/s"), bare unit symbols ("in mol/L") and math symbols to words."""
     tables = tables or default_tables()
-    text = _speak_quantities(prepare_text(text), tables)
+    text = _CURRENCY.sub(_speak_currency, speak_isotopes(prepare_text(text)))
+    text = _speak_quantities(text, tables)
     return speak_symbols(text, tables=tables)
