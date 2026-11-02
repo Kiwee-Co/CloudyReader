@@ -511,10 +511,10 @@ def say_as(surface: str, words: str, kind: str = "spoken") -> Respelling:
     return Respelling(surface, words, kind)  # type: ignore[arg-type]
 
 
-def test_spoken_guide_replaces_the_expression_everywhere():
+def test_spoken_guide_replaces_only_the_occurrence_it_followed():
     q = question("Find g(1) when g(a) = 3a. What is g(1)?", respellings=(say_as("g(1)", "g of 1"),))
     seg = script(q).segments[0]
-    assert seg.text == "Find g of 1 when g(a) = 3a. What is g of 1?"
+    assert seg.text == "Find g of 1 when g(a) = 3a. What is g(1)?"
     assert seg.overrides == ()
 
 
@@ -557,10 +557,92 @@ def test_spell_guide_replaces_the_surface_with_its_letters(surface, content, spo
     assert seg.overrides == ()
 
 
-def test_a_say_as_guide_printed_twice_is_applied_once_without_a_warning():
-    guide = say_as("Dd", "big D little d")
-    s = script(question("Dd and Dd.", respellings=(guide, guide)))
-    assert s.segments[0].text == "big D little d and big D little d."
+WORDS_Y = "y equals open x2 parenthesis 24 x minus 36 close parenthesis over x squared"
+
+
+@pytest.mark.parametrize(
+    ("stem", "guides", "spoken"),
+    [
+        pytest.param(
+            "Consider the equation: y =. When y = 3, find x.",
+            (say_as("y =", WORDS_Y),),
+            f"Consider the equation: {WORDS_Y}. When y = 3, find x.",
+            id="corpus-y-equals-keeps-the-condition",
+        ),
+        pytest.param(
+            "g(1) now and g(1) later",
+            (say_as("g(1)", "g of 1"),),
+            "g of 1 now and g(1) later",
+            id="one-guide-one-occurrence",
+        ),
+        pytest.param(
+            "g(1) now and g(1) later",
+            (say_as("g(1)", "g of 1"), say_as("g(1)", "g of 1")),
+            "g of 1 now and g of 1 later",
+            id="same-guide-printed-twice-takes-both",
+        ),
+        pytest.param(
+            "x then x",
+            (say_as("x", "ex"), say_as("x", "why")),
+            "ex then why",
+            id="two-guides-take-the-occurrences-in-order",
+        ),
+        pytest.param(
+            "genotypes DD and Dd, so the Dd genotype",
+            (
+                say_as("DD", "big D big D"),
+                say_as("Dd", "big D little d"),
+                say_as("Dd", "big D little d"),
+            ),
+            "genotypes big D big D and big D little d, so the big D little d genotype",
+            id="corpus-genotypes",
+        ),
+        pytest.param(
+            "x and xx and x",
+            (say_as("x", "ex"),),
+            "ex and xx and x",
+            id="longer-word-is-not-an-occurrence",
+        ),
+    ],
+)
+def test_a_say_as_guide_replaces_one_occurrence(stem, guides, spoken):
+    s = script(question(stem, respellings=guides))
+    assert s.segments[0].text == spoken
+    assert s.warnings == ()
+
+
+def test_the_exact_corpus_input_keeps_the_condition_with_the_real_stages(real_normalizer):
+    q = question(
+        "Consider the following equation: y =. When y = 3, what are the possible values for x?",
+        kind=Kind.BONUS,
+        number=4,
+        category="MATH",
+        fmt=Fmt.SHORT_ANSWER,
+        respellings=(say_as("y =", WORDS_Y),),
+    )
+    s = real_normalizer.to_script([q], NO_RESOLUTIONS, DEFAULT)
+    assert texts(s)[-1] == (
+        f"Consider the following equation: {WORDS_Y}. "
+        "When y equals 3, what are the possible values for x?"
+    )
+
+
+def test_the_exact_corpus_paste_keeps_the_condition_end_to_end(real_normalizer):
+    raw = (
+        "BONUS\n4) MATH Short Answer Consider the following equation: y = [y equals open x2 "
+        "parenthesis 24 x minus 36 close parenthesis over x squared]. When y = 3, what are the "
+        "possible values for x?\n\nANSWER: 6 AND 2\n"
+    )
+    s = real_normalizer.to_script(parse(raw), NO_RESOLUTIONS, DEFAULT)
+    assert texts(s)[-1].endswith(f"{WORDS_Y}. When y equals 3, what are the possible values for x?")
+    assert texts(s)[-1].count("open x2") == 1
+
+
+def test_a_phonetic_guide_covers_every_occurrence_and_a_repeat_adds_nothing():
+    guide = Respelling("Pharynx", "FAR-ingks")
+    s = script(question("The Pharynx and the Pharynx.", respellings=(guide, guide)))
+    assert s.segments[0].text == "The Pharynx and the Pharynx."
+    assert s.segments[0].overrides == (Override("Pharynx", "<FAR-ingks>", "respelling"),)
     assert s.warnings == ()
 
 

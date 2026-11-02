@@ -98,11 +98,13 @@ def _surface_pattern(surface: str) -> re.Pattern[str]:
     return re.compile(head + re.escape(surface) + tail)
 
 
-def _hide(text: str, pattern: re.Pattern[str], words: str, marks: dict[str, str]) -> str:
-    """Swap every match for a private-use mark; `marks` says what to restore it to."""
+def _hide(
+    text: str, pattern: re.Pattern[str], words: str, marks: dict[str, str], count: int = 0
+) -> str:
+    """Swap the first `count` matches (0 = all) for a private-use mark that restores to `words`."""
     mark = chr(_PRIVATE_USE + len(marks))
     marks[mark] = words
-    return pattern.sub(lambda _: mark, text)
+    return pattern.sub(lambda _: mark, text, count=count)
 
 
 def _spell_out(content: str) -> str:
@@ -254,9 +256,12 @@ class ScriptNormalizer:
         done: set[str] = set()
         for i in sorted(range(len(respellings)), key=lambda k: -len(respellings[k].surface)):
             guide = respellings[i]
-            if guide.surface in done:  # the same guide printed twice
-                continue
-            done.add(guide.surface)
+            # A phonetic guide covers every occurrence at once; a say-as guide only the one it
+            # followed ("y = [y equals ...]. When y = 3" must keep its second "y =").
+            if guide.kind == "phonetic":
+                if guide.surface in done:
+                    continue
+                done.add(guide.surface)
             pattern = _surface_pattern(guide.surface) if guide.surface else None
             if pattern is None or not pattern.search(text):
                 warnings.append(
@@ -300,7 +305,7 @@ class ScriptNormalizer:
         if not re.search(r"\w", words):
             warnings.append(f"Guide for {guide.surface!r} dropped: it holds no words.")
             return text
-        return _hide(text, pattern, words, marks)
+        return _hide(text, pattern, words, marks, count=1)
 
     def _hide_phonetic(
         self,
