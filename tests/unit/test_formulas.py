@@ -11,6 +11,7 @@ Conventions pinned here (they also satisfy tests/golden/spoken_cases.yaml):
 from __future__ import annotations
 
 import re
+import time
 
 import pytest
 
@@ -315,6 +316,18 @@ FLATTENED_EXPONENTS = [
         "The number four point five six times ten to the eleventh has how many zeroes?",
     ),
     ("about 4 × 105.", "about four times ten to the fifth."),
+    # A lowercase or capital x is the times sign in the same artifact (22 corpus lines).
+    (
+        "approximately 6.4 x 106 meters",
+        "approximately six point four times ten to the sixth meters",
+    ),
+    ("W) 1 x 105 X) 3 x 106", "W) one times ten to the fifth X) three times ten to the sixth"),
+    ("1.2 X 10-3", "one point two times ten to the minus three"),
+    (
+        f"1.2 X 10{MINUS}3 and 2.7 X 10-4?",
+        "one point two times ten to the minus three"
+        " and two point seven times ten to the minus four?",
+    ),
 ]
 
 
@@ -327,6 +340,8 @@ def test_flattened_exponents(raw: str, spoken: str) -> None:
 # No mantissa, or digits that start with zero: an ordinary number.
 NOT_EXPONENTS = [
     "2 × 1000",
+    "2 x 1000",
+    "5 x 10 grid",
     "30 × 100",
     "5 × 10",
     "2 × 1005",
@@ -340,6 +355,18 @@ NOT_EXPONENTS = [
 @pytest.mark.parametrize("text", NOT_EXPONENTS)
 def test_numbers_that_only_look_like_exponents_are_left_alone(text: str) -> None:
     assert speak_formulas(text) == text
+
+
+def test_a_long_digit_run_after_capitals_is_linear_in_time() -> None:
+    # Regression: nested digit groups backtracked exponentially (30 digits took 9 s).
+    for digits in (30, 300, 3000):
+        text = "AB" + "1" * digits + "x"
+        started = time.perf_counter()
+        assert speak_formulas(text) == text
+        assert time.perf_counter() - started < 2.0
+    assert speak_formulas("TP53, BRCA1, CD4+ and G3P") == (
+        "T P fifty-three, B R C A one, C D four plus and G three P"
+    )
 
 
 def test_flattened_exponent_after_a_unit_pass() -> None:

@@ -160,7 +160,7 @@ _SCIENTIFIC = re.compile(
 # It is an exponent only after a mantissa and a times sign, and never when the digits start with
 # zero ("2 × 1000", "30 × 100" stay numbers).
 _FLAT_SCIENTIFIC = re.compile(
-    r"(?<![\w.^])(?P<mantissa>\d+(?:\.\d+)?)\s*(?:×|times)\s*10(?P<sign>[-−–]?)(?P<exp>\d+)"
+    r"(?<![\w.^])(?P<mantissa>\d+(?:\.\d+)?)\s*(?:[\u00d7xX]|times)\s*10(?P<sign>[-−–]?)(?P<exp>\d+)"
     r"(?!\w|\.\d)"
 )
 # PDF text flattens 10^-4 to "10–4" or "10 –4". "10 –4" (a space before the dash, none after)
@@ -337,7 +337,7 @@ _LISTED = re.compile(
 )
 # Capitals and digits: TP53, BRCA1, CD4, SAR11, G3P, E3SM. Two capitals and a digit at least.
 _LETTERS_DIGITS = re.compile(
-    r"(?<![\w.])(?=[A-Z0-9]*[A-Z][A-Z0-9]*[A-Z])(?P<token>[A-Z]+(?:\d{1,3}[A-Z]*)+)"
+    r"(?<![\w.])(?=[A-Z0-9]*[A-Z][A-Z0-9]*[A-Z])(?P<token>[A-Z]+(?:\d{1,3}[A-Z]*)++)"
     r"(?P<charge>[+\u2212](?!\w))?(?!\w)"
 )
 _WORDS_WITH_DIGITS = frozenset({"COVID"})

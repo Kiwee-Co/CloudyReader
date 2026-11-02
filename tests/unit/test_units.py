@@ -607,7 +607,7 @@ EN_DASH_TERMS = [
     (f"What is 5 {EN_DASH} ({EN_DASH}3)?", "What is 5 minus (minus 3)?"),
     (f"What is 8 {EN_DASH} (2)?", "What is 8 minus (2)?"),
     (f"What is 10 {EN_DASH} (6 \u00f7 2)?", "What is 10 minus (6 divided by 2)?"),
-    (f"Evaluate: |4 {EN_DASH} (-8)|", "Evaluate: |4 minus (-8)|"),
+    (f"Evaluate: |4 {EN_DASH} (-8)|", "Evaluate: |4 minus (minus 8)|"),
     (f"{EN_DASH}log 5", "minus log 5"),
 ]
 
@@ -756,6 +756,128 @@ def test_two_plain_numbers_need_a_cue_or_a_unit_veto(raw: str, spoken: str) -> N
     assert speak_units(raw) == spoken
 
 
+SQUARED = "\u00b2"
+
+# Real lines (Round5, m_round14, RegionalMS_13A, 16A_MS_Reg): the voice drops an ASCII hyphen and
+# a dash that is a sign, so "-16" is heard as "16" and "y = \u2013 2x + 4" as a positive slope.
+SIGNS = [
+    (
+        "The point (-3, -2) is reflected through the line y = -x.",
+        "The point (minus 3, minus 2) is reflected through the line y equals minus x.",
+    ),
+    (f"f(x) = x{SQUARED} - x - 12", "f(x) equals x^2 minus x minus 12"),
+    ("ANSWER: -16", "ANSWER: minus 16"),
+    ("ANSWER: (3, -4)", "ANSWER: (3, minus 4)"),
+    ("ANSWER: -3/7", "ANSWER: minus 3/7"),
+    ("Solve 3x + 15 = -12", "Solve 3x plus 15 equals minus 12"),
+    ("(-2)(-5)(-4)", "(minus 2)(minus 5)(minus 4)"),
+    ("x=-3", "x equals minus 3"),
+    ("between -3 and 5, inclusive", "between minus 3 and 5, inclusive"),
+    ("x \u2265 -1", "x is greater than or equal to minus 1"),
+    ("pH = -log 5", "pH equals minus log 5"),
+    ("ANSWER: x2 - 22x + 121", "ANSWER: x2 minus 22x plus 121"),
+    ("(x + 1)^2 - 5", "(x plus 1)^2 minus 5"),
+    (f"x{SQUARED} {EN_DASH} 12", "x^2 minus 12"),
+    ("6 - 2 - 1 = 3", "6 minus 2 minus 1 equals 3"),
+    ("What is 83 - 19 + 17?", "What is 83 minus 19 plus 17?"),
+    ("ANSWER: 3,- 3", "ANSWER: 3, minus 3"),
+    # A space after the dash: the sign follows "equals", a bracket or a comma.
+    (f"X) y = {EN_DASH} 2x + 4", "X) y equals minus 2x plus 4"),
+    (f"Y) y = {EN_DASH} 4", "Y) y equals minus 4"),
+    ("[- 3, 5]", "[minus 3, 5]"),
+    # An element name or a symbol-shaped word is no isotope when the number is outside Z..3Z.
+    (
+        f"W) Nitrogen {EN_DASH}196 \u00b0C X) Oxygen {EN_DASH}183 \u00b0C"
+        f" Y) Helium {EN_DASH}269 \u00b0C",
+        "W) Nitrogen minus 196 degrees Celsius X) Oxygen minus 183 degrees Celsius"
+        " Y) Helium minus 269 degrees Celsius",
+    ),
+    (
+        f"At {EN_DASH}40 degrees, Celsius and Fahrenheit readings are equal.",
+        "At minus 40 degrees, Celsius and Fahrenheit readings are equal.",
+    ),
+    ("At -40 degrees", "At minus 40 degrees"),
+    (f"In {EN_DASH}3x + 5 = 11, what is x?", "In minus 3x plus 5 equals 11, what is x?"),
+    ("Helium -269.5 degrees", "Helium minus 269.5 degrees"),
+    # A term with several letter and digit groups.
+    (f"96a7b3 {EN_DASH} 64a3b", "96a7b3 minus 64a3b"),
+]
+
+
+@pytest.mark.parametrize(("raw", "spoken"), SIGNS)
+def test_a_dash_that_is_a_sign_or_a_minus_is_spoken(raw: str, spoken: str) -> None:
+    assert speak_units(raw) == spoken
+    assert speak_units(spoken) == spoken
+
+
+def test_many_signs_are_linear_in_time() -> None:
+    started = time.perf_counter()
+    spoken = speak_units("(-1, " * 20000)
+    assert time.perf_counter() - started < 5.0
+    assert spoken.count("minus") == 20000
+
+
+def test_a_huge_number_after_an_element_is_negative_not_an_isotope() -> None:
+    assert speak_units("Cl -" + "9" * 5000) == "Cl minus " + "9" * 5000
+
+
+# A hyphen in a word, a tight range, an isotope or a spaced range or title is not a minus.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "well-known",
+        "Z-1",
+        "5-10",
+        "x-axis",
+        "ages 5 - 10",
+        "Middle School - Round 1A Page 1",
+        "W) 10 - 30",
+        "Cl-36",
+        "Y) Uranium -235",
+        "Cl -36",
+        "C -14",
+        "H -3",
+        "I -131",
+        "Carbon -14",
+        f"Uranium {EN_DASH}235",
+        "Page 2 - Score",
+        "Figure 3 - a graph",
+    ],
+)
+def test_a_hyphen_that_is_not_a_minus_is_kept(text: str) -> None:
+    assert speak_units(text) == text
+
+
+# Real lines (4A_MS_Reg, MSRound-1, MSRound-10): an attached m or g is a variable beside an operator
+# or when the same letter stands alone in the text; anywhere else it is a unit.
+ATTACHED_LETTERS = [
+    (
+        f"A school has 5m {EN_DASH} 13 students in its club, and 2m + 41 students in its band.",
+        "A school has 5m minus 13 students in its club, and 2m plus 41 students in its band.",
+    ),
+    (
+        "If m is an integer and 20m is divisible by 6, which of the following?",
+        "If m is an integer and 20m is divisible by 6, which of the following?",
+    ),
+    ("Solve 3g = 12", "Solve 3g equals 12"),
+    (
+        "A bob of mass m is replaced with one of mass 4m.",
+        "A bob of mass m is replaced with one of mass 4m.",
+    ),
+    ("a 5m rope", "a 5 meters rope"),
+    ("10g of salt", "10 grams of salt"),
+    ("a 58g/L solution", "a 58 grams per liter solution"),
+]
+
+
+@pytest.mark.parametrize(("raw", "spoken"), ATTACHED_LETTERS)
+def test_an_attached_m_or_g_is_a_variable_in_algebra_and_a_unit_elsewhere(
+    raw: str, spoken: str
+) -> None:
+    assert speak_units(raw) == spoken
+    assert speak_units(spoken) == spoken
+
+
 def test_a_long_dash_chain_is_linear_in_time() -> None:
     # Regression: the fixed-point loop was cubic. N=800 took 30 s; one pass takes ~10 ms.
     started = time.perf_counter()
@@ -789,6 +911,7 @@ def test_flattened_exponent_signs_are_left_for_the_formula_pass() -> None:
     assert speak_units("8 × 10−3") == "8 times 10−3"
     assert speak_units(f"3.28 × 10{EN_DASH}10") == f"3.28 times 10{EN_DASH}10"
     assert speak_units("x = 5 − 3") == "x equals 5 minus 3"
+    assert speak_units("1.2 X 10−3") == "1.2 X 10−3"
 
 
 def test_private_use_and_replacement_glyphs_are_left_alone() -> None:

@@ -153,6 +153,15 @@ def element_names() -> frozenset[str]:
     return frozenset(entry["name"].lower() for entry in load_entries("elements").values())
 
 
+@cache
+def atomic_numbers() -> dict[str, int]:
+    """Element symbol and lowercase name -> atomic number. Bounds a plausible mass number."""
+    entries = load_entries("elements")
+    by_symbol = {symbol: entry["atomic_number"] for symbol, entry in entries.items()}
+    by_name = {entry["name"].lower(): entry["atomic_number"] for entry in entries.values()}
+    return {**by_symbol, **by_name}
+
+
 # Single letters that may touch the number ("5m", "3g"); other letters would hit "2N" ploidy,
 # "5V", "3A", decades like "1960s", or algebra like "2h", so they need a space.
 _ATTACH_OK = frozenset({"m", "g"})
@@ -425,11 +434,25 @@ _HOUR_OF_DAY = re.compile(r"(?:[1-9]|1[0-2])")
 _SPELLED_NEXT = re.compile(r" (?:[A-Z]\b|(?:" + "|".join([*_ONES, *filter(None, _TENS)]) + r")\b)")
 
 
-def _speak_quantity(m: re.Match[str], units: Mapping[str, UnitName]) -> str:
+# "5m \u2013 13", "3g = 12": an operator after an attached m or g, raw or spoken, makes it a
+# variable.
+_OPERATOR_AFTER = re.compile(
+    r"\s*(?:[+=\u00d7\u00f7*^<>\u2013\u2212-]"
+    r"|(?:plus|minus|times|divided|equals|is (?:less|greater))\b)"
+)
+# "If m is an integer and 20m is...": the same letter stands alone elsewhere in the text.
+_ATTACHED_LETTER_ALONE = re.compile(r"(?<![\w.^/\u2212-])(?<![\d.]\s)([mg])(?![\w.^/\u2212-])")
+
+
+def _speak_quantity(
+    m: re.Match[str], units: Mapping[str, UnitName], alone: frozenset[str] = frozenset()
+) -> str:
     num, sep, surface = m["num"], m["sep"], m["unit"]
     single = len(surface) == 1 and surface.isascii() and surface.isalpha()
     if single and sep != " " and surface not in _ATTACH_OK:
         return m.group()  # "2N", "5V", "1960s", "2-N"
+    if single and not sep and (surface in alone or _OPERATOR_AFTER.match(m.string, m.end())):
+        return m.group()  # algebra, not meters or grams: "5m \u2013 13", "3g = 12"
     if single and surface.isupper() and _INITIAL.match(m.string, m.end()):
         return m.group()  # "1915 W. H. Bragg": W is an initial, not watts
     if single and _SPELLED_NEXT.match(m.string, m.end()):
@@ -443,7 +466,8 @@ def _speak_quantity(m: re.Match[str], units: Mapping[str, UnitName]) -> str:
 
 def _speak_quantities(text: str, tables: Tables) -> str:
     units, found = tables.units, tables.matchers
-    text = found.quantity.sub(lambda m: _speak_quantity(m, units), text)
+    alone = frozenset(_ATTACHED_LETTER_ALONE.findall(text))
+    text = found.quantity.sub(lambda m: _speak_quantity(m, units, alone), text)
 
     def cued(m: re.Match[str]) -> str:
         if len(m["unit"]) == 1 and _SPELLED_NEXT.match(m.string, m.end()):
@@ -475,7 +499,7 @@ def _is_operand_start(ch: str) -> bool:
 # "10−3" after a times sign is a flattened exponent: the sign stays for the formula pass.
 # A real minus right after a 10 and before a digit is that exponent's sign too (10 minus-7).
 _TEN_BEFORE = re.compile(r"(?<![\w.])10\s*$")
-_FLAT_EXPONENT_SIGN = re.compile(r"(?:\u00d7|\btimes|\bx)\s*10$")
+_FLAT_EXPONENT_SIGN = re.compile(r"(?:\u00d7|\btimes|\b[xX])\s*10$")
 
 
 _ELEMENT_BEFORE = re.compile(r"(?<![A-Za-z])[A-Z][a-z]?$")
@@ -509,40 +533,71 @@ def _applies(key: str, text: str, start: int, end: int) -> bool:
     return spaced  # "<", ">" and ASCII arrows must stand alone
 
 
-# The en dash is also PDF text's minus. It is one where a minus sign must stand: before a number
-# or variable after "=", "(", "[", "," or a space, and between algebra terms
-# ("2x – 6y", "18y – 9"). Two plain numbers are a range ("5 – 10") unless arithmetic sits
-# right beside them: an operator word after a number, "equals", "times", "pi", "log", "^", or a
-# bracket around both. A kept dash beats an invented minus, so "over" and "squared" are no cues.
+# The en dash is PDF text's minus and the ASCII hyphen is typed as one; the voice drops both.
+# A dash is a minus as a sign ("-3", "y = \u2013 4") or between terms ("2x \u2013 6y", "x^2 - x"); a
+# tight hyphen is never one. Two plain numbers are a range unless arithmetic sits beside them.
 _NUMBER = r"\d+(?:\.\d+)?"
-_TERM = r"(?:\d+(?:\.\d+)?[a-z]{0,3}\d{0,2}|[a-z]\d{0,2})"
+_NUMBER_TERM = rf"{_NUMBER}(?:[a-z]\d{{0,2}}){{0,4}}"  # 3x, 9am, 96a7b3
+# "x^2 - 12" is the term x^2 minus 12, not the plain number 2 minus 12.
+_TERM = rf"(?:(?:{_NUMBER_TERM}|[a-z]\d{{0,2}})(?:\^\d{{1,2}})?|\^\d{{1,2}})"
 # The article "a" before a prose word ("Figure 3 \u2013 a graph") is no variable; other letters are.
 _MATH_WORDS = r"(?:plus|minus|times|equals|over|divided|squared|cubed|to)\b"
 _RIGHT = (
-    r"(?:\d+(?:\.\d+)?[a-z]{0,3}\d{0,2}(?!\w|\.\d)"
+    rf"(?:{_NUMBER_TERM}(?!\w|\.\d)"
     rf"|a(?!\w|\.\d)(?![ ]+(?!{_MATH_WORDS})[a-z]{{2}})"
     r"|[b-z](?!\w|\.\d)|[a-z]\d{1,2}(?!\w|\.\d)|\()"
 )
-_EN_DASH_SIGN = re.compile(r"(?<![^\s(\[=,;])\u2013(?=\.?\d|log\b|[a-z]{1,2}\d{0,2}(?![A-Za-z]))")
+# After "equals" the hyphen has no space: "x=-3" is spoken "x equals-3".
+_EN_DASH_SIGN = re.compile(
+    r"(?:(?<![^\s(\[=,;])|(?<=equals))"
+    r"(?:\u2013(?=\.?\d|log\b|[a-z]{1,2}\d{0,2}(?![A-Za-z]))"
+    r"|-(?=\.?\d|log\b|[a-z]\d{0,2}(?![A-Za-z])))"
+)
+# A space after the sign: "y = \u2013 2x + 4" is said "y equals [pause] 2x", so the sign is lost.
+_SPACED_SIGN = re.compile(
+    r"(?P<opener>\bequals|[(\[,])(?P<gap>\s?)[\u2013-]\s+"
+    r"(?=\.?\d|log\b|[a-z]\d{0,2}(?![A-Za-z])|\()"
+)
 _AFTER_TEN = re.compile(r"(?<![\w.])10\s+$")
 
 
+_ELEMENT_NAME_BEFORE = re.compile(r"([A-Za-z]+)\s?$")
+_MASS_NUMBER = re.compile(r"(\d{1,3})(?!\d|\.\d)")
+
+
+def _is_isotope_mass(word: str, text: str, sign_at: int) -> bool:
+    """An element, a sign and a whole mass number between Z and 3Z: "Uranium -235", "Cl -36".
+
+    "At -40", "Helium \u2013269" and "In -3x" fall outside it, so they are negative numbers.
+    """
+    numbers = atomic_numbers()
+    z = numbers.get(word) or numbers.get(word.lower())
+    mass = _MASS_NUMBER.match(text, sign_at + 1)
+    return bool(z and mass and z <= int(mass[1]) <= 3 * z)
+
+
 def _en_dash_sign(m: re.Match[str]) -> str:
-    if _AFTER_TEN.search(m.string[: m.start()]):
+    text, start = m.string, m.start()
+    if _AFTER_TEN.search(text[max(0, start - 16) : start]):
         return m.group()  # "is 10 \u20134 molar": an exponent, said by speak_formulas
-    return "minus "
+    name = _ELEMENT_NAME_BEFORE.search(text[max(0, start - 20) : start])
+    if name and _is_isotope_mass(name[1], text, start):
+        return m.group()  # isotopes, not negative numbers
+    glued = text[start - 1 : start] in {",", ";"} or text[start - 1 : start].isalpha()
+    return " minus " if glued and start else "minus "  # "x=-3" arrives as "equals-3"
 
 
 # The right operand is a lookahead: in a chain of dashes it stays free to start the next match.
 _EN_DASH_BETWEEN = re.compile(
-    rf"(?<![\w.])(?P<l>{_TERM})(?!\w|\.\d)(?P<gap>\s?)\u2013(?P<tail>\s?)(?=(?P<r>{_RIGHT}))"
+    rf"(?<![\w.])(?P<l>{_TERM})(?!\w|\.\d)(?P<gap>\s?)(?:\u2013|(?<=\s)-(?=\s))(?P<tail>\s?)"
+    rf"(?=(?P<r>{_RIGHT}))"
 )
-_EN_DASH_AFTER_PAREN = re.compile(rf"\) \u2013 (?=(?P<r>{_RIGHT}))")
+_EN_DASH_AFTER_PAREN = re.compile(rf"\) [\u2013-] (?=(?P<r>{_RIGHT}))")
 _WINDOW = 24  # how far from the dash a cue may sit
 _OPERATOR_WORD = r"(?:plus|minus|times|divided by)"  # the spoken + - \u00d7 \u00f7
 _CUE_BEFORE = re.compile(rf"(?:(?:\d|\)|\b[a-z])\s+{_OPERATOR_WORD}|\bequals|\blog)\s+$")
 _CUE_AFTER = re.compile(
-    rf"\s+{_OPERATOR_WORD}\s+[\d(]|[\s)(\d.\u2013]{{0,24}}\bequals\b|\s+(?:pi|log)\b|\^"
+    rf"\s+{_OPERATOR_WORD}\s+[\d(]|[\s)(\d.\u2013-]{{0,24}}\bequals\b|\s+(?:pi|log)\b|\^"
     r"|\s+is (?:less|greater|not|approximately)\b"
 )
 _BRACKET_BEFORE = re.compile(r"\(\s*$")
@@ -599,7 +654,13 @@ def _speak_en_dash_minus(text: str, tables: Tables) -> str:
         pieces.append(f"{m['l']} minus " if minus else m.group())
         position, chained_at = m.end(), (m.end() if minus else -1)
     pieces.append(text[position:])
-    return _EN_DASH_SIGN.sub(_en_dash_sign, "".join(pieces))
+
+    def spaced(m: re.Match[str]) -> str:
+        gap = m["gap"] or (" " if m["opener"] in {",", "equals"} else "")
+        return f"{m['opener']}{gap}minus "
+
+    text = _SPACED_SIGN.sub(spaced, "".join(pieces))
+    return _EN_DASH_SIGN.sub(_en_dash_sign, text)
 
 
 def speak_symbols(
