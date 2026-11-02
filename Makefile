@@ -168,8 +168,9 @@ $(STAMPS)/voices: $(STAMPS)/deps assets.lock.json scripts/fetch_assets.py
 	$(FETCH) --group voices --voices $(VOICES) $(FETCH_NET)
 	@mkdir -p $(@D) && touch $@
 
-kokoro: ## Kokoro assets (arm64 only) via scripts/fetch_assets.py into .data/models/kokoro
+kokoro: $(STAMPS)/deps ## Kokoro engine (arm64 only): sync the kokoro extra, fetch its SHA256-pinned assets
 	@if [ "$$(uname -m)" != arm64 ]; then echo "kokoro: needs Apple Silicon (arm64), found $$(uname -m)" >&2; exit 1; fi
+	$(UV) sync --frozen --inexact --extra kokoro $(UV_NET)
 	$(FETCH) --group kokoro $(FETCH_NET)
 
 doctor: ## Read-only health report; exit 1 with the exact fix when a required item is missing
