@@ -22,6 +22,8 @@ The commands on this page are untested: CI does not run them.
    make ci
    ```
 
+   The gate needs `shellcheck`, `prettier`, and `markdownlint` on your `PATH`. See [Test and CI]({{ '/developer/testing/' | relative_url }}).
+
 5. Push the branch and open a pull request against `main`.
 6. Wait for the check `ci`. Fix the failures and push again. A new push cancels the older run.
 7. A maintainer merges with a rebase merge. Each of your commits lands on `main` as it is, so write each message for the history.

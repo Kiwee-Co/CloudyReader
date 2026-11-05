@@ -108,7 +108,8 @@ Run `make help` to list every target and variable.
 | `make test` | Run the gate tests with a 75 percent coverage floor. |
 | `make check` | Run `ruff check` and `ruff format --check`. |
 | `make fmt` | Run `ruff format` and `ruff check --fix`. |
-| `make ci` | Run `check`, then `test`, then `precommit`. This is the commit gate. |
+| `make guards` | Run the policy guards: vendor domain, lock hosts, disk paths, and workflow triggers. |
+| `make ci` | Run `guards`, `check`, `test`, then `precommit`. This is the commit gate. It needs `shellcheck`, `prettier`, and `markdownlint` on the `PATH`. |
 | `make app` | Build `dist/Cloudy Reader.app`. |
 
 ## Contributing

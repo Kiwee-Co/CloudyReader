@@ -19,6 +19,7 @@ The commands on this page are untested: CI does not run them.
 | Python 3.12 | The project pins `>=3.12,<3.13`. | `.python-version` holds `3.12`. |
 | [uv](https://docs.astral.sh/uv/) | Manages the environment and the lock file. | `brew install uv`. CI uses uv 0.9.28. |
 | GNU Make | Runs the targets. | The Makefile also works with the Make 3.81 that macOS ships. |
+| ShellCheck, Prettier, and markdownlint | `make precommit` and `make ci` run them as hooks. | Install ShellCheck with `uv tool install shellcheck-py`. Install the other two with `npm install --global prettier markdownlint-cli`, which needs Node. |
 | Xcode command line tools | `make app` needs `codesign`. | `xcode-select --install`. |
 
 ## Set up a checkout
@@ -58,8 +59,9 @@ Run `make help` to print this list with the variables.
 | `test-fast` | Run the quick tests. No models, no network. |
 | `check` | `ruff check` and `ruff format --check`. |
 | `fmt` | `ruff format` and `ruff check --fix`. |
-| `precommit` | `pre-commit run -a`, or print how to install it. |
-| `ci` | The commit gate: `check`, then `test`, then `precommit`. |
+| `precommit` | `pre-commit run -a`, or print how to install it. The hooks need `shellcheck`, `prettier`, and `markdownlint` on the `PATH`. |
+| `guards` | The policy guards: vendor domain, lock hosts, disk paths, and workflow triggers. Needs only `python3` and `git`. |
+| `ci` | The commit gate: `guards`, `check`, `test`, then `precommit`. |
 | `app` | Build `dist/Cloudy Reader.app`. |
 | `icons` | Regenerate the four icon candidates and `assets/icons/preview.png`. |
 | `open-icons` | Open `assets/icons/preview.png`. |
@@ -111,7 +113,7 @@ The script `scripts/build_app.sh` never uses the network. It runs PyInstaller wi
 env -u UV_INDEX_URL -u UV_DEFAULT_INDEX uv lock --default-index https://pypi.org/simple
 ```
 
-Check the diff of `uv.lock` before you commit. Every `registry` URL must name `https://pypi.org/simple`. CI also fails when the lock names a host other than `pypi.org`, `files.pythonhosted.org`, or `github.com`.
+Check the diff of `uv.lock` before you commit. Every `registry` URL must name `https://pypi.org/simple`. CI also fails when the lock names a host other than `pypi.org`, `files.pythonhosted.org`, or `github.com`. It fails too when `uv lock --check` finds the lock out of date.
 
 ## Run the app from source
 
