@@ -10,10 +10,11 @@ on:
 permissions:
   contents: read
 
-# A pull request run is replaced by its next push; a run on main always finishes.
+# A pull request run is replaced by its next push. Any other run gets a group of its own,
+# so nothing cancels it and a run on main always finishes.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
 
 defaults:
   run:
@@ -95,8 +96,9 @@ jobs:
           uvx --python "$(cat .python-version)" --from "actionlint-py==$ACTIONLINT_PY" actionlint
 
       # Offline: no token, so no online audits; the audits that read the files still run.
+      # The github format puts each finding in the check annotations, where a reader sees it.
       - name: zizmor
-        run: uvx --python "$(cat .python-version)" "zizmor==$ZIZMOR" --offline .github/workflows
+        run: uvx --python "$(cat .python-version)" "zizmor==$ZIZMOR" --offline --format github .github/workflows
 
   pre-commit:
     name: pre-commit

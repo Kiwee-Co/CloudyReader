@@ -56,9 +56,12 @@ def test_default_permissions_are_read_only_and_no_job_widens_them() -> None:
 
 
 def test_concurrency_cancels_pull_request_runs_only() -> None:
+    # Only a PR run shares a group by ref; any other run has its own run_id, so none is cancelled.
     concurrency = load()["concurrency"]
-    assert "github.ref" in concurrency["group"]
-    assert concurrency["cancel-in-progress"] == "${{ github.event_name == 'pull_request' }}"
+    assert concurrency["cancel-in-progress"] is True
+    assert (
+        "github.event_name == 'pull_request' && github.ref || github.run_id" in concurrency["group"]
+    )
 
 
 def test_every_job_has_a_timeout_and_a_pinned_runner() -> None:
@@ -219,3 +222,9 @@ def test_the_format_job_installs_pinned_node_tools_without_scripts_and_runs_the_
 def test_the_pre_commit_job_skips_exactly_the_hooks_the_format_job_runs() -> None:
     runs = " ".join(s.get("run", "") for s in steps("pre-commit"))
     assert "SKIP=prettier,markdownlint pre-commit run --all-files" in runs
+
+
+def test_zizmor_runs_offline_with_annotations_so_findings_are_readable() -> None:
+    step = next(s for s in steps("lint") if s.get("name") == "zizmor")
+    assert "--offline" in step["run"] and "--format github" in step["run"]
+    assert '"zizmor==$ZIZMOR"' in step["run"]
