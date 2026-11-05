@@ -228,3 +228,20 @@ def test_zizmor_runs_offline_with_annotations_so_findings_are_readable() -> None
     step = next(s for s in steps("lint") if s.get("name") == "zizmor")
     assert "--offline" in step["run"] and "--format github" in step["run"]
     assert '"zizmor==$ZIZMOR"' in step["run"]
+
+
+def test_actionlint_prints_each_finding_as_an_annotation() -> None:
+    step = next(s for s in steps("lint") if s.get("name") == "actionlint")
+    assert "::error file={{.Filepath}},line={{.Line}}" in step["run"]
+    assert "$err" not in step["run"], "a dollar sign in single quotes trips shellcheck SC2016"
+    assert 'actionlint -format "$format"' in step["run"]
+
+
+def test_zizmor_has_one_scoped_ignore_and_it_says_why() -> None:
+    lines = CI.read_text(encoding="utf-8").splitlines()
+    ignores = [i for i, line in enumerate(lines) if "zizmor: ignore" in line]
+    assert len(ignores) == 1, "every new suppression needs its own review"
+    at = ignores[0]
+    assert lines[at].strip() == "run: | # zizmor: ignore[adhoc-packages]"
+    assert lines[at - 1].strip() == "- name: Install Prettier and markdownlint"
+    assert "lockfile" in lines[at - 2] + lines[at - 3]

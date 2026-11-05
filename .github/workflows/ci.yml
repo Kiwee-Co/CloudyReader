@@ -90,10 +90,12 @@ jobs:
           git ls-files -z -- '*.sh' | xargs -0 -r shellcheck
 
       # With shellcheck on PATH, actionlint also lints the shell in every run block.
+      # The format turns each finding into a check annotation, which a reader sees without logs.
       - name: actionlint
         run: |
           PATH="$(uv tool dir --bin):$PATH"
-          uvx --python "$(cat .python-version)" --from "actionlint-py==$ACTIONLINT_PY" actionlint
+          format='{{range .}}::error file={{.Filepath}},line={{.Line}},col={{.Column}},title=actionlint {{.Kind}}::{{.Message}}\n{{end}}'
+          uvx --python "$(cat .python-version)" --from "actionlint-py==$ACTIONLINT_PY" actionlint -format "$format"
 
       # Offline: no token, so no online audits; the audits that read the files still run.
       # The github format puts each finding in the check annotations, where a reader sees it.
@@ -160,9 +162,10 @@ jobs:
           version: '0.9.28'
           enable-cache: false
 
-      # Node and npm ship on the runner image. No install script runs; there is no lockfile yet.
+      # Node and npm ship on the runner image. Exact versions, no install script. A lockfile needs
+      # the public npm registry to generate, so zizmor's adhoc-packages is ignored here only.
       - name: Install Prettier and markdownlint
-        run: |
+        run: | # zizmor: ignore[adhoc-packages]
           npm install --prefix "$RUNNER_TEMP/format-tools" --ignore-scripts --no-audit --no-fund \
             "prettier@$PRETTIER" "markdownlint-cli@$MARKDOWNLINT_CLI"
 
