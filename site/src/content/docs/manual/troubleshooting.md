@@ -1,9 +1,10 @@
 ---
-title: "Troubleshooting"
-description: "Fixes for start-up problems, missing voices, error messages, silence, and slow readings."
+title: 'Troubleshooting'
+description: 'Fixes for start-up problems, missing voices, error messages, silence, and slow readings.'
 sidebar:
   order: 7
 ---
+
 Find your symptom, check the cause, and apply the fix. Quoted messages are the text that the app shows in its status bar.
 
 The commands on this page are untested: CI does not run them.

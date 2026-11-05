@@ -1,10 +1,11 @@
 ---
-title: "Point cloudyreader.com at the site"
-description: "What is set for the custom domain, what is left, and how to check DNS and HTTPS."
+title: 'Point cloudyreader.com at the site'
+description: 'What is set for the custom domain, what is left, and how to check DNS and HTTPS.'
 sidebar:
   order: 15
-  label: "Custom domain"
+  label: 'Custom domain'
 ---
+
 The custom domain `cloudyreader.com` is set in **Settings > Pages**. GitHub builds the site from the branch `main`, folder `/docs`. DNS already points the name at GitHub Pages. This guide lists what is done, what is left, and how to check each part.
 
 The commands on this page are untested: CI does not run them.

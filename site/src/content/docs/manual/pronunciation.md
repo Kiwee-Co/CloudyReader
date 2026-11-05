@@ -1,9 +1,10 @@
 ---
-title: "Pronunciation"
-description: "How Cloudy Reader turns formulas, units, symbols, and names into speech, and how to fix a word."
+title: 'Pronunciation'
+description: 'How Cloudy Reader turns formulas, units, symbols, and names into speech, and how to fix a word.'
 sidebar:
   order: 4
 ---
+
 Cloudy Reader changes how a word sounds. It never changes which word is said. The app spells the formula `NaHCO3` as "N A H C O three". It never swaps in "baking soda". Every stage on this page follows that rule: lookups and the lexicon pick sounds, not words.
 
 ## Follow the stages

@@ -1,9 +1,10 @@
 ---
-title: "FAQ"
-description: "Short answers to common questions about Cloudy Reader."
+title: 'FAQ'
+description: 'Short answers to common questions about Cloudy Reader.'
 sidebar:
   order: 8
 ---
+
 ## What does Cloudy Reader do?
 
 It reads US DOE National Science Bowl questions aloud on your Mac. You paste the text, choose a voice, and press **Speak**. The voices run on your Mac. The app also turns formulas, units, and symbols into words, so a voice can say them.

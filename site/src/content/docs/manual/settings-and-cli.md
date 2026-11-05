@@ -1,9 +1,10 @@
 ---
-title: "Settings and command line"
-description: "Every command-line option, environment variable, and saved preference of Cloudy Reader."
+title: 'Settings and command line'
+description: 'Every command-line option, environment variable, and saved preference of Cloudy Reader.'
 sidebar:
   order: 6
 ---
+
 This page lists every option the app reads. The app has no settings window. Its choices live in the window, in two environment variables, and in three command-line options, plus `-h` and `--help`.
 
 The commands on this page are untested: CI does not run them.

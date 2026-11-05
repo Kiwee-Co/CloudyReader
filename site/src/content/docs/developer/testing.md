@@ -1,9 +1,10 @@
 ---
-title: "Test and CI"
-description: "The test gates, the markers, the coverage floor, the live smoke checks, and the CI workflow."
+title: 'Test and CI'
+description: 'The test gates, the markers, the coverage floor, the live smoke checks, and the CI workflow.'
 sidebar:
   order: 13
 ---
+
 The commit gate is `make ci`. It runs the lint check, the tests with a coverage floor, and the pre-commit hooks. The required status check `ci` runs the same command.
 
 The commands on this page are untested: CI does not run them.

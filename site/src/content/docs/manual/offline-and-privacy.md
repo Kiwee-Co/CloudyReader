@@ -1,9 +1,10 @@
 ---
-title: "Offline and privacy"
-description: "What stays on your Mac, what uses the network, how to work offline, and where the app stores files."
+title: 'Offline and privacy'
+description: 'What stays on your Mac, what uses the network, how to work offline, and where the app stores files.'
 sidebar:
   order: 5
 ---
+
 Speech runs on your Mac. This page lists the two cases where the app uses the network, what each one sends, and how to stop both.
 
 The commands on this page are untested: CI does not run them.

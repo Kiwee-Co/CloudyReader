@@ -1,9 +1,10 @@
 ---
-title: "Get started"
-description: "Requirements, install, first launch, and your first reading."
+title: 'Get started'
+description: 'Requirements, install, first launch, and your first reading.'
 sidebar:
   order: 1
 ---
+
 Cloudy Reader reads National Science Bowl questions aloud on your Mac. This page takes you from a built app to your first reading.
 
 The commands on this page are untested: CI does not run them.

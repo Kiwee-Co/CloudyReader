@@ -1,9 +1,10 @@
 ---
-title: "Build the app"
-description: "Set up a checkout, run the make targets, work offline, and build the ad-hoc signed Cloudy Reader.app."
+title: 'Build the app'
+description: 'Set up a checkout, run the make targets, work offline, and build the ad-hoc signed Cloudy Reader.app.'
 sidebar:
   order: 11
 ---
+
 This page covers a source checkout: the setup, every `make` target, offline builds, and `make app`.
 
 The commands on this page are untested: CI does not run them.

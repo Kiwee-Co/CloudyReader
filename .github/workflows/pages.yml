@@ -7,7 +7,7 @@ name: Pages
 on:
   push:
     branches: [main]
-    paths: ["site/**", "scripts/check_site.py", ".github/workflows/pages.yml"]
+    paths: ['site/**', 'scripts/check_site.py', '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions:
@@ -25,8 +25,8 @@ jobs:
       contents: read
       pages: read # configure-pages reads the Pages settings
     env:
-      ASTRO_TELEMETRY_DISABLED: "1"
-      NPM_CONFIG_IGNORE_SCRIPTS: "true" # site/.npmrc says the same; no dependency has one
+      ASTRO_TELEMETRY_DISABLED: '1'
+      NPM_CONFIG_IGNORE_SCRIPTS: 'true' # site/.npmrc says the same; no dependency has one
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
