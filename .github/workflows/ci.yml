@@ -1,0 +1,96 @@
+# Required status check `ci` on main: runs the `make ci` gate (ruff, pytest + coverage, pre-commit).
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  ci:
+    name: ci
+    # macOS arm64: afplay, afinfo and wheels that need macOS 14+. macos-14 retired 2026-11-02.
+    runs-on: macos-15
+    timeout-minutes: 25
+    env:
+      UV_MANAGED_PYTHON: "1"
+      UV_NO_PROGRESS: "1"
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Owner rule: no tracked file may name the vendor's own domain. The pattern is built from
+      # two pieces, so this file never matches its own check.
+      - name: No Apple-domain references
+        run: |
+          pat='apple\.c''om'
+          rc=0
+          git grep -n -I -i -e "$pat" -- > "$RUNNER_TEMP/domain-hits.txt" || rc=$?
+          case "$rc" in
+            1) ;;
+            0) echo "::error::tracked files name a forbidden domain; remove these lines:"
+               cut -d: -f1,2 "$RUNNER_TEMP/domain-hits.txt"
+               exit 1 ;;
+            *) echo "::error::git grep failed (exit $rc)"; exit "$rc" ;;
+          esac
+
+      # A hosted runner reaches only public hosts: fail early if the lock names any other.
+      - name: Check uv.lock hosts
+        run: |
+          bad=$(grep -o -E 'https?://[^/" ]+' uv.lock | sort -u \
+            | grep -v -E '^https://(pypi\.org|files\.pythonhosted\.org|github\.com)$' || true)
+          if [ -n "$bad" ]; then
+            echo "::error file=uv.lock::non-public host in uv.lock, relock against pypi.org: $bad"
+            exit 1
+          fi
+
+      # uv 0.9.28 is the local version. It meets pyproject's uv_build bound, so no backend download.
+      # cache-local-path is the Makefile's UV_CACHE_DIR, so `uv run --offline` finds the same cache.
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.9.28"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+          cache-local-path: ${{ github.workspace }}/.cache/uv
+          prune-cache: true
+
+      - name: Show toolchain
+        run: |
+          echo "image ${ImageVersion:-unknown}"
+          sw_vers -productVersion
+          uname -m
+          uv --version
+          make --version | sed -n 1p
+
+      - name: Install locked dependencies
+        run: |
+          uv sync --frozen
+          .venv/bin/python -VV
+
+      - name: Install pre-commit
+        run: |
+          uv tool install --python "$(cat .python-version)" pre-commit==4.7.0
+          uv tool dir --bin >> "$GITHUB_PATH"
+
+      # `make precommit` skips silently when pre-commit is missing, so fail first.
+      - name: Gate (make ci)
+        timeout-minutes: 15
+        run: |
+          command -v pre-commit >/dev/null || { echo "::error::pre-commit not on PATH"; exit 1; }
+          make ci
