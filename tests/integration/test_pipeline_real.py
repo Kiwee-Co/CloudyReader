@@ -93,7 +93,11 @@ def test_build_default_service_wires_the_real_components(tmp_path, monkeypatch):
     service = build_default_service(settings)
 
     assert isinstance(service, Pipeline)
-    assert service.voices() == []  # an empty voices dir: Piper lists nothing, Kokoro is absent
+    voices = service.voices()
+    # An empty data dir: Piper lists nothing, Kokoro is absent, so no voice is installed.
+    assert [voice.key for voice in voices if voice.installed] == []
+    # Only placeholder rows may show (an optional engine offline: "offline: not downloaded").
+    assert all(not voice.installed and voice.reason for voice in voices), voices
 
 
 def engine_keys(tmp_path):

@@ -78,15 +78,22 @@ class TtsService:
     def voices(self) -> list[VoiceInfo]:
         found: list[VoiceInfo] = []
         for engine in self._engines.values():
-            if not engine.available():
-                continue
             try:
-                found.extend(engine.voices())
+                if engine.available():
+                    found.extend(engine.voices())
+                elif (placeholders := getattr(engine, "placeholder_voices", None)) is not None:
+                    # Dimmed rows that say why (not downloaded yet, ...): never installed.
+                    found.extend([dataclasses.replace(v, installed=False) for v in placeholders()])
             except Exception as exc:  # one broken engine must not hide the other voices
                 _LOG.warning(
                     "TTS engine %r failed to list voices: %s", engine.key, exc, exc_info=True
                 )
         return found
+
+    def load_hint(self, voice: VoiceInfo) -> str | None:
+        """What the engine must load before its first synthesis with `voice`; None: nothing."""
+        hook = getattr(self._engines.get(voice.engine), "load_hint", None)
+        return hook() if hook is not None else None
 
     @property
     def last_warnings(self) -> list[str]:
@@ -129,7 +136,9 @@ class TtsService:
                 f"no TTS engine registered for {voice.engine!r} (voice {voice.key})"
             )
         if not engine.available():
+            reason = getattr(engine, "unavailable_reason", None)  # set by available()
             raise EngineUnavailableError(
                 f"TTS engine {voice.engine!r} is unavailable (voice {voice.key})"
+                + (f": {reason}" if reason else "")
             )
         return engine

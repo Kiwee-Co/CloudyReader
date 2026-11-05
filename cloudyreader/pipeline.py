@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import importlib
 import logging
 import platform
 import threading
@@ -34,11 +35,19 @@ log = logging.getLogger(__name__)
 # The CRAFT model tags both words here; the regex detectors tag neither.
 NER_PROBE = "Insulin is secreted by beta cells in response to glucose."
 
+# (module, class) in picker order after Kokoro. Imported on Apple Silicon only, when the service
+# is built; a module that is absent (Qwen ships in a later release) or broken is skipped.
+_OPTIONAL_ENGINES = (
+    ("cloudyreader.engines.chatterbox_turbo", "ChatterboxTurboEngine"),
+    ("cloudyreader.engines.qwen3_tts", "Qwen3TtsEngine"),
+)
+
 
 class SpeechService(Protocol):
     """What the pipeline needs from `cloudyreader.tts.TtsService`.
 
     Optional engine notes: `last_warnings` (set by each synthesize) and `script_warnings(...)`.
+    Optional `load_hint(voice)`: what the first synthesis with that voice must load.
     """
 
     def voices(self) -> list[VoiceInfo]: ...
@@ -90,6 +99,23 @@ class Pipeline:
         spans = self._detector.detect(NER_PROBE)
         return "ner" if any(span.source == "ner" for span in spans) else "regex-only"
 
+    def load_hint(self, voice_key: str) -> str | None:
+        """Status text for a slow first `prepare` with this voice, such as a model load.
+
+        None when nothing loads or the voice is not ready. UI thread: cheap, never raises.
+        """
+        hook = getattr(self._tts, "load_hint", None)
+        if hook is None:
+            return None
+        try:
+            voice = next((v for v in self._tts.voices() if v.key == voice_key), None)
+            if voice is None or not voice.installed:
+                return None  # prepare() fails fast with the reason instead
+            return hook(voice) or None
+        except Exception as exc:
+            log.warning("load hint for %s failed: %s", voice_key, exc, exc_info=True)
+            return None
+
     def prepare(self, raw: str, voice_key: str, opts: RenderOptions) -> Reading:
         if not raw.strip():
             raise ValueError("nothing to read")
@@ -122,7 +148,8 @@ class Pipeline:
         for voice in voices:
             if voice.key == key:
                 if not voice.installed:
-                    raise ValueError(f"voice {key!r} is not installed")
+                    reason = f": {voice.reason}" if voice.reason else ""
+                    raise ValueError(f"voice {key!r} is not installed{reason}")
                 return voice
         known = ", ".join(voice.key for voice in voices) or "none"
         raise ValueError(f"unknown voice {key!r} (available: {known})")
@@ -233,7 +260,9 @@ def build_default_service(settings: Settings | None = None) -> Pipeline:
             settings=dataclasses.replace(settings, offline=True), **shared
         ),
         normalizer=ScriptNormalizer(lexicon),
-        tts=TtsService(_engines(settings), settings.cache_dir / "wav"),
+        tts=TtsService(
+            [*_engines(settings), *_optional_engines(settings)], settings.cache_dir / "wav"
+        ),
         settings=settings,
     )
 
@@ -249,4 +278,20 @@ def _engines(settings: Settings) -> list[TtsEngine]:
             log.info("Kokoro engine not loaded: %s", exc)
         else:
             engines.append(KokoroEngine(settings.models_dir, all_voices=True))
+    return engines
+
+
+def _optional_engines(settings: Settings) -> list[TtsEngine]:
+    """Chatterbox Turbo and Qwen3-TTS, Apple Silicon only. Each engine decides its own rows."""
+    if platform.machine() != "arm64":
+        return []
+    engines: list[TtsEngine] = []
+    for module, name in _OPTIONAL_ENGINES:
+        try:
+            engine_class = getattr(importlib.import_module(module), name)
+            engines.append(engine_class(settings))
+        except ImportError as exc:  # not in this build or this release: the other engines read
+            log.info("optional engine %s not loaded: %s", module, exc)
+        except Exception as exc:  # a broken engine must not stop the app or the next engine
+            log.warning("optional engine %s failed to load: %s", module, exc, exc_info=True)
     return engines
