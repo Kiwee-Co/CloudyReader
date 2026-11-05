@@ -1,14 +1,15 @@
 """Render the documentation figures in docs/assets/img as vector SVG from the live app window.
 
 Usage, with the app's own environment so the figures show the current UI:
-  uv run --frozen --offline --project <repo> python scripts/make_doc_snapshots.py --out docs/assets/img
+  uv run --frozen --offline --project <repo> python scripts/make_doc_snapshots.py --out <dir>
 
-Qt lays out the real MainWindow and About box offscreen: on macOS with the native style (the cocoa
-platform, windows never shown), elsewhere on `offscreen`. The service is the GUI fake (no network,
-no audio) fed the real voice catalog and the real parser and normalizer; settings go to a temp folder.
-QSvgGenerator cannot capture the native macOS style, so each control is drawn here as vector shapes
-from its live geometry and font. Colors come from the live palette and tokens.py, plus control fills
-sampled from native renders. Popup menus are drawn from the combo box's real items.
+Qt lays out the real MainWindow and About box without showing them: on macOS with the native style
+(the cocoa platform), elsewhere on `offscreen`. The service is the GUI fake (no network, no audio)
+fed the real voice catalog and the real parser and normalizer; settings go to a temp folder.
+QSvgGenerator cannot capture the native macOS style, so each control is drawn here as vector
+shapes from its live geometry and font. Colors come from the live palette and tokens.py, plus
+control fills sampled from native renders. Popup menus are drawn from the combo box's real items.
+A window figure shows the content only, with square corners: the site draws the window frame.
 """
 
 from __future__ import annotations
@@ -27,9 +28,11 @@ from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from pathlib import Path
 from types import ModuleType
+from typing import Any
 from xml.sax.saxutils import escape, quoteattr
 
 os.environ.setdefault("QT_MAC_DISABLE_FOREGROUND_APPLICATION_TRANSFORM", "1")  # no Dock icon
+sys.dont_write_bytecode = True  # never leave .pyc files in the app checkout
 
 from PySide6.QtCore import QPoint, QRectF, QSettings, Qt  # noqa: E402
 from PySide6.QtGui import (  # noqa: E402
@@ -59,14 +62,19 @@ from PySide6.QtWidgets import (  # noqa: E402
 import cloudyreader  # noqa: E402
 
 ROOT = Path(cloudyreader.__file__).resolve().parents[1]  # the checkout the app code comes from
-FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif"
-MARGIN = 28.0  # room around a window for its shadow
-TITLE_BAR = 28.0
-WINDOW_RADIUS = 10.0
-MENU_ROW, MENU_PAD, MENU_RADIUS, MENU_TEXT, MENU_TAIL = 22.0, 5.0, 8.0, 21.0, 24.0
+FONT = (
+    "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, "
+    "sans-serif"
+)
+MENU_ROW = 22.0  # macOS menu metrics: row height, padding, corner, text and tail insets
+MENU_PAD = 5.0
+MENU_RADIUS = 8.0
+MENU_TEXT = 21.0
+MENU_TAIL = 24.0
+GAP = 18.0  # between stacked status strips
 LESSAC = "piper:en_US-lessac-medium"
-MISSING = "kokoro:bm_daniel"  # the one voice shown as not installed
-LIGHTS = (("#FF5F57", "#E0443E"), ("#FEBC2E", "#DEA123"), ("#28C840", "#1AAB29"))
+MISSING = "kokoro:am_puck"  # the one voice shown as not installed, high enough to stay in view
+ROUND = {"stroke_linecap": "round", "stroke_linejoin": "round"}
 
 
 # --- SVG writing -------------------------------------------------------------------------------
@@ -99,6 +107,10 @@ def rgba(hex_color: str, alpha: float = 1.0) -> QColor:
     return color
 
 
+def rect_attrs(r: QRectF, radius: float = 0) -> str:
+    return attrs(x=r.x(), y=r.y(), width=r.width(), height=r.height(), rx=radius or None)
+
+
 class Svg:
     """One figure: a viewBox in points, a title and description, defs, and drawing elements."""
 
@@ -118,10 +130,7 @@ class Svg:
         self._body.append(element)
 
     def rect(self, r: QRectF, radius: float = 0, **kw: object) -> None:
-        rx = radius or None
-        self.add(
-            f"<rect{attrs(x=r.x(), y=r.y(), width=r.width(), height=r.height(), rx=rx, **kw)}/>"
-        )
+        self.add(f"<rect{rect_attrs(r, radius)}{attrs(**kw)}/>")
 
     def path(self, d: str, **kw: object) -> None:
         self.add(f"<path{attrs(d=d, **kw)}/>")
@@ -132,6 +141,11 @@ class Svg:
     def text(self, x: float, y: float, value: str, **kw: object) -> None:
         self.add(f"<text{attrs(x=x, y=y, **kw)}>{escape(value)}</text>")
 
+    def clip(self, inner: str) -> str:
+        cid = self.uid("clip")
+        self.define(f'<clipPath id="{cid}">{inner}</clipPath>')
+        return cid
+
     def blur(self, deviation: float) -> str:
         fid = self.uid("blur")
         self.define(
@@ -140,17 +154,18 @@ class Svg:
         )
         return fid
 
-    def gradient(
-        self, stops: Sequence[tuple[float, QColor]], x1=0.0, y1=0.0, x2=0.0, y2=1.0, **kw
-    ) -> str:
+    def gradient(self, stops: Sequence[tuple[float, QColor]], **kw: object) -> str:
+        """A linear gradient, top to bottom unless x1/y1/x2/y2 say otherwise."""
         gid = self.uid("grad")
-        parts = "".join(
-            f"<stop{attrs(offset=at, stop_color=c.name(), stop_opacity=c.alphaF() if c.alphaF() < 1 else None)}/>"
-            for at, c in stops
-        )
-        self.define(
-            f"<linearGradient{attrs(id=gid, x1=x1, y1=y1, x2=x2, y2=y2, **kw)}>{parts}</linearGradient>"
-        )
+        parts = []
+        for at, color in stops:
+            alpha = color.alphaF()
+            stop = attrs(
+                offset=at, stop_color=color.name(), stop_opacity=alpha if alpha < 1 else None
+            )
+            parts.append(f"<stop{stop}/>")
+        line = {"x1": 0, "y1": 0, "x2": 0, "y2": 1, **kw}
+        self.define(f"<linearGradient{attrs(id=gid, **line)}>{''.join(parts)}</linearGradient>")
         return gid
 
     def xml(self) -> str:
@@ -158,19 +173,20 @@ class Svg:
         defs = f"<defs>{''.join(self._defs)}</defs>\n" if self._defs else ""
         return (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
-            f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}"'
-            f' role="img" aria-labelledby="title desc" font-family={quoteattr(FONT)}>\n'
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" '
+            f'viewBox="0 0 {w} {h}" role="img" aria-labelledby="title desc" '
+            f"font-family={quoteattr(FONT)}>\n"
             f'<title id="title">{escape(self.title)}</title>\n'
             f'<desc id="desc">{escape(self.desc)}</desc>\n'
             f"{defs}" + "\n".join(self._body) + "\n</svg>\n"
         )
 
 
-def qpath_d(path: QPainterPath, digits: int = 1) -> str:
-    """SVG path data for a QPainterPath (moves, lines, cubic curves)."""
+def qpath_d(path: QPainterPath) -> str:
+    """SVG path data for a QPainterPath: moves, lines, and cubic curves."""
 
-    def pt(e) -> str:
-        return f"{round(e.x, digits):g} {round(e.y, digits):g}"
+    def pt(e: Any) -> str:
+        return f"{round(e.x, 1):g} {round(e.y, 1):g}"
 
     out, i, kinds = [], 0, QPainterPath.ElementType
     while i < path.elementCount():
@@ -181,10 +197,14 @@ def qpath_d(path: QPainterPath, digits: int = 1) -> str:
         elif e.type == kinds.LineToElement:
             out.append(f"L{pt(e)}")
             i += 1
-        else:  # CurveToElement, then two CurveToDataElement
+        else:  # a CurveToElement, then its two CurveToDataElements
             out.append(f"C{pt(e)} {pt(path.elementAt(i + 1))} {pt(path.elementAt(i + 2))}")
             i += 3
     return "".join(out)
+
+
+def fill_rule(path: QPainterPath) -> str | None:
+    return "evenodd" if path.fillRule() == Qt.FillRule.OddEvenFill else None
 
 
 # --- colors per appearance ---------------------------------------------------------------------
@@ -192,14 +212,13 @@ def qpath_d(path: QPainterPath, digits: int = 1) -> str:
 
 @dataclass(frozen=True)
 class Look:
-    """Colors for one appearance. Text and backgrounds come from the live palette."""
+    """Colors for one appearance; text and backgrounds come from the live palette."""
 
     dark: bool
     window: QColor
     label: QColor
     disabled: QColor
     base: QColor
-    text: QColor
     placeholder: QColor
     field_edge: QColor
     field_top: QColor
@@ -223,49 +242,87 @@ class Look:
     shadow: QColor
     warning: QColor
     error: QColor
-    ink: QColor  # captions and diagram text outside the app's own chrome
+    ink: QColor  # captions outside the app's own chrome
+
+
+# Sampled from 2x native renders of this window (light, then dark); errors and warnings are the
+# system red and yellow.
+_SAMPLED = {
+    False: {
+        "field_edge": QColor("#B6B6B6"),
+        "field_top": QColor("#8E8E8E"),
+        "control": QColor("#FFFFFF"),
+        "control_edge": rgba("#000000", 0.13),
+        "control_shine": rgba("#FFFFFF", 0),
+        "control_shadow": rgba("#000000", 0.24),
+        "control_off": QColor("#F5F5F5"),
+        "default": QColor("#077EFF"),
+        "cap_top": QColor("#2690FF"),
+        "cap_bottom": QColor("#047DFF"),
+        "accent": QColor("#077EFF"),
+        "box": QColor("#FFFFFF"),
+        "box_edge": rgba("#000000", 0.18),
+        "chevron": QColor("#ACACAC"),
+        "separator": QColor("#838383"),
+        "track": QColor("#E0E0E0"),
+        "menu": QColor("#F6F6F6"),
+        "menu_edge": rgba("#000000", 0.14),
+        "window_edge": rgba("#000000", 0.2),
+        "shadow": rgba("#000000", 0.3),
+        "warning": QColor("#FFCC00"),
+        "error": QColor("#FF3B30"),
+    },
+    True: {
+        "field_edge": QColor("#101010"),
+        "field_top": QColor("#0D0D0D"),
+        "control": QColor("#656565"),
+        "control_edge": rgba("#000000", 0.25),
+        "control_shine": rgba("#FFFFFF", 0.14),
+        "control_shadow": rgba("#000000", 0.25),
+        "control_off": QColor("#4B4B4B"),
+        "default": QColor("#1560D2"),
+        "cap_top": QColor("#177AE4"),
+        "cap_bottom": QColor("#156FCF"),
+        "accent": QColor("#1C6CDC"),
+        "box": QColor("#5E5E5E"),
+        "box_edge": rgba("#000000", 0.3),
+        "chevron": QColor("#B2B2B2"),
+        "separator": QColor("#838383"),
+        "track": QColor("#474747"),
+        "menu": QColor("#2B2B2B"),
+        "menu_edge": rgba("#FFFFFF", 0.16),
+        "window_edge": rgba("#FFFFFF", 0.14),
+        "shadow": rgba("#000000", 0.55),
+        "warning": QColor("#FFD60A"),
+        "error": QColor("#FF453A"),
+    },
+}
 
 
 def look_for(dark: bool, palette: QPalette | None) -> Look:
-    """The appearance's colors. Control fills are sampled from native renders of this window."""
+    """The appearance's colors: the live palette when the platform applied it, else its values."""
     from cloudyreader.gui import tokens
 
-    if dark:
-        fallback = ("#323232", rgba("#FFFFFF", 0.85), rgba("#FFFFFF", 0.25), "#171717")
-    else:
-        fallback = ("#ECECEC", rgba("#000000", 0.85), rgba("#000000", 0.25), "#FFFFFF")
-    window, label, disabled, base = (QColor(c) for c in fallback)
-    if palette is not None:  # the platform applied this appearance: take its own colors
-        active, off, role = (
-            QPalette.ColorGroup.Active,
-            QPalette.ColorGroup.Disabled,
-            QPalette.ColorRole,
-        )
+    ink = "#FFFFFF" if dark else "#000000"
+    window = QColor("#323232" if dark else "#ECECEC")
+    base = QColor("#171717" if dark else "#FFFFFF")
+    label, disabled = rgba(ink, 0.85), rgba(ink, 0.25)
+    if palette is not None:
+        role = QPalette.ColorRole
         window, base = palette.color(role.Window), palette.color(role.Base)
-        label, disabled = (
-            palette.color(active, role.WindowText),
-            palette.color(off, role.WindowText),
-        )
-    text = QColor(label)
-    if dark:
-        return Look(
-            True, window, label, disabled, base, text, QColor(tokens.PLACEHOLDER_DARK),
-            QColor("#101010"), QColor("#0D0D0D"), QColor("#656565"), rgba("#000000", 0.25),
-            rgba("#FFFFFF", 0.14), rgba("#000000", 0.25), QColor("#4B4B4B"), QColor("#1560D2"),
-            QColor("#177AE4"), QColor("#156FCF"), QColor("#1C6CDC"), QColor("#5E5E5E"),
-            rgba("#000000", 0.3), QColor("#B2B2B2"), QColor("#838383"), QColor("#474747"),
-            QColor("#2B2B2B"), rgba("#FFFFFF", 0.16), rgba("#FFFFFF", 0.14), rgba("#000000", 0.55),
-            QColor("#FFD60A"), QColor("#FF453A"), rgba("#FFFFFF", 0.85),
-        )  # fmt: skip
+        label = palette.color(QPalette.ColorGroup.Active, role.WindowText)
+        disabled = palette.color(QPalette.ColorGroup.Disabled, role.WindowText)
+    placeholder = QColor(tokens.PLACEHOLDER_DARK if dark else tokens.PLACEHOLDER_LIGHT)
     return Look(
-        False, window, label, disabled, base, text, QColor(tokens.PLACEHOLDER_LIGHT),
-        QColor("#B6B6B6"), QColor("#8E8E8E"), QColor("#FFFFFF"), rgba("#000000", 0.13),
-        rgba("#FFFFFF", 0), rgba("#000000", 0.24), QColor("#F5F5F5"), QColor("#077EFF"),
-        QColor("#2690FF"), QColor("#047DFF"), QColor("#077EFF"), QColor("#FFFFFF"),
-        rgba("#000000", 0.18), QColor("#ACACAC"), QColor("#838383"), QColor("#E0E0E0"),
-        QColor("#F6F6F6"), rgba("#000000", 0.14), rgba("#000000", 0.2), rgba("#000000", 0.3),
-        QColor("#FFCC00"), QColor("#FF3B30"), rgba("#000000", 0.85),
-    )  # fmt: skip
+        dark=dark,
+        window=window,
+        label=label,
+        disabled=disabled,
+        base=base,
+        placeholder=placeholder,
+        ink=rgba(ink, 0.85),
+        **_SAMPLED[dark],
+    )
 
 
 # --- the live app ------------------------------------------------------------------------------
@@ -284,9 +341,10 @@ class Env:
         self.app.setApplicationName("Cloudy Reader")
         self.app.setOrganizationName("CloudyReaderDocs")
         icon = ROOT / "assets" / "icons" / "cloud-atom" / "icon_512.png"
-        if icon.is_file():  # what a source run shows in the About box
+        if icon.is_file():  # what a source checkout shows in the About box
             self.app.setWindowIcon(QIcon(str(icon)))
         self.voices = real_voices(self.tmp)
+        self.service_class = doc_service_class()
         self._ids = itertools.count(1)
 
     def scheme(self, dark: bool) -> Look:
@@ -306,17 +364,17 @@ class Env:
             time.sleep(0.005)
 
     @contextmanager
-    def window(self, *, rotation: str | None = None, **knobs: object) -> Iterator[tuple]:
+    def window(self, *, rotation: str | None = None, **knobs: object) -> Iterator[tuple[Any, Any]]:
+        """A shown-offscreen MainWindow with its voices listed, and its fake service."""
         from cloudyreader.gui.fake_service import FakeClipboard, FakePlayer
         from cloudyreader.gui.main_window import MainWindow
 
-        settings = QSettings(
-            str(self.tmp / f"window{next(self._ids)}.ini"), QSettings.Format.IniFormat
-        )
+        path = self.tmp / f"window{next(self._ids)}.ini"
+        settings = QSettings(str(path), QSettings.Format.IniFormat)
         settings.setValue("voice", LESSAC)
         if rotation is not None:
             settings.setValue("voice_rotation", rotation)
-        service = DocService(voices=self.voices, **knobs)
+        service = self.service_class(voices=self.voices, **knobs)
         win = MainWindow(service, FakePlayer(), settings=settings, clipboard=FakeClipboard())
         win.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen)
         win.show()
@@ -333,18 +391,25 @@ class Env:
             win.deleteLater()
             self.app.processEvents()
 
-    def speak(self, win: QWidget, text: str) -> None:
+    def speak(self, win: Any, text: str) -> None:
         played: list[object] = []
         win.reading_played.connect(played.append)
         win.question_edit.setPlainText(text)
         win.speak_action.trigger()
         self.pump(lambda: bool(played), "a reading plays")
 
+    def hold_reading(self, win: Any, service: Any) -> None:
+        """Start a reading that waits in prepare(), so the busy bar shows; window() releases it."""
+        service.gate = threading.Event()
+        win.question_edit.setPlainText(sample_question())
+        win.speak_action.trigger()
+        self.pump(lambda: not win.busy_bar.isHidden(), "busy bar")
 
-def real_voices(tmp: Path) -> list:
-    """The voices the app lists once every pinned voice is in: the real names and order.
 
-    Piper voices are scanned from stand-in files named as in assets.lock.json; Kokoro voices come
+def real_voices(tmp: Path) -> list[Any]:
+    """The voices the app lists once every pinned voice is in: their real names and order.
+
+    Piper voices come from a scan of stand-in files named as in assets.lock.json, Kokoro voices
     from the engine's own table. One Kokoro voice stays not installed, as after a failed download.
     """
     from cloudyreader.engines.kokoro import RECOMMENDED_VOICES, VOICE_GRADES, KokoroEngine
@@ -357,16 +422,20 @@ def real_voices(tmp: Path) -> list:
         if asset["group"] == "voices" and asset["name"].endswith(".onnx"):
             stem = asset["name"].removesuffix(".onnx")
             language, _, rest = stem.partition("-")
-            config = {"language": {"code": language}, "audio": {"quality": rest.rpartition("-")[2]}}
+            config = {
+                "language": {"code": language},
+                "audio": {"quality": rest.rpartition("-")[2]},
+                "num_speakers": 1,
+            }
             (folder / asset["name"]).write_bytes(b"")
-            (folder / f"{asset['name']}.json").write_text(json.dumps({**config, "num_speakers": 1}))
+            (folder / f"{asset['name']}.json").write_text(json.dumps(config))
     engine = KokoroEngine(tmp / "kokoro", all_voices=True)
     ids = [*RECOMMENDED_VOICES, *(v for v in VOICE_GRADES if v not in RECOMMENDED_VOICES)]
     kokoro = [engine._voice_info(vid) for vid in ids]  # what voices() lists on Apple Silicon
     return scan_installed(folder) + [replace(v, installed=v.key != MISSING) for v in kokoro]
 
 
-def _doc_service_class() -> type:
+def doc_service_class() -> type:
     from cloudyreader.gui.fake_service import FakeReaderService
     from cloudyreader.lexicon import Lexicon
     from cloudyreader.normalize import ScriptNormalizer
@@ -374,28 +443,23 @@ def _doc_service_class() -> type:
 
     normalizer = ScriptNormalizer(Lexicon.load())
 
-    class _DocService(FakeReaderService):
+    class DocService(FakeReaderService):
         """The GUI fake with the real parser and normalizer, so the spoken script is genuine."""
 
-        def prepare(self, raw, voice_key, opts):
+        def prepare(self, raw: str, voice_key: str, opts: Any) -> Any:
             reading = super().prepare(raw, voice_key, opts)
             questions = QuestionParser().parse(raw)
             script = normalizer.to_script(questions, {}, opts)
             return replace(reading, questions=tuple(questions), script=script)
 
-    return _DocService
+    return DocService
 
 
-class _LazyService:
-    _cls: type | None = None
+def sample_question() -> str:
+    """The toss-up the app's own self-test reads."""
+    from cloudyreader.__main__ import SELF_TEST_PASTE
 
-    def __call__(self, **knobs: object):
-        if _LazyService._cls is None:
-            _LazyService._cls = _doc_service_class()
-        return _LazyService._cls(**knobs)
-
-
-DocService = _LazyService()
+    return SELF_TEST_PASTE.strip()
 
 
 # --- drawing the widgets -----------------------------------------------------------------------
@@ -412,8 +476,13 @@ def font_kw(font: QFont) -> dict[str, object]:
     return {"font_size": font.pointSizeF(), "font_weight": weight if weight != 400 else None}
 
 
+def pts(*xy: float) -> str:
+    """'x y' pairs for path data."""
+    return " ".join(num(v) for v in xy)
+
+
 class Canvas:
-    """Draws one live widget tree into an Svg at an offset, as macOS controls in an active window."""
+    """Draws a live widget tree into an Svg at an offset, as macOS controls in an active window."""
 
     def __init__(self, svg: Svg, look: Look, root: QWidget, dx: float, dy: float) -> None:
         self.svg, self.look, self.root, self.dx, self.dy = svg, look, root, dx, dy
@@ -425,7 +494,7 @@ class Canvas:
 
     def tree(self, parent: QWidget) -> None:
         for child in parent.children():
-            if isinstance(child, QWidget) and child.isVisibleTo(self.root) and not child.isWindow():
+            if isinstance(child, QWidget) and not child.isWindow() and child.isVisibleTo(self.root):
                 self.widget(child)
 
     def widget(self, w: QWidget) -> None:
@@ -447,27 +516,22 @@ class Canvas:
             self.label(w)
         elif isinstance(w, StatusBar):
             self.status_bar(w)
-            self.tree(w)  # its permanent widgets: download label and bar, busy bar
+            self.tree(w)  # its permanent widgets: the download label and bar, the busy bar
         else:
             self.tree(w)
 
-    # Plain bezels: a 0.5 pt edge, a soft shadow below, an inner top shine in Dark Mode.
-    def bezel(self, r: QRectF, fill: QColor, radius: float = 5.5, edge: bool = True) -> None:
+    def bezel(self, r: QRectF, fill: QColor, *, edge: bool = True, radius: float = 5.5) -> None:
+        """A control bezel: soft shadow below, 0.5 pt edge, and in Dark Mode a top shine."""
         look, svg = self.look, self.svg
         svg.rect(r.translated(0, 0.6), radius, **paint(look.control_shadow))
         svg.rect(r, radius, **paint(fill))
-        if edge:
-            inset = r.adjusted(0.25, 0.25, -0.25, -0.25)
-            svg.rect(
-                inset, radius, fill="none", **paint(look.control_edge, "stroke"), stroke_width=0.5
-            )
-        if look.dark and edge:
-            x0, x1, y = r.left() + radius, r.right() - radius, r.top() + 0.75
-            svg.path(
-                f"M{num(x0)} {num(y)}H{num(x1)}",
-                **paint(look.control_shine, "stroke"),
-                stroke_width=0.5,
-            )
+        if not edge:
+            return
+        inset = r.adjusted(0.25, 0.25, -0.25, -0.25)
+        svg.rect(inset, radius, fill="none", stroke_width=0.5, **paint(look.control_edge, "stroke"))
+        if look.dark:
+            shine = f"M{pts(r.left() + radius, r.top() + 0.75)}H{num(r.right() - radius)}"
+            svg.path(shine, stroke_width=0.5, **paint(look.control_shine, "stroke"))
 
     def button(self, b: QPushButton) -> None:
         opt = QStyleOptionButton()
@@ -476,114 +540,99 @@ class Canvas:
         r = QRectF(item).translated(self.geo(b).topLeft())
         on = b.isEnabled()
         primary = on and b.isDefault()
-        fill = (
-            self.look.default if primary else (self.look.control if on else self.look.control_off)
-        )
+        look = self.look
+        fill = look.default if primary else (look.control if on else look.control_off)
         self.bezel(r, fill, edge=not primary)
-        color = QColor("#FFFFFF") if primary else (self.look.label if on else self.look.disabled)
+        color = QColor("#FFFFFF") if primary else (look.label if on else look.disabled)
         y = baseline(r.top(), r.height(), b.font())
-        self.svg.text(
-            r.center().x(), y, b.text(), text_anchor="middle", **font_kw(b.font()), **paint(color)
-        )
-
-    def popup(self, c: QComboBox) -> None:
-        r = self.popup_bezel(c)
-        look, svg = self.look, self.svg
-        self.bezel(r, look.control if c.isEnabled() else look.control_off)
-        cap = QRectF(r.right() - 18.5, r.top() + 2, 15.5, r.height() - 4)
-        top, bottom = (look.cap_top, look.cap_bottom) if c.isEnabled() else (look.disabled,) * 2
-        gid = svg.gradient([(0, top), (1, bottom)])
-        svg.rect(cap, 4, fill=f"url(#{gid})")
-        cx, cy = cap.center().x(), cap.center().y()
-        chevrons = f"M{num(cx - 3)} {num(cy - 1.5)}l3 -2.8l3 2.8M{num(cx - 3)} {num(cy + 1.5)}l3 2.8l3 -2.8"
-        svg.path(chevrons, fill="none", stroke="#FFFFFF", stroke_width=1.5, stroke_linecap="round",
-                 stroke_linejoin="round")  # fmt: skip
-        text = c.currentText() or c.placeholderText()
-        color = look.label if c.isEnabled() and c.currentIndex() >= 0 else look.disabled
-        y = baseline(r.top(), r.height(), c.font())
-        svg.text(r.left() + 9, y, text, **font_kw(c.font()), **paint(color))
+        kw = {"text_anchor": "middle", **font_kw(b.font()), **paint(color)}
+        self.svg.text(r.center().x(), y, b.text(), **kw)
 
     def popup_bezel(self, c: QComboBox) -> QRectF:
-        """The drawn popup button inside the widget: measured on native renders of this window."""
+        """The drawn popup button inside the widget, as measured on native renders."""
         g = self.geo(c)
         return QRectF(g.left() + 5.5, g.top() + 4, g.width() - 12, 20.5)
+
+    def popup(self, c: QComboBox) -> None:
+        r, look, svg = self.popup_bezel(c), self.look, self.svg
+        on = c.isEnabled()
+        self.bezel(r, look.control if on else look.control_off)
+        cap = QRectF(r.right() - 18.5, r.top() + 2, 15.5, r.height() - 4)
+        top, bottom = (look.cap_top, look.cap_bottom) if on else (look.disabled, look.disabled)
+        svg.rect(cap, 4, fill=f"url(#{svg.gradient([(0, top), (1, bottom)])})")
+        cx, cy = cap.center().x(), cap.center().y()
+        chevrons = f"M{pts(cx - 3, cy - 1.5)}l3 -2.8l3 2.8M{pts(cx - 3, cy + 1.5)}l3 2.8l3 -2.8"
+        svg.path(chevrons, fill="none", stroke="#FFFFFF", stroke_width=1.5, **ROUND)
+        text = c.currentText() or c.placeholderText()
+        color = look.label if on and c.currentIndex() >= 0 else look.disabled
+        y = baseline(r.top(), r.height(), c.font())
+        svg.text(r.left() + 9, y, text, **font_kw(c.font()), **paint(color))
 
     def checkbox(self, c: QCheckBox) -> None:
         opt = QStyleOptionButton()
         c.initStyleOption(opt)
-        style, g = c.style(), self.geo(c)
+        style, g, look, svg = c.style(), self.geo(c), self.look, self.svg
         ind = style.subElementRect(QStyle.SubElement.SE_CheckBoxIndicator, opt, c)
-        box = QRectF(g.left() + ind.left() + 1.5, g.top() + ind.center().y() + 0.5 - 7, 14, 14)
-        look, svg = self.look, self.svg
+        box = QRectF(g.left() + ind.left() + 1.5, g.top() + ind.center().y() - 6.5, 14, 14)
         if c.isChecked():
             svg.rect(box, 3.5, **paint(look.accent))
             x, y = box.left(), box.top()
-            check = f"M{num(x + 3.4)} {num(y + 7.4)}L{num(x + 6)} {num(y + 10)}L{num(x + 10.6)} {num(y + 4.4)}"
-            svg.path(check, fill="none", stroke="#FFFFFF", stroke_width=1.9, stroke_linecap="round",
-                     stroke_linejoin="round")  # fmt: skip
+            check = f"M{pts(x + 3.4, y + 7.4)}L{pts(x + 6, y + 10)}L{pts(x + 10.6, y + 4.4)}"
+            svg.path(check, fill="none", stroke="#FFFFFF", stroke_width=1.9, **ROUND)
         else:
             svg.rect(box.translated(0, 0.5), 3.5, **paint(look.control_shadow))
             svg.rect(box, 3.5, **paint(look.box))
-            svg.rect(box.adjusted(0.25, 0.25, -0.25, -0.25), 3.5, fill="none",
-                     **paint(look.box_edge, "stroke"), stroke_width=0.5)  # fmt: skip
+            edge = box.adjusted(0.25, 0.25, -0.25, -0.25)
+            svg.rect(edge, 3.5, fill="none", stroke_width=0.5, **paint(look.box_edge, "stroke"))
         content = style.subElementRect(QStyle.SubElement.SE_CheckBoxContents, opt, c)
         y = baseline(g.top(), g.height(), c.font())
         svg.text(g.left() + content.left(), y, c.text(), **font_kw(c.font()), **paint(look.label))
 
-    def disclosure(self, d: QWidget) -> None:
+    def disclosure(self, d: Any) -> None:
         from cloudyreader.gui import tokens
 
         g, size = self.geo(d), tokens.DISCLOSURE_SIZE
         x, y = g.left(), g.top() + (g.height() - size) / 2
         if d.isChecked():
-            shape = f"M{num(x + 3)} {num(y + 4.5)}L{num(x + 6.5)} {num(y + 8.5)}L{num(x + 10)} {num(y + 4.5)}"
+            shape = f"M{pts(x + 3, y + 4.5)}L{pts(x + 6.5, y + 8.5)}L{pts(x + 10, y + 4.5)}"
         else:
-            shape = f"M{num(x + 4.5)} {num(y + 3)}L{num(x + 8.5)} {num(y + 6.5)}L{num(x + 4.5)} {num(y + 10)}"
-        self.svg.path(shape, fill="none", **paint(self.look.chevron, "stroke"), stroke_width=1.6,
-                      stroke_linecap="round", stroke_linejoin="round")  # fmt: skip
-        tx = x + size + tokens.INDICATOR_SPACING
-        ty = baseline(g.top(), g.height(), d.font())
+            shape = f"M{pts(x + 4.5, y + 3)}L{pts(x + 8.5, y + 6.5)}L{pts(x + 4.5, y + 10)}"
+        stroke = paint(self.look.chevron, "stroke")
+        self.svg.path(shape, fill="none", stroke_width=1.6, **stroke, **ROUND)
+        tx, ty = x + size + tokens.INDICATOR_SPACING, baseline(g.top(), g.height(), d.font())
         self.svg.text(tx, ty, d.text(), **font_kw(d.font()), **paint(self.look.label))
 
     def field(self, e: QPlainTextEdit) -> None:
         look, svg, g = self.look, self.svg, self.geo(e)
-        svg.rect(g.adjusted(0.5, 0.5, -0.5, -0.5), **paint(look.base), **paint(look.field_edge, "stroke"),
-                 stroke_width=1)  # fmt: skip
-        svg.path(f"M{num(g.left() + 1)} {num(g.top() + 0.5)}H{num(g.right() - 1)}",
-                 **paint(look.field_top, "stroke"), stroke_width=1)  # fmt: skip
+        frame = g.adjusted(0.5, 0.5, -0.5, -0.5)
+        svg.rect(frame, stroke_width=1, **paint(look.base), **paint(look.field_edge, "stroke"))
+        top_edge = f"M{pts(g.left() + 1, g.top() + 0.5)}H{num(g.right() - 1)}"
+        svg.path(top_edge, stroke_width=1, **paint(look.field_top, "stroke"))
         view = self.geo(e.viewport())
-        clip = svg.uid("clip")
-        svg.define(
-            f'<clipPath id="{clip}"><rect{attrs(x=view.x(), y=view.y(), width=view.width(), height=view.height())}/></clipPath>'
-        )
-        lines: list[str] = []
-        doc = e.document()
+        clip = svg.clip(f"<rect{rect_attrs(view)}/>")
+        doc, lines = e.document(), []
         if doc.isEmpty():
             r = e.cursorRect(QTextCursor(doc))
             y = view.top() + r.top() + QFontMetricsF(e.font()).ascent()
-            text = escape(e.placeholderText())
-            lines.append(
-                f"<text{attrs(x=view.left() + r.left(), y=y, **paint(look.placeholder))}>{text}</text>"
-            )
+            where = attrs(x=view.left() + r.left(), y=y, **paint(look.placeholder))
+            lines.append(f"<text{where}>{escape(e.placeholderText())}</text>")
         block = doc.firstBlock()
         while block.isValid() and not doc.isEmpty():
             layout = block.layout()
             for i in range(layout.lineCount()):
                 line = layout.lineAt(i)
+                start = line.textStart()
+                chunk = block.text()[start : start + line.textLength()].rstrip()
+                if not chunk:
+                    continue
                 cursor = QTextCursor(doc)
-                cursor.setPosition(block.position() + line.textStart())
+                cursor.setPosition(block.position() + start)
                 r = e.cursorRect(cursor)
-                chunk = block.text()[
-                    line.textStart() : line.textStart() + line.textLength()
-                ].rstrip()
-                if chunk:
-                    y = view.top() + r.top() + line.ascent()
-                    lines.append(
-                        f"<text{attrs(x=view.left() + r.left(), y=y)}>{escape(chunk)}</text>"
-                    )
+                where = attrs(x=view.left() + r.left(), y=view.top() + r.top() + line.ascent())
+                lines.append(f"<text{where}>{escape(chunk)}</text>")
             block = block.next()
-        kw = {**font_kw(e.font()), **paint(look.text)}
-        svg.add(f'<g clip-path="url(#{clip})"{attrs(**kw)}>' + "".join(lines) + "</g>")
+        group = attrs(clip_path=f"url(#{clip})", **font_kw(e.font()), **paint(look.label))
+        svg.add(f"<g{group}>" + "".join(lines) + "</g>")
 
     def label(self, label: QLabel) -> None:
         r = QRectF(label.contentsRect()).translated(self.geo(label).topLeft())
@@ -595,74 +644,81 @@ class Canvas:
                 box.moveCenter(r.center())
                 self.icon_painter(box)
             return
-        if not label.text():
-            return
-        self.paragraph(label.text(), label.font(), r, label.alignment(), label.wordWrap())
+        if label.text():
+            self.paragraph(label.text(), label.font(), r, label.alignment(), label.wordWrap())
 
-    def paragraph(
-        self, text: str, font: QFont, r: QRectF, align: Qt.AlignmentFlag, wrap: bool
-    ) -> None:
-        rows: list[tuple[str, float, float, float]] = []  # text, x offset, top, ascent
-        top = 0.0
+    def paragraph(self, text: str, font: QFont, r: QRectF, align: Any, wrap: bool) -> None:
+        """Text laid out by Qt, one <text> per line, placed as QLabel aligns it."""
+        rows: list[tuple[str, float, float]] = []  # text, line top, ascent
+        height = 0.0
         for para in text.split("\n"):
             layout = QTextLayout(para, font)
             layout.beginLayout()
-            while True:
-                line = layout.createLine()
-                if not line.isValid():
-                    break
+            while (line := layout.createLine()).isValid():
                 line.setLineWidth(r.width() if wrap else 1e6)
-                chunk = para[line.textStart() : line.textStart() + line.textLength()].rstrip()
-                rows.append((chunk, line.naturalTextWidth(), top, line.ascent()))
-                top += line.height()
+                start = line.textStart()
+                rows.append(
+                    (para[start : start + line.textLength()].rstrip(), height, line.ascent())
+                )
+                height += line.height()
             layout.endLayout()
+        flag = Qt.AlignmentFlag
         y0 = r.top()
-        if align & Qt.AlignmentFlag.AlignVCenter:
-            y0 += (r.height() - top) / 2
-        elif align & Qt.AlignmentFlag.AlignBottom:
-            y0 += r.height() - top
-        anchor, x = "start", r.left()
-        if align & Qt.AlignmentFlag.AlignRight:
+        if align & flag.AlignVCenter:
+            y0 += (r.height() - height) / 2
+        elif align & flag.AlignBottom:
+            y0 += r.height() - height
+        anchor, x = None, r.left()
+        if align & flag.AlignRight:
             anchor, x = "end", r.right()
-        elif align & Qt.AlignmentFlag.AlignHCenter:
+        elif align & flag.AlignHCenter:
             anchor, x = "middle", r.center().x()
-        for chunk, _width, row_top, ascent in rows:
-            self.svg.text(x, y0 + row_top + ascent, chunk, text_anchor=anchor if anchor != "start" else None,
-                          **font_kw(font), **paint(self.look.label))  # fmt: skip
+        kw = {"text_anchor": anchor, **font_kw(font), **paint(self.look.label)}
+        for chunk, top, ascent in rows:
+            self.svg.text(x, y0 + top + ascent, chunk, **kw)
 
     def progress(self, bar: QProgressBar) -> None:
-        g = self.geo(bar)
+        g, svg, look = self.geo(bar), self.svg, self.look
         track = QRectF(g.left(), g.center().y() - 3, g.width(), 6)
-        self.svg.rect(track, 3, **paint(self.look.track))
+        svg.rect(track, 3, **paint(look.track))
         span = bar.maximum() - bar.minimum()
         if span > 0:  # determinate: the share done, in the accent color
             share = (bar.value() - bar.minimum()) / span
-            self.svg.rect(QRectF(track.left(), track.top(), max(6.0, track.width() * share), 6), 3,
-                          **paint(self.look.accent))  # fmt: skip
-        else:  # indeterminate: one still frame of the moving highlight
-            glow = QRectF(track.left() + track.width() * 0.18, track.top(), track.width() * 0.34, 6)
-            self.svg.rect(glow, 3, **paint(self.look.accent), opacity=0.55)
+            done = QRectF(track.left(), track.top(), max(6.0, track.width() * share), 6)
+            svg.rect(done, 3, **paint(look.accent))
+        else:  # indeterminate: one still frame of its moving highlight
+            glow = QRectF(track.left() + 0.18 * track.width(), track.top(), 0.34 * track.width(), 6)
+            svg.rect(glow, 3, opacity=0.55, **paint(look.accent))
 
-    def status_bar(self, bar: QWidget) -> None:
+    def status_bar(self, bar: Any) -> None:
         g, look, svg = self.geo(bar), self.look, self.svg
-        svg.path(f"M{num(g.left())} {num(g.top() + 0.25)}H{num(g.right())}",
-                 **paint(look.separator, "stroke"), stroke_width=0.5)  # fmt: skip
+        svg.path(
+            f"M{pts(g.left(), g.top() + 0.25)}H{num(g.right())}",
+            stroke_width=0.5,
+            **paint(look.separator, "stroke"),
+        )
         if not bar.currentMessage():
             return
         icon, text_rect, elided = bar.message_layout()
-        origin = g.topLeft()
         if icon.isValid():
-            self.tone_icon(QRectF(icon).translated(origin), bar.tone.value)
-        t = QRectF(text_rect).translated(origin)
-        svg.text(t.left(), baseline(t.top(), t.height(), bar.font()), elided, **font_kw(bar.font()),
-                 **paint(look.label))  # fmt: skip
+            self.tone_icon(QRectF(icon).translated(g.topLeft()), bar.tone.value)
+        t = QRectF(text_rect).translated(g.topLeft())
+        y = baseline(t.top(), t.height(), bar.font())
+        svg.text(t.left(), y, elided, **font_kw(bar.font()), **paint(look.label))
 
     def tone_icon(self, r: QRectF, tone: str) -> None:
+        """The status bar's warning triangle or error disc, drawn as the system alert badges."""
         x, y, svg = r.left(), r.top(), self.svg
         if tone == "warning":
-            tri = f"M{num(x + 8)} {num(y + 2)}L{num(x + 14.6)} {num(y + 14)}H{num(x + 1.4)}Z"
-            svg.path(tri, **paint(self.look.warning), stroke=self.look.warning.name(), stroke_width=2,
-                     stroke_linejoin="round")  # fmt: skip
+            color = self.look.warning
+            triangle = f"M{pts(x + 8, y + 2)}L{pts(x + 14.6, y + 14)}H{num(x + 1.4)}Z"
+            svg.path(
+                triangle,
+                stroke=color.name(),
+                stroke_width=2,
+                stroke_linejoin="round",
+                **paint(color),
+            )
             ink = rgba("#000000", 0.85)
         else:
             svg.circle(x + 8, y + 8, 7.5, **paint(self.look.error))
@@ -671,45 +727,22 @@ class Canvas:
         svg.circle(x + 8, y + 12.2, 0.95, **paint(ink))
 
 
-# --- window chrome, menus, the logo ------------------------------------------------------------
+# --- window content and menus -----------------------------------------------------------------
 
 
-def window_frame(svg: Svg, look: Look, r: QRectF, title: str, *, buttons: int = 3) -> str:
-    """Shadow, body, edge and title bar of a window; returns a clip id for its content."""
-    blur = svg.blur(14 if not look.dark else 18)
-    svg.rect(r.translated(0, 10), WINDOW_RADIUS, **paint(look.shadow), filter=f"url(#{blur})")
-    svg.rect(r, WINDOW_RADIUS, **paint(look.window))
-    clip = svg.uid("win")
-    svg.define(
-        f'<clipPath id="{clip}"><rect{attrs(x=r.x(), y=r.y(), width=r.width(), height=r.height(), rx=WINDOW_RADIUS)}/></clipPath>'
-    )
-    for i, (fill, edge) in enumerate(LIGHTS):
-        cx = r.left() + 20 + 20 * i
-        if i < buttons:
-            svg.circle(cx, r.top() + 14, 6, fill=fill, stroke=edge, stroke_width=0.5)
-        else:  # dimmed, as on a panel that cannot be minimized or zoomed
-            svg.circle(cx, r.top() + 14, 6, **paint(look.control_off), **paint(look.control_edge, "stroke"),
-                       stroke_width=0.5)  # fmt: skip
-    if title:
-        svg.text(r.center().x(), r.top() + 18.5, title, text_anchor="middle", font_size=13,
-                 font_weight=600, **paint(look.label))  # fmt: skip
-    return clip
-
-
-def window_edge(svg: Svg, look: Look, r: QRectF) -> None:
-    svg.rect(r.adjusted(0.25, 0.25, -0.25, -0.25), WINDOW_RADIUS, fill="none",
-             **paint(look.window_edge, "stroke"), stroke_width=0.5)  # fmt: skip
-
-
-def draw_window(svg: Svg, look: Look, win: QWidget, x: float, y: float) -> Canvas:
-    outer = QRectF(x, y, win.width(), TITLE_BAR + win.height())
-    clip = window_frame(svg, look, outer, win.windowTitle())
+def draw_content(
+    svg: Svg, look: Look, widget: QWidget, *, icon: Callable[[QRectF], None] | None = None
+) -> QRectF:
+    """A window's content at the origin: square corners, no title bar, no shadow."""
+    r = QRectF(0, 0, widget.width(), widget.height())
+    svg.rect(r, **paint(look.window))
+    clip = svg.clip(f"<rect{rect_attrs(r)}/>")
     svg.add(f'<g clip-path="url(#{clip})">')
-    canvas = Canvas(svg, look, win, x, y + TITLE_BAR)
-    canvas.tree(win)
+    canvas = Canvas(svg, look, widget, 0, 0)
+    canvas.icon_painter = icon
+    canvas.tree(widget)
     svg.add("</g>")
-    window_edge(svg, look, outer)
-    return canvas
+    return r
 
 
 @dataclass(frozen=True)
@@ -720,62 +753,92 @@ class MenuItem:
 
 def combo_items(combo: QComboBox) -> list[MenuItem]:
     model = combo.model()
+    enabled = Qt.ItemFlag.ItemIsEnabled
     return [
-        MenuItem(
-            combo.itemText(i), bool(model.flags(model.index(i, 0)) & Qt.ItemFlag.ItemIsEnabled)
-        )
+        MenuItem(combo.itemText(i), bool(model.flags(model.index(i, 0)) & enabled))
         for i in range(combo.count())
     ]
 
 
 def menu_rect(button: QRectF, items: Sequence[MenuItem], current: int, font: QFont) -> QRectF:
-    """Where macOS opens a popup button's menu: the current item lies over the button."""
+    """Where macOS opens a popup button's menu: the current item over the button."""
     metrics = QFontMetricsF(font)
     width = max(metrics.horizontalAdvance(item.text) for item in items) + MENU_TEXT + MENU_TAIL
     width = max(width, button.width() + MENU_TEXT - 9)
     top = button.top() - MENU_PAD - current * MENU_ROW - (MENU_ROW - button.height()) / 2
-    return QRectF(button.left() + 9 - MENU_TEXT, top, width, 2 * MENU_PAD + MENU_ROW * len(items))
+    height = 2 * MENU_PAD + MENU_ROW * len(items)
+    return QRectF(button.left() + 9 - MENU_TEXT, top, width, height)
 
 
-def draw_menu(svg: Svg, look: Look, r: QRectF, items: Sequence[MenuItem], current: int,
-              hover: int, font: QFont) -> None:  # fmt: skip
+def draw_menu(
+    svg: Svg,
+    look: Look,
+    r: QRectF,
+    items: Sequence[MenuItem],
+    marks: tuple[int, int],
+    font: QFont,
+    bounds: QRectF,
+) -> list[int]:
+    """A popup menu over the content; marks = (checked item, item under the pointer).
+
+    A menu taller than the content stops at its edge with a scroll arrow, as macOS does at a
+    screen edge. Returns the indexes of the items in view.
+    """
+    current, hover = marks
+    top, bottom = max(r.top(), bounds.top() + 4), min(r.bottom(), bounds.bottom() - 4)
+    body = QRectF(r.left(), top, r.width(), bottom - top)
     blur = svg.blur(9)
-    svg.rect(r.translated(0, 6), MENU_RADIUS, **paint(look.shadow), filter=f"url(#{blur})")
-    svg.rect(
-        r, MENU_RADIUS, **paint(look.menu), **paint(look.menu_edge, "stroke"), stroke_width=0.5
-    )
+    svg.rect(body.translated(0, 6), MENU_RADIUS, filter=f"url(#{blur})", **paint(look.shadow))
+    edge = paint(look.menu_edge, "stroke")
+    svg.rect(body, MENU_RADIUS, stroke_width=0.5, **paint(look.menu), **edge)
+    first = body.top() + (MENU_ROW if top > r.top() else MENU_PAD) - 0.01
+    last = body.bottom() - (MENU_ROW if bottom < r.bottom() else MENU_PAD) + 0.01
+    shown = []
     for i, item in enumerate(items):
         row = QRectF(r.left(), r.top() + MENU_PAD + i * MENU_ROW, r.width(), MENU_ROW)
+        if row.top() < first or row.bottom() > last:
+            continue
+        shown.append(i)
         lit = i == hover and item.enabled
         if lit:
             svg.rect(row.adjusted(5, 0, -5, 0), 5, **paint(look.accent))
         ink = QColor("#FFFFFF") if lit else (look.label if item.enabled else look.disabled)
         if i == current:
-            x, y = row.left() + 7.5, row.center().y()
-            svg.path(f"M{num(x)} {num(y)}l3 3l6 -7", fill="none", **paint(ink, "stroke"), stroke_width=1.6,
-                     stroke_linecap="round", stroke_linejoin="round")  # fmt: skip
-        svg.text(row.left() + MENU_TEXT, baseline(row.top(), row.height(), font), item.text,
-                 **font_kw(font), **paint(ink))  # fmt: skip
+            mark = f"M{pts(row.left() + 7.5, row.center().y())}l3 3l6 -7"
+            svg.path(mark, fill="none", stroke_width=1.6, **paint(ink, "stroke"), **ROUND)
+        y = baseline(row.top(), row.height(), font)
+        svg.text(row.left() + MENU_TEXT, y, item.text, **font_kw(font), **paint(ink))
+    cx = body.center().x()
+    if top > r.top():
+        y = body.top() + MENU_ROW / 2
+        svg.path(f"M{pts(cx - 5, y + 2.5)}l5 -5l5 5z", **paint(look.label))
+    if bottom < r.bottom():
+        y = body.bottom() - MENU_ROW / 2
+        svg.path(f"M{pts(cx - 5, y - 2.5)}l5 5l5 -5z", **paint(look.label))
+    return shown
+
+
+# --- the logo ----------------------------------------------------------------------------------
 
 
 def load_icon_designer() -> ModuleType:
     """scripts/make_icons.py of the app checkout: the logo reuses its exact shapes."""
     spec = importlib.util.spec_from_file_location("make_icons", ROOT / "scripts" / "make_icons.py")
     if spec is None or spec.loader is None:
-        raise FileNotFoundError("scripts/make_icons.py")
+        raise FileNotFoundError(ROOT / "scripts" / "make_icons.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
 class Logo:
-    """The cloud-atom app icon as vector paths, from the same geometry as scripts/make_icons.py."""
+    """The cloud-atom app icon as vector paths, from the geometry scripts/make_icons.py draws."""
 
     def __init__(self) -> None:
         icons = load_icon_designer()
         self.design = next(d for d in icons.DESIGNS if d.name == "cloud-atom")
-        self.canvas, body_rect = icons.CANVAS, icons.BODY_RECT
-        self.body_rect, self.body = body_rect, icons.squircle(body_rect, icons.RADIUS)
+        self.canvas, self.body_rect = icons.CANVAS, icons.BODY_RECT
+        self.body = icons.squircle(icons.BODY_RECT, icons.RADIUS)
         layers = self.design.layers(1.0)
         turn = icons.fit(layers, icons.SYMBOL_BOX)
         placed = [icons.Layer(turn.map(layer.path), layer.style) for layer in layers]
@@ -784,27 +847,27 @@ class Logo:
         self.tint = icons.mix(QColor("#FFFFFF"), QColor(self.design.stops[-1]), 0.20)
 
     def draw(self, svg: Svg, box: QRectF) -> None:
-        """The icon scaled into box, its 1024 px canvas mapped onto the box."""
-        scale = box.width() / self.canvas
-        b, top = self.body_rect, self.body_rect.top()
-        last = len(self.design.stops) - 1
-        stops = [(i / last, QColor(stop)) for i, stop in enumerate(self.design.stops)]
-        body_fill = svg.gradient(stops, b.left() + 0.15 * b.width(), b.top(), b.right() - 0.15 * b.width(),
-                                 b.bottom(), gradientUnits="userSpaceOnUse")  # fmt: skip
-        gloss = svg.gradient([(0, rgba("#FFFFFF", 0.20)), (1, rgba("#FFFFFF", 0))], 0, top, 0,
-                             top + 0.5 * b.height(), gradientUnits="userSpaceOnUse")  # fmt: skip
-        rim = svg.gradient([(0, rgba("#FFFFFF", 0.62)), (1, rgba("#FFFFFF", 0))], 0, top, 0,
-                           top + 0.32 * b.height(), gradientUnits="userSpaceOnUse")  # fmt: skip
-        bounds = self.solid.boundingRect()
-        white = svg.gradient([(0, QColor("#FFFFFF")), (1, self.tint)], 0, bounds.top(), 0, bounds.bottom(),
-                             gradientUnits="userSpaceOnUse")  # fmt: skip
-        clip = svg.uid("body")
-        body_d = qpath_d(self.body)
-        svg.define(f'<clipPath id="{clip}"><path d="{body_d}"/></clipPath>')
-        shadow, glow = svg.blur(12), svg.blur(10)
-        svg.add(
-            f'<g transform="translate({num(box.left())} {num(box.top())}) scale({num(scale)})">'
+        """The icon with its 1024 px canvas mapped onto box: body, gloss, rim, and symbol."""
+        b, design = self.body_rect, self.design
+        top, user = b.top(), {"gradientUnits": "userSpaceOnUse"}
+        last = len(design.stops) - 1
+        stops = [(i / last, QColor(stop)) for i, stop in enumerate(design.stops)]
+        ends = {"x1": b.left() + 0.15 * b.width(), "y1": top, "x2": b.right() - 0.15 * b.width()}
+        body_fill = svg.gradient(stops, **ends, y2=b.bottom(), **user)
+        clear = rgba("#FFFFFF", 0)
+        gloss_stops = [(0, rgba("#FFFFFF", 0.20)), (1, clear)]
+        gloss = svg.gradient(gloss_stops, y1=top, y2=top + 0.5 * b.height(), **user)
+        rim = svg.gradient(
+            [(0, rgba("#FFFFFF", 0.62)), (1, clear)], y1=top, y2=top + 0.32 * b.height(), **user
         )
+        bounds = self.solid.boundingRect()
+        white_stops = [(0, QColor("#FFFFFF")), (1, self.tint)]
+        white = svg.gradient(white_stops, y1=bounds.top(), y2=bounds.bottom(), **user)
+        body_d = qpath_d(self.body)
+        clip = svg.clip(f'<path d="{body_d}"/>')
+        shadow, glow = svg.blur(12), svg.blur(10)
+        scale = num(box.width() / self.canvas)
+        svg.add(f'<g transform="translate({num(box.left())} {num(box.top())}) scale({scale})">')
         svg.path(
             body_d,
             fill="#000000",
@@ -817,25 +880,22 @@ class Logo:
         svg.rect(b, fill=f"url(#{gloss})")
         svg.path(body_d, fill="none", stroke=f"url(#{rim})", stroke_width=6)
         svg.add("</g>")
-        solid_d = qpath_d(self.solid)
-        rule = "evenodd" if self.solid.fillRule() == Qt.FillRule.OddEvenFill else None
-        svg.path(solid_d, fill=self.design.shade, fill_opacity=0.30, fill_rule=rule, transform="translate(0 16)",
-                 filter=f"url(#{glow})")  # fmt: skip
+        solid_d, rule = qpath_d(self.solid), fill_rule(self.solid)
+        svg.path(
+            solid_d,
+            fill=design.shade,
+            fill_opacity=0.30,
+            fill_rule=rule,
+            transform="translate(0 16)",
+            filter=f"url(#{glow})",
+        )
         svg.path(solid_d, fill=f"url(#{white})", fill_rule=rule)
         for knock in self.knocks:
-            krule = "evenodd" if knock.fillRule() == Qt.FillRule.OddEvenFill else None
-            svg.path(qpath_d(knock), fill=f"url(#{body_fill})", fill_rule=krule)
+            svg.path(qpath_d(knock), fill=f"url(#{body_fill})", fill_rule=fill_rule(knock))
         svg.add("</g>")
 
 
 # --- the figures -------------------------------------------------------------------------------
-
-
-def sample_question() -> str:
-    """The toss-up the app's own self-test reads."""
-    from cloudyreader.__main__ import SELF_TEST_PASTE
-
-    return SELF_TEST_PASTE.strip()
 
 
 def appearance(dark: bool) -> str:
@@ -847,12 +907,13 @@ def fig_window(env: Env, look: Look) -> Svg:
         env.speak(win, sample_question())
         win.script_toggle.setChecked(True)
         env.pump(lambda: win.statusBar().currentMessage() == "Playing 2.0 s.", "playing status")
-        w, h = win.width() + 2 * MARGIN, win.height() + TITLE_BAR + 2 * MARGIN
-        svg = Svg(w, h, "Cloudy Reader main window",
-                  f"The main window in {appearance(look.dark)}: a pasted toss-up question, the voice "
-                  "Lessac, the Rotation row set to No rotation, the spoken script shown, and the "
-                  "status Playing 2.0 s.")  # fmt: skip
-        draw_window(svg, look, win, MARGIN, MARGIN)
+        desc = (
+            f"The main window in {appearance(look.dark)}: a pasted toss-up question, the voice "
+            "lessac, the Rotation row set to No rotation, the spoken script shown, and the status "
+            "Playing 2.0 s."
+        )
+        svg = Svg(win.width(), win.height(), "Cloudy Reader main window", desc)
+        draw_content(svg, look, win)
     return svg
 
 
@@ -861,127 +922,121 @@ def fig_menu(env: Env, look: Look, which: str) -> Svg:
         win.question_edit.setPlainText(sample_question())
         env.app.processEvents()
         combo = win.voice_picker.combo if which == "voices" else win.rotation_combo
-        items = combo_items(combo)
-        current = combo.currentIndex()
-        hover = (
-            next(i for i, it in enumerate(items) if it.text.startswith("Heart"))
-            if which == "voices"
-            else 2
-        )
-        probe = Canvas(Svg(1, 1, "", ""), look, win, MARGIN, MARGIN + TITLE_BAR)
-        button = probe.popup_bezel(combo)
-        menu = menu_rect(button, items, current, combo.font())
-        shift = max(0.0, MARGIN - menu.top())  # room above a menu that opens past the window top
-        bottom = max(MARGIN + TITLE_BAR + win.height(), menu.bottom()) + shift + MARGIN
-        width = max(win.width() + 2 * MARGIN, menu.right() + MARGIN)
+        items, current = combo_items(combo), combo.currentIndex()
+        if which == "voices":
+            hover = next(i for i, item in enumerate(items) if item.text.startswith("Heart"))
+        else:
+            hover = next(i for i, item in enumerate(items) if item.text == "Random shuffle")
+        probe = Canvas(Svg(1, 1, "", ""), look, win, 0, 0)
+        menu = menu_rect(probe.popup_bezel(combo), items, current, combo.font())
         if which == "voices":
             title = "Voice menu"
-            desc = (f"The Voice menu open in {appearance(look.dark)}: Piper and Kokoro voices under their "
-                    "engine names, Kokoro names with their gender, and one Kokoro voice dimmed because it "
-                    "is not installed.")  # fmt: skip
+            desc = (
+                f"The Voice menu open in {appearance(look.dark)}: Piper and Kokoro voices under "
+                "their engine names, Kokoro names with their gender, one Kokoro voice dimmed "
+                "because it is not installed, and a scroll arrow where the list goes on."
+            )
         else:
             title = "Rotation menu"
-            desc = (f"The Rotation menu open in {appearance(look.dark)}: No rotation, Round robin, Random "
-                    "shuffle, US only (random shuffle), Men only, and Women only.")  # fmt: skip
-        svg = Svg(width, bottom, title, desc)
-        draw_window(svg, look, win, MARGIN, MARGIN + shift)
-        draw_menu(svg, look, menu.translated(0, shift), items, current, hover, combo.font())
+            desc = (
+                f"The Rotation menu open in {appearance(look.dark)}: No rotation, Round robin, "
+                "Random shuffle, US only (random shuffle), Men only, and Women only."
+            )
+        svg = Svg(win.width(), win.height(), title, desc)
+        bounds = draw_content(svg, look, win)
+        shown = draw_menu(svg, look, menu, items, (current, hover), combo.font(), bounds)
+        if which == "voices" and not any("not installed" in items[i].text for i in shown):
+            raise RuntimeError(f"{MISSING} is out of view: pick a voice higher in the menu")
     return svg
 
 
-def status_strip(svg: Svg, look: Look, win: QWidget, y: float, caption: str) -> float:
-    """The window's status bar as a strip with a caption above it; returns the next free y."""
+def status_strip(svg: Svg, look: Look, win: Any, y: float, caption: str) -> float:
+    """The window's status bar as a square strip under a caption; returns the next free y."""
     bar = win.statusBar()
-    svg.text(MARGIN, y + 13, caption, font_size=12, font_weight=600, **paint(look.ink))
+    svg.text(0, y + 13, caption, font_size=12, font_weight=600, **paint(look.ink))
     y += 22
-    r = QRectF(MARGIN, y, win.width(), bar.height())
-    blur = svg.blur(6)
-    svg.rect(r.translated(0, 3), 8, **paint(look.shadow), opacity=0.5, filter=f"url(#{blur})")
-    svg.rect(r, 8, **paint(look.window))
-    clip = svg.uid("strip")
-    svg.define(
-        f'<clipPath id="{clip}"><rect{attrs(x=r.x(), y=r.y(), width=r.width(), height=r.height(), rx=8)}/></clipPath>'
-    )
+    r = QRectF(0, y, win.width(), bar.height())
+    svg.rect(r, **paint(look.window))
+    clip = svg.clip(f"<rect{rect_attrs(r)}/>")
     svg.add(f'<g clip-path="url(#{clip})">')
     origin = bar.mapTo(win, QPoint(0, 0))
-    canvas = Canvas(svg, look, win, MARGIN - origin.x(), y - origin.y())
-    canvas.widget(bar)
+    Canvas(svg, look, win, -origin.x(), y - origin.y()).widget(bar)
     svg.add("</g>")
-    svg.rect(r.adjusted(0.25, 0.25, -0.25, -0.25), 8, fill="none", **paint(look.window_edge, "stroke"),
-             stroke_width=0.5)  # fmt: skip
-    return y + bar.height() + 18
+    edge = r.adjusted(0.25, 0.25, -0.25, -0.25)
+    svg.rect(edge, fill="none", stroke_width=0.5, **paint(look.window_edge, "stroke"))
+    return y + bar.height() + GAP
 
 
-def download_event():
+def download_event() -> Any:
+    """A progress report at 42% of every voice file in assets.lock.json."""
     from cloudyreader.prefetch import PrefetchProgress
 
     lock = json.loads((ROOT / "assets.lock.json").read_text(encoding="utf-8"))
     sizes = [a["size"] for a in lock["assets"] if a["group"] in ("voices", "kokoro")]
     total = sum(sizes)
-    return PrefetchProgress("af_bella.safetensors", total * 42 // 100, total, 12, len(sizes))
-
-
-def hold_reading(env: Env, win: QWidget, service: object) -> None:
-    """Start a reading that waits in prepare(), so the busy bar shows; the window releases it."""
-    service.gate = threading.Event()
-    win.question_edit.setPlainText(sample_question())
-    win.speak_action.trigger()
-    env.pump(lambda: not win.busy_bar.isHidden(), "busy bar")
+    done = -(-total * 42 // 100)  # rounded up, so the window's floored percent reads 42
+    return PrefetchProgress("af_bella.safetensors", done, total, 12, len(sizes))
 
 
 def fig_download(env: Env, look: Look) -> Svg:
     from cloudyreader.prefetch import PrefetchResult
 
-    svg = Svg(1, 1, "", "")
-    y, width = MARGIN, 0.0
+    svg = Svg(1, 1, "Voice download progress", "")
+    y, width = 0.0, 0.0
     captions = ("Downloading voices", "Downloading voices while a reading is prepared")
     for busy, caption in zip((False, True), captions, strict=True):
-        knobs = {"prefetch_result": PrefetchResult("complete", files=1),
-                 "prefetch_events": [download_event()], "prefetch_gate": threading.Event()}  # fmt: skip
+        knobs = {
+            "prefetch_result": PrefetchResult("complete", files=1),
+            "prefetch_events": [download_event()],
+            "prefetch_gate": threading.Event(),
+        }
         with env.window(**knobs) as (win, service):
             env.pump(lambda w=win: not w.prefetch_label.isHidden(), "download progress")
             if busy:
-                hold_reading(env, win, service)
+                env.hold_reading(win, service)
             y = status_strip(svg, look, win, y, caption)
-            width = win.width() + 2 * MARGIN
-    svg.width, svg.height = width, y - 18 + MARGIN
-    svg.title = "Voice download progress"
-    svg.desc = (f"The status bar in {appearance(look.dark)} while voices download: Downloading voices "
-                "42% with its progress bar, and the same with the busy bar beside it while a reading "
-                "is prepared.")  # fmt: skip
+            width = win.width()
+    svg.width, svg.height = width, y - GAP
+    svg.desc = (
+        f"The status bar in {appearance(look.dark)} while voices download: Downloading voices 42% "
+        "with its progress bar; then the same with Preparing and the busy bar beside it."
+    )
     return svg
 
 
 def fig_states(env: Env, look: Look) -> Svg:
+    from cloudyreader import prefetch, rotation
     from cloudyreader.gui.widgets import Tone
-    from cloudyreader.prefetch import PrefetchResult
-    from cloudyreader.rotation import RotationMode
 
-    svg = Svg(1, 1, "", "")
-    y = MARGIN
-    with env.window() as (win, _service):  # ready
+    svg = Svg(1, 1, "Status bar states", "")
+    y = 0.0
+    with env.window() as (win, _service):
         y = status_strip(svg, look, win, y, "Ready")
-        width = win.width() + 2 * MARGIN
-    with env.window(rotation=str(RotationMode.ROUND_ROBIN)) as (win, service):
-        hold_reading(env, win, service)
+        width = win.width()
+    with env.window(rotation=str(rotation.RotationMode.ROUND_ROBIN)) as (win, service):
+        env.hold_reading(win, service)
         y = status_strip(svg, look, win, y, "Preparing, with voice rotation on")
         service.gate.set()
         env.pump(lambda: win.statusBar().currentMessage().startswith("Playing"), "playing")
         y = status_strip(svg, look, win, y, "Playing")
-    partial = PrefetchResult("partial", failed=("bm_daniel.safetensors",))
+    partial = prefetch.PrefetchResult(
+        "partial", failed=(f"{MISSING.partition(':')[2]}.safetensors",)
+    )
     with env.window(prefetch_result=partial) as (win, _service):
         env.pump(lambda: win.statusBar().tone is Tone.WARNING, "warning")
         y = status_strip(svg, look, win, y, "Warning")
-    with env.window(error=ValueError(f"voice {MISSING!r} is not installed")) as (win, _service):
+    error = ValueError(f"voice {MISSING!r} is not installed")  # the pipeline's own wording
+    with env.window(error=error) as (win, _service):
         win.question_edit.setPlainText(sample_question())
         win.speak_action.trigger()
         env.pump(lambda: win.statusBar().tone is Tone.ERROR, "error")
         y = status_strip(svg, look, win, y, "Error")
-    svg.width, svg.height = width, y - 18 + MARGIN
-    svg.title = "Status bar states"
-    svg.desc = (f"The status bar in {appearance(look.dark)}: ready and empty; preparing with the rotated "
-                "voice named; playing with that voice named; a warning that some voices could not be "
-                "downloaded; and an error.")  # fmt: skip
+    svg.width, svg.height = width, y - GAP
+    svg.desc = (
+        f"The status bar in {appearance(look.dark)}: ready and empty; preparing with the rotated "
+        "voice named; playing with that voice named; a warning that some voices could not be "
+        "downloaded; and an error."
+    )
     return svg
 
 
@@ -995,143 +1050,199 @@ def fig_about(env: Env, look: Look, logo: Logo) -> Svg:
             shown.append(box)
             original(box)
 
-        QMessageBox.show = hidden_show
+        QMessageBox.show = hidden_show  # type: ignore[method-assign]
         try:
             win.about_action.trigger()
         finally:
-            QMessageBox.show = original
+            QMessageBox.show = original  # type: ignore[method-assign]
         box = shown[0]
         env.app.processEvents()
-        box.adjustSize()
-        env.app.processEvents()
-        w, h = box.width() + 2 * MARGIN, box.height() + TITLE_BAR + 2 * MARGIN
-        svg = Svg(w, h, "About Cloudy Reader",
-                  f"The About panel in {appearance(look.dark)}: the app icon, the name Cloudy Reader, "
-                  "the version, a one-line description, and an OK button.")  # fmt: skip
-        outer = QRectF(MARGIN, MARGIN, box.width(), TITLE_BAR + box.height())
-        clip = window_frame(svg, look, outer, "", buttons=1)
-        svg.add(f'<g clip-path="url(#{clip})">')
-        canvas = Canvas(svg, look, box, MARGIN, MARGIN + TITLE_BAR)
-        canvas.icon_painter = lambda r: logo.draw(svg, r)
-        canvas.tree(box)
-        svg.add("</g>")
-        window_edge(svg, look, outer)
+        desc = (
+            f"The About panel in {appearance(look.dark)}: the app icon, the name Cloudy Reader, "
+            "the version, a one-line description, and an OK button."
+        )
+        svg = Svg(box.width(), box.height(), "About Cloudy Reader", desc)
+        draw_content(svg, look, box, icon=lambda r: logo.draw(svg, r))
         box.close()
     return svg
 
 
 def fig_logo(logo: Logo) -> Svg:
-    svg = Svg(256, 256, "Cloudy Reader app icon",
-              "A rounded square with a deep blue to violet gradient and a white speech-bubble cloud "
-              "with an atom: a nucleus and two electron orbits.")  # fmt: skip
+    desc = (
+        "A rounded square with a deep blue to violet gradient and a white speech-bubble cloud "
+        "with an atom: a nucleus and two electron orbits."
+    )
+    svg = Svg(256, 256, "Cloudy Reader app icon", desc)
     logo.draw(svg, QRectF(0, 0, 256, 256))
     return svg
 
 
-def fig_pipeline(dark: bool) -> Svg:
-    """How a pasted question becomes sound, from cloudyreader/pipeline.py and the modules it calls."""
-    ink = rgba("#FFFFFF", 0.88) if dark else rgba("#1D1D1F", 1)
-    soft = rgba("#FFFFFF", 0.62) if dark else rgba("#3A3A3C", 1)
-    paper = QColor("#1C1C1E") if dark else QColor("#FFFFFF")
-    local_fill = QColor("#2C2C2E") if dark else QColor("#F2F2F7")
-    net_fill = QColor("#10263F") if dark else QColor("#EAF3FF")
-    edge = rgba("#FFFFFF", 0.22) if dark else rgba("#000000", 0.18)
-    net_edge = QColor("#409CFF") if dark else QColor("#0A64D6")
-    arrow = rgba("#FFFFFF", 0.55) if dark else rgba("#000000", 0.5)
-    svg = Svg(980, 470, "Cloudy Reader reading pipeline",
-              "A pasted question goes through the parser, entity detection, and name lookups (a local "
-              "cache and OPSIN, then PubChem or UniProt over the network unless offline), the normalizer, "
-              "respelling to IPA, a Piper or Kokoro voice, the WAV cache, and the afplay player. Voice "
-              "files download once at start over the network unless offline. Everything else runs on "
-              "the Mac.")  # fmt: skip
-    svg.rect(QRectF(0, 0, 980, 470), 16, **paint(paper))
-    head = svg.uid("arrow")
-    svg.define(f'<marker id="{head}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" '
-               f'orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"{attrs(**paint(arrow))}/></marker>')  # fmt: skip
+@dataclass(frozen=True)
+class Ink:
+    """The pipeline diagram's colors for one appearance."""
 
-    def box(
-        x: float, y: float, w: float, h: float, title: str, lines: Sequence[str], net: bool = False
-    ) -> QRectF:
-        r = QRectF(x, y, w, h)
-        svg.rect(r, 10, **paint(net_fill if net else local_fill), **paint(net_edge if net else edge, "stroke"),
-                 stroke_width=1.2 if net else 1, stroke_dasharray="5 4" if net else None)  # fmt: skip
-        svg.text(x + 14, y + 24, title, font_size=14, font_weight=600, **paint(ink))
+    text: QColor
+    soft: QColor
+    paper: QColor
+    local: QColor
+    net: QColor
+    edge: QColor
+    net_edge: QColor
+    arrow: QColor
+
+
+def diagram_ink(dark: bool) -> Ink:
+    if dark:
+        return Ink(
+            rgba("#FFFFFF", 0.88),
+            rgba("#FFFFFF", 0.62),
+            QColor("#1C1C1E"),
+            QColor("#2C2C2E"),
+            QColor("#10263F"),
+            rgba("#FFFFFF", 0.22),
+            QColor("#409CFF"),
+            rgba("#FFFFFF", 0.55),
+        )
+    return Ink(
+        QColor("#1D1D1F"),
+        QColor("#3A3A3C"),
+        QColor("#FFFFFF"),
+        QColor("#F2F2F7"),
+        QColor("#EAF3FF"),
+        rgba("#000000", 0.18),
+        QColor("#0A64D6"),
+        rgba("#000000", 0.5),
+    )
+
+
+class Diagram:
+    """Boxes and arrows for the pipeline figure."""
+
+    def __init__(self, svg: Svg, ink: Ink) -> None:
+        self.svg, self.ink = svg, ink
+        self.head = svg.uid("arrow")
+        tip = attrs(**paint(ink.arrow))
+        svg.define(
+            f'<marker id="{self.head}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" '
+            f'markerHeight="7" orient="auto-start-reverse">'
+            f'<path d="M0 0L10 5L0 10z"{tip}/></marker>'
+        )
+
+    def box(self, r: QRectF, title: str, lines: Sequence[str] = (), *, net: bool = False) -> QRectF:
+        ink, svg = self.ink, self.svg
+        style = {"stroke_width": 1.2, "stroke_dasharray": "5 4"} if net else {"stroke_width": 1}
+        edge = paint(ink.net_edge if net else ink.edge, "stroke")
+        svg.rect(r, 10, **paint(ink.net if net else ink.local), **edge, **style)
+        if title:
+            title_ink = ink.net_edge if net else ink.text
+            svg.text(
+                r.left() + 14,
+                r.top() + 24,
+                title,
+                font_size=14,
+                font_weight=600,
+                **paint(title_ink),
+            )
         for i, text in enumerate(lines):
-            svg.text(x + 14, y + 44 + 17 * i, text, font_size=12, **paint(soft))
+            svg.text(r.left() + 14, r.top() + 44 + 17 * i, text, font_size=12, **paint(ink.soft))
         return r
 
-    def link(x1: float, y1: float, x2: float, y2: float, dashed: bool = False) -> None:
-        svg.path(f"M{num(x1)} {num(y1)}L{num(x2)} {num(y2)}", fill="none", **paint(arrow, "stroke"),
-                 stroke_width=1.5, stroke_dasharray="4 4" if dashed else None, marker_end=f"url(#{head})")  # fmt: skip
+    def link(
+        self, start: tuple[float, float], end: tuple[float, float], *, dashed: bool = False
+    ) -> None:
+        self.svg.path(
+            f"M{pts(*start)}L{pts(*end)}",
+            fill="none",
+            stroke_width=1.5,
+            stroke_dasharray="4 4" if dashed else None,
+            marker_end=f"url(#{self.head})",
+            **paint(self.ink.arrow, "stroke"),
+        )
 
-    svg.text(32, 44, "From pasted text to sound", font_size=18, font_weight=700, **paint(ink))
-    q = box(32, 70, 160, 78, "Question text", ["pasted or from", "the clipboard"])
-    p = box(232, 70, 160, 78, "Parser", ["toss-up or bonus,", "category, choices"])
-    d = box(432, 70, 200, 78, "Entity detection", ["scispaCy CRAFT model", "plus regexes"])
-    lk = box(
-        672,
-        70,
-        276,
-        150,
-        "Name lookups",
-        ["1. lexicon skip, then the", "    cache (SQLite)", "2. OPSIN (Java, on the Mac)"],
+
+def fig_pipeline(dark: bool) -> Svg:
+    """How a pasted question becomes sound: cloudyreader/pipeline.py and the modules it calls."""
+    ink = diagram_ink(dark)
+    desc = (
+        "A pasted question goes through the parser, entity detection, and name lookups: the "
+        "lexicon and a local cache, then OPSIN on the Mac, then PubChem or UniProt over HTTPS "
+        "unless offline. Then the normalizer, respelling to IPA, a Piper or Kokoro voice, the WAV "
+        "cache, and the afplay player. Missing voice files download once at start over HTTPS "
+        "unless offline. --offline or CLOUDYREADER_OFFLINE=1 stops the lookups and the voice "
+        "download; Online lookups off stops only PubChem and UniProt. Everything else runs on the "
+        "Mac."
     )
-    net = box(688, 166, 244, 42, "", [], net=True)
-    svg.text(net.left() + 12, net.top() + 26, "3. PubChem or UniProt (HTTPS)", font_size=12, font_weight=600,
-             **paint(net_edge))  # fmt: skip
-    n = box(
-        672,
-        264,
-        276,
-        96,
-        "Normalizer",
-        ["lexicon, units, formulas,", "answer choices, bracket", "respellings"],
-    )
-    r = box(432, 264, 200, 96, "Respelling to IPA", ["NSB brackets to IPA;", "Kokoro: misaki IPA"])
-    t = box(232, 264, 160, 96, "Voice", ["Piper (espeak-ng)", "or Kokoro (Apple", "Silicon only)"])
-    c = box(32, 264, 160, 96, "WAV cache", ["one file per script,", "voice, speed, speaker"])
-    pl = box(32, 390, 160, 54, "Player", ["afplay"])
-    dl = box(
-        232, 390, 260, 54, "Voice download at start", ["missing pinned voices (HTTPS)"], net=True
-    )
-    link(q.right(), q.center().y(), p.left(), p.center().y())
-    link(p.right(), p.center().y(), d.left(), d.center().y())
-    link(d.right(), d.center().y(), lk.left(), d.center().y())
-    link(lk.center().x(), lk.bottom(), n.center().x(), n.top())
-    link(n.left(), n.center().y(), r.right(), r.center().y())
-    link(r.left(), r.center().y(), t.right(), t.center().y())
-    link(t.left(), t.center().y(), c.right(), c.center().y())
-    link(c.center().x(), c.bottom(), pl.center().x(), pl.top())
-    link(dl.center().x() - 40, dl.top(), t.center().x(), t.bottom(), dashed=True)
-    sw = QRectF(512, 390, 436, 54)
-    svg.rect(sw, 10, fill="none", **paint(edge, "stroke"), stroke_width=1)
-    svg.text(
-        sw.left() + 14, sw.top() + 22, "Offline switch", font_size=14, font_weight=600, **paint(ink)
-    )
-    svg.text(sw.left() + 14, sw.top() + 40, "--offline, CLOUDYREADER_OFFLINE=1, or Online lookups off: "
-             "no HTTPS", font_size=12, **paint(soft))  # fmt: skip
-    legend_y = 44
+    svg = Svg(980, 540, "Cloudy Reader reading pipeline", desc)
+    svg.rect(QRectF(0, 0, 980, 540), 16, **paint(ink.paper))
+    d = Diagram(svg, ink)
+    svg.text(32, 44, "From pasted text to sound", font_size=18, font_weight=700, **paint(ink.text))
     svg.rect(
-        QRectF(640, legend_y - 12, 18, 14),
-        4,
-        **paint(local_fill),
-        **paint(edge, "stroke"),
-        stroke_width=1,
+        QRectF(640, 32, 18, 14), 4, stroke_width=1, **paint(ink.local), **paint(ink.edge, "stroke")
     )
-    svg.text(664, legend_y, "on the Mac", font_size=12, **paint(soft))
-    svg.rect(QRectF(760, legend_y - 12, 18, 14), 4, **paint(net_fill), **paint(net_edge, "stroke"), stroke_width=1.2,
-             stroke_dasharray="3 3")  # fmt: skip
-    svg.text(784, legend_y, "network (HTTPS)", font_size=12, **paint(soft))
+    svg.text(664, 44, "on the Mac", font_size=12, **paint(ink.soft))
+    legend = {"stroke_width": 1.2, "stroke_dasharray": "3 3"}
+    svg.rect(
+        QRectF(760, 32, 18, 14), 4, **paint(ink.net), **paint(ink.net_edge, "stroke"), **legend
+    )
+    svg.text(784, 44, "network (HTTPS)", font_size=12, **paint(ink.soft))
+    q = d.box(QRectF(32, 70, 160, 78), "Question text", ["pasted, or from", "the clipboard"])
+    p = d.box(QRectF(232, 70, 160, 78), "Parser", ["toss-up or bonus,", "category, choices"])
+    e = d.box(
+        QRectF(432, 70, 200, 78), "Entity detection", ["scispaCy CRAFT model", "plus regexes"]
+    )
+    lookups = ["1. lexicon, then the local", "    cache (SQLite)", "2. OPSIN (Java, on the Mac)"]
+    k = d.box(QRectF(672, 70, 276, 160), "Name lookups", lookups)
+    d.box(QRectF(686, 172, 248, 44), "3. PubChem or UniProt", net=True)
+    n_lines = [
+        "lexicon, units, formulas, choices;",
+        "the answer line only when",
+        "Read answer line is on",
+    ]
+    n = d.box(QRectF(672, 270, 276, 96), "Normalizer", n_lines)
+    r = d.box(
+        QRectF(432, 270, 200, 96), "Respelling to IPA", ["NSB brackets to IPA;", "Kokoro: misaki"]
+    )
+    v = d.box(
+        QRectF(232, 270, 160, 96),
+        "Voice",
+        ["Piper (espeak-ng) or", "Kokoro (Apple", "Silicon only)"],
+    )
+    c = d.box(
+        QRectF(32, 270, 160, 96), "WAV cache", ["one file per script,", "voice, speed, speaker"]
+    )
+    pl = d.box(QRectF(32, 400, 160, 56), "Player", ["afplay"])
+    dl = d.box(
+        QRectF(232, 400, 260, 56), "Voice download at start", ["missing pinned voices"], net=True
+    )
+    switch = [
+        "--offline or CLOUDYREADER_OFFLINE=1:",
+        "no name lookups and no voice download",
+        "Online lookups off:",
+        "no PubChem or UniProt; voices still download",
+    ]
+    d.box(QRectF(512, 400, 436, 112), "Offline switches", switch)
+    mid = lambda box: box.center().y()  # noqa: E731
+    d.link((q.right(), mid(q)), (p.left(), mid(p)))
+    d.link((p.right(), mid(p)), (e.left(), mid(e)))
+    d.link((e.right(), mid(e)), (k.left(), mid(e)))
+    d.link((k.center().x(), k.bottom()), (n.center().x(), n.top()))
+    d.link((n.left(), mid(n)), (r.right(), mid(r)))
+    d.link((r.left(), mid(r)), (v.right(), mid(v)))
+    d.link((v.left(), mid(v)), (c.right(), mid(c)))
+    d.link((c.center().x(), c.bottom()), (pl.center().x(), pl.top()))
+    d.link((dl.center().x() - 50, dl.top()), (v.center().x(), v.bottom()), dashed=True)
     return svg
 
 
-FIGURES = ("logo", "window", "about", "voices", "rotation", "download", "status-states", "pipeline")
+# --- main --------------------------------------------------------------------------------------
+
+FIGURES = ("logo", "pipeline", "window", "about", "voices", "rotation", "download", "status-states")
 
 
 def write(svg: Svg, out: Path, name: str) -> None:
     path = out / f"{name}.svg"
     path.write_text(svg.xml(), encoding="utf-8")
-    print(f"{path.name:24} {path.stat().st_size / 1024:6.1f} KB")
+    print(f"{path.name:26} {path.stat().st_size / 1024:6.1f} KB")
 
 
 def build(out: Path, platform: str, only: Sequence[str]) -> int:
@@ -1163,11 +1274,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Render the docs figures as vector SVG.")
     parser.add_argument("--out", type=Path, default=Path("docs/assets/img"), help="output folder")
     default = "cocoa" if sys.platform == "darwin" else "offscreen"
-    parser.add_argument("--platform", choices=("cocoa", "offscreen"), default=default,
-                        help=f"Qt platform for layout (default here: {default}; windows are never shown)")  # fmt: skip
     parser.add_argument(
-        "--only", nargs="+", choices=FIGURES, default=list(FIGURES), help="figures to render"
+        "--platform",
+        choices=("cocoa", "offscreen"),
+        default=default,
+        help=f"Qt platform for the layout (default here: {default}); windows are never shown",
     )
+    parser.add_argument("--only", nargs="+", choices=FIGURES, default=list(FIGURES))
     args = parser.parse_args(argv)
     return build(args.out, args.platform, args.only)
 
