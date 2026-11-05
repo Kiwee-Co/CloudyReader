@@ -1,0 +1,220 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+/* Architects Daughter, the theme's heading font, served from this site (SIL OFL 1.1, see
+   assets/fonts/OFL.txt), so no page asks Google Fonts for it. */
+@font-face {
+  font-family: "Architects Daughter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("{{ '/assets/fonts/ArchitectsDaughter-Regular.ttf' | relative_url }}") format("truetype");
+}
+
+/* Small additions for the manual, in the theme's own colors. On the #fafafa page: text #666
+   5.50:1, link #2268b2 5.45:1 (the theme's #2879d0 is 4.25:1), headings #474747 8.90:1. */
+
+/* Links in running text get an underline, so color is not the only cue (WCAG 1.4.1). */
+#main-content p a,
+#main-content li a,
+#main-content td a,
+#main-content dd a,
+#main-content figcaption a {
+  color: #2268b2;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+#main-content pre code {
+  color: #2268b2;
+}
+
+/* The grouped page list above each manual page. */
+.manual-nav {
+  margin: 0 0 30px;
+  padding: 12px 16px;
+  font-size: 14px;
+  background: #f2f8fc;
+  border: 1px solid #dbe7f3;
+  border-radius: 6px;
+}
+
+.manual-nav .nav-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+}
+
+.manual-nav .nav-group + .nav-group {
+  margin-top: 8px;
+}
+
+.manual-nav .nav-group__title {
+  margin: 0;
+  font-weight: bold;
+  color: #444;
+}
+
+.manual-nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#main-content .manual-nav a {
+  color: #2268b2;
+  text-decoration: none;
+}
+
+#main-content .manual-nav a:hover {
+  text-decoration: underline;
+}
+
+#main-content .manual-nav a[aria-current="page"] {
+  font-weight: bold;
+  color: #444;
+}
+
+#main-content .page-title {
+  margin-bottom: 20px;
+}
+
+.edit-link,
+.site-note {
+  font-size: 13px;
+  color: #666;
+}
+
+.site-note {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid #ddd;
+}
+
+.site-note p {
+  margin-bottom: 8px;
+}
+
+/* Screenshots and diagrams. */
+.figure {
+  margin: 0 0 30px;
+  text-align: center;
+}
+
+.figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.figure figcaption {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #666;
+}
+
+/* A plain window frame: a title bar with three dots around a snapshot of the window content. */
+.window-frame {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-align: left;
+  vertical-align: top;
+  background: #fff;
+  border: 1px solid #c9c9c9;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.window-frame img {
+  border-top: 1px solid #ddd;
+}
+
+.window-frame__bar {
+  display: flex;
+  gap: 8px;
+  padding: 9px 12px;
+  background: #ececec;
+}
+
+.window-frame__bar span {
+  width: 12px;
+  height: 12px;
+  background: #bdbdbd;
+  border-radius: 50%;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 1px 6px;
+  font-family: inherit;
+  font-size: 0.85em;
+  line-height: 1.4;
+  color: #444;
+  text-align: center;
+  white-space: nowrap;
+  background: #fff;
+  border: 1px solid #999;
+  border-bottom-width: 2px;
+  border-radius: 4px;
+}
+
+/* Callouts: the bold label in the text carries the meaning; tint and edge only support it.
+   Text #444 on the tints: 9.09:1 and 8.99:1; labels #2268b2 5.31:1 and #8a4500 6.61:1. */
+.note,
+.warning {
+  padding: 12px 16px;
+  color: #444;
+  background: #f2f8fc;
+  border-left: 6px solid #2268b2;
+}
+
+.note > :last-child,
+.warning > :last-child {
+  margin-bottom: 0;
+}
+
+.warning {
+  background: #fdf5e6;
+  border-left-color: #b25c00;
+}
+
+.note > p:first-child > strong:first-child {
+  color: #2268b2;
+}
+
+.warning > p:first-child > strong:first-child {
+  color: #8a4500;
+}
+
+/* Tables read left to right, like the rest of the manual. */
+#main-content table {
+  margin-bottom: 20px;
+  border-collapse: collapse;
+}
+
+#main-content th,
+#main-content td {
+  padding: 6px 10px;
+  text-align: left;
+  vertical-align: top;
+  border: 1px solid #e3e3e3;
+}
+
+#main-content th {
+  font-weight: bold;
+  color: #444;
+  background: #f2f8fc;
+}
+
+#main-content td {
+  font-weight: 400;
+}

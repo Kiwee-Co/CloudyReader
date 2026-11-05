@@ -1,29 +1,25 @@
 {%- comment -%}
-A figure for an image in /assets/img/. Parameters: src (a file name there, or a site path that
-starts with "/"), alt (required, never empty), caption (optional, Markdown), width and height
-(optional, in CSS pixels, so the page reserves the space). A "-light" file gets its "-dark"
-file as the dark-appearance source; any other file gets one when a "-dark" sibling exists.
+A figure for an image in /assets/img/. src: a file name there, or a site path that starts with
+"/". alt: required, never empty. caption: Markdown. frame="window", width, height: optional.
+{%- endcomment -%}
+{%- comment -%}
+The page shows the light file. A missing file renders nothing, so a page still reads well while
+its image is on the way; scripts/check_site.py reports the missing file.
 {%- endcomment -%}
 {%- assign figure_src = include.src | strip -%}
 {%- unless figure_src contains "/" -%}{%- assign figure_src = "/assets/img/" | append: figure_src -%}{%- endunless -%}
-{%- assign figure_dark = "" -%}
-{%- if figure_src contains "-light." -%}
-{%- assign figure_dark = figure_src | replace: "-light.", "-dark." -%}
-{%- else -%}
-{%- assign figure_ext = figure_src | split: "." | last -%}
-{%- assign figure_stem_size = figure_src.size | minus: figure_ext.size | minus: 1 -%}
-{%- assign figure_sibling = figure_src | slice: 0, figure_stem_size | append: "-dark." | append: figure_ext -%}
-{%- assign figure_found = site.static_files | where: "path", figure_sibling | first -%}
-{%- if figure_found -%}{%- assign figure_dark = figure_sibling -%}{%- endif -%}
-{%- endif -%}
-<figure class="figure{% if include.class %} {{ include.class }}{% endif %}">
-<picture>
-{%- if figure_dark != "" %}
-<source srcset="{{ figure_dark | relative_url }}" media="(prefers-color-scheme: dark)">
+{%- assign figure_file = site.static_files | where: "path", figure_src | first -%}
+{%- if figure_file -%}
+<figure class="figure{% if include.frame == 'window' %} figure--window{% endif %}">
+{%- if include.frame == "window" %}
+<div class="window-frame"><div class="window-frame__bar" aria-hidden="true"><span></span><span></span><span></span></div>
 {%- endif %}
 <img src="{{ figure_src | relative_url }}" alt="{{ include.alt | escape }}"{% if include.width %} width="{{ include.width }}"{% endif %}{% if include.height %} height="{{ include.height }}"{% endif %} loading="lazy" decoding="async">
-</picture>
+{%- if include.frame == "window" %}
+</div>
+{%- endif %}
 {%- if include.caption %}
 <figcaption>{{ include.caption | markdownify | remove: "<p>" | remove: "</p>" | strip }}</figcaption>
 {%- endif %}
 </figure>
+{%- endif -%}
