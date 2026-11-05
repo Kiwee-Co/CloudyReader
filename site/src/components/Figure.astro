@@ -9,9 +9,11 @@ interface Props {
 	frame?: 'window'; // draw a window frame: the window snapshots show the content only
 }
 const { src, dark, alt, caption, frame } = Astro.props;
+// A stable anchor per image, so a page can link to its figure: voices-light.svg is #figure-voices.
+const id = `figure-${src.replace(/\.svg$/, '').replace(/-light$/, '')}`;
 ---
 
-<figure class:list={['cr-figure', { 'cr-figure--window': frame === 'window' }]}>
+<figure {id} class:list={['cr-figure', { 'cr-figure--window': frame === 'window' }]}>
 	<div class="cr-figure__frame">
 		{frame === 'window' && (
 			<div class="cr-figure__bar" aria-hidden="true">

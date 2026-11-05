@@ -20,8 +20,8 @@ Cloudy Reader reads US DOE National Science Bowl questions aloud on your Mac. It
 [![Coverage gate: >= 75%](https://img.shields.io/badge/coverage%20gate-%3E%3D_75%25-informational)](https://kiwee-co.github.io/CloudyReader/developer/testing/)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/img/window-dark.svg">
-  <img src="docs/assets/img/window-light.svg" alt="The Cloudy Reader window: a question box, Voice and Rotation menus, two option checkboxes, the Paste, Speak Clipboard, Repeat, Stop, and Speak buttons, and a status bar." width="680">
+  <source media="(prefers-color-scheme: dark)" srcset="site/public/img/window-dark.svg">
+  <img src="site/public/img/window-light.svg" alt="The Cloudy Reader window: a question box, Voice and Rotation menus, two option checkboxes, the Paste, Speak Clipboard, Repeat, Stop, and Speak buttons, and a status bar." width="680">
 </picture>
 
 ## Features

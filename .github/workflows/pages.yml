@@ -1,0 +1,64 @@
+# Builds the Starlight site in site/ and publishes it to GitHub Pages.
+# Needs Settings > Pages > Build and deployment > Source = "GitHub Actions". The custom domain
+# cloudyreader.com and "Enforce HTTPS" stay as they are. Pages creates the github-pages
+# environment on the first deploy.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", "scripts/check_site.py", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: read # configure-pages reads the Pages settings
+    env:
+      ASTRO_TELEMETRY_DISABLED: "1"
+      NPM_CONFIG_IGNORE_SCRIPTS: "true" # site/.npmrc says the same; no dependency has one
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: site/.node-version
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - name: Install the locked packages
+        working-directory: site
+        run: npm ci
+      - name: Build
+        working-directory: site
+        run: npm run build
+      - name: Check links, anchors, alt text and origins in the build
+        run: python3 scripts/check_site.py site/dist # once the script reads the build
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
