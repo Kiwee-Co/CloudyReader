@@ -47,7 +47,7 @@ The code states rule R5 in several modules: a resolution decides how a token is 
 | `respell.py` | NSB respelling to IPA, driven by `data/respelling_rules.json`. |
 | `units.py` | Number words, units, symbols, and the text preparation that both stages share. |
 | `formulas.py` | Formulas, ions, scientific notation, exponents, ratios, and acronyms. |
-| `spoken_fractions.py` | Fractions, mixed numbers, and fraction glyphs to words: `fold_glyphs` and `speak_fractions`. |
+| `spoken_fractions.py` | Fractions, mixed numbers, and fraction glyphs to words. `mark_fractions` runs before the unit stage, `say_marked` after it, and `speak_fractions` runs both for a say-as guide. |
 | `normalize.py` | `ScriptNormalizer`: builds the segments, applies guides, and calls units, fractions, formulas, and the lexicon. |
 | `tts.py` | `TtsService`: the engine registry and the content-addressed WAV cache. |
 | `engines/` | `piper.py`, `kokoro.py`, and `misaki_ipa.py` (the IPA to misaki phoneme map). |

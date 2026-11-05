@@ -16,6 +16,11 @@ All notable changes to Cloudy Reader are recorded in this file, which follows Ke
 - 0.7 s of exact silence inserted after the stem when choices follow.
 - A built-in lexicon of hard science words.
 - Formulas spelled as letters and number words.
+- Fractions read as words: 1/7 is "one seventh", 3/9 is "three ninths", 3/4 is "three quarters".
+- Mixed numbers and fraction glyphs read as words: 2 1/2 and 2½ are "two and one half".
+- A split of 100 into multiples of 5 reads as a pair: 50/50 is "fifty-fifty", 60/40 is "sixty-forty".
+- Fractions work in the stem, the choices, the answer line, and say-as guide words.
+- Slashes in m/s, √10/5, 1.5/2, and 3/9/2024 are not read as fractions.
 - Offline OPSIN check of systematic chemical names.
 - Optional PubChem and UniProt lookups, on by default. Their answers never change the sound.
 - Offline mode: `--offline` or `CLOUDYREADER_OFFLINE=1` stops the lookups and the voice download.

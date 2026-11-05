@@ -16,7 +16,7 @@ Cloudy Reader changes how a word sounds. It never changes which word is said. Th
 | 1. Clean and parse | Fixes PDF leftovers. Finds the header, number, category, format, stem, choices, and answer. Takes bracket guides out of the text. | No |
 | 2. Detect names | Marks formulas, chemical names, genes, and proteins in the stem and the choices. It marks the answer too when **Read answer line** is on. | No |
 | 3. Look up names | Asks OPSIN on your Mac about systematic names. Asks PubChem and UniProt about other names. | PubChem and UniProt only |
-| 4. Build the script | Applies guides, then units and symbols, then formulas and notation, then the lexicon. | No |
+| 4. Build the script | Applies guides, then units and symbols, then fractions, then formulas and notation, then the lexicon. | No |
 | 5. Speak | The voice engine turns the script and the pronunciation overrides into audio. | No |
 
 The **Spoken script** view shows the words that step 4 builds. Step 4 also sets the silent pause after each part of a question. See [Use the app]({{ '/manual/using-the-app/' | relative_url }}) for the view and the pause table.
@@ -36,7 +36,7 @@ Pasted text from PDFs and web pages is messy. The parser handles these cases:
 
 ## Hear formulas, units, and symbols
 
-The unit stage runs first. The formula stage runs second. Plain numbers stay as digits, and the voice reads them. The app turns digits into words inside formulas, exponents, scientific notation, isotope names, gene symbols, and the header number.
+The unit stage runs first. The fraction stage runs second. The formula stage runs third. Plain numbers stay as digits, and the voice reads them. The app turns digits into words inside fractions, formulas, exponents, scientific notation, isotope names, gene symbols, and the header number.
 
 | In the question | In the spoken script |
 | --- | --- |
@@ -73,6 +73,47 @@ Know these rules:
 - **Isotopes keep the m.** `technetium-99m` is "technetium ninety-nine m", never "99 meters".
 - **The app speaks currency.** `$16.50` is "16 dollars 50 cents".
 - **The app repairs minus signs.** An en dash or hyphen between algebra terms, as in `2x – 6y`, becomes "minus". A range between plain numbers, as in `5–10 grams`, stays a range.
+
+### Hear fractions
+
+The app reads a written fraction the way a moderator says it. A voice would read the raw slash as "slash" or drop it.
+
+| In the question | In the spoken script         |
+| --------------- | ---------------------------- |
+| `1/7`           | one seventh                  |
+| `3/9`           | three ninths                 |
+| `5/8`           | five eighths                 |
+| `2/51`          | two fifty-firsts             |
+| `1/2`           | one half                     |
+| `3/2`           | three halves                 |
+| `3/4`           | three quarters               |
+| `2/4`           | two fourths                  |
+| `1/360`         | one over three hundred sixty |
+| `50/50`         | fifty-fifty                  |
+| `2 1/2`         | two and one half             |
+| `2½`            | two and one half             |
+| `-3/7`          | minus three sevenths         |
+
+Know these rules:
+
+- **Halves and quarters.** `1/2` is "one half" and `3/2` is "three halves". Only `1/4` and `3/4` say "quarter". Other counts of fourths say "fourths": `9/4` is "nine fourths".
+- **Other denominators.** The numbers 3 to 99, 100, and 1000 give an ordinal such as "ninths". Any other denominator says "over": `5/1` is "five over one".
+- **A glued ordinal suffix.** The suffix drops: `1/7th` and `2/3rds` read as "one seventh" and "two thirds". It also forces the ordinal for a large denominator: `1/360th` is "one three-hundred-sixtieth".
+- **Splits.** A fraction whose parts are multiples of 5 and add up to 100 reads as a pair. `50/50` is "fifty-fifty", and `60/40` is "sixty-forty". `51/49` stays a fraction.
+- **Mixed numbers use "and".** `2 1/2` and `2-1/2` are "two and one half". After a whole number, an improper fraction stays two numbers: `2 3/2` is "2 three halves".
+- **Fraction glyphs read as fractions.** `½`, `¼`, `¾`, and the other glyphs from U+2150 to U+215E read as fractions. The fraction slash `⁄` and the division slash `∕` work like `/`.
+- **A minus sign says "minus".** A hyphen, minus sign, or en dash directly before a fraction reads as "minus", as before a plain number.
+- **Where it works.** The stem, the choices, the answer line when **Read answer line** is on, and the words of a say-as guide. A say-as guide for the whole expression still wins: `4 2/7 [4 and two-sevenths]` speaks the guide's words.
+
+The app decides what is a fraction on the text as you pasted it, before the unit stage changes anything. It leaves a slash alone when the text is not a plain fraction of whole numbers:
+
+- **A letter beside the slash.** `m/s`, `mol/L`, `and/or`, `t1/2`, `x/2`, and `1/x` stay. A letter that touches the denominator keeps the slash too: `1/2bh` and `4/3πr3`. The unit stage still reads `m/s` as "meters per second".
+- **A root sign, a Greek letter, or a superscript on the left.** `√10/5`, `π2/6`, and `mv²/2` stay.
+- **A decimal point or a thousands comma.** `1.5/2`, `1/2.5`, and `1,000/3` stay.
+- **A second slash.** The date `3/9/2024` and the chain `1/2/3` stay.
+- **A leading zero.** `01/02` stays.
+- **Spaces around the slash.** `3 / 4` stays. The unit stage reads it as "3 over 4".
+- **A number of more than nine digits.** It stays.
 
 ### Hear acronyms and gene symbols
 
