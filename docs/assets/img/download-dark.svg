@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="120" viewBox="0 0 680 120" role="img" aria-labelledby="title desc" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif">
+<title id="title">Voice download progress</title>
+<desc id="desc">The status bar in Dark Mode while voices download: Downloading voices 42% with its progress bar; then the same with Preparing and the busy bar beside it.</desc>
+<defs><clipPath id="clip1"><rect x="0" y="22" width="680" height="29"/></clipPath><clipPath id="clip2"><rect x="0" y="91" width="680" height="29"/></clipPath></defs>
+<text x="0" y="13" font-size="12" font-weight="600" fill="#ffffff" fill-opacity="0.85">Downloading voices</text>
+<rect x="0" y="22" width="680" height="29" fill="#323232"/>
+<g clip-path="url(#clip1)">
+<path d="M0 22.25H680" stroke-width="0.5" stroke="#838383"/>
+<text x="406" y="40.09" font-size="12" fill="#ffffff" fill-opacity="0.85">Downloading voices… 42%</text>
+<rect x="564" y="34" width="96" height="6" rx="3" fill="#474747"/>
+<rect x="564" y="34" width="40.32" height="6" rx="3" fill="#1c6cdc"/>
+</g>
+<rect x="0.25" y="22.25" width="679.5" height="28.5" fill="none" stroke-width="0.5" stroke="#ffffff" stroke-opacity="0.14"/>
+<text x="0" y="82" font-size="12" font-weight="600" fill="#ffffff" fill-opacity="0.85">Downloading voices while a reading is prepared</text>
+<rect x="0" y="91" width="680" height="29" fill="#323232"/>
+<g clip-path="url(#clip2)">
+<path d="M0 91.25H680" stroke-width="0.5" stroke="#838383"/>
+<text x="20" y="110.03" font-size="12" fill="#ffffff" fill-opacity="0.85">Preparing…</text>
+<text x="290" y="109.09" font-size="12" fill="#ffffff" fill-opacity="0.85">Downloading voices… 42%</text>
+<rect x="448" y="103" width="96" height="6" rx="3" fill="#474747"/>
+<rect x="448" y="103" width="40.32" height="6" rx="3" fill="#1c6cdc"/>
+<rect x="564" y="103" width="96" height="6" rx="3" fill="#474747"/>
+<rect x="581.28" y="103" width="32.64" height="6" rx="3" opacity="0.55" fill="#1c6cdc"/>
+</g>
+<rect x="0.25" y="91.25" width="679.5" height="28.5" fill="none" stroke-width="0.5" stroke="#ffffff" stroke-opacity="0.14"/>
+</svg>
