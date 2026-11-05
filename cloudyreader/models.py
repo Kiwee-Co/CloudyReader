@@ -6,7 +6,7 @@ Single writer: stream S0b. Everyone else imports, never edits.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Literal, Protocol
@@ -84,6 +84,9 @@ class Override:
     surface: str
     ipa: str
     source: str  # "respelling" | "lexicon" | "iupac"
+    # Plain-text engines (no IPA input) say this instead of `surface`; "" when there is none.
+    # compare=False: equality and hash stay on surface, ipa and source.
+    respelling: str = field(default="", compare=False)
 
 
 @dataclass(frozen=True)
@@ -105,13 +108,14 @@ class SpokenScript:
 @dataclass(frozen=True)
 class VoiceInfo:
     key: str  # "piper:en_US-lessac-medium" | "kokoro:af_heart"
-    engine: Literal["piper", "kokoro"]
+    engine: Literal["piper", "kokoro", "chatterbox_turbo", "qwen3_tts"]
     name: str
     language: str  # "en-US"
     quality: str  # "medium" | "high" | ...
     num_speakers: int
     installed: bool
     path: Path | None = None
+    reason: str = ""  # why `installed` is False, a short phrase; "" when installed
 
 
 @dataclass(frozen=True)
