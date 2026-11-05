@@ -89,6 +89,4 @@ repos:
         exclude: |
           (?x)^(
             docs/index\.md
-            | docs/manual/using-the-app\.md
-            | docs/manual/voices\.md
           )$
