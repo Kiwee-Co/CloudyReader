@@ -26,7 +26,10 @@ def _label(voice: VoiceInfo) -> str:
 
 
 class VoicePicker(QWidget):
-    """Emits voice_changed(key) when the user lands on a voice. A rebuild never emits."""
+    """Emits voice_changed(key) when the user lands on a voice. A rebuild never emits.
+
+    The caller places `label` (its buddy is the combo) beside the picker, as a form row does.
+    """
 
     voice_changed = Signal(str)
 
@@ -47,8 +50,8 @@ class VoicePicker(QWidget):
         self.speaker_spin = QSpinBox()
         self.speaker_spin.setAccessibleName("Speaker")
 
-        voice_label = QLabel("Voice:")
-        voice_label.setBuddy(self.combo)
+        self.label = QLabel("Voice:")
+        self.label.setBuddy(self.combo)
         speaker_label = QLabel("Speaker:")
         speaker_label.setBuddy(self.speaker_spin)
         self.speaker_box = QWidget()
@@ -61,10 +64,10 @@ class VoicePicker(QWidget):
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(tokens.CONTROL_SPACING)
-        layout.addWidget(voice_label)
-        layout.addWidget(self.combo, 1)
+        layout.setSpacing(tokens.GROUP_SPACING)
+        layout.addWidget(self.combo)
         layout.addWidget(self.speaker_box)
+        layout.addStretch(1)  # given extra width, the popup still keeps its natural size
 
         self.combo.currentIndexChanged.connect(self._on_index_changed)
 

@@ -102,8 +102,9 @@ def test_run_closes_the_window_and_stops_audio_when_the_loop_ends_without_closin
 
 
 _CHILD = """
+import os
 import sys
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QSettings, QTimer
 from PySide6.QtWidgets import QApplication
 import cloudyreader.gui.app as app_module
 from cloudyreader.gui.fake_service import FakePlayer, FakeReaderService
@@ -121,23 +122,43 @@ class Window(app_module.MainWindow):
         QTimer.singleShot(50, probe)
 
 
+# The parent's temp dir: the default NativeFormat would write the user's real preferences.
+QSettings.setDefaultFormat(QSettings.Format.IniFormat)
+QSettings.setPath(
+    QSettings.Format.IniFormat, QSettings.Scope.UserScope, os.environ["CHILD_SETTINGS_DIR"]
+)
 app_module.MainWindow = Window
 sys.exit(app_module.run(FakeReaderService(), FakePlayer(), argv=sys.argv[1:]))
 """
 
 
-def test_run_creates_the_app_and_forwards_argv_to_qt():
-    # A fresh process: inside pytest a QApplication already exists, so run() would reuse it.
-    done = subprocess.run(
+def run_child(settings_dir: Path) -> subprocess.CompletedProcess[str]:
+    """Run _CHILD in a fresh process; its QSettings live under settings_dir."""
+    return subprocess.run(
         [sys.executable, "-c", _CHILD, "-style", "windows"],
-        env={**os.environ, "QT_QPA_PLATFORM": "offscreen"},
+        env={**os.environ, "QT_QPA_PLATFORM": "offscreen", "CHILD_SETTINGS_DIR": str(settings_dir)},
         capture_output=True,
         text=True,
         timeout=60,
     )
 
+
+def test_run_creates_the_app_and_forwards_argv_to_qt(tmp_path):
+    # A fresh process: inside pytest a QApplication already exists, so run() would reuse it.
+    done = run_child(tmp_path)
+
     assert done.returncode == 0, done.stderr
     assert "RESULT windows Cloudy Reader" in done.stdout
+
+
+def test_the_child_saves_its_window_geometry_under_the_temp_dir(tmp_path):
+    # Regression: closing the window saves its geometry, so a child on the default
+    # NativeFormat settings wrote the user's real preferences on every test run.
+    done = run_child(tmp_path)
+
+    assert done.returncode == 0, done.stderr
+    [ini] = tmp_path.rglob("*.ini")
+    assert QSettings(str(ini), QSettings.Format.IniFormat).value("geometry")
 
 
 # --- dev-mode icon ---------------------------------------------------------------------------

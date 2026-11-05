@@ -8,6 +8,7 @@ from itertools import pairwise
 from typing import Protocol
 
 from PySide6.QtCore import (
+    QByteArray,
     QCoreApplication,
     QEvent,
     QObject,
@@ -24,18 +25,23 @@ from PySide6.QtGui import (
     QAccessibleAnnouncementEvent,
     QAction,
     QCloseEvent,
+    QColor,
     QGuiApplication,
     QKeySequence,
+    QPalette,
 )
 from PySide6.QtWidgets import (
+    QAbstractSpinBox,
     QCheckBox,
+    QFormLayout,
     QHBoxLayout,
+    QLabel,
+    QLineEdit,
     QMainWindow,
     QMessageBox,
     QPlainTextEdit,
     QProgressBar,
     QPushButton,
-    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -43,11 +49,13 @@ from PySide6.QtWidgets import (
 from cloudyreader.gui import tokens
 from cloudyreader.gui.names import APP_NAME, app_version
 from cloudyreader.gui.voice_picker import LOADING, VoicePicker
+from cloudyreader.gui.widgets import DisclosureButton, StatusBar, Tone, text_style
 from cloudyreader.models import AudioPlayer, ReaderService, Reading, RenderOptions, VoiceInfo
 
 log = logging.getLogger(__name__)
 
 _QUEUED = Qt.ConnectionType.QueuedConnection
+_NATIVE = QKeySequence.SequenceFormat.NativeText
 
 
 class ClipboardSource(Protocol):
@@ -116,6 +124,7 @@ class MainWindow(QMainWindow):
         self._has_played = False
         self._closing = False
         self._playback_text = ""  # status text owned by playback: cleared when audio ends
+        self._about_box: QMessageBox | None = None
 
         # One worker at a time: the service is not promised to be thread-safe. The pool is created
         # before the signals, so it is destroyed first and waits for a running job to finish.
@@ -133,8 +142,13 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(APP_NAME)
         self.setMinimumSize(*tokens.WINDOW_MIN_SIZE)
         self.resize(*tokens.WINDOW_DEFAULT_SIZE)
+        self._status = StatusBar()
+        self.setStatusBar(self._status)
         self._build_actions()
         self._build_ui()
+        self._apply_text_colors()
+        # The system switches light and dark at runtime; the placeholder tokens follow it.
+        QGuiApplication.styleHints().colorSchemeChanged.connect(self._apply_text_colors)
         self._restore_settings()
         self._load_voices()
         self._refresh_controls()
@@ -151,7 +165,7 @@ class MainWindow(QMainWindow):
     # --- construction ------------------------------------------------------------------------
 
     def _build_actions(self) -> None:
-        def make(text: str, slot: Callable[[], None], *shortcuts: str) -> QAction:
+        def make(text: str, slot: Callable[[], object], *shortcuts: str) -> QAction:
             action = QAction(text, self)
             action.setShortcuts([QKeySequence(s) for s in shortcuts])
             action.triggered.connect(slot)
@@ -164,6 +178,31 @@ class MainWindow(QMainWindow):
         )
         self.repeat_action = make("Repeat", self._on_repeat, "Ctrl+R")
         self.stop_action = make("Stop", self._on_stop, "Ctrl+.")
+        self.close_action = make("Close Window", self.close, "Ctrl+W")
+        self.minimize_action = make("Minimize", self.showMinimized, "Ctrl+M")
+        self.zoom_action = make("Zoom", self._toggle_zoom)
+
+        # Edit commands act on the focused text field, which takes these keys itself anyway.
+        def edit(text: str, key: QKeySequence.StandardKey, command: str) -> QAction:
+            action = QAction(text, self)
+            action.setShortcuts(key)
+            action.triggered.connect(lambda: self._edit(command))
+            return action
+
+        self.undo_action = edit("Undo", QKeySequence.StandardKey.Undo, "undo")
+        self.redo_action = edit("Redo", QKeySequence.StandardKey.Redo, "redo")
+        self.cut_action = edit("Cut", QKeySequence.StandardKey.Cut, "cut")
+        self.copy_action = edit("Copy", QKeySequence.StandardKey.Copy, "copy")
+        self.paste_action = edit("Paste", QKeySequence.StandardKey.Paste, "paste")
+        self.select_all_action = edit("Select All", QKeySequence.StandardKey.SelectAll, "selectAll")
+        self._edit_actions = {
+            "undo": self.undo_action,
+            "redo": self.redo_action,
+            "cut": self.cut_action,
+            "copy": self.copy_action,
+            "paste": self.paste_action,
+            "selectAll": self.select_all_action,
+        }
 
         # Standard app-menu roles: on macOS Qt moves these two into the application menu.
         self.about_action = QAction(f"About {APP_NAME}", self)
@@ -174,70 +213,96 @@ class MainWindow(QMainWindow):
         self.quit_action.setShortcut(QKeySequence("Ctrl+Q"))  # Cmd+Q; StandardKey.Quit can be empty
         self.quit_action.triggered.connect(self.close)  # one window: closing it ends the app
 
-        # HIG (Menus): every command lives in the menu bar, where its shortcut is discoverable.
-        # File and Help only hold the two role actions: macOS empties and hides them.
+        # HIG (Menus): the standard menus in the standard order, every shortcut discoverable.
+        # Help only holds the About role action, so macOS empties and hides it.
         bar = self.menuBar()
-        bar.addMenu("File").addAction(self.quit_action)
+        bar.addMenu("File").addActions([self.close_action, self.quit_action])
+        self.edit_menu = bar.addMenu("Edit")
+        self.edit_menu.addActions([self.undo_action, self.redo_action])
+        self.edit_menu.addSeparator()
+        self.edit_menu.addActions(
+            [self.cut_action, self.copy_action, self.paste_action, self.select_all_action]
+        )
+        self.edit_menu.aboutToShow.connect(self._update_edit_actions)
         menu = bar.addMenu("Reading")
         menu.addActions([self.speak_action, self.speak_clipboard_action])
         menu.addSeparator()
         menu.addActions([self.repeat_action, self.stop_action])
+        bar.addMenu("Window").addActions([self.minimize_action, self.zoom_action])
         bar.addMenu("Help").addAction(self.about_action)
 
     def _build_ui(self) -> None:
+        speak_keys = self.speak_action.shortcuts()[0].toString(_NATIVE)
         self.question_edit = QPlainTextEdit()
-        self.question_edit.setPlaceholderText("Paste a question here")
+        self.question_edit.setPlaceholderText(
+            f"Paste a National Science Bowl question, then press {speak_keys} to hear it."
+        )
         self.question_edit.setAccessibleName("Question")
         self.question_edit.setTabChangesFocus(True)  # Tab must leave the box, not type a tab
+        self.question_edit.document().setDocumentMargin(tokens.TEXT_INSET)
 
         self.voice_picker = VoicePicker()
         self.read_answer_check = QCheckBox("Read answer line")
+        self.read_answer_check.setToolTip("Also read the ANSWER line aloud.")
         self.online_lookups_check = QCheckBox("Online lookups")
+        self.online_lookups_check.setToolTip(
+            "Look up chemical and protein names on PubChem and UniProt to say them right."
+        )
 
         self.paste_button = QPushButton("Paste")
+        self.paste_button.setToolTip("Replace the question with the clipboard text.")
         self.paste_button.clicked.connect(self._on_paste)
-        self.speak_clipboard_button = self._action_button(self.speak_clipboard_action)
-        self.repeat_button = self._action_button(self.repeat_action)
-        self.stop_button = self._action_button(self.stop_action)
-        self.speak_button = self._action_button(self.speak_action)
+        self.speak_clipboard_button = self._action_button(
+            self.speak_clipboard_action, "Paste the clipboard and speak it"
+        )
+        self.repeat_button = self._action_button(self.repeat_action, "Play the last reading again")
+        self.stop_button = self._action_button(self.stop_action, "Stop playback")
+        self.speak_button = self._action_button(self.speak_action, "Speak the question")
         self.speak_button.setDefault(True)  # HIG (Buttons): the primary action is the default
 
-        self.script_toggle = QToolButton()
-        self.script_toggle.setText("Spoken script")
-        self.script_toggle.setCheckable(True)
-        self.script_toggle.setAutoRaise(True)
-        self.script_toggle.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        self.script_toggle.setArrowType(Qt.ArrowType.RightArrow)
+        self.script_toggle = DisclosureButton("Spoken script")
         self.script_toggle.setAccessibleDescription("Show or hide the text that is spoken")
         self.script_toggle.toggled.connect(self._toggle_script)
         self.script_view = QPlainTextEdit()
         self.script_view.setReadOnly(True)
         self.script_view.setAccessibleName("Spoken script")
+        self.script_view.setPlaceholderText("The words that are spoken appear here.")
+        self.script_view.setFont(text_style(tokens.TEXT_CALLOUT_PT))  # secondary to the question
+        self.script_view.document().setDocumentMargin(tokens.TEXT_INSET)
         self.script_view.setMinimumHeight(tokens.SCRIPT_MIN_HEIGHT)
         self.script_view.hide()
 
-        layout = QVBoxLayout()
-        layout.setContentsMargins(*(tokens.MARGIN,) * 4)
-        layout.setSpacing(tokens.GROUP_SPACING)
-        layout.addWidget(self.question_edit, 3)
-        layout.addWidget(self.voice_picker)
-        options = QHBoxLayout()
-        options.setSpacing(tokens.GROUP_SPACING)
-        options.addWidget(self.read_answer_check)
-        options.addWidget(self.online_lookups_check)
-        options.addStretch(1)
-        layout.addLayout(options)
+        # HIG (Layout): a form with right-aligned labels; popups keep their natural width.
+        form = QFormLayout()
+        form.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        form.setFormAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.FieldsStayAtSizeHint)
+        form.setHorizontalSpacing(tokens.CONTROL_SPACING)
+        form.setVerticalSpacing(tokens.CONTROL_SPACING)
+        form.addRow(self.voice_picker.label, self.voice_picker)
+        # A plain label, no buddy: each checkbox is named by its own text for VoiceOver.
+        form.addRow(QLabel("Options:"), self.read_answer_check)
+        form.addRow("", self.online_lookups_check)  # empty text: Qt adds no label at all
         buttons = QHBoxLayout()
-        buttons.setSpacing(tokens.CONTROL_SPACING)
+        buttons.setSpacing(tokens.GROUP_SPACING)
         buttons.addWidget(self.paste_button)
         buttons.addWidget(self.speak_clipboard_button)
         buttons.addStretch(1)
         buttons.addWidget(self.repeat_button)
         buttons.addWidget(self.stop_button)
         buttons.addWidget(self.speak_button)
+        script = QVBoxLayout()  # a hidden view adds no spacing, so collapsed leaves no gap
+        script.setSpacing(tokens.CONTROL_SPACING)
+        script.addWidget(self.script_toggle, 0, Qt.AlignmentFlag.AlignLeft)
+        script.addWidget(self.script_view)
+
+        layout = QVBoxLayout()
+        layout.setContentsMargins(*(tokens.MARGIN,) * 4)
+        layout.setSpacing(tokens.SECTION_SPACING)
+        layout.addWidget(self.question_edit, 3)
+        layout.addLayout(form)
         layout.addLayout(buttons)
-        layout.addWidget(self.script_toggle, 0, Qt.AlignmentFlag.AlignLeft)
-        layout.addWidget(self.script_view, 2)
+        layout.addLayout(script, 2)
         central = QWidget()
         central.setLayout(layout)
         self.setCentralWidget(central)
@@ -247,7 +312,7 @@ class MainWindow(QMainWindow):
         self.busy_bar.setTextVisible(False)
         self.busy_bar.setFixedWidth(tokens.BUSY_BAR_WIDTH)
         self.busy_bar.setAccessibleName("Preparing")
-        self.statusBar().addPermanentWidget(self.busy_bar)
+        self._status.addPermanentWidget(self.busy_bar)
         self.busy_bar.hide()
 
         order = [
@@ -267,13 +332,33 @@ class MainWindow(QMainWindow):
         for first, second in pairwise(order):
             QWidget.setTabOrder(first, second)
 
-    def _action_button(self, action: QAction) -> QPushButton:
+    def _action_button(self, action: QAction, tip: str) -> QPushButton:
         button = QPushButton(action.text())
+        button.setToolTip(f"{tip} ({action.shortcuts()[0].toString(_NATIVE)})")
         button.clicked.connect(action.trigger)
         return button
 
+    def _apply_text_colors(self, scheme: Qt.ColorScheme | None = None) -> None:
+        """Give placeholders the AA token of the current appearance; other colors stay native."""
+        if scheme is None:
+            scheme = QGuiApplication.styleHints().colorScheme()
+        if scheme == Qt.ColorScheme.Unknown:  # no word from the platform: judge the background
+            base = self.question_edit.palette().color(QPalette.ColorRole.Base)
+            scheme = Qt.ColorScheme.Dark if base.lightness() < 128 else Qt.ColorScheme.Light
+        dark = scheme == Qt.ColorScheme.Dark
+        palette = QPalette()  # sets no role yet, so every other role keeps following the system
+        palette.setColor(
+            QPalette.ColorRole.PlaceholderText,
+            QColor(tokens.PLACEHOLDER_DARK if dark else tokens.PLACEHOLDER_LIGHT),
+        )
+        for view in (self.question_edit, self.script_view):
+            view.setPalette(palette)
+
     def _restore_settings(self) -> None:
         saved = self._settings
+        geometry = saved.value("geometry")
+        if isinstance(geometry, QByteArray) and not geometry.isEmpty():
+            self.restoreGeometry(geometry)  # HIG: reopen where the user left it; False if broken
         self.read_answer_check.setChecked(saved.value("read_answer", False, type=bool))
         self.online_lookups_check.setChecked(saved.value("online_lookups", True, type=bool))
         # Connected after the restore so loading never rewrites the saved preference. The picker
@@ -298,7 +383,7 @@ class MainWindow(QMainWindow):
         self.voice_picker.set_voices(voices, preferred=saved)
         self._end_loading()
         if self.voice_picker.voice_key() is None:
-            self._notify("No voice is installed.")
+            self._notify("No voice is installed.", tone=Tone.WARNING)
         self.voices_settled.emit()
 
     def _on_voices_failed(self, exc: BaseException) -> None:
@@ -311,7 +396,7 @@ class MainWindow(QMainWindow):
 
     def _end_loading(self) -> None:
         self._loading_voices = False
-        if self.statusBar().currentMessage() == LOADING:  # unless something newer replaced it
+        if self._status.currentMessage() == LOADING:  # unless something newer replaced it
             self._clear_status()
         self._update_busy_bar()
         self._refresh_controls()
@@ -339,20 +424,20 @@ class MainWindow(QMainWindow):
     def _update_busy_bar(self) -> None:
         self.busy_bar.setVisible(self._busy or self._loading_voices)
 
-    def _notify(self, text: str, *, tooltip: str | None = None) -> None:
-        self.statusBar().showMessage(text)
-        self.statusBar().setToolTip(tooltip or text)
+    def _notify(self, text: str, *, tooltip: str | None = None, tone: Tone = Tone.INFO) -> None:
+        self._status.show_message(text, tone)
+        self._status.setToolTip(tooltip or text)
 
     def _clear_status(self) -> None:
-        self.statusBar().clearMessage()
-        self.statusBar().setToolTip("")
+        self._status.clearMessage()
+        self._status.setToolTip("")
 
     def _show_error(self, exc: BaseException) -> None:
         detail = str(exc).strip() or type(exc).__name__
         text = f"Error: {detail.splitlines()[0]}"
-        self._notify(text, tooltip=f"Error: {detail}")
+        self._notify(text, tooltip=f"Error: {detail}", tone=Tone.ERROR)
         # No modal, so tell assistive tech the status changed.
-        event = QAccessibleAnnouncementEvent(self.statusBar(), text)
+        event = QAccessibleAnnouncementEvent(self._status, text)
         event.setPoliteness(QAccessible.AnnouncementPoliteness.Assertive)
         QAccessible.updateAccessibility(event)
         self.error_occurred.emit(text)
@@ -365,11 +450,57 @@ class MainWindow(QMainWindow):
         if self._player.is_playing:
             return
         self._poll.stop()
-        if self.statusBar().currentMessage() == self._playback_text:
+        if self._status.currentMessage() == self._playback_text:
             self._clear_status()
         self._refresh_controls()
 
     # --- commands ----------------------------------------------------------------------------
+
+    def _edit_target(self) -> QPlainTextEdit | QLineEdit | None:
+        """The text field an Edit command acts on: the one with focus in this window."""
+        widget = self.focusWidget()
+        if isinstance(widget, QAbstractSpinBox):
+            widget = widget.findChild(QLineEdit)
+        return widget if isinstance(widget, QPlainTextEdit | QLineEdit) else None
+
+    def _edit(self, command: str) -> None:
+        target = self._edit_target()
+        if target is not None:
+            getattr(target, command)()
+
+    def _update_edit_actions(self) -> None:
+        """HIG (Menus): dim the Edit commands that cannot act on the focused field."""
+        target = self._edit_target()
+        states = dict.fromkeys(self._edit_actions, False)
+        if isinstance(target, QPlainTextEdit):
+            doc, editable = target.document(), not target.isReadOnly()
+            selected = target.textCursor().hasSelection()
+            states |= {
+                "undo": editable and doc.isUndoAvailable(),
+                "redo": editable and doc.isRedoAvailable(),
+                "cut": editable and selected,
+                "copy": selected,
+                "paste": target.canPaste(),
+                "selectAll": not doc.isEmpty(),
+            }
+        elif isinstance(target, QLineEdit):
+            editable, selected = not target.isReadOnly(), target.hasSelectedText()
+            states |= {
+                "undo": target.isUndoAvailable(),
+                "redo": target.isRedoAvailable(),
+                "cut": editable and selected,
+                "copy": selected,
+                "paste": editable,
+                "selectAll": bool(target.text()),
+            }
+        for command, enabled in states.items():
+            self._edit_actions[command].setEnabled(enabled)
+
+    def _toggle_zoom(self) -> None:
+        if self.isMaximized():
+            self.showNormal()
+        else:
+            self.showMaximized()
 
     def _on_paste(self) -> None:
         text = self._clipboard.text()
@@ -397,7 +528,10 @@ class MainWindow(QMainWindow):
             return
         voice_key = self.voice_picker.voice_key()
         if voice_key is None:
-            self._notify(LOADING if self._loading_voices else "No voice is installed.")
+            if self._loading_voices:
+                self._notify(LOADING)
+            else:
+                self._notify("No voice is installed.", tone=Tone.WARNING)
             return
         if not raw.strip():
             self._notify("Paste a question first.")
@@ -434,7 +568,7 @@ class MainWindow(QMainWindow):
         self._poll.start()
         warnings = tuple(dict.fromkeys((*reading.warnings, *reading.script.warnings)))
         if warnings:
-            self._notify(_warning_text(warnings))
+            self._notify(_warning_text(warnings), tone=Tone.WARNING)
         else:
             self._play_status(f"Playing {reading.audio.duration_s:.1f} s.")
         self._refresh_controls()
@@ -472,6 +606,10 @@ class MainWindow(QMainWindow):
         self._refresh_controls()
 
     def _show_about(self) -> None:
+        if self._about_box is not None:  # one panel at a time, like the system About window
+            self._about_box.raise_()
+            self._about_box.activateWindow()
+            return
         box = QMessageBox(self)
         box.setWindowTitle(f"About {APP_NAME}")
         box.setTextFormat(Qt.TextFormat.PlainText)
@@ -483,12 +621,15 @@ class MainWindow(QMainWindow):
             box.setIconPixmap(icon.pixmap(tokens.ABOUT_ICON_SIZE, tokens.ABOUT_ICON_SIZE))
         box.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         box.setWindowModality(Qt.WindowModality.NonModal)  # like the system About panel
+        box.finished.connect(self._forget_about_box)  # on close, before the deferred delete
+        self._about_box = box
         box.show()
 
+    def _forget_about_box(self) -> None:
+        self._about_box = None
+
     def _toggle_script(self, shown: bool) -> None:
-        self.script_view.setVisible(shown)
-        arrow = Qt.ArrowType.DownArrow if shown else Qt.ArrowType.RightArrow
-        self.script_toggle.setArrowType(arrow)
+        self.script_view.setVisible(shown)  # the disclosure button turns its own triangle
 
     def event(self, event: QEvent) -> bool:
         # Menu hover sends an empty status tip that would wipe a message the user has not read.
@@ -506,5 +647,6 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self._closing = True  # a result still in flight must not start audio after close
+        self._settings.setValue("geometry", self.saveGeometry())
         self._silence()
         super().closeEvent(event)
