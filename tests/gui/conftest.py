@@ -48,11 +48,12 @@ def make_window(qtbot, service, player, settings, clipboard):
         player=player,
         settings=settings,
         clipboard=clipboard,
+        rotator=None,
         wait_for_voices=True,
     ):
         from cloudyreader.gui.main_window import MainWindow
 
-        win = MainWindow(service, player, settings=settings, clipboard=clipboard)
+        win = MainWindow(service, player, settings=settings, clipboard=clipboard, rotator=rotator)
         qtbot.addWidget(win)
         win.show()
         if wait_for_voices:  # the list loads on a worker thread
