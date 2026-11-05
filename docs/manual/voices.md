@@ -49,7 +49,7 @@ Inside Kokoro, the menu lists the best grade first. Voices with the same grade s
 
 ## Choose a voice
 
-{% include figure.html src="voices-light.svg" alt="The Voice menu open. Piper and Kokoro voices sit under their engine names. Kokoro names carry their gender. One Kokoro voice is dimmed because it is not installed." caption="The Voice menu groups voices by engine." frame="window" %}
+{% include figure.html src="voices-light.svg" alt="The Voice menu open at the end of the Kokoro list. Grades run from D down to F+, and each name carries its gender. The last Kokoro voice, Adam, is dimmed because it is not installed. The Piper voices follow: alan, amy, jenny_dioco, lessac, and ryan. A scroll arrow shows that the list goes on." caption="The Voice menu: the end of the Kokoro list, then the Piper voices." frame="window" %}
 
 Open **Voice**. The headings **Kokoro** and **Piper** are labels, not choices. The menu lists Kokoro first. Inside an engine, the best grade or quality tier comes first, then the name.
 
@@ -125,7 +125,9 @@ The text names the mode that found no voice. This happens, for example, when onl
 | A built app | The app carries the voices it was built with. On every start it links them into the `voices` and `models` folders of your data folder. |
 | The background download | The app downloads missing pinned voices. See the next section. |
 | Your own files | You copy files into the `voices` folder. See "Add a Piper voice by hand". |
-| `make voices` and `make kokoro` | A source checkout fetches the pinned files into `.data`. See [Build the app]({{ '/developer/building/' | relative_url }}). |
+| `make voices` and `make kokoro` | A source checkout fetches the pinned files into `.data`. |
+
+For the `make` targets, see [Build the app]({{ '/developer/building/' | relative_url }}).
 
 The data folder is `~/Library/Application Support/cloudyreader`. The variable `CLOUDYREADER_DATA_DIR` replaces it.
 

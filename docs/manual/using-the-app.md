@@ -19,7 +19,7 @@ The window opens at 680 by 620 points. The smallest size is 560 by 480 points. T
 | --- | --- |
 | Question box | Holds the text to read. Paste or type here. The placeholder names the Speak shortcut. Tab leaves the box. |
 | **Voice** | Chooses the voice. The headings **Piper** and **Kokoro** group the voices. A **Speaker** box appears only for a voice with more than one speaker. |
-| **Rotation** | Chooses how **Speak** picks the next voice. See [Voices and rotation]({{ '/manual/voices/' | relative_url }}). |
+| **Rotation** | Chooses how **Speak** picks the next voice. |
 | **Read answer line** | Reads the answer after the question. Off by default. |
 | **Online lookups** | Allows name lookups at PubChem and UniProt. On by default. |
 | **Paste** | Replaces the question with the clipboard text. |
@@ -29,6 +29,8 @@ The window opens at 680 by 620 points. The smallest size is 560 by 480 points. T
 | **Speak** | Reads the question box. This is the default button. |
 | **Spoken script** | Shows or hides the words that the voice speaks. The view is empty until the first reading. |
 | Status bar | Shows messages, the download progress, and a busy bar. |
+
+For the rotation modes, see [Voices and rotation]({{ '/manual/voices/' | relative_url }}).
 
 ## Read a question
 
