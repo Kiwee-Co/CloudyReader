@@ -7,7 +7,7 @@ import logging
 import platform
 import threading
 from collections.abc import Callable, Iterator, Sequence
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from cloudyreader.config import Settings, load_settings
 from cloudyreader.models import (
@@ -25,6 +25,9 @@ from cloudyreader.models import (
     TtsEngine,
     VoiceInfo,
 )
+
+if TYPE_CHECKING:
+    from cloudyreader.prefetch import PrefetchProgress, PrefetchResult
 
 log = logging.getLogger(__name__)
 
@@ -71,6 +74,16 @@ class Pipeline:
 
     def voices(self) -> list[VoiceInfo]:
         return self._tts.voices()
+
+    def prefetch_voices(
+        self,
+        progress: Callable[[PrefetchProgress], None] | None = None,
+        cancel: threading.Event | None = None,
+    ) -> PrefetchResult:
+        """Download the pinned voices that are missing. Blocking, any thread, never raises."""
+        from cloudyreader.prefetch import VoicePrefetch  # lazy: a bare Pipeline needs no httpx
+
+        return VoicePrefetch(self._settings).run(progress, cancel)
 
     def entity_mode(self) -> str:
         """ "ner" when the detector tags NER_PROBE with its model, else "regex-only"."""
@@ -235,5 +248,5 @@ def _engines(settings: Settings) -> list[TtsEngine]:
         except ImportError as exc:  # no MLX stack: Piper alone still reads
             log.info("Kokoro engine not loaded: %s", exc)
         else:
-            engines.append(KokoroEngine(settings.models_dir))
+            engines.append(KokoroEngine(settings.models_dir, all_voices=True))
     return engines

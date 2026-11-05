@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import platform
 import sys
+import threading
 
 import pytest
 
@@ -115,3 +116,42 @@ def test_a_kokoro_that_will_not_import_leaves_piper_alone(monkeypatch, tmp_path)
     monkeypatch.setitem(sys.modules, "cloudyreader.engines.kokoro", None)  # `import` now raises
 
     assert engine_keys(tmp_path) == ["piper"]
+
+
+def test_kokoro_is_wired_to_list_all_28_voices(monkeypatch, tmp_path):
+    pytest.importorskip("cloudyreader.engines.kokoro")
+    monkeypatch.setattr(platform, "machine", lambda: "arm64")
+    settings = load_settings({"CLOUDYREADER_DATA_DIR": str(tmp_path)})
+
+    kokoro = [engine for engine in _engines(settings) if engine.key == "kokoro"]
+
+    assert len(kokoro) == 1
+    assert kokoro[0].all_voices is True
+
+
+def test_prefetch_voices_hands_settings_progress_and_cancel_to_voice_prefetch(
+    monkeypatch, tmp_path
+):
+    from cloudyreader import prefetch
+
+    calls = []
+    done = prefetch.PrefetchResult("complete", files=2)
+
+    class SpyPrefetch:
+        def __init__(self, settings):
+            calls.append(settings)
+
+        def run(self, progress=None, cancel=None):
+            calls.append((progress, cancel))
+            return done
+
+    monkeypatch.setattr(prefetch, "VoicePrefetch", SpyPrefetch)
+    settings = load_settings({"CLOUDYREADER_DATA_DIR": str(tmp_path)})
+    pipeline = make_rig(settings=settings).pipeline
+    events, cancel = [], threading.Event()
+
+    assert pipeline.prefetch_voices(events.append, cancel) is done
+    assert pipeline.prefetch_voices(progress=events.append, cancel=cancel) is done
+    assert calls == [settings, (events.append, cancel)] * 2
+    # The window finds the hook by this exact name; a typo there would fail silently.
+    assert callable(getattr(pipeline, "prefetch_voices", None))
