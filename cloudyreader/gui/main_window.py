@@ -318,7 +318,7 @@ class MainWindow(QMainWindow):
         self.read_answer_check.setToolTip("Also read the ANSWER line aloud.")
         self.online_lookups_check = QCheckBox("Online lookups")
         self.online_lookups_check.setToolTip(
-            "Look up chemical and protein names on PubChem and UniProt to say them right."
+            "Look up chemical and protein names on PubChem and UniProt."
         )
 
         self.paste_button = QPushButton("Paste")

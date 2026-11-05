@@ -363,6 +363,15 @@ def test_online_lookups_says_where_names_go(window):
     assert "PubChem" in window.online_lookups_check.toolTip()
 
 
+def test_online_lookups_promises_nothing_about_the_sound(window):
+    # Only the local OPSIN check changes how a name is said; PubChem and UniProt answers are
+    # fetched and cached, and the script builder ignores them.
+    tip = window.online_lookups_check.toolTip()
+
+    assert tip == "Look up chemical and protein names on PubChem and UniProt."
+    assert "say them right" not in tip
+
+
 # --- window behavior -------------------------------------------------------------------------
 
 
