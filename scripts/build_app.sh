@@ -205,6 +205,21 @@ add_assets() {
   copy_into "$ROOT/assets.lock.json" "$assets/"
 }
 
+# Stops the build when the Info.plist is invalid or does not name the chosen icon.
+check_bundle() {
+  local plist=$STAGE_APP/Contents/Info.plist icon version macos
+  plutil -lint -s "$plist" || die "PyInstaller wrote an invalid $plist"
+  icon=$(plutil -extract CFBundleIconFile raw -o - "$plist" 2>/dev/null) ||
+    die "Info.plist names no CFBundleIconFile"
+  [[ -f $STAGE_APP/Contents/Resources/$icon ]] || die "the Info.plist icon is not in Contents/Resources: $icon"
+  if [[ -n $ICON_PATH ]] && ! cmp -s -- "$ICON_PATH" "$STAGE_APP/Contents/Resources/$icon"; then
+    die "Contents/Resources/$icon differs from $ICON_PATH"
+  fi
+  version=$(plutil -extract CFBundleShortVersionString raw -o - "$plist") || die "no CFBundleShortVersionString"
+  macos=$(plutil -extract LSMinimumSystemVersion raw -o - "$plist") || die "no LSMinimumSystemVersion"
+  say "Info.plist: version $version, macOS $macos or later, icon $icon"
+}
+
 sign_bundle() {
   local log=$ROOT/build/codesign.log
   # Ad-hoc: the app is not distributed, so no Developer ID and no notarization.
@@ -274,6 +289,7 @@ main() {
   resolve_inputs
   build_bundle
   add_assets
+  check_bundle
   sign_bundle
   install_bundle
   say "codesign: ad-hoc signature verified (--deep --strict)"
