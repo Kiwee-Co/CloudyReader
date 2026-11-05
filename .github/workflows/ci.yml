@@ -1,30 +1,50 @@
-# Required status check `ci` on main: runs the `make ci` gate (ruff, pytest + coverage, pre-commit).
+# The job named `ci` is the one required status check: it passes only when every other job did.
 name: ci
 
 on:
-  pull_request:
-    branches: [main]
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# A pull request run is replaced by its next push; a run on main always finishes.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 defaults:
   run:
     shell: bash
 
+env:
+  # PyPI versions of the tools that uvx and uv tool install fetch. Bump them here only.
+  # Unverified until the first run: chosen without index access. 1.7.12.* is actionlint 1.7.12.
+  SHELLCHECK_PY: "0.11.0.1"
+  ACTIONLINT_PY: "1.7.12.*"
+  ZIZMOR: "1.32.0"
+
 jobs:
-  ci:
-    name: ci
-    # macOS arm64: afplay, afinfo and wheels that need macOS 14+. macos-14 retired 2026-11-02.
-    runs-on: macos-15
-    timeout-minutes: 25
+  guards:
+    name: guards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # scripts/ci_guards.py: vendor domain, uv.lock hosts, disk paths, workflow triggers.
+      - name: Repo guards
+        run: make guards
+
+  lint:
+    name: lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     env:
       UV_MANAGED_PYTHON: "1"
       UV_NO_PROGRESS: "1"
@@ -34,30 +54,102 @@ jobs:
         with:
           persist-credentials: false
 
-      # Owner rule: no tracked file may name the vendor's own domain. The pattern is built from
-      # two pieces, so this file never matches its own check.
-      - name: No Apple-domain references
-        run: |
-          pat='apple\.c''om'
-          rc=0
-          git grep -n -I -i -e "$pat" -- > "$RUNNER_TEMP/domain-hits.txt" || rc=$?
-          case "$rc" in
-            1) ;;
-            0) echo "::error::tracked files name a forbidden domain; remove these lines:"
-               cut -d: -f1,2 "$RUNNER_TEMP/domain-hits.txt"
-               exit 1 ;;
-            *) echo "::error::git grep failed (exit $rc)"; exit "$rc" ;;
-          esac
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.9.28"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+          cache-local-path: ${{ github.workspace }}/.cache/uv
+          prune-cache: true
 
-      # A hosted runner reaches only public hosts: fail early if the lock names any other.
-      - name: Check uv.lock hosts
+      # The dev group only: ruff and PyYAML at the versions uv.lock pins, without the app.
+      - name: Install the dev group
+        run: uv sync --frozen --only-group dev
+
+      - name: Ruff
         run: |
-          bad=$(grep -o -E 'https?://[^/" ]+' uv.lock | sort -u \
-            | grep -v -E '^https://(pypi\.org|files\.pythonhosted\.org|github\.com)$' || true)
-          if [ -n "$bad" ]; then
-            echo "::error file=uv.lock::non-public host in uv.lock, relock against pypi.org: $bad"
-            exit 1
-          fi
+          .venv/bin/ruff --version
+          .venv/bin/ruff check . --output-format=github
+          .venv/bin/ruff format --check --diff .
+
+      - name: YAML under .github
+        run: .venv/bin/python scripts/ci_yaml.py
+
+      - name: Install ShellCheck
+        run: uv tool install --python "$(cat .python-version)" "shellcheck-py==$SHELLCHECK_PY"
+
+      - name: ShellCheck
+        run: |
+          PATH="$(uv tool dir --bin):$PATH"
+          shellcheck --version
+          git ls-files -z -- '*.sh' | xargs -0 -r shellcheck
+
+      # With shellcheck on PATH, actionlint also lints the shell in every run block.
+      - name: actionlint
+        run: |
+          PATH="$(uv tool dir --bin):$PATH"
+          uvx --python "$(cat .python-version)" --from "actionlint-py==$ACTIONLINT_PY" actionlint
+
+      # Offline: no token, so no online audits; the audits that read the files still run.
+      - name: zizmor
+        run: uvx --python "$(cat .python-version)" "zizmor==$ZIZMOR" --offline .github/workflows
+
+  pre-commit:
+    name: pre-commit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      UV_MANAGED_PYTHON: "1"
+      UV_NO_PROGRESS: "1"
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.9.28"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+          cache-local-path: ${{ github.workspace }}/.cache/uv
+          prune-cache: true
+
+      # The hooks are local and need no clone, so there is no hook cache to restore.
+      # The ruff hooks run .venv/bin/ruff, so the dev group goes in first.
+      - name: Install the dev group
+        run: uv sync --frozen --only-group dev
+
+      - name: Install pre-commit and shellcheck
+        run: |
+          uv tool install --python "$(cat .python-version)" pre-commit==4.7.0
+          uv tool install --python "$(cat .python-version)" "shellcheck-py==$SHELLCHECK_PY"
+
+      # A hook that finds no tool would fail late; name the missing tool first.
+      - name: Run every hook
+        run: |
+          PATH="$(uv tool dir --bin):$PATH"
+          command -v pre-commit >/dev/null || { echo "::error::pre-commit not on PATH"; exit 1; }
+          command -v shellcheck >/dev/null || { echo "::error::shellcheck not on PATH"; exit 1; }
+          pre-commit run --all-files --show-diff-on-failure
+
+  test:
+    name: test
+    # macOS arm64: afplay, afinfo and wheels that need macOS 14+. macos-14 retired 2026-11-02.
+    runs-on: macos-15
+    timeout-minutes: 20
+    env:
+      UV_MANAGED_PYTHON: "1"
+      UV_NO_PROGRESS: "1"
+      QT_QPA_PLATFORM: offscreen
+      CLOUDYREADER_OFFLINE: "1"
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # uv 0.9.28 is the local version. It meets pyproject's uv_build bound, so no backend download.
       # cache-local-path is the Makefile's UV_CACHE_DIR, so `uv run --offline` finds the same cache.
@@ -83,14 +175,86 @@ jobs:
           uv sync --frozen
           .venv/bin/python -VV
 
-      - name: Install pre-commit
+      # The same gate as `make test`: markers and coverage floor come from the Makefile.
+      # PYTEST_ADDOPTS only adds the two report files.
+      - name: Test gate (make test)
         run: |
-          uv tool install --python "$(cat .python-version)" pre-commit==4.7.0
-          uv tool dir --bin >> "$GITHUB_PATH"
+          REPORT_DIR="$RUNNER_TEMP/reports"
+          mkdir -p "$REPORT_DIR"
+          export PYTEST_ADDOPTS="--junitxml=$REPORT_DIR/junit.xml --cov-report=xml:$REPORT_DIR/coverage.xml"
+          make test
 
-      # `make precommit` skips silently when pre-commit is missing, so fail first.
-      - name: Gate (make ci)
-        timeout-minutes: 15
+      - name: Summarize the run
+        if: ${{ !cancelled() }}
         run: |
-          command -v pre-commit >/dev/null || { echo "::error::pre-commit not on PATH"; exit 1; }
-          make ci
+          REPORT_DIR="$RUNNER_TEMP/reports"
+          python3 -I scripts/ci_summary.py --junit "$REPORT_DIR/junit.xml" \
+            --coverage "$REPORT_DIR/coverage.xml" >> "$GITHUB_STEP_SUMMARY"
+
+  docs:
+    name: docs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Standard library only; ubuntu-24.04 ships Python 3.12. It runs before the slower build.
+      - name: Check the site source
+        run: python3 scripts/check_site.py docs
+
+      # Pages deploys from branch main, folder /docs; nothing deploys here.
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697 # v1.0.13
+        with:
+          source: ./docs
+          destination: ./_site
+
+  lock:
+    name: lock
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      UV_MANAGED_PYTHON: "1"
+      UV_NO_PROGRESS: "1"
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.9.28"
+          enable-cache: false
+
+      - name: uv.lock matches pyproject.toml
+        run: uv lock --check
+
+  # Branch protection requires only this job. It runs even when a job failed or was skipped.
+  ci:
+    name: ci
+    needs: [guards, lint, pre-commit, test, docs, lock]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      RESULTS: >-
+        guards=${{ needs.guards.result }}
+        lint=${{ needs.lint.result }}
+        pre-commit=${{ needs.pre-commit.result }}
+        test=${{ needs.test.result }}
+        docs=${{ needs.docs.result }}
+        lock=${{ needs.lock.result }}
+    steps:
+      - name: Every job must succeed
+        run: |
+          fail=0
+          for pair in $RESULTS; do
+            echo "$pair"
+            [ "${pair#*=}" = success ] || fail=1
+          done
+          exit "$fail"
