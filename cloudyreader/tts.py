@@ -15,6 +15,7 @@ from contextlib import suppress
 from pathlib import Path
 
 from cloudyreader.models import Audio, RenderOptions, SpokenScript, TtsEngine, VoiceInfo
+from cloudyreader.voice_meta import engine_rank, voice_sort_key
 
 _LOG = logging.getLogger(__name__)
 
@@ -76,14 +77,18 @@ class TtsService:
         self._local = threading.local()  # per thread: engine notes of that thread's last call
 
     def voices(self) -> list[VoiceInfo]:
+        """Engines in ENGINE_ORDER (unknown ones last, as registered), best voice first in each."""
         found: list[VoiceInfo] = []
-        for engine in self._engines.values():
+        for engine in sorted(self._engines.values(), key=lambda engine: engine_rank(engine.key)):
             try:
                 if engine.available():
-                    found.extend(engine.voices())
+                    rows = engine.voices()
                 elif (placeholders := getattr(engine, "placeholder_voices", None)) is not None:
                     # Dimmed rows that say why (not downloaded yet, ...): never installed.
-                    found.extend([dataclasses.replace(v, installed=False) for v in placeholders()])
+                    rows = [dataclasses.replace(v, installed=False) for v in placeholders()]
+                else:
+                    continue
+                found.extend(sorted(rows, key=voice_sort_key))
             except Exception as exc:  # one broken engine must not hide the other voices
                 _LOG.warning(
                     "TTS engine %r failed to list voices: %s", engine.key, exc, exc_info=True

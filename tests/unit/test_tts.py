@@ -123,7 +123,8 @@ def test_voices_aggregates_the_available_engines_in_order(cache_dir):
     kokoro = FakeEngine("kokoro", voices=(voice("kokoro:af", "kokoro"),))
     service = TtsService([piper, kokoro], cache_dir)
 
-    assert [v.key for v in service.voices()] == ["piper:a", "piper:b", "kokoro:af"]
+    # Listing order is voice_meta.ENGINE_ORDER (Kokoro before Piper), not registration order.
+    assert [v.key for v in service.voices()] == ["kokoro:af", "piper:a", "piper:b"]
 
 
 def test_voices_skips_an_unavailable_engine(cache_dir):

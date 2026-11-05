@@ -159,8 +159,9 @@ def test_optional_engines_follow_kokoro_on_arm64(arm64, fake_engines, monkeypatc
     monkeypatch.setattr(tts, "TtsService", SpyService)
     service = build_default_service(settings)
 
-    assert registered == ["piper", "kokoro", "chatterbox_turbo", "qwen3_tts"]  # the picker order
-    assert keys(service.voices()) == [HEART.key, BUILTIN.key, RYAN.key, AIDEN.key]
+    assert registered == ["piper", "kokoro", "chatterbox_turbo", "qwen3_tts"]  # unchanged
+    # The picker order: Kokoro, Chatterbox Turbo, Qwen3-TTS (ungraded: by name), Piper.
+    assert keys(service.voices()) == [HEART.key, BUILTIN.key, AIDEN.key, RYAN.key]
 
 
 def test_optional_engines_absent_off_apple_silicon(monkeypatch, caplog):
@@ -298,18 +299,18 @@ def test_tts_lists_placeholder_rows_of_an_unavailable_engine_as_not_installed(tm
     listed = service.voices()
 
     assert [(v.key, v.installed, v.reason) for v in listed] == [
-        (LESSAC.key, True, ""),
+        (AIDEN.key, False, waiting),  # Qwen lists before Piper; ungraded voices by name
         (RYAN.key, False, waiting),
-        (AIDEN.key, False, waiting),
+        (LESSAC.key, True, ""),
     ]
     assert qwen.listed == 0  # an unavailable engine is never asked for its real rows
 
     qwen.ready = True  # the weights landed: the real rows replace the placeholders
 
     assert [(v.key, v.installed) for v in service.voices()] == [
-        (LESSAC.key, True),
-        (RYAN.key, True),
         (AIDEN.key, True),
+        (RYAN.key, True),
+        (LESSAC.key, True),
     ]
 
 

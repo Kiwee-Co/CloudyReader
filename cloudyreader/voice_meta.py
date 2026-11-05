@@ -1,8 +1,9 @@
-"""Voice gender and accent: Kokoro ids encode them, Piper voices and engine presets use tables."""
+"""Voice gender, accent and listing order: Kokoro ids and grades, Piper tables and tiers."""
 
 from __future__ import annotations
 
 import logging
+import math
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -15,6 +16,15 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 Gender = Literal["female", "male"]
+
+# The owner's quality order of the engine headings. An engine missing here lists after these.
+ENGINE_ORDER = ("kokoro", "chatterbox_turbo", "qwen3_tts", "piper")
+
+# Kokoro quality is the published grade (A down to F-): letter x 3, plus 1 for "+", minus 1 for "-".
+_GRADE = re.compile(r"([A-DF])([+-]?)")
+_LETTER_SCORE: Mapping[str, int] = {"A": 4, "B": 3, "C": 2, "D": 1, "F": 0}
+_SIGN_SCORE: Mapping[str, int] = {"+": 1, "": 0, "-": -1}
+_PIPER_TIERS: Mapping[str, int] = {"high": 3, "medium": 2, "low": 1, "x_low": 0}
 
 
 @dataclass(frozen=True)
@@ -69,3 +79,33 @@ def profile_of(voice: VoiceInfo) -> VoiceProfile | None:
         log.debug("no known gender for voice %s: it never rotates", key)
         return None
     return VoiceProfile(gender, accent)
+
+
+def engine_rank(engine: str) -> int:
+    """Position of `engine` in ENGINE_ORDER; an unknown engine ranks after every known one."""
+    return ENGINE_ORDER.index(engine) if engine in ENGINE_ORDER else len(ENGINE_ORDER)
+
+
+def grade_score(voice: VoiceInfo) -> int | None:
+    """Quality inside the voice's engine, higher is better. None: ungraded or an unknown string."""
+    quality = getattr(voice, "quality", None)
+    if not isinstance(quality, str):
+        return None
+    engine = getattr(voice, "engine", None)
+    if engine == "kokoro":
+        grade = _GRADE.fullmatch(quality.strip().upper())
+        return 3 * _LETTER_SCORE[grade[1]] + _SIGN_SCORE[grade[2]] if grade else None
+    if engine == "piper":
+        return _PIPER_TIERS.get(quality.strip().lower())
+    return None
+
+
+def voice_sort_key(voice: VoiceInfo) -> tuple[int, float, str, str]:
+    """Listing order: engine (ENGINE_ORDER), best grade first, ungraded last, then name, key."""
+    score = grade_score(voice)
+    return (
+        engine_rank(voice.engine),
+        math.inf if score is None else -score,
+        voice.name.casefold(),
+        voice.key,
+    )
