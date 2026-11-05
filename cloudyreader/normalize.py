@@ -329,7 +329,9 @@ class ScriptNormalizer:
             )
             return text, None
         surface = _unshout(guide.surface) if shouted else guide.surface
-        override = _usable(Override(surface, ipa, "respelling"), warnings)
+        override = _usable(
+            Override(surface, ipa, "respelling", respelling=guide.respelling), warnings
+        )
         if override is None:
             return text, None
         return _hide(text, pattern, surface, marks), override
