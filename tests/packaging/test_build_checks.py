@@ -60,7 +60,7 @@ def stage(root: Path, icon: bytes = b"voice", **keys: str | None) -> Path:
     (app / "Contents" / "Resources").mkdir(parents=True)
     plist = {
         "CFBundleIconFile": "AppIcon.icns",
-        "CFBundleShortVersionString": "0.1.0",
+        "CFBundleShortVersionString": "0.0.1",
         "LSMinimumSystemVersion": "26.0",
     } | keys
     plist = {k: v for k, v in plist.items() if v is not None}
@@ -85,7 +85,7 @@ def test_check_bundle_reports_version_macos_and_icon(root: Path) -> None:
 
     assert result.returncode == 0, result.stderr
     assert result.stdout.splitlines()[-1] == (
-        "build_app: Info.plist: version 0.1.0, macOS 26.0 or later, icon AppIcon.icns"
+        "build_app: Info.plist: version 0.0.1, macOS 26.0 or later, icon AppIcon.icns"
     )
 
 
