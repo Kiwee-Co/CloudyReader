@@ -121,7 +121,7 @@ if [ -e build ]; then rm -r build; fi
 endef
 
 .PHONY: help setup deps lock models voices kokoro doctor run test test-fast check fmt precommit \
-        ci app icons open-icons samples smoke-live clean clean-app clean-all FORCE
+        ci app icons open-icons samples smoke-live smoke-voices clean clean-app clean-all FORCE
 
 help: ## Show targets and overridable variables
 	@echo "usage: make <target> [VAR=value ...]"
@@ -222,6 +222,11 @@ samples: ## Extract NSB sample PDFs to .data/samples (scripts/extract_samples.py
 smoke-live: ## Live PubChem + UniProt check (scripts/live_smoke.py); never in ci
 	@echo "smoke-live needs internet access to PubChem and UniProt: run it OUTSIDE the agent sandbox."
 	@if [ -f scripts/live_smoke.py ]; then $(UV_RUN) $(PYTHON) scripts/live_smoke.py; else echo "pending: scripts/live_smoke.py (s3o-opsin) not written yet"; fi
+
+# Not in the .data export above: the script writes only into its own temp dir.
+smoke-voices: ## Live voice-download check (scripts/live_smoke_voices.py, about 0.55 MB); never in ci
+	@echo "smoke-voices needs internet access to the voice hosts: run it OUTSIDE the agent sandbox."
+	$(UV_RUN) $(PYTHON) scripts/live_smoke_voices.py
 
 clean: clean-app ## Remove caches and build artifacts (runs clean-app); never .data/ or .venv/
 	$(CLEAN_CMDS)
