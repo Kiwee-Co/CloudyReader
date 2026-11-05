@@ -73,7 +73,7 @@ MENU_TEXT = 21.0
 MENU_TAIL = 24.0
 GAP = 18.0  # between stacked status strips
 LESSAC = "piper:en_US-lessac-medium"
-MISSING = "kokoro:am_puck"  # the one voice shown as not installed, high enough to stay in view
+MISSING = "kokoro:am_adam"  # the one voice shown as not installed: the last Kokoro row, in view
 ROUND = {"stroke_linecap": "round", "stroke_linejoin": "round"}
 
 
@@ -411,8 +411,10 @@ def real_voices(tmp: Path) -> list[Any]:
 
     Piper voices come from a scan of stand-in files named as in assets.lock.json, Kokoro voices
     from the engine's own table. One Kokoro voice stays not installed, as after a failed download.
+    The order is the app's own sort key, the one TtsService.voices() lists them by.
     """
     from cloudyreader.engines.kokoro import RECOMMENDED_VOICES, VOICE_GRADES, KokoroEngine
+    from cloudyreader.voice_meta import voice_sort_key
     from cloudyreader.voices import scan_installed
 
     folder = tmp / "voices"
@@ -432,7 +434,8 @@ def real_voices(tmp: Path) -> list[Any]:
     engine = KokoroEngine(tmp / "kokoro", all_voices=True)
     ids = [*RECOMMENDED_VOICES, *(v for v in VOICE_GRADES if v not in RECOMMENDED_VOICES)]
     kokoro = [engine._voice_info(vid) for vid in ids]  # what voices() lists on Apple Silicon
-    return scan_installed(folder) + [replace(v, installed=v.key != MISSING) for v in kokoro]
+    voices = scan_installed(folder) + [replace(v, installed=v.key != MISSING) for v in kokoro]
+    return sorted(voices, key=voice_sort_key)
 
 
 def doc_service_class() -> type:
@@ -932,9 +935,10 @@ def fig_menu(env: Env, look: Look, which: str) -> Svg:
         if which == "voices":
             title = "Voice menu"
             desc = (
-                f"The Voice menu open in {appearance(look.dark)}: Piper and Kokoro voices under "
-                "their engine names, Kokoro names with their gender, one Kokoro voice dimmed "
-                "because it is not installed, and a scroll arrow where the list goes on."
+                f"The Voice menu open in {appearance(look.dark)}: the end of the Kokoro list, best "
+                "first, names with their gender, one voice dimmed because it is not installed, "
+                "then the Piper voices under their engine name, and a scroll arrow where the list "
+                "goes on."
             )
         else:
             title = "Rotation menu"

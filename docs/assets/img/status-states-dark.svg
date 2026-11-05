@@ -13,7 +13,7 @@
 <rect x="0" y="91" width="680" height="29" fill="#323232"/>
 <g clip-path="url(#clip2)">
 <path d="M0 91.25H680" stroke-width="0.5" stroke="#838383"/>
-<text x="20" y="110.03" font-size="12" fill="#ffffff" fill-opacity="0.85">Preparing with alan (male)…</text>
+<text x="20" y="110.03" font-size="12" fill="#ffffff" fill-opacity="0.85">Preparing with Heart (female)…</text>
 <rect x="564" y="103" width="96" height="6" rx="3" fill="#474747"/>
 <rect x="581.28" y="103" width="32.64" height="6" rx="3" opacity="0.55" fill="#1c6cdc"/>
 </g>
@@ -22,7 +22,7 @@
 <rect x="0" y="160" width="680" height="29" fill="#323232"/>
 <g clip-path="url(#clip3)">
 <path d="M0 160.25H680" stroke-width="0.5" stroke="#838383"/>
-<text x="20" y="179.03" font-size="12" fill="#ffffff" fill-opacity="0.85">Playing 2.0 s with alan (male).</text>
+<text x="20" y="179.03" font-size="12" fill="#ffffff" fill-opacity="0.85">Playing 2.0 s with Heart (female).</text>
 </g>
 <rect x="0.25" y="160.25" width="679.5" height="28.5" fill="none" stroke-width="0.5" stroke="#ffffff" stroke-opacity="0.14"/>
 <text x="0" y="220" font-size="12" font-weight="600" fill="#ffffff" fill-opacity="0.85">Warning</text>
@@ -42,7 +42,7 @@
 <circle cx="28" cy="312" r="7.5" fill="#ff453a"/>
 <rect x="27.2" y="308.6" width="1.6" height="5.6" rx="0.8" fill="#ffffff"/>
 <circle cx="28" cy="316.2" r="0.95" fill="#ffffff"/>
-<text x="42" y="317.03" font-size="12" fill="#ffffff" fill-opacity="0.85">Error: voice 'kokoro:am_puck' is not installed</text>
+<text x="42" y="317.03" font-size="12" fill="#ffffff" fill-opacity="0.85">Error: voice 'kokoro:am_adam' is not installed</text>
 </g>
 <rect x="0.25" y="298.25" width="679.5" height="28.5" fill="none" stroke-width="0.5" stroke="#ffffff" stroke-opacity="0.14"/>
 </svg>
