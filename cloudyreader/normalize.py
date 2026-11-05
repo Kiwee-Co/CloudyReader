@@ -13,7 +13,7 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import replace
 
-from cloudyreader import formulas, respell, units
+from cloudyreader import formulas, respell, spoken_fractions, units
 from cloudyreader.lexicon import Lexicon
 from cloudyreader.models import (
     Fmt,
@@ -284,7 +284,11 @@ class ScriptNormalizer:
                 text = _hide(text, pattern, name, marks)
                 named[name] = names[name]
 
-        spoken = _squash(self._formulas(self._units(text)))
+        # Fraction glyphs turn into digits before the unit stage reads quantities; the words come
+        # after it has said the signs ("-3/7" is "minus 3/7") and before the formula stage, which
+        # would take the 2 of "1/2 × 10^3" for a mantissa.
+        text = self._units(spoken_fractions.fold_glyphs(text))
+        spoken = _squash(self._formulas(spoken_fractions.speak_fractions(text)))
         if shouted:
             spoken = _unshout(spoken)
         spoken = _squash(_BRACKET_RE.sub(" ", spoken))
@@ -305,7 +309,8 @@ class ScriptNormalizer:
         warnings: list[str],
     ) -> str:
         words = _spell_out(guide.respelling) if guide.kind == "spell" else guide.respelling
-        words = _squash(_BRACKET_RE.sub(" ", words))
+        # The guide's words skip every stage, so a fraction in them would still be read "slash".
+        words = spoken_fractions.speak_fractions(_squash(_BRACKET_RE.sub(" ", words)))
         if not re.search(r"\w", words):
             warnings.append(f"Guide for {guide.surface!r} dropped: it holds no words.")
             return text
