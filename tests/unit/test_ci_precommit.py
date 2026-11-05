@@ -138,8 +138,9 @@ def tracked() -> list[str]:
     return [rel for rel in done.stdout.split("\0") if rel]
 
 
-def exclude_pattern(hook_id: str) -> str:
-    return hooks()[hook_id]["exclude"]
+def exclude_pattern(hook_id: str) -> str | None:
+    """The hook's exclude baseline; None once the reformat commit has deleted it."""
+    return hooks()[hook_id].get("exclude")
 
 
 @pytest.mark.parametrize("hook_id", FORMAT_HOOKS)
@@ -159,14 +160,19 @@ def test_prettier_checks_without_writing_and_covers_markdown_yaml_and_json() -> 
 
 @pytest.mark.parametrize("hook_id", FORMAT_HOOKS)
 def test_files_that_are_clean_today_are_never_excluded(hook_id: str) -> None:
-    pattern = re.compile(exclude_pattern(hook_id))
+    baseline = exclude_pattern(hook_id)
+    if baseline is None:
+        return
     for path in CLEAN_TODAY:
-        assert not pattern.search(path), f"{hook_id} excludes {path}"
+        assert not re.search(baseline, path), f"{hook_id} excludes {path}"
 
 
 @pytest.mark.parametrize("hook_id", FORMAT_HOOKS)
 def test_every_exclude_entry_still_names_a_tracked_file(hook_id: str) -> None:
-    body = exclude_pattern(hook_id).strip().removeprefix("(?x)^(").removesuffix(")$")
+    baseline = exclude_pattern(hook_id)
+    if baseline is None:
+        return
+    body = baseline.strip().removeprefix("(?x)^(").removesuffix(")$")
     entries = [e.strip() for e in body.replace("\n", " ").split(" | ") if e.strip()]
     assert entries, f"{hook_id} excludes nothing: delete the exclude key"
     files = tracked()
