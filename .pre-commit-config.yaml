@@ -1,4 +1,4 @@
-# Local hooks only: they run the venv's pinned ruff, no network clone.
+# Local hooks only: they run the venv's pinned ruff, pygrep checks and shellcheck, no network clone.
 repos:
   - repo: local
     hooks:
@@ -12,3 +12,48 @@ repos:
         entry: .venv/bin/ruff format
         language: system
         types_or: [python, pyi]
+
+      # The hooks below only read: they report a hit and never rewrite a file.
+      # Fixtures, golden data, a font licence and docs/CNAME hold odd whitespace on purpose.
+      - id: trailing-whitespace
+        name: no trailing whitespace
+        entry: '[ \t]+$'
+        language: pygrep
+        types: [text]
+        exclude: ^(tests/fixtures/|tests/golden/|docs/assets/fonts/|docs/CNAME$)
+      - id: end-of-file
+        name: file ends with a newline
+        entry: '[^\n]\Z'
+        language: pygrep
+        args: [--multiline]
+        types: [text]
+        exclude: ^(tests/fixtures/|tests/golden/|docs/assets/fonts/|docs/CNAME$)
+      - id: merge-conflict
+        name: no merge-conflict markers
+        entry: '^(<{7}|>{7})( |$)'
+        language: pygrep
+        types: [text]
+      - id: private-key
+        name: no private-key blocks
+        entry: '-----BEGIN ([A-Z0-9]+ )*PRIVATE KEY( BLOCK)?-----'
+        language: pygrep
+        types: [text]
+      # The patterns below are escaped so this file never matches its own hooks.
+      - id: vendor-domain
+        name: no vendor domain
+        entry: 'apple\.co[m]'
+        language: pygrep
+        args: [--ignore-case]
+        types: [text]
+      # One test asserts that these paths are absent from output; scripts/ci_guards.py holds the lines.
+      - id: disk-paths
+        name: no machine disk paths
+        entry: '/(Volumes|Users)/'
+        language: pygrep
+        types: [text]
+        exclude: ^tests/integration/test_nsb_corpus\.py$
+      - id: shellcheck
+        name: shellcheck
+        entry: shellcheck
+        language: system
+        types: [shell]
