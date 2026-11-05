@@ -22,6 +22,7 @@ from typing import Any, Protocol
 import numpy as np
 
 from cloudyreader.engines.misaki_ipa import ipa_to_misaki
+from cloudyreader.engines.padding import trim_letter_padding
 from cloudyreader.models import Audio, RenderOptions, Segment, SpokenScript, VoiceInfo
 
 log = logging.getLogger(__name__)
@@ -207,7 +208,8 @@ class KokoroEngine:
     """TtsEngine for Kokoro-82M. Overrides reach the model as misaki `[surface](/phonemes/)`."""
 
     key = "kokoro"
-    version = f"kokoro-82m@{KOKORO_REVISION[:8]}+misaki-ipa-2"
+    # The +r suffix changes with the WAV assembly, so cached WAVs from older code are not reused.
+    version = f"kokoro-82m@{KOKORO_REVISION[:8]}+misaki-ipa-2+r1"
 
     def __init__(
         self, models_dir: Path, backend: KokoroBackend | None = None, *, all_voices: bool = False
@@ -343,11 +345,15 @@ class KokoroEngine:
         speed = min(max(opts.speed, SPEED_RANGE[0]), SPEED_RANGE[1])
         if speed != opts.speed:
             self._warn(f"Kokoro: speed {opts.speed} clamped to {speed}")
-        parts: list[np.ndarray] = []
+        speech: list[np.ndarray] = []
         for segment in script.segments:
-            for line in self.render(segment, voice).splitlines():
-                if line.strip():
-                    parts.append(self._line(line.strip(), vid, speed))
+            lines = self.render(segment, voice).splitlines()
+            sound = [self._line(line.strip(), vid, speed) for line in lines if line.strip()]
+            speech.append(np.concatenate(sound) if sound else np.zeros(0, dtype=np.float32))
+        parts: list[np.ndarray] = []
+        trimmed = trim_letter_padding(script.segments, speech, SAMPLE_RATE)
+        for segment, sound in zip(script.segments, trimmed, strict=True):
+            parts.append(sound)
             if segment.pause_after_ms > 0:
                 parts.append(
                     np.zeros(round(SAMPLE_RATE * segment.pause_after_ms / 1000), np.float32)

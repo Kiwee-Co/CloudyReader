@@ -17,13 +17,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
+from cloudyreader.engines.padding import trim_letter_padding
 from cloudyreader.models import Audio, RenderOptions, Segment, SpokenScript, VoiceInfo
 from cloudyreader.voices import KEY_PREFIX, is_safe_name, scan_installed
 
 _LOG = logging.getLogger(__name__)
 
 # Bump when rendering or silence logic changes, so cached WAVs from older code are not reused.
-_RENDER_REVISION = 4
+_RENDER_REVISION = 5
 # espeak-ng keeps process-wide state, so one lock covers every engine instance.
 _SYNTH_LOCK = threading.Lock()
 # Voice maps carry the IPA letter U+0261, never ASCII "g", which hand-written IPA tends to use.
@@ -269,7 +272,8 @@ class PiperEngine:
     def synthesize(
         self, script: SpokenScript, voice: VoiceInfo, opts: RenderOptions, out_wav: Path
     ) -> Audio:
-        """Write the script as a 16-bit mono WAV. `out_wav` is overwritten; partial on error."""
+        """Write the script as a 16-bit mono WAV. `out_wav` is overwritten; missing or partial on
+        error."""
         self._local.warnings = []
         if voice.engine != self.key:
             raise ValueError(f"voice {voice.key!r} belongs to engine {voice.engine!r}, not 'piper'")
@@ -291,15 +295,25 @@ class PiperEngine:
         frames = 0
         with _SYNTH_LOCK:
             piper_voice = self._piper_voice(model)
+            speech = [
+                np.frombuffer(
+                    b"".join(
+                        chunk.audio_int16_bytes
+                        for unit in _units(text)
+                        for chunk in piper_voice.synthesize(unit, syn_config)
+                    ),
+                    dtype=np.int16,
+                )
+                for text in texts
+            ]
+            trimmed = trim_letter_padding(script.segments, speech, rate)
             with wave.open(str(out_wav), "wb") as wav:
                 wav.setnchannels(1)
                 wav.setsampwidth(2)
                 wav.setframerate(rate)
-                for segment, text in zip(script.segments, texts, strict=True):
-                    for unit in _units(text):
-                        for chunk in piper_voice.synthesize(unit, syn_config):
-                            wav.writeframes(chunk.audio_int16_bytes)
-                            frames += len(chunk.audio_int16_bytes) // 2
+                for segment, sound in zip(script.segments, trimmed, strict=True):
+                    wav.writeframes(sound.tobytes())
+                    frames += len(sound)
                     silence = max(0, round(rate * segment.pause_after_ms / 1000))
                     wav.writeframes(b"\x00\x00" * silence)
                     frames += silence

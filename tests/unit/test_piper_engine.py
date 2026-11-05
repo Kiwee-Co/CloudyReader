@@ -127,7 +127,7 @@ def engine(voices_dir: Path, fake: FakePiperVoice) -> PiperEngine:
 
 def test_engine_key_and_version(engine):
     assert engine.key == "piper"
-    assert engine.version == f"piper-tts-{importlib.metadata.version('piper-tts')}+r4"
+    assert engine.version == f"piper-tts-{importlib.metadata.version('piper-tts')}+r5"
 
 
 def test_available_when_piper_is_importable(engine, monkeypatch):
