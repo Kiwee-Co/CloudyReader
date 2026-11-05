@@ -284,11 +284,11 @@ class ScriptNormalizer:
                 text = _hide(text, pattern, name, marks)
                 named[name] = names[name]
 
-        # Fraction glyphs turn into digits before the unit stage reads quantities; the words come
-        # after it has said the signs ("-3/7" is "minus 3/7") and before the formula stage, which
-        # would take the 2 of "1/2 × 10^3" for a mantissa.
-        text = self._units(spoken_fractions.fold_glyphs(text))
-        spoken = _squash(self._formulas(spoken_fractions.speak_fractions(text)))
+        # Fractions are found on the raw text, before the unit stage turns "√10/5" into "square
+        # root of 10/5"; their words come after it has said the signs ("-3/7" is "minus 3/7") and
+        # before the formula stage, which would take the 2 of "1/2 × 10^3" for a mantissa.
+        text = self._units(spoken_fractions.mark_fractions(text))
+        spoken = _squash(self._formulas(spoken_fractions.say_marked(text)))
         if shouted:
             spoken = _unshout(spoken)
         spoken = _squash(_BRACKET_RE.sub(" ", spoken))

@@ -4,10 +4,10 @@ import re
 
 import pytest
 
-from cloudyreader import normalize
+from cloudyreader import normalize, spoken_fractions
 from cloudyreader.models import Choice, Fmt, Kind, Override, Question, RenderOptions, Respelling
 from cloudyreader.normalize import ScriptNormalizer
-from cloudyreader.spoken_fractions import fold_glyphs, speak_fractions
+from cloudyreader.spoken_fractions import mark_fractions, say_marked, speak_fractions
 
 MINUS = "−"
 EN_DASH = "–"
@@ -40,6 +40,14 @@ def spoken(text: str) -> str:
     return stem_segment(text).text
 
 
+def spoken_without_fractions(text: str, monkeypatch: pytest.MonkeyPatch) -> str:
+    """The reading before the fraction stage existed: both passes do nothing."""
+    with monkeypatch.context() as patch:
+        patch.setattr(spoken_fractions, "mark_fractions", lambda t: t)
+        patch.setattr(spoken_fractions, "say_marked", lambda t: t)
+        return spoken(text)
+
+
 OWNER = [
     ("1/7", "one seventh"),
     ("3/9", "three ninths"),
@@ -52,7 +60,24 @@ HALVES_AND_QUARTERS = [
     ("0/2", "zero halves"),
     ("1/4", "one quarter"),
     ("3/4", "three quarters"),
-    ("9/4", "nine quarters"),
+    # "Quarters" is for one and three only; every other count reads "fourths".
+    ("2/4", "two fourths"),
+    ("9/4", "nine fourths"),
+    ("25/4", "twenty-five fourths"),
+    ("0/4", "zero fourths"),
+]
+# A 100 split into two multiples of 5 is said the way people say odds.
+SPLITS = [
+    ("50/50", "fifty-fifty"),
+    ("60/40", "sixty-forty"),
+    ("40/60", "forty-sixty"),
+    ("90/10", "ninety-ten"),
+    ("75/25", "seventy-five-twenty-five"),
+    ("51/49", "fifty-one forty-ninths"),
+    ("50/60", "fifty sixtieths"),
+    ("0/100", "zero hundredths"),
+    ("100/0", "one hundred over zero"),
+    ("2 40/60", "two and forty sixtieths"),
 ]
 ORDINALS = [
     ("22/7", "twenty-two sevenths"),
@@ -127,6 +152,8 @@ GLUED_GLYPHS = [
     ("2⅔ pizzas", "two and two thirds pizzas"),
     ("2 ¾", "two and three quarters"),
     ("x½", "x one half"),
+    ("x½y", "x one half y"),
+    ("1,½", "1,one half"),  # a glyph is a fraction whatever sits beside it
 ]
 SUFFIXES = [
     ("1/7th", "one seventh"),
@@ -137,7 +164,20 @@ SUFFIXES = [
     ("1/2nd", "one half"),
     ("1/4th", "one quarter"),
     ("1 1/3rd", "one and one third"),
-    ("1/360th", "one over three hundred sixty"),
+    # The written suffix asks for the ordinal at any size; without it the "over" rule stays.
+    ("1/360th", "one three-hundred-sixtieth"),
+    ("7/200ths", "seven two-hundredths"),
+    ("1/360", "one over three hundred sixty"),
+]
+# A sign the unit stage leaves (after "^", or in text no other stage reads) says "minus".
+SIGNS = [
+    ("-1/2", "minus one half"),
+    ("-½", "minus one half"),
+    (f"{MINUS}2 1/2", "minus two and one half"),
+    (f"x^{EN_DASH}1/2", "x^minus one half"),
+    ("y equals -1/2", "y equals minus one half"),
+    ("(-3/4)", "(minus three quarters)"),
+    ("x-1/2", "x-one half"),  # glued to a letter: no sign
 ]
 BOUNDARIES = [
     ("1/2.", "one half."),
@@ -152,6 +192,7 @@ BOUNDARIES = [
 SPEAK = [
     *OWNER,
     *HALVES_AND_QUARTERS,
+    *SPLITS,
     *ORDINALS,
     *POWERS_OF_TEN,
     *OVER,
@@ -160,9 +201,11 @@ SPEAK = [
     *GLYPHS,
     *GLUED_GLYPHS,
     *SUFFIXES,
+    *SIGNS,
     *BOUNDARIES,
 ]
-# A letter, a decimal point, a thousands comma, another slash or a space beside it: not a fraction.
+# A letter, a root sign, a decimal point, a thousands comma, another slash or a space beside it:
+# not a fraction.
 KEPT = [
     "m/s",
     "mol/L",
@@ -174,6 +217,11 @@ KEPT = [
     "1/2bh",
     "is1/3",
     "2/3πr",
+    "π2/6",
+    "√10/5",
+    "∛8/27",
+    "∜16/81",
+    "mv²/2",
     "1.5/2",
     "1/2.5",
     "62.8/4",
@@ -187,6 +235,7 @@ KEPT = [
     "3/ 4",
     "01/02",
     "1/02",
+    "⅟",  # "1/" alone is no fraction
     "1/" + "9" * 10,
     "1/" + "9" * 5000,  # far past int()'s digit limit: left alone, never a crash
 ]
@@ -215,26 +264,86 @@ def test_a_long_denominator_still_reads_over():
     )
 
 
-@pytest.mark.parametrize(
-    ("raw", "folded"),
-    [
-        ("½", "1/2"),
-        ("2½", "2 1/2"),
-        ("x½y", "x 1/2 y"),
-        ("-½", "-1/2"),
-        ("⅟", "⅟"),  # "1/" alone is no fraction
-    ],
-)
-def test_fold_glyphs(raw, folded):
-    assert fold_glyphs(raw) == folded
+@pytest.mark.parametrize("raw", ["1/2", "2 1/2", "½", "2½", "x^-1/2"])
+def test_the_first_pass_marks_the_slash_and_keeps_the_digits(raw):
+    marked = mark_fractions(raw)
+    assert "/" not in marked and "½" not in marked
+    assert re.sub(r"\D", "", marked) == re.sub(r"\D", "", raw.replace("½", "12"))
+
+
+@pytest.mark.parametrize("text", ["square root of 10/5", "pi 2/6", "m v^2/2", "1/2"])
+def test_the_second_pass_reads_only_marked_slashes(text):
+    assert say_marked(text) == text
 
 
 # --- through the real normalizer --------------------------------------------------------------
 
 
-@pytest.mark.parametrize(("raw", "words"), [*HALVES_AND_QUARTERS, *MIXED, *GLYPHS, *SUFFIXES])
+@pytest.mark.parametrize("raw", KEPT)
+def test_the_normalizer_reads_a_kept_slash_as_it_did_before(raw, monkeypatch):
+    assert spoken(raw) == spoken_without_fractions(raw, monkeypatch)
+
+
+@pytest.mark.parametrize(
+    ("raw", "before"),
+    [
+        # The unit stage rewrites a root sign, pi or a superscript left of the digits; the
+        # fraction pass must decide on the text as written.
+        ("1 + √10/5", "1 plus square root of 10/5"),
+        ("π2/6", "pi 2/6"),
+        ("KE = mv²/2", "KE equals m v squared/2"),
+        ("∛8/27", "cube root of 8/27"),
+        ("∜16/81", "fourth root of 16/81"),
+        ("√1/4", "square root of 1/4"),
+    ],
+)
+def test_roots_pi_and_powers_keep_their_old_reading(raw, before):
+    assert spoken(raw) == before
+
+
+@pytest.mark.parametrize(
+    ("raw", "words"),
+    [
+        ("x^-1/2", "x to the power of minus one half"),
+        (f"y = x^{MINUS}1/2", "y equals x to the power of minus one half"),
+        ("M^-1/2 s^-1", "M to the power of minus one half per second"),
+        ("√½", "square root of one half"),
+    ],
+)
+def test_a_sign_or_root_beside_a_fraction_is_spoken(raw, words):
+    assert spoken(raw) == words
+
+
+@pytest.mark.parametrize(
+    ("raw", "words"), [*HALVES_AND_QUARTERS, *SPLITS, *MIXED, *GLYPHS, *SUFFIXES]
+)
 def test_the_normalizer_reads_each_form(raw, words):
     assert spoken(f"It is {raw} here.") == f"It is {words} here."
+
+
+@pytest.mark.parametrize(
+    ("raw", "words"),
+    [
+        # Lines from real rounds, as the first corpus comparison listed them.
+        (
+            "a rock that contains a 50/50 ratio of the two",
+            "a rock that contains a fifty-fifty ratio of the two",
+        ),
+        ("1/360th of an arcminute", "one three-hundred-sixtieth of an arcminute"),
+        (
+            "buys 1 5/12 pounds of bananas and 11/4 pounds of apples",
+            "buys one and five twelfths pounds of bananas and eleven fourths pounds of apples",
+        ),
+        ("the three numbers 2, 2/4, and 2/8", "the three numbers 2, two fourths, and two eighths"),
+        ("ANSWER: (-1/4, -13/4)", "ANSWER: (minus one quarter, minus thirteen fourths)"),
+        (
+            "What is 3/7 divided by 8/21 divided by 15/4?",
+            "What is three sevenths divided by eight twenty-firsts divided by fifteen fourths?",
+        ),
+    ],
+)
+def test_real_round_lines(raw, words):
+    assert spoken(raw) == words
 
 
 @pytest.mark.parametrize(
@@ -367,9 +476,18 @@ def test_a_fraction_inside_a_say_as_guide_is_read_too():
     assert segment.text == "Solve 2 to the 4x power equals one sixteenth for x."
 
 
+def test_a_sign_inside_a_say_as_guide_says_minus():
+    # No unit stage reads a guide's words, so the fraction pass says the sign itself.
+    guide = Respelling("y = -1/2", "y equals -1/2", "spoken")
+    segment = stem_segment("Graph y = -1/2 now.", respellings=[guide])
+    assert segment.text == "Graph y equals minus one half now."
+
+
 def test_no_fraction_is_ever_read_as_slash():
-    """Regression: every voice reads a raw "/" as "slash", so none may reach it."""
+    """Regression: every voice reads a raw "/" as "slash", and "-one" just like "one"."""
     texts = [spoken(f"It is {raw} here.") for raw, _ in SPEAK]
-    texts += [spoken(raw) for raw in ("-1/2", f"{EN_DASH}3/7", "2½", "1⁄2 of 3∕4")]
+    texts += [spoken(raw) for raw in ("-1/2", f"{EN_DASH}3/7", "2½", "1⁄2 of 3∕4", "x^-1/2")]
     leaks = [t for t in texts if re.search(r"slash|[/⁄∕]", t, re.IGNORECASE)]
+    bare_signs = [t for t in texts if re.search(r"(?:^|[\s(^])[-−–][a-z]", t)]
     assert leaks == []
+    assert bare_signs == []
