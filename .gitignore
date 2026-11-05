@@ -1,13 +1,141 @@
-.venv/
-.data/
-.cache/
-__pycache__/
-*.pyc
-*.wav
-.pytest_cache/
-.ruff_cache/
-.coverage
+.claude/*
+!.claude/skills/
+
+# General
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+*.swp
+*.swo
+
+# IDE and Editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.atom/
+.vim/
+*.iml
+
+# Operating System
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependencies and Build Artifacts
+node_modules/
 dist/
 build/
-.DS_Store
-.claude/
+target/
+*.jar
+*.war
+*.ear
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+go.work.sum
+vendor/
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.pid
+*.seed
+*.lock
+
+# Security
+*.key
+*.crt
+*.pem
+secrets.yml
+secrets.yaml
+
+# Cloud and Infrastructure
+.terraform/
+*.tfstate
+*.tfvars
+.pulumi/
+
+# Testing
+coverage/
+.nyc_output/
+junit.xml
+test-results/
+
+# Documentation
+docs/_build/
+site/
+
+# MacOS specific
+.AppleDouble
+.LSOverride
+Icon
+
+# Hooks runtime artifacts
+scripts/hooks/logs/*.log
+scripts/hooks/archives/*.log
+scripts/hooks/archives/precompact-*.log
+.ghe-token
+scripts/image/.ghe-token
+
+# go-kiwee pipeline run artifacts
+.kiwee/

@@ -1,0 +1,16 @@
+# Submodules format themselves with their own prettier config and their own
+# pre-commit hook. Descending into them from the parent reformats content the
+# parent doesn't own -- that's how we got the churn we had to restore once
+# already. `pre-commit run` never sees this content either: git submodules
+# are invisible to the parent's own index, so `plugins/**` files never reach
+# the parent's pre-commit hook. This file just teaches the bare `prettier`
+# CLI (which walks the filesystem, blind to submodule boundaries) the same
+# boundary pre-commit already gets for free from git.
+
+# Node tooling, if ever installed locally for pinning (see Makefile
+# `prettier-check`/`prettier-fix`).
+
+.kiwee/
+.pytest_cache/
+.venv/
+node_modules/
