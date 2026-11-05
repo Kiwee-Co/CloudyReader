@@ -14,3 +14,8 @@
 .pytest_cache/
 .venv/
 node_modules/
+
+# Tool-written or test data: a reformat would be undone by the tool or change a test.
+assets.lock.json
+cloudyreader/data/*.json
+tests/golden/*.yaml

@@ -68,14 +68,6 @@ repos:
         exclude: |
           (?x)^(
             README\.md
-            | assets\.lock\.json
-            | cloudyreader/data/elements\.json
-            | cloudyreader/data/ions_and_groups\.json
-            | cloudyreader/data/iupac_morphemes\.json
-            | cloudyreader/data/pronunciations\.json
-            | cloudyreader/data/respelling_rules\.json
-            | cloudyreader/data/symbols\.json
-            | cloudyreader/data/units\.json
             | docs/custom-domain\.md
             | docs/developer/architecture\.md
             | docs/developer/building\.md
@@ -88,10 +80,6 @@ repos:
             | docs/manual/troubleshooting\.md
             | docs/manual/using-the-app\.md
             | docs/manual/voices\.md
-            | tests/golden/ambiguous\.yaml
-            | tests/golden/parse_cases\.yaml
-            | tests/golden/respelling_cases\.yaml
-            | tests/golden/spoken_cases\.yaml
           )$
       - id: markdownlint
         name: markdownlint

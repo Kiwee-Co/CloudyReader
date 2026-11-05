@@ -6,6 +6,7 @@ built from pieces, so this file passes its own hooks.
 
 from __future__ import annotations
 
+import fnmatch
 import re
 import subprocess
 from pathlib import Path
@@ -179,3 +180,12 @@ def test_every_exclude_entry_still_names_a_tracked_file(hook_id: str) -> None:
     for entry in entries:
         regex = re.compile(entry.strip("| \n"))
         assert any(regex.fullmatch(path) for path in files), f"{hook_id}: no file matches {entry}"
+
+
+def test_tool_written_and_fixture_data_stay_out_of_prettier() -> None:
+    patterns = ("assets.lock.json", "cloudyreader/data/*.json", "tests/golden/*.yaml")
+    ignored = (ROOT / ".prettierignore").read_text(encoding="utf-8").splitlines()
+    files = tracked()
+    for pattern in patterns:
+        assert pattern in ignored, f".prettierignore lacks {pattern}"
+        assert any(fnmatch.fnmatch(path, pattern) for path in files), f"{pattern} names no file"
