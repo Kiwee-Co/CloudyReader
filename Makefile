@@ -28,8 +28,14 @@ APP_NAME ?= Cloudy Reader
 ICON ?=
 ## bundle the Kokoro engine in `make app`: auto, 0 or 1
 KOKORO ?= auto
+## voices and Kokoro model inside `make app`: 1 (self-contained) or 0 (downloaded at first launch)
+BUNDLE_VOICES ?= 1
 ## output dir for `make app`
 OUT ?= dist
+## version `make release` checks and names the zip with; PYPROJECT_VERSION is pyproject.toml's
+VERSION ?= $(PYPROJECT_VERSION)
+
+PYPROJECT_VERSION := $(shell sed -n 's/^version = "\([^"]*\)".*/\1/p' pyproject.toml | head -n 1)
 
 export UV_CACHE_DIR := $(CURDIR)/.cache/uv
 STAMPS := .cache/stamps
@@ -44,7 +50,7 @@ FETCH_NET = $(if $(filter 1,$(OFFLINE)),--offline)
 GATE_MARKERS = not model and not voice and not network and not java
 FAST_MARKERS = not slow and not network and not model and not voice and not java
 
-run test test-fast samples smoke-live app: export CLOUDYREADER_DATA_DIR := $(CURDIR)/.data
+run test test-fast samples smoke-live app release: export CLOUDYREADER_DATA_DIR := $(CURDIR)/.data
 
 # doctor UV ONLINE VERIFY VOICE...: read-only checks; exit 1 when a required item is missing.
 define DOCTOR_SH
@@ -121,7 +127,7 @@ if [ -e build ]; then rm -r build; fi
 endef
 
 .PHONY: help setup deps lock models voices kokoro doctor run test test-fast check fmt precommit \
-        ci app icons open-icons samples smoke-live smoke-voices clean clean-app clean-all FORCE
+        ci app release icons open-icons samples smoke-live smoke-voices clean clean-app clean-all FORCE
 
 help: ## Show targets and overridable variables
 	@echo "usage: make <target> [VAR=value ...]"
@@ -201,9 +207,15 @@ ci: ## Commit gate: check, then test, then precommit
 	$(MAKE) --no-print-directory test
 	$(MAKE) --no-print-directory precommit
 
-app: $(STAMPS)/deps $(STAMPS)/models $(STAMPS)/packaging ## Build dist/Cloudy Reader.app (self-contained, ad-hoc signed); ICON=<name> KOKORO=auto|0|1
+app: $(STAMPS)/deps $(STAMPS)/models $(STAMPS)/packaging ## Build dist/Cloudy Reader.app (ad-hoc signed); ICON=<name> KOKORO=auto|0|1 BUNDLE_VOICES=1|0
 	@case "$(KOKORO)" in auto|0|1) ;; *) echo "KOKORO must be auto, 0 or 1 (got '$(KOKORO)')" >&2; exit 1 ;; esac
-	@if [ -f scripts/build_app.sh ]; then APP_NAME="$(APP_NAME)" ICON="$(ICON)" KOKORO="$(KOKORO)" OUT="$(OUT)" bash scripts/build_app.sh; else echo "pending: scripts/build_app.sh (pkg agent) not written yet; it builds \"$(OUT)/$(APP_NAME).app\""; fi
+	@case "$(BUNDLE_VOICES)" in 0|1) ;; *) echo "BUNDLE_VOICES must be 0 or 1 (got '$(BUNDLE_VOICES)')" >&2; exit 1 ;; esac
+	@if [ -f scripts/build_app.sh ]; then APP_NAME="$(APP_NAME)" ICON="$(ICON)" KOKORO="$(KOKORO)" BUNDLE_VOICES="$(BUNDLE_VOICES)" OUT="$(OUT)" bash scripts/build_app.sh; else echo "pending: scripts/build_app.sh (pkg agent) not written yet; it builds \"$(OUT)/$(APP_NAME).app\""; fi
+
+release: ## Lean app (voices download at first launch) as a checked zip + SHA-256 in dist/; VERSION=x.y.z; never uploads
+	APP_NAME="$(APP_NAME)" OUT="$(OUT)" bash scripts/build_app.sh release-preflight "$(VERSION)"
+	$(MAKE) --no-print-directory app BUNDLE_VOICES=0 OFFLINE=1 ICON=cloud-atom KOKORO=1
+	APP_NAME="$(APP_NAME)" OUT="$(OUT)" bash scripts/build_app.sh release "$(VERSION)"
 
 # After models, so two uv processes never write .venv at once under make -j.
 $(STAMPS)/packaging: $(STAMPS)/models pyproject.toml uv.lock

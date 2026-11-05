@@ -13,14 +13,19 @@
 #   bundle resolves to com.cloudyreader.CloudyReader (probe check "identity").
 # - One folder, not one file: nothing unpacks to a temp dir on each launch.
 #
-# Env inputs: APP_NAME, ICON, KOKORO=auto|0|1, OUT, CLOUDYREADER_DATA_DIR (asset source, default
-# .data), ENTRY=auto|app|probe, SELFTEST_TIMEOUT (s).
+# BUNDLE_VOICES=0 builds the lean bundle of a release: no voice and no Kokoro model inside (the app
+# downloads them at first launch), only assets.lock.json; an audit then proves it.
+# `build_app.sh release VERSION` (make release) zips the dist bundle and checks the zip itself.
+#
+# Env inputs: APP_NAME, ICON, KOKORO=auto|0|1, BUNDLE_VOICES=1|0, OUT, CLOUDYREADER_DATA_DIR (asset
+# source, default .data), ENTRY=auto|app|probe, SELFTEST_TIMEOUT (s).
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 APP_NAME=${APP_NAME:-Cloudy Reader}
 ICON=${ICON:-}
 KOKORO=${KOKORO:-auto}
+BUNDLE_VOICES=${BUNDLE_VOICES:-1}
 OUT=${OUT:-dist}
 DATA=${CLOUDYREADER_DATA_DIR:-$ROOT/.data}
 ENTRY=${ENTRY:-auto}
@@ -125,12 +130,24 @@ resolve_inputs() {
   if [[ $ENTRY == app ]]; then ENTRY_SCRIPT=$ROOT/packaging/launcher.py; else ENTRY_SCRIPT=$ROOT/packaging/probe_app.py; fi
   resolve_icon
   resolve_kokoro
+  resolve_bundle_voices
+  resolve_out
+  STAGE_APP=$ROOT/build/dist/$APP_NAME.app
+}
 
+# OUT, made absolute (relative to the repo root), and the bundle path inside it.
+resolve_out() {
   if [[ $OUT != /* ]]; then OUT=$ROOT/$OUT; fi
   mkdir -p -- "$OUT"
   OUT=$(cd -- "$OUT" && pwd -P)
-  STAGE_APP=$ROOT/build/dist/$APP_NAME.app
   FINAL_APP=$OUT/$APP_NAME.app
+}
+
+resolve_bundle_voices() {
+  case $BUNDLE_VOICES in
+    0 | 1) ;;
+    *) die "BUNDLE_VOICES must be 0 or 1, got '$BUNDLE_VOICES'" ;;
+  esac
 }
 
 # ICON (a folder under assets/icons/, else the name in default.txt) -> ICON_PATH; empty means
@@ -221,8 +238,13 @@ build_bundle() {
   PYI_SECONDS=$(since "$t0")
 }
 
+# The lock always ships: the downloader reads it. Voices and the Kokoro model only with
+# BUNDLE_VOICES=1; a lean bundle gets them at first launch.
 add_assets() {
   local assets=$STAGE_APP/Contents/Resources/assets onnx
+  mkdir -p -- "$assets"
+  copy_into "$ROOT/assets.lock.json" "$assets/"
+  [[ $BUNDLE_VOICES == 1 ]] || return 0
   mkdir -p -- "$assets/voices"
   for onnx in "${VOICES[@]}"; do
     copy_into "$onnx" "$assets/voices/"
@@ -232,7 +254,35 @@ add_assets() {
     mkdir -p -- "$assets/models"
     copy_into "$KOKORO_DIR" "$assets/models/"
   fi
-  copy_into "$ROOT/assets.lock.json" "$assets/"
+}
+
+# Piper's own package models, not voices: the Hebrew and Arabic diacritizers, which only voices
+# of those languages load. Any other .onnx in a lean bundle fails the audit.
+NOT_VOICES=(
+  "Contents/Resources/piper/hebrew/nakdimon.onnx"
+  "Contents/Resources/piper/tashkeel/model.onnx"
+)
+
+# Fails unless the bundle $1 is lean: no voices or models folder under assets, no .onnx.json, no
+# .onnx outside NOT_VOICES, no .safetensors under an assets or models folder.
+audit_voices() {
+  local app=$1 path rel found=()
+  for rel in Contents/Resources/assets/voices Contents/Resources/assets/models; do
+    if [[ -e $app/$rel || -L $app/$rel ]]; then found+=("$rel"); fi
+  done
+  while IFS= read -r -d '' path; do
+    rel=${path#"$app"/}
+    case $rel in
+      *.onnx.json) found+=("$rel") ;;
+      *.onnx) [[ " ${NOT_VOICES[*]} " == *" $rel "* ]] || found+=("$rel") ;;
+      */assets/*.safetensors | */models/*.safetensors) found+=("$rel") ;;
+    esac
+  done < <(find "$app" \( -type f -o -type l \) \( -name '*.onnx' -o -name '*.onnx.json' \
+    -o -name '*.safetensors' \) -print0)
+  if ((${#found[@]})); then
+    die "voice binaries in the bundle (BUNDLE_VOICES=0 must ship none): $(printf '%s ' "${found[@]}")"
+  fi
+  say "voice audit: no voice binary in the bundle"
 }
 
 # Stops the build when the Info.plist is invalid or does not name the chosen icon.
@@ -269,32 +319,79 @@ install_bundle() {
   fi
 }
 
-# Runs the bundle headless with --self-test against this build's own data folder, offline.
-self_test() {
-  local run=$1 log=$ROOT/build/selftest-$1.log t0 pid rc=0 ticks=0
-  t0=$(now)
-  CLOUDYREADER_DATA_DIR=$SELFTEST_DATA CLOUDYREADER_OFFLINE=1 QT_QPA_PLATFORM=offscreen \
-    "$FINAL_APP/Contents/MacOS/$APP_NAME" --self-test >"$log" 2>&1 &
+# Runs bundle $2 headless and offline on data folder $3 with the arguments after it, within
+# SELFTEST_TIMEOUT. Sets BUNDLE_RC; the output goes to build/$1.log.
+run_bundle() {
+  local label=$1 app=$2 data=$3 pid ticks=0
+  shift 3
+  BUNDLE_RC=0
+  CLOUDYREADER_DATA_DIR=$data CLOUDYREADER_OFFLINE=1 QT_QPA_PLATFORM=offscreen \
+    "$app/Contents/MacOS/$APP_NAME" "$@" >"$ROOT/build/$label.log" 2>&1 &
   pid=$!
   while kill -0 "$pid" 2>/dev/null; do
     if ((ticks >= SELFTEST_TIMEOUT * 10)); then
       kill -TERM "$pid" 2>/dev/null || true
       wait "$pid" || true
-      die "self-test run $run timed out after ${SELFTEST_TIMEOUT}s (log: build/selftest-$run.log)"
+      die "$label timed out after ${SELFTEST_TIMEOUT}s (log: build/$label.log)"
     fi
     sleep 0.1
     ticks=$((ticks + 1))
   done
-  wait "$pid" || rc=$?
+  wait "$pid" || BUNDLE_RC=$?
+}
+
+# --self-test of bundle $2 on data folder $3: SELFTEST_RC, and the output in build/selftest-$1.log.
+run_self_test() {
+  run_bundle "selftest-$1" "$2" "$3" --self-test
+  SELFTEST_RC=$BUNDLE_RC
+}
+
+# Runs the bundle headless with --self-test against this build's own data folder, offline.
+self_test() {
+  local run=$1 log=$ROOT/build/selftest-$1.log t0
+  t0=$(now)
+  run_self_test "$run" "$FINAL_APP" "$SELFTEST_DATA"
   SELFTEST_SECONDS[run]=$(since "$t0")
-  if ((rc != 0)); then
+  if ((SELFTEST_RC != 0)); then
     tail -n 20 "$log" >&2
-    die "self-test run $run exited $rc (log: build/selftest-$run.log)"
+    die "self-test run $run exited $SELFTEST_RC (log: build/selftest-$run.log)"
   fi
   local detail
   # The app reports "voices/entities/audio" lines; the probe one JSON line.
   detail=$(grep -E '^(voices|entities|audio) ' "$log" | tr -s ' ' | paste -s -d ';' - || true)
   say "self-test run $run: ok in ${SELFTEST_SECONDS[run]}s: ${detail:-$(tail -n 1 "$log" | cut -c 1-160)}"
+}
+
+# A lean bundle carries no voice: give the self-test's data folder $1 the build host's voices and
+# Kokoro model, as links. The app reads them where its download would have put them.
+seed_selftest_data() {
+  local data=$1 onnx
+  mkdir -p -- "$data/voices"
+  for onnx in "${VOICES[@]}"; do
+    ln -s -- "$onnx" "$data/voices/"
+    ln -s -- "$onnx.json" "$data/voices/"
+  done
+  if [[ -d $KOKORO_DIR ]]; then
+    mkdir -p -- "$data/models"
+    ln -s -- "$KOKORO_DIR" "$data/models/kokoro"
+  fi
+}
+
+# A lean bundle on an empty data folder must give the documented "no voice installed" result:
+# exit 2 and the FAIL line, with no traceback.
+self_test_no_voice() {
+  local app=$1 log=$ROOT/build/selftest-no-voice.log empty
+  empty=$(fresh_dir selftest-empty)
+  run_self_test no-voice "$app" "$empty"
+  if ((SELFTEST_RC != 2)); then
+    die "self-test on an empty data folder exited $SELFTEST_RC, expected 2 (no voice installed) (log: build/selftest-no-voice.log)"
+  fi
+  if grep -q 'Traceback (most recent call last)' "$log"; then
+    die "self-test on an empty data folder printed a traceback (log: build/selftest-no-voice.log)"
+  fi
+  grep -q '^FAIL: no Piper voice installed$' "$log" ||
+    die "self-test on an empty data folder did not print 'FAIL: no Piper voice installed' (log: build/selftest-no-voice.log)"
+  say "self-test run 3 (empty data folder): no voice installed, exit 2, as documented"
 }
 
 summary() {
@@ -304,6 +401,7 @@ summary() {
   say "size: $(du -sh -- "$FINAL_APP" | cut -f 1), PyInstaller ${PYI_SECONDS}s, total ${SECONDS}s"
   say "entry: $ENTRY ($(basename -- "$ENTRY_SCRIPT")), icon: ${ICON_PATH:-PyInstaller default}"
   say "voices from $DATA/voices: ${names[*]}"
+  say "voices and Kokoro model: $([[ $BUNDLE_VOICES == 1 ]] && echo "bundled" || echo "not bundled, downloaded at first launch")"
   say "kokoro: $([[ $KOKORO == 1 ]] && echo "included" || echo "not included")"
   say "self-test wall time: first ${SELFTEST_SECONDS[1]}s, second ${SELFTEST_SECONDS[2]}s"
   say "largest components (MB):"
@@ -320,16 +418,103 @@ main() {
   build_bundle
   add_assets
   check_bundle
+  if [[ $BUNDLE_VOICES == 0 ]]; then audit_voices "$STAGE_APP"; fi
   sign_bundle
   install_bundle
   say "codesign: ad-hoc signature verified (--deep --strict)"
   # Both runs share one fresh folder: the second exercises links that already exist.
   SELFTEST_DATA=$(fresh_dir selftest-data)
+  if [[ $BUNDLE_VOICES == 0 ]]; then seed_selftest_data "$SELFTEST_DATA"; fi
   self_test 1
   self_test 2
+  if [[ $BUNDLE_VOICES == 0 ]]; then self_test_no_voice "$FINAL_APP"; fi
   summary
 }
 
+# The release zip's file name for version $1.
+release_name() { printf '%s-%s-macos-arm64.zip' "${APP_NAME// /-}" "$1"; }
+
+# The zip's SHA-256 beside it, as `<hash>  <file name>`: shasum's own format, the name only.
+write_checksum() {
+  local zip=$1
+  (cd -- "$(dirname -- "$zip")" && shasum -a 256 "$(basename -- "$zip")") >"$zip.sha256"
+}
+
+# Fails when a zip holds macOS clutter: __MACOSX, .DS_Store or AppleDouble ._ files.
+check_zip_clean() {
+  local clutter
+  clutter=$(zipinfo -1 "$1" | grep -E '(^|/)(__MACOSX|\.DS_Store|\._)' || true)
+  [[ -z $clutter ]] || die "$(basename -- "$1") holds macOS clutter: $(head -n 5 <<<"$clutter" | tr '\n' ' ')"
+}
+
+# make release, before it builds: VERSION is well formed, and the build venv's own cloudyreader
+# metadata already says VERSION. PyInstaller bundles that dist-info, and the About box and
+# --version read it, so a stale venv would ship "Version 0.1.0" inside a 0.0.1 zip.
+release_preflight() {
+  local version=${1:-} have
+  [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "VERSION must look like 1.2.3, got '$version'"
+  PY=$ROOT/.venv/bin/python
+  have=$("$PY" -I -c 'import importlib.metadata as m; print(m.version("cloudyreader"))' 2>/dev/null) ||
+    have=none
+  [[ $have == "$version" ]] || die "the build venv's cloudyreader metadata says $have, not $version:" \
+    "run the sync step first (online, public PyPI: make .cache/stamps/packaging kokoro)"
+  say "release: the build venv's cloudyreader metadata says $version"
+}
+
+# make release VERSION: zips the lean dist bundle with its SHA-256 (moving older ones aside), then
+# checks the zip itself: unzipped, it must pass codesign, carry VERSION in its Info.plist and its
+# --version, pass the voice audit and the seeded self-test. Never uploads anything.
+release_main() {
+  local version=${1:-} name zip check app plist shown size data printed
+  [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "VERSION must look like 1.2.3, got '$version'"
+  resolve_out
+  [[ -d $FINAL_APP ]] || die "no $FINAL_APP: make release builds it first"
+  find_voices
+  KOKORO_DIR=$DATA/models/kokoro
+  name=$(release_name "$version")
+  zip=$OUT/$name
+  move_aside "$zip"
+  move_aside "$zip.sha256"
+  # --norsrc --noextattr: without them ditto adds an AppleDouble ._ file per extended attribute.
+  ditto -c -k --keepParent --norsrc --noextattr "$FINAL_APP" "$zip"
+  check_zip_clean "$zip"
+  write_checksum "$zip"
+  (cd -- "$OUT" && shasum -a 256 -c -s "$name.sha256") || die "$name does not match $name.sha256"
+
+  check=$(fresh_dir release-check)
+  ditto -x -k "$zip" "$check"
+  app=$check/$APP_NAME.app
+  if ! codesign --verify --deep --strict "$app" >"$ROOT/build/release-codesign.log" 2>&1; then
+    tail -n 20 "$ROOT/build/release-codesign.log" >&2
+    die "codesign --verify --deep --strict failed on the extracted copy"
+  fi
+  plist=$app/Contents/Info.plist
+  shown=$(plutil -extract CFBundleShortVersionString raw -o - "$plist") || die "no version in $plist"
+  [[ $shown == "$version" ]] ||
+    die "the app says version $shown, not $version: bump pyproject.toml or pass VERSION=$shown"
+  say "release: $name: version $shown, macOS $(plutil -extract LSMinimumSystemVersion raw -o - "$plist") or later"
+  data=$(fresh_dir selftest-release)
+  seed_selftest_data "$data"
+  # The About box and --version read the bundled metadata, which the Info.plist does not show.
+  run_bundle release-version "$app" "$data" --version
+  ((BUNDLE_RC == 0)) || die "the extracted copy's --version exited $BUNDLE_RC (log: build/release-version.log)"
+  printed=$(tail -n 1 "$ROOT/build/release-version.log")
+  [[ $printed == "$APP_NAME $version" ]] ||
+    die "the extracted copy's --version prints '$printed', not '$APP_NAME $version':" \
+      "its bundled metadata is stale; run the sync step first, then make release again"
+  say "release: the extracted copy's --version prints $printed"
+  audit_voices "$app"
+  run_self_test release "$app" "$data"
+  ((SELFTEST_RC == 0)) || die "the extracted copy's self-test exited $SELFTEST_RC (log: build/selftest-release.log)"
+  say "release: the extracted copy passes codesign, the voice audit and the self-test"
+  size=$(awk -v b="$(stat -f %z "$zip")" 'BEGIN { printf "%.1f", b / 1e6 }')
+  say "release: $zip ($size MB), SHA-256 in $name.sha256; nothing was uploaded"
+}
+
 if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
-  main "$@"
+  case ${1:-} in
+    release-preflight) release_preflight "${2:-}" ;;
+    release) release_main "${2:-}" ;;
+    *) main "$@" ;;
+  esac
 fi
