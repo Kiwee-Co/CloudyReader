@@ -78,7 +78,11 @@ Each part of a question becomes a segment. A choice becomes two segments: its le
 
 The app skips a part that the pasted text does not have. A paste without a number or a header has no header segment. A choice with no text gets one pause of 400 ms after its letter.
 
-Each pause is exact silence in the audio file. Every voice engine writes it the same way, so the pauses do not depend on the voice. The spoken words stay the same.
+The app inserts each pause as exact silence in the audio file. Every voice engine writes it the same way. The spoken words stay the same.
+
+A voice can add its own silence around a line. A Kokoro voice wraps each line in about 0.4 s of near silence. A pause between two Kokoro lines therefore runs about 0.8 s longer than the table says.
+
+The app cuts that silence next to a choice letter. The pause after a letter then lasts about 0.3 to 0.4 s.
 
 The audio cache key includes the pauses. After an update that changes a pause, the app renders a question that you heard before once more.
 

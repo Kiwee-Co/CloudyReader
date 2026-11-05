@@ -45,21 +45,24 @@ The first letter of a voice id gives the accent: `a` is en-US and `b` is en-GB. 
 | UK female (4) | `bf_emma` (B-), `bf_isabella` (C), `bf_alice` (D), `bf_lily` (D) |
 | UK male (4) | `bm_fable` (C), `bm_george` (C), `bm_lewis` (D+), `bm_daniel` (D) |
 
-The menu lists six recommended voices first: `af_heart`, `af_bella`, `bf_emma`, `am_michael`, `am_fenrir`, and `am_puck`. The other 22 follow.
+Inside Kokoro, the menu lists the best grade first. Voices with the same grade sort by name. The list starts with `af_heart` (A), `af_bella` (A-), `bf_emma` (B-), and `af_nicole` (B-).
 
 ## Choose a voice
 
 {% include figure.html src="voices-light.svg" alt="The Voice menu open. Piper and Kokoro voices sit under their engine names. Kokoro names carry their gender. One Kokoro voice is dimmed because it is not installed." caption="The Voice menu groups voices by engine." frame="window" %}
 
-Open **Voice**. The headings **Piper** and **Kokoro** are labels, not choices.
+Open **Voice**. The headings **Kokoro** and **Piper** are labels, not choices. The menu lists Kokoro first. Inside an engine, the best grade or quality tier comes first, then the name.
 
 - A row reads *name* (*language*, *quality*). Examples: `lessac (en-US, medium)` and `Heart (female) (en-US, A)`.
+- The five pinned Piper voices are all `medium`, so they list by name: `alan`, `amy`, `jenny_dioco`, `lessac`, and `ryan`.
 - A voice that is listed but not installed carries the words "not installed". It is dimmed, and you cannot pick it.
 - With no installed voice, the menu is dimmed and its placeholder reads "No voice installed".
 - While the list loads, the placeholder reads "Loading voices…". If the list fails, it reads "Voices unavailable".
 - The **Speaker** box appears for a voice whose file lists more than one speaker. It counts from 0 and resets to 0 when you change the voice.
 
-The app remembers your choice. At the next start it selects the saved voice. If that voice is gone, it selects the first installed voice.
+The app remembers your choice. At the next start it selects the saved voice. With no saved voice, or if that voice is gone, it selects the best installed voice. That is the first installed row in the menu.
+
+Until you choose a voice, a finished download can move the selection to a better voice.
 
 ## Rotate voices
 
@@ -87,7 +90,7 @@ A voice joins the pool when it meets all four conditions:
 3. It is an English voice with a known gender. Kokoro voices qualify by id. Piper voices qualify only if they are one of the five in the table above.
 4. It fits the mode. US only needs en-US. Men only needs male. Women only needs female.
 
-The pool follows the order of the **Voice** menu. Piper voices come first, sorted by file name. Then come the six recommended Kokoro voices and the other 22. A repeated voice counts once. The pool is rebuilt from the latest voice list, so a finished download changes it.
+The pool follows the order of the **Voice** menu: Kokoro voices, best grade first, then Piper voices by name. A repeated voice counts once. The pool is rebuilt from the latest voice list, so a finished download changes it.
 
 ### Know how each mode picks
 

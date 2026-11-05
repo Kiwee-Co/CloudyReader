@@ -19,7 +19,7 @@ Cloudy Reader reads US DOE National Science Bowl questions aloud on your Mac. It
 
 - **Reads questions as you paste them.** The parser handles toss-ups and bonuses, multiple choice (W, X, Y, Z), short answer, and the answer line. It cleans PDF leftovers: hard wraps, page footers, round titles, and glued headers.
 - **Two local voice engines.** Piper provides 5 pinned English voices. Kokoro-82M on MLX adds 28 more on Apple Silicon. The project pins 33 voices in all.
-- **Science-aware speech.** Formulas and ions are spelled (`H2O` becomes "H two O"). Units, scientific notation, exponents, and Greek letters become words. A pasted guide such as `[KREBZ SY-kul]` sets how a word sounds. A built-in lexicon covers hard science terms.
+- **Science-aware speech.** Formulas and ions are spelled (`H2O` becomes "H two O"). Units, fractions, scientific notation, exponents, and Greek letters become words. A pasted guide such as `[KREBZ SY-kul]` sets how a word sounds. A built-in lexicon covers hard science terms.
 - **Voice rotation.** Choose No rotation, or pick a mode that changes the voice for each reading. The modes are round robin, random shuffle, US only, men only, and women only.
 - **Optional name lookups.** PubChem and UniProt lookups are on by default. One checkbox, the `--offline` flag, or `CLOUDYREADER_OFFLINE=1` turns them off.
 - **Background voice download.** Missing pinned voices download over HTTPS. The app checks every file against a pinned SHA-256 value.

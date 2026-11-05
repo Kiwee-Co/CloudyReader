@@ -23,7 +23,7 @@ The diagram runs left to right across the top row. It then runs right to left ac
 2. **Parse.** `QuestionParser.parse` returns `Question` objects. It also takes bracket guides out of the stem and the choices and keeps them as `Respelling` objects. No question raises `ValueError("nothing to read")`.
 3. **Detect.** `SciEntityDetector.detect` scans each stem and each choice. It scans the answer only when `read_answer` is on. It returns `EntitySpan` objects.
 4. **Resolve.** `ChainResolver.resolve_many` looks up the first span of each unique text within `lookup_budget_s`. The pipeline uses the online resolver when `opts.online_lookups` is true and `settings.offline` is false. Otherwise it uses the offline twin: cache and OPSIN only.
-5. **Normalize.** `ScriptNormalizer.to_script` builds a `SpokenScript`: segments, pauses, pronunciation overrides, and warnings. It makes one segment each for the header, the category, the format, the stem, and the answer. A choice makes two segments: its letter and its text. The letter segment carries its own pause, so the silence does not depend on how a voice reads the period.
+5. **Normalize.** `ScriptNormalizer.to_script` builds a `SpokenScript`: segments, pauses, pronunciation overrides, and warnings. It makes one segment each for the header, the category, the format, the stem, and the answer. A choice makes two segments: its letter and its text. The letter segment carries its own pause, so the inserted silence does not depend on how a voice reads the period.
 6. **Synthesize.** `TtsService.synthesize` returns an `Audio` from the WAV cache or from the engine.
 7. **Collect notes.** The pipeline merges three lists: the normalizer warnings, the engine warnings from the last synthesis, and the engine's pre-check of the script. It removes duplicates and returns the `Reading`.
 
@@ -47,11 +47,13 @@ The code states rule R5 in several modules: a resolution decides how a token is 
 | `respell.py` | NSB respelling to IPA, driven by `data/respelling_rules.json`. |
 | `units.py` | Number words, units, symbols, and the text preparation that both stages share. |
 | `formulas.py` | Formulas, ions, scientific notation, exponents, ratios, and acronyms. |
-| `normalize.py` | `ScriptNormalizer`: builds the segments, applies guides, and calls units, formulas, and the lexicon. |
+| `spoken_fractions.py` | Fractions, mixed numbers, and fraction glyphs to words: `fold_glyphs` and `speak_fractions`. |
+| `normalize.py` | `ScriptNormalizer`: builds the segments, applies guides, and calls units, fractions, formulas, and the lexicon. |
 | `tts.py` | `TtsService`: the engine registry and the content-addressed WAV cache. |
 | `engines/` | `piper.py`, `kokoro.py`, and `misaki_ipa.py` (the IPA to misaki phoneme map). |
+| `engines/padding.py` | `trim_letter_padding`: cuts a voice's own silence next to a choice letter, so the pause after a letter lasts about the same in every voice. |
 | `voices.py` | Scans installed Piper voices. It also holds a catalog downloader, `VoiceManager`, that no app code calls. |
-| `voice_meta.py` | Gender and accent of English voices, for rotation. |
+| `voice_meta.py` | Gender and accent of English voices, for rotation. Also the voice listing order: `ENGINE_ORDER` and `voice_sort_key`. |
 | `rotation.py` | `RotationMode` and `VoiceRotator`. |
 | `prefetch.py` | `VoicePrefetch`: the background voice download. |
 | `frozen.py` | Support for a PyInstaller bundle: finds `Contents/Resources` and links bundled assets. |
@@ -93,11 +95,17 @@ An `Override` carries neutral IPA. The stress mark sits before the stressed syll
 | --- | --- | --- |
 | Class | `PiperEngine` | `KokoroEngine` |
 | `available()` | The `piper` package is installed. | Apple Silicon, backend packages present, and model files with the pinned SHA-256 value. |
-| `voices()` | Every `.onnx` plus `.onnx.json` pair in the voices folder. | 28 voices: six recommended first, then 22. |
+| `voices()` | Every `.onnx` plus `.onnx.json` pair in the voices folder. | 28 voices, each with its published grade. |
 | Output | 16-bit mono WAV at the voice's sample rate. | 16-bit mono WAV at 24,000 Hz. |
 | Version string | `piper-tts-<version>+r<render revision>` | `kokoro-82m@<revision>+misaki-ipa-2` |
 
-Both engines write the pause after a segment as exact silence in the WAV file. The pause does not depend on the voice.
+Both engines write the pause after a segment as exact silence in the WAV file. That silence does not depend on the voice.
+
+A voice can add its own silence around a line. Kokoro wraps each line in about 0.4 s of near silence, and Piper in a few milliseconds. Both engines call `trim_letter_padding` in `engines/padding.py` to cut that silence next to a choice letter.
+
+`TtsService.voices()` sets the order of the **Voice** menu. Engines follow `ENGINE_ORDER` in `voice_meta.py`, Kokoro first and Piper last. Inside an engine, the best grade or tier comes first, then the name.
+
+The voice picker selects the first installed voice when no saved voice applies.
 
 `build_default_service` always registers Piper. It registers Kokoro only when `platform.machine()` is `arm64` and the module imports. Bump `_RENDER_REVISION` in `engines/piper.py` when rendering changes, so old cached WAV files stop matching.
 
