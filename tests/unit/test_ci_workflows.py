@@ -99,7 +99,7 @@ def test_tool_pins_are_exact_versions_and_none_is_left_open() -> None:
     env = load()["env"]
     assert set(env) == {"SHELLCHECK_PY", "ACTIONLINT_PY", "ZIZMOR"}
     for name, value in env.items():
-        assert re.fullmatch(r"\d+(\.\d+){1,3}(\.\*)?", value), f"{name}={value!r}"
+        assert re.fullmatch(r"\d+(\.\d+){1,3}", value), f"{name}={value!r}"
     assert "PIN_ME" not in CI.read_text(encoding="utf-8")
 
 
@@ -190,3 +190,15 @@ def test_tool_commands_pin_the_python_so_uv_fetches_no_second_interpreter() -> N
             for line in step.get("run", "").splitlines():
                 if re.search(r"\b(uvx|uv tool install)\b", line):
                     assert '--python "$(cat .python-version)"' in line, f"{job_id}: {line}"
+
+
+def test_the_reports_are_uploaded_even_after_a_failure_and_kept_fourteen_days() -> None:
+    job = load()["jobs"]["test"]
+    upload = next(
+        s for s in job["steps"] if s.get("uses", "").startswith("actions/upload-artifact@")
+    )
+    assert upload["if"] == "${{ !cancelled() }}"
+    assert upload["with"]["retention-days"] == 14
+    assert upload["with"]["path"] == "${{ runner.temp }}/reports"
+    gate = next(s for s in job["steps"] if s.get("name") == "Test gate (make test)")
+    assert 'REPORT_DIR="$RUNNER_TEMP/reports"' in gate["run"]
