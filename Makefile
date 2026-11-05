@@ -202,10 +202,15 @@ fmt: ## ruff format + ruff check --fix
 precommit: ## pre-commit run -a, or print how to install pre-commit
 	@if command -v pre-commit >/dev/null 2>&1; then pre-commit run -a; else echo "pre-commit not installed: brew install pre-commit (or: uv tool install pre-commit)"; fi
 
-ci: ## Commit gate: check, then test, then precommit
+ci: guards ## Commit gate: guards, check, then test, then precommit
 	$(MAKE) --no-print-directory check
 	$(MAKE) --no-print-directory test
 	$(MAKE) --no-print-directory precommit
+
+.PHONY: guards
+# Standard library only, so no venv: the same entry point the CI guards job runs.
+guards: ## Policy guards: vendor domain, public lock hosts, disk paths, workflow triggers
+	python3 -I -X pycache_prefix=$(CURDIR)/.cache/pycache scripts/ci_guards.py
 
 app: $(STAMPS)/deps $(STAMPS)/models $(STAMPS)/packaging ## Build dist/Cloudy Reader.app (ad-hoc signed); ICON=<name> KOKORO=auto|0|1 BUNDLE_VOICES=1|0
 	@case "$(KOKORO)" in auto|0|1) ;; *) echo "KOKORO must be auto, 0 or 1 (got '$(KOKORO)')" >&2; exit 1 ;; esac
