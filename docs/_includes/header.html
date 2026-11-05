@@ -1,0 +1,36 @@
+{%- comment -%}
+Site header. Wide windows show the links inline; narrow ones get a disclosure menu that needs no
+script. Only one of the two is displayed at a time (site.css), so assistive tech meets one.
+Manual and Developer link to the first page of their group.
+{%- endcomment -%}
+<header class="site-header">
+<div class="site-header__inner">
+<a class="brand" href="{{ '/' | relative_url }}">
+<img class="brand__mark" src="{{ '/assets/img/logo.svg' | relative_url }}" alt="" aria-hidden="true" width="28" height="28">
+<span class="brand__name">{{ site.title }}</span>
+</a>
+<nav class="site-nav" aria-label="Site">
+<ul class="site-nav__list">
+{%- for group in site.nav_groups -%}
+{%- assign group_first = site.pages | where: "nav_group", group | sort: "nav_order" | first -%}
+{%- if group_first %}
+<li><a href="{{ group_first.url | relative_url }}"{% if page.nav_group == group %} aria-current="true"{% endif %}>{{ group }}</a></li>
+{%- endif -%}
+{%- endfor %}
+<li><a href="{{ site.repo_url }}">GitHub</a></li>
+</ul>
+</nav>
+<details class="menu">
+<summary class="menu__button"><span class="menu__icon" aria-hidden="true"></span><span class="menu__label">Menu</span></summary>
+<nav class="menu__panel" aria-label="Site">
+<ul class="menu__list">
+<li><a href="{{ '/' | relative_url }}"{% if page.url == "/" %} aria-current="page"{% endif %}>Home</a></li>
+</ul>
+{% include nav.html context="menu" %}
+<ul class="menu__list">
+<li><a href="{{ site.repo_url }}">GitHub</a></li>
+</ul>
+</nav>
+</details>
+</div>
+</header>

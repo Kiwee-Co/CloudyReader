@@ -1,0 +1,44 @@
+# Jekyll site for GitHub Pages (the github-pages gem, Jekyll 3.10). Source: this docs/ folder.
+# No url or baseurl here: the Pages build sets both from the repository's Pages settings, so
+# every link goes through relative_url and works at /CloudyReader/ and at a custom domain root.
+title: Cloudy Reader
+tagline: Reads National Science Bowl questions aloud
+description: >-
+  Cloudy Reader is a macOS app that reads National Science Bowl questions aloud. It turns
+  chemical formulas, units, and pronunciation guides into clear speech, with Piper and Kokoro
+  voices that run on your Mac.
+lang: en-US
+repository: Kiwee-Co/CloudyReader
+
+# The Pages build adds the Primer theme unless it is switched off; the layouts here replace it.
+theme: null
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+  auto_ids: true
+
+# The only plugins the site uses; both are on the GitHub Pages allow list.
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+  - node_modules
+  - .jekyll-cache
+  - .sass-cache
+
+# Values the templates read. Edit links open the page source on the default branch.
+repo_url: https://github.com/Kiwee-Co/CloudyReader
+edit_url: https://github.com/Kiwee-Co/CloudyReader/edit/main/docs/
+copyright: Copyright © 2026 the Cloudy Reader authors.
+license_note: License not yet chosen.
+
+# Sidebar group order. Each page names its group and its place in it: nav_group, nav_order.
+nav_groups:
+  - Manual
+  - Developer

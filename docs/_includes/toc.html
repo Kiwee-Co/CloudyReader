@@ -1,0 +1,26 @@
+{%- comment -%}
+In-page contents: every h2 and h3 in include.html that has an id (kramdown gives each Markdown
+heading one). Renders nothing when the page has fewer than two such headings.
+{%- endcomment -%}
+{%- assign toc_chunks = include.html | split: "<h" -%}
+{%- capture toc_items -%}
+{%- for toc_chunk in toc_chunks offset: 1 -%}
+{%- assign toc_level = toc_chunk | slice: 0 -%}
+{%- assign toc_next = toc_chunk | slice: 1 -%}
+{%- if toc_level == "2" or toc_level == "3" -%}
+{%- if toc_next == " " or toc_next == ">" -%}
+{%- assign toc_tag = toc_chunk | split: ">" | first -%}
+{%- if toc_tag contains ' id="' -%}
+{%- assign toc_id = toc_tag | split: ' id="' | last | split: '"' | first -%}
+{%- assign toc_close = "</h" | append: toc_level -%}
+{%- assign toc_text = toc_chunk | split: toc_close | first | remove_first: toc_tag | remove_first: ">" | strip_html | strip -%}
+<li class="toc__item toc__item--h{{ toc_level }}"><a href="#{{ toc_id }}">{{ toc_text }}</a></li>
+{%- endif -%}
+{%- endif -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endcapture -%}
+{%- assign toc_count = toc_items | split: "<li" | size | minus: 1 -%}
+{%- if toc_count >= 2 -%}
+<ol class="toc__list">{{ toc_items }}</ol>
+{%- endif -%}

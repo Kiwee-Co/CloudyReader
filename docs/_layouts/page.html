@@ -1,0 +1,65 @@
+---
+layout: default
+---
+{%- comment -%}
+Documentation page: group navigation, the title as the only h1, the page content, an in-page
+contents list for h2 and h3, previous and next links in nav order, and an edit link.
+{%- endcomment -%}
+{%- capture page_toc -%}{% include toc.html html=content %}{%- endcapture -%}
+{%- assign page_toc = page_toc | strip -%}
+{%- assign pager_prev = nil -%}
+{%- assign pager_next = nil -%}
+{%- assign pager_last = nil -%}
+{%- assign pager_found = false -%}
+{%- for group in site.nav_groups -%}
+{%- assign group_pages = site.pages | where: "nav_group", group | sort: "nav_order" -%}
+{%- for item in group_pages -%}
+{%- if pager_found and pager_next == nil -%}{%- assign pager_next = item -%}{%- endif -%}
+{%- if item.url == page.url -%}{%- assign pager_found = true -%}{%- assign pager_prev = pager_last -%}{%- endif -%}
+{%- assign pager_last = item -%}
+{%- endfor -%}
+{%- endfor -%}
+<div class="docs{% if page_toc != '' %} docs--toc{% endif %}">
+<nav class="docs-sidebar" aria-label="Documentation">
+{% include nav.html context="sidebar" %}
+</nav>
+<article class="docs-article">
+<header class="docs-header">
+{%- if page.nav_group %}
+<p class="eyebrow">{{ page.nav_group }}</p>
+{%- endif %}
+<h1>{{ page.title }}</h1>
+{%- if page.description %}
+<p class="lede">{{ page.description }}</p>
+{%- endif %}
+</header>
+{%- if page_toc != "" %}
+<details class="toc toc--inline">
+<summary>On this page</summary>
+{{ page_toc }}
+</details>
+{%- endif %}
+<div class="prose">
+{{ content }}
+</div>
+<footer class="docs-footer">
+{%- if pager_prev or pager_next %}
+<nav class="pager" aria-label="Previous and next page">
+{%- if pager_prev %}
+<a class="pager__link pager__link--prev" href="{{ pager_prev.url | relative_url }}" rel="prev"><span class="pager__label">Previous</span> <span class="pager__title">{{ pager_prev.nav_title | default: pager_prev.title }}</span></a>
+{%- endif %}
+{%- if pager_next %}
+<a class="pager__link pager__link--next" href="{{ pager_next.url | relative_url }}" rel="next"><span class="pager__label">Next</span> <span class="pager__title">{{ pager_next.nav_title | default: pager_next.title }}</span></a>
+{%- endif %}
+</nav>
+{%- endif %}
+<p class="edit-link"><a href="{{ site.edit_url }}{{ page.path }}">Edit this page on GitHub</a></p>
+</footer>
+</article>
+{%- if page_toc != "" %}
+<nav class="toc toc--side" aria-labelledby="toc-title">
+<p class="toc__title" id="toc-title">On this page</p>
+{{ page_toc }}
+</nav>
+{%- endif %}
+</div>
