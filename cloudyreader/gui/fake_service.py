@@ -6,11 +6,12 @@ import math
 import tempfile
 import threading
 import time
-from collections.abc import Sequence
-from dataclasses import dataclass
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from cloudyreader.models import Audio, Reading, RenderOptions, Segment, SpokenScript, VoiceInfo
+from cloudyreader.prefetch import PrefetchProgress, PrefetchResult
 
 FAKE_VOICES: tuple[VoiceInfo, ...] = (
     VoiceInfo("piper:en_US-lessac-medium", "piper", "Lessac", "en-US", "medium", 1, True),
@@ -23,6 +24,7 @@ FAKE_VOICES: tuple[VoiceInfo, ...] = (
 
 _FAKE_WAV = Path(tempfile.gettempdir()) / "cloudyreader-fake.wav"  # never opened
 _GATE_TIMEOUT_S = 10.0  # a forgotten gate must fail a test, not hang it
+_CANCEL_POLL_S = 0.01  # a held prefetch checks its cancel event this often
 
 
 @dataclass(frozen=True)
@@ -48,6 +50,12 @@ class FakeReaderService:
         voices_delay_s: float = 0.0,
         voices_error: Exception | None = None,
         voices_gate: threading.Event | None = None,
+        prefetch_result: PrefetchResult | None = None,
+        prefetch_events: Sequence[PrefetchProgress] = (),
+        prefetch_gate: threading.Event | None = None,
+        prefetch_delay_s: float = 0.0,
+        prefetch_error: Exception | None = None,
+        prefetch_installs: Sequence[str] = (),
     ) -> None:
         self.voice_list = list(voices)
         self.delay_s = delay_s
@@ -58,8 +66,16 @@ class FakeReaderService:
         self.voices_delay_s = voices_delay_s
         self.voices_error = voices_error
         self.voices_gate = voices_gate  # the same hold for voices(), like a slow model hash
+        # The download hook exists only once a result or an error is set: inert by default.
+        self.prefetch_result = prefetch_result
+        self.prefetch_events = tuple(prefetch_events)
+        self.prefetch_gate = prefetch_gate  # holds the run after its first event (or at start)
+        self.prefetch_delay_s = prefetch_delay_s
+        self.prefetch_error = prefetch_error
+        self.prefetch_installs = tuple(prefetch_installs)  # keys installed as the run starts
         self.calls: list[PrepareCall] = []
         self.voices_threads: list[threading.Thread] = []
+        self.prefetch_threads: list[threading.Thread] = []
 
     def voices(self) -> list[VoiceInfo]:
         self.voices_threads.append(threading.current_thread())
@@ -81,6 +97,50 @@ class FakeReaderService:
         script = SpokenScript(tuple(Segment(text=line) for line in lines))
         audio = Audio(_FAKE_WAV, 22_050, self.duration_s, cache_hit=False)
         return Reading((), script, (), {}, audio, warnings=self.warnings)
+
+    @property
+    def prefetch_voices(self) -> Callable[..., PrefetchResult] | None:
+        """The download hook, or None (the default) like a service that has none."""
+        if self.prefetch_result is None and self.prefetch_error is None:
+            return None
+        return self._prefetch
+
+    def _prefetch(
+        self,
+        progress: Callable[[PrefetchProgress], None] | None = None,
+        cancel: threading.Event | None = None,
+    ) -> PrefetchResult:
+        self.prefetch_threads.append(threading.current_thread())
+        time.sleep(self.prefetch_delay_s)
+        if self.prefetch_error is not None:
+            raise self.prefetch_error
+        cancelled = PrefetchResult("cancelled")
+        if cancel is not None and cancel.is_set():
+            return cancelled
+        installs = set(self.prefetch_installs)  # files land before their progress event
+        self.voice_list = [
+            replace(v, installed=True) if v.key in installs else v for v in self.voice_list
+        ]
+        for index, event in enumerate(self.prefetch_events or (None,)):
+            if cancel is not None and cancel.is_set():
+                return cancelled
+            if event is not None and progress is not None:
+                progress(event)
+            if index == 0 and not self._hold(cancel):
+                return cancelled
+        return self.prefetch_result or PrefetchResult("nothing")
+
+    def _hold(self, cancel: threading.Event | None) -> bool:
+        """Wait at prefetch_gate. False when cancel comes first."""
+        if self.prefetch_gate is None:
+            return True
+        deadline = time.monotonic() + _GATE_TIMEOUT_S
+        while not self.prefetch_gate.wait(_CANCEL_POLL_S):
+            if cancel is not None and cancel.is_set():
+                return False
+            if time.monotonic() > deadline:
+                raise TimeoutError("fake prefetch gate was never released")
+        return True
 
 
 class FakePlayer:

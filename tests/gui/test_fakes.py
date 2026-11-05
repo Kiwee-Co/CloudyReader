@@ -1,5 +1,6 @@
 import threading
 import time
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,7 @@ from cloudyreader.gui.fake_service import (
     FakeReaderService,
 )
 from cloudyreader.models import Audio, RenderOptions
+from cloudyreader.prefetch import PrefetchProgress, PrefetchResult
 
 
 def make_audio(duration_s: float = 1.0) -> Audio:
@@ -167,3 +169,174 @@ def test_clipboard_returns_what_was_set():
 
     clipboard.set_text("def")
     assert clipboard.text() == "def"
+
+
+# --- prefetch hook ---------------------------------------------------------------------------
+
+HEART = "kokoro:af_heart"
+
+
+def progress_event(files_done: int, file: str = "a.onnx") -> PrefetchProgress:
+    return PrefetchProgress(file, files_done * 10, 40, files_done, 4)
+
+
+def run_prefetch(service, **kwargs) -> tuple[list[PrefetchProgress], PrefetchResult]:
+    seen: list[PrefetchProgress] = []
+    result = service.prefetch_voices(progress=seen.append, **kwargs)
+    return seen, result
+
+
+def test_prefetch_hook_is_absent_by_default_like_a_service_without_one():
+    service = FakeReaderService()
+
+    assert service.prefetch_voices is None
+    assert getattr(service, "prefetch_voices", None) is None
+
+
+def test_prefetch_reports_its_events_then_returns_the_result_and_records_its_thread():
+    events = [progress_event(1), progress_event(2)]
+    result = PrefetchResult("complete", files=2)
+    service = FakeReaderService(prefetch_result=result, prefetch_events=events)
+
+    seen, got = run_prefetch(service)
+
+    assert (seen, got) == (events, result)
+    assert service.prefetch_threads == [threading.current_thread()]
+
+
+def test_prefetch_works_without_progress_or_cancel():
+    service = FakeReaderService(prefetch_result=PrefetchResult("nothing"))
+
+    assert service.prefetch_voices() == PrefetchResult("nothing")
+
+
+def test_prefetch_installs_voices_before_its_first_event():
+    voices = [
+        replace(v, installed=False) if v.key == HEART else v for v in fake_service.FAKE_VOICES
+    ]
+    service = FakeReaderService(
+        voices=voices,
+        prefetch_result=PrefetchResult("complete", files=1),
+        prefetch_events=[progress_event(1)],
+        prefetch_installs=[HEART],
+    )
+    installed_at_event = []
+
+    service.prefetch_voices(
+        progress=lambda _e: installed_at_event.append(
+            {v.key: v.installed for v in service.voices()}[HEART]
+        )
+    )
+
+    assert installed_at_event == [True]
+    assert fake_service.FAKE_VOICES[4].installed  # the shared tuple is never edited
+
+
+def test_prefetch_gate_holds_the_run_after_its_first_event():
+    gate = threading.Event()
+    events = [progress_event(1), progress_event(2)]
+    service = FakeReaderService(
+        prefetch_result=PrefetchResult("complete", files=2),
+        prefetch_events=events,
+        prefetch_gate=gate,
+    )
+    seen = []
+    worker = threading.Thread(target=lambda: service.prefetch_voices(progress=seen.append))
+
+    worker.start()
+    worker.join(0.1)
+    assert worker.is_alive()
+    assert seen == events[:1]
+    gate.set()
+    worker.join(2)
+
+    assert seen == events
+    assert service.prefetch_threads == [worker]
+
+
+def test_prefetch_gate_holds_at_the_start_without_events():
+    gate = threading.Event()
+    service = FakeReaderService(prefetch_result=PrefetchResult("nothing"), prefetch_gate=gate)
+    worker = threading.Thread(target=service.prefetch_voices)
+
+    worker.start()
+    worker.join(0.1)
+    assert worker.is_alive()
+    gate.set()
+    worker.join(2)
+    assert not worker.is_alive()
+
+
+def test_cancel_ends_a_held_prefetch():
+    gate, cancel = threading.Event(), threading.Event()
+    service = FakeReaderService(
+        prefetch_result=PrefetchResult("complete", files=2),
+        prefetch_events=[progress_event(1), progress_event(2)],
+        prefetch_gate=gate,
+    )
+    got = []
+    worker = threading.Thread(target=lambda: got.append(run_prefetch(service, cancel=cancel)))
+
+    worker.start()
+    worker.join(0.1)
+    cancel.set()
+    worker.join(2)
+
+    assert not worker.is_alive()
+    assert got == [([progress_event(1)], PrefetchResult("cancelled"))]
+
+
+def test_cancel_before_the_start_reports_nothing():
+    cancel = threading.Event()
+    cancel.set()
+    service = FakeReaderService(
+        prefetch_result=PrefetchResult("complete", files=1),
+        prefetch_events=[progress_event(1)],
+        prefetch_installs=[HEART],
+    )
+
+    assert run_prefetch(service, cancel=cancel) == ([], PrefetchResult("cancelled"))
+
+
+def test_prefetch_raises_the_configured_error():
+    service = FakeReaderService(prefetch_error=RuntimeError("disk full"))
+
+    assert callable(service.prefetch_voices)
+    with pytest.raises(RuntimeError, match="disk full"):
+        service.prefetch_voices()
+
+
+def test_prefetch_waits_out_the_configured_delay():
+    service = FakeReaderService(prefetch_result=PrefetchResult("nothing"), prefetch_delay_s=0.05)
+    started = time.monotonic()
+
+    service.prefetch_voices()
+
+    assert time.monotonic() - started >= 0.04
+
+
+def test_an_unreleased_prefetch_gate_fails_instead_of_hanging(monkeypatch):
+    monkeypatch.setattr(fake_service, "_GATE_TIMEOUT_S", 0.05)
+    service = FakeReaderService(
+        prefetch_result=PrefetchResult("nothing"), prefetch_gate=threading.Event()
+    )
+
+    with pytest.raises(TimeoutError, match="gate"):
+        service.prefetch_voices()
+
+
+def test_cancel_between_events_stops_the_run():
+    cancel = threading.Event()
+    service = FakeReaderService(
+        prefetch_result=PrefetchResult("complete", files=2),
+        prefetch_events=[progress_event(1), progress_event(2)],
+    )
+    seen = []
+
+    def report(event):
+        seen.append(event)
+        cancel.set()
+
+    result = service.prefetch_voices(progress=report, cancel=cancel)
+
+    assert (seen, result) == ([progress_event(1)], PrefetchResult("cancelled"))
