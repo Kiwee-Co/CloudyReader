@@ -57,3 +57,50 @@ repos:
         entry: shellcheck
         language: system
         types: [shell]
+
+      # Formatting follows .prettierrc and .markdownlint.json. Each exclude lists files that fail
+      # today, so only clean files are enforced. The one reformat commit deletes the lists.
+      - id: prettier
+        name: prettier --check
+        entry: prettier --check
+        language: system
+        types_or: [markdown, yaml, json]
+        exclude: |
+          (?x)^(
+            README\.md
+            | assets\.lock\.json
+            | cloudyreader/data/elements\.json
+            | cloudyreader/data/ions_and_groups\.json
+            | cloudyreader/data/iupac_morphemes\.json
+            | cloudyreader/data/pronunciations\.json
+            | cloudyreader/data/respelling_rules\.json
+            | cloudyreader/data/symbols\.json
+            | cloudyreader/data/units\.json
+            | docs/custom-domain\.md
+            | docs/developer/architecture\.md
+            | docs/developer/building\.md
+            | docs/developer/testing\.md
+            | docs/index\.md
+            | docs/manual/getting-started\.md
+            | docs/manual/offline-and-privacy\.md
+            | docs/manual/pronunciation\.md
+            | docs/manual/settings-and-cli\.md
+            | docs/manual/troubleshooting\.md
+            | docs/manual/using-the-app\.md
+            | docs/manual/voices\.md
+            | tests/golden/ambiguous\.yaml
+            | tests/golden/parse_cases\.yaml
+            | tests/golden/respelling_cases\.yaml
+            | tests/golden/spoken_cases\.yaml
+          )$
+      - id: markdownlint
+        name: markdownlint
+        entry: markdownlint
+        language: system
+        types: [markdown]
+        exclude: |
+          (?x)^(
+            docs/index\.md
+            | docs/manual/using-the-app\.md
+            | docs/manual/voices\.md
+          )$

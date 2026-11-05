@@ -22,9 +22,12 @@ defaults:
 env:
   # PyPI versions of the tools that uvx and uv tool install fetch. Bump them here only.
   # Unverified until the first run: they are GitHub release tags, read without PyPI access.
-  SHELLCHECK_PY: "0.11.0.1"
-  ACTIONLINT_PY: "1.7.12.25"
-  ZIZMOR: "1.31.1"
+  SHELLCHECK_PY: '0.11.0.1'
+  ACTIONLINT_PY: '1.7.12.25'
+  ZIZMOR: '1.31.1'
+  # npm versions of the format tools, read from the owner's local installs.
+  PRETTIER: '3.9.10'
+  MARKDOWNLINT_CLI: '0.50.0'
 
 jobs:
   guards:
@@ -46,8 +49,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
-      UV_MANAGED_PYTHON: "1"
-      UV_NO_PROGRESS: "1"
+      UV_MANAGED_PYTHON: '1'
+      UV_NO_PROGRESS: '1'
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -57,7 +60,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: "0.9.28"
+          version: '0.9.28'
           enable-cache: true
           cache-dependency-glob: uv.lock
           cache-local-path: ${{ github.workspace }}/.cache/uv
@@ -100,8 +103,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
-      UV_MANAGED_PYTHON: "1"
-      UV_NO_PROGRESS: "1"
+      UV_MANAGED_PYTHON: '1'
+      UV_NO_PROGRESS: '1'
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -111,7 +114,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: "0.9.28"
+          version: '0.9.28'
           enable-cache: true
           cache-dependency-glob: uv.lock
           cache-local-path: ${{ github.workspace }}/.cache/uv
@@ -128,12 +131,54 @@ jobs:
           uv tool install --python "$(cat .python-version)" "shellcheck-py==$SHELLCHECK_PY"
 
       # A hook that finds no tool would fail late; name the missing tool first.
-      - name: Run every hook
+      # The format job runs the prettier and markdownlint hooks, so this job skips them.
+      - name: Run the other hooks
         run: |
           PATH="$(uv tool dir --bin):$PATH"
           command -v pre-commit >/dev/null || { echo "::error::pre-commit not on PATH"; exit 1; }
           command -v shellcheck >/dev/null || { echo "::error::shellcheck not on PATH"; exit 1; }
-          pre-commit run --all-files --show-diff-on-failure
+          SKIP=prettier,markdownlint pre-commit run --all-files --show-diff-on-failure
+
+  format:
+    name: format
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      UV_MANAGED_PYTHON: '1'
+      UV_NO_PROGRESS: '1'
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: '0.9.28'
+          enable-cache: false
+
+      # Node and npm ship on the runner image. No install script runs; there is no lockfile yet.
+      - name: Install Prettier and markdownlint
+        run: |
+          npm install --prefix "$RUNNER_TEMP/format-tools" --ignore-scripts --no-audit --no-fund \
+            "prettier@$PRETTIER" "markdownlint-cli@$MARKDOWNLINT_CLI"
+
+      - name: Install pre-commit
+        run: uv tool install --python "$(cat .python-version)" pre-commit==4.7.0
+
+      # The hooks hold the flags and the exclude lists, so CI and a local commit agree.
+      - name: Prettier
+        run: |
+          PATH="$RUNNER_TEMP/format-tools/node_modules/.bin:$(uv tool dir --bin):$PATH"
+          prettier --version
+          pre-commit run --all-files prettier
+
+      - name: markdownlint
+        run: |
+          PATH="$RUNNER_TEMP/format-tools/node_modules/.bin:$(uv tool dir --bin):$PATH"
+          markdownlint --version
+          pre-commit run --all-files markdownlint
 
   test:
     name: test
@@ -141,10 +186,10 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 20
     env:
-      UV_MANAGED_PYTHON: "1"
-      UV_NO_PROGRESS: "1"
+      UV_MANAGED_PYTHON: '1'
+      UV_NO_PROGRESS: '1'
       QT_QPA_PLATFORM: offscreen
-      CLOUDYREADER_OFFLINE: "1"
+      CLOUDYREADER_OFFLINE: '1'
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -156,7 +201,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: "0.9.28"
+          version: '0.9.28'
           enable-cache: true
           cache-dependency-glob: uv.lock
           cache-local-path: ${{ github.workspace }}/.cache/uv
@@ -226,8 +271,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
-      UV_MANAGED_PYTHON: "1"
-      UV_NO_PROGRESS: "1"
+      UV_MANAGED_PYTHON: '1'
+      UV_NO_PROGRESS: '1'
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -237,7 +282,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: "0.9.28"
+          version: '0.9.28'
           enable-cache: false
 
       - name: uv.lock matches pyproject.toml
@@ -246,7 +291,7 @@ jobs:
   # Branch protection requires only this job. It runs even when a job failed or was skipped.
   ci:
     name: ci
-    needs: [guards, lint, pre-commit, test, docs, lock]
+    needs: [guards, lint, pre-commit, format, test, docs, lock]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -255,6 +300,7 @@ jobs:
         guards=${{ needs.guards.result }}
         lint=${{ needs.lint.result }}
         pre-commit=${{ needs.pre-commit.result }}
+        format=${{ needs.format.result }}
         test=${{ needs.test.result }}
         docs=${{ needs.docs.result }}
         lock=${{ needs.lock.result }}

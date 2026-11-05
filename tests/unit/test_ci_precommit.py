@@ -7,6 +7,7 @@ built from pieces, so this file passes its own hooks.
 from __future__ import annotations
 
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -114,3 +115,61 @@ def test_the_config_does_not_trip_its_own_hooks() -> None:
 def test_exclusions_are_narrow(hook_id: str, path: str, excluded: bool) -> None:
     pattern = hooks()[hook_id].get("exclude")
     assert (re.search(pattern, path) is not None) is excluded
+
+
+# --- prettier and markdownlint: a ratchet, so only files that are clean today are enforced ------
+
+FORMAT_HOOKS = ("prettier", "markdownlint")
+CLEAN_TODAY = (
+    ".github/workflows/ci.yml",
+    ".markdownlint.json",
+    ".pre-commit-config.yaml",
+    "CHANGELOG.md",
+    "docs/_config.yml",
+    "docs/developer/contributing.md",
+    "docs/manual/faq.md",
+)
+
+
+def tracked() -> list[str]:
+    done = subprocess.run(
+        ["git", "ls-files", "-z"], cwd=ROOT, capture_output=True, text=True, check=True
+    )
+    return [rel for rel in done.stdout.split("\0") if rel]
+
+
+def exclude_pattern(hook_id: str) -> str:
+    return hooks()[hook_id]["exclude"]
+
+
+@pytest.mark.parametrize("hook_id", FORMAT_HOOKS)
+def test_format_hooks_run_the_local_tool_over_the_right_file_kinds(hook_id: str) -> None:
+    hook = hooks()[hook_id]
+    assert hook["language"] == "system"
+    assert hook["entry"].split()[0] == hook_id
+    kinds = hook.get("types_or") or hook.get("types")
+    assert "markdown" in kinds
+
+
+def test_prettier_checks_without_writing_and_covers_markdown_yaml_and_json() -> None:
+    hook = hooks()["prettier"]
+    assert hook["entry"] == "prettier --check"
+    assert set(hook["types_or"]) == {"markdown", "yaml", "json"}
+
+
+@pytest.mark.parametrize("hook_id", FORMAT_HOOKS)
+def test_files_that_are_clean_today_are_never_excluded(hook_id: str) -> None:
+    pattern = re.compile(exclude_pattern(hook_id))
+    for path in CLEAN_TODAY:
+        assert not pattern.search(path), f"{hook_id} excludes {path}"
+
+
+@pytest.mark.parametrize("hook_id", FORMAT_HOOKS)
+def test_every_exclude_entry_still_names_a_tracked_file(hook_id: str) -> None:
+    body = exclude_pattern(hook_id).strip().removeprefix("(?x)^(").removesuffix(")$")
+    entries = [e.strip() for e in body.replace("\n", " ").split(" | ") if e.strip()]
+    assert entries, f"{hook_id} excludes nothing: delete the exclude key"
+    files = tracked()
+    for entry in entries:
+        regex = re.compile(entry.strip("| \n"))
+        assert any(regex.fullmatch(path) for path in files), f"{hook_id}: no file matches {entry}"

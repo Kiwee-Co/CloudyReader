@@ -16,7 +16,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOWS = ROOT / ".github" / "workflows"
 CI = WORKFLOWS / "ci.yml"
-JOBS = ("guards", "lint", "pre-commit", "test", "docs", "lock")
+JOBS = ("guards", "lint", "pre-commit", "format", "test", "docs", "lock")
 USES = re.compile(r"^\s*(?:-\s+)?uses:\s*(?P<ref>\S+)(?P<rest>.*)$")
 PINNED = re.compile(r"^[\w.-]+/[\w./-]+@[0-9a-f]{40}$")
 VERSION_NOTE = re.compile(r"^\s+# v\d+\.\d+\.\d+\s*$")
@@ -97,7 +97,7 @@ def test_every_checkout_drops_the_token() -> None:
 
 def test_tool_pins_are_exact_versions_and_none_is_left_open() -> None:
     env = load()["env"]
-    assert set(env) == {"SHELLCHECK_PY", "ACTIONLINT_PY", "ZIZMOR"}
+    assert set(env) == {"SHELLCHECK_PY", "ACTIONLINT_PY", "ZIZMOR", "PRETTIER", "MARKDOWNLINT_CLI"}
     for name, value in env.items():
         assert re.fullmatch(r"\d+(\.\d+){1,3}", value), f"{name}={value!r}"
     assert "PIN_ME" not in CI.read_text(encoding="utf-8")
@@ -202,3 +202,20 @@ def test_the_reports_are_uploaded_even_after_a_failure_and_kept_fourteen_days() 
     assert upload["with"]["path"] == "${{ runner.temp }}/reports"
     gate = next(s for s in job["steps"] if s.get("name") == "Test gate (make test)")
     assert 'REPORT_DIR="$RUNNER_TEMP/reports"' in gate["run"]
+
+
+def test_the_format_job_installs_pinned_node_tools_without_scripts_and_runs_the_two_hooks() -> None:
+    install = next(
+        s for s in steps("format") if s.get("name") == "Install Prettier and markdownlint"
+    )
+    assert "--ignore-scripts" in install["run"]
+    assert '"prettier@$PRETTIER"' in install["run"]
+    assert '"markdownlint-cli@$MARKDOWNLINT_CLI"' in install["run"]
+    runs = [s.get("run", "") for s in steps("format")]
+    assert any("pre-commit run --all-files prettier" in run for run in runs)
+    assert any("pre-commit run --all-files markdownlint" in run for run in runs)
+
+
+def test_the_pre_commit_job_skips_exactly_the_hooks_the_format_job_runs() -> None:
+    runs = " ".join(s.get("run", "") for s in steps("pre-commit"))
+    assert "SKIP=prettier,markdownlint pre-commit run --all-files" in runs
