@@ -315,9 +315,10 @@ def test_spec_info_plist_contract(monkeypatch: pytest.MonkeyPatch) -> None:
         "CFBundleDisplayName": "Cloudy Reader",
         "CFBundleShortVersionString": VERSION,
         "CFBundleVersion": VERSION,
+        "NSHumanReadableCopyright": "Copyright © 2026 the Cloudy Reader authors.",
         "NSHighResolutionCapable": True,
         "NSPrincipalClass": "NSApplication",
-        "LSMinimumSystemVersion": "14.0",
+        "LSMinimumSystemVersion": "11.0",  # the floor: the stand-in Analysis collects no binaries
         "LSApplicationCategoryType": "public.app-category.education",
     }
 

@@ -2,6 +2,7 @@
 # scripts/build_app.sh drives it through env vars: CR_ENTRY (script), CR_APP_NAME, CR_ICON
 # (an .icns path or empty for PyInstaller's default), CR_KOKORO (1 = bundle mlx-audio).
 import os
+import runpy
 import tomllib
 from pathlib import Path
 
@@ -13,6 +14,9 @@ ENTRY = os.environ.get("CR_ENTRY", str(ROOT / "packaging" / "launcher.py"))
 ICON = os.environ.get("CR_ICON") or None
 KOKORO = os.environ.get("CR_KOKORO") == "1"
 VERSION = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
+COPYRIGHT = "Copyright © 2026 the Cloudy Reader authors."
+MIN_MACOS_FLOOR = "11.0"  # PyInstaller's arm64 bootloader; a collected binary may need newer
+min_macos = runpy.run_path(str(ROOT / "packaging" / "min_macos.py"))["min_macos"]
 
 # Compiled spaCy/thinc extensions import each other from C, invisible to the import scan;
 # the rest carry data (models, espeak-ng-data, the JRE, the OPSIN jar) or dist-info metadata.
@@ -72,6 +76,8 @@ a = Analysis(  # noqa: F821
     module_collection_mode={"mlx_audio": "pyz+py"} if KOKORO else {},
     noarchive=False,
 )
+# The oldest macOS that loads every collected binary: wheel tags can understate it.
+MIN_MACOS = min_macos((src for _, src, _ in a.binaries + a.datas), floor=MIN_MACOS_FLOOR)
 pyz = PYZ(a.pure)  # noqa: F821
 exe = EXE(  # noqa: F821
     pyz,
@@ -100,9 +106,10 @@ app = BUNDLE(  # noqa: F821
         "CFBundleDisplayName": APP_NAME,
         "CFBundleShortVersionString": VERSION,
         "CFBundleVersion": VERSION,
+        "NSHumanReadableCopyright": COPYRIGHT,
         "NSHighResolutionCapable": True,
         "NSPrincipalClass": "NSApplication",
-        "LSMinimumSystemVersion": "14.0",
+        "LSMinimumSystemVersion": MIN_MACOS,
         "LSApplicationCategoryType": "public.app-category.education",
     },
 )
