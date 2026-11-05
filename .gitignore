@@ -139,3 +139,9 @@ scripts/image/.ghe-token
 
 # go-kiwee pipeline run artifacts
 .kiwee/
+
+# cloudyreader: local data, venv and caches that the template above lacks
+.data/
+.venv/
+.ruff_cache/
+*.wav
