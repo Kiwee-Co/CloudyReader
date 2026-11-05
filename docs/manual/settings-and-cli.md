@@ -7,7 +7,7 @@ permalink: /manual/settings-and-cli/
 description: Every command-line option, environment variable, and saved preference of Cloudy Reader.
 ---
 
-This page lists every option the app reads. The app has no settings window. Its choices live in the window, in two environment variables, and in three command-line options.
+This page lists every option the app reads. The app has no settings window. Its choices live in the window, in two environment variables, and in three command-line options, plus `-h` and `--help`.
 
 The commands on this page are untested: CI does not run them.
 
@@ -89,16 +89,16 @@ The app does not read these values from the environment or from a file.
 | Lookup request rate | 5 per second |
 | Lookup cache life | 30 days for a found name, 1 day for a name not found |
 | Longest name that a lookup may send | 256 characters |
-| Download attempts per file | 3, after 2 and then 4 seconds |
+| Download tries per file | 3, with waits of 2 and then 4 seconds between them |
 | Age at which a leftover partial download is removed | 24 hours |
 | Speaking speed | 1.0. The window has no speed control. |
 
 ## Know the saved preferences
 
-The app saves these keys with Qt's `QSettings`. The organization name is `CloudyReader`. The application name is `Cloudy Reader`. On macOS, Qt stores them in a property list in `~/Library/Preferences`. Find the file:
+The app saves these keys with Qt's `QSettings`. The organization name is `CloudyReader`. The application name is `Cloudy Reader`. On macOS, Qt stores them in `~/Library/Preferences/com.cloudyreader.Cloudy Reader.plist`. Read the values:
 
 ```bash
-ls ~/Library/Preferences | grep -i cloudyreader
+defaults read "com.cloudyreader.Cloudy Reader"
 ```
 
 | Key | Type | Default | Meaning |
@@ -110,6 +110,8 @@ ls ~/Library/Preferences | grep -i cloudyreader
 | `geometry` | Binary | None | The window size and position. The app writes it when the window closes. |
 
 The app writes the checkbox, voice, and rotation keys at once when you change them. It does not write them while it restores them at start.
+
+To reset every key, quit the app and run `defaults delete "com.cloudyreader.Cloudy Reader"`.
 
 ## Find the folders
 

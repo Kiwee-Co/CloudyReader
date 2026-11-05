@@ -3,6 +3,7 @@
 Cloudy Reader reads US DOE National Science Bowl questions aloud on your Mac. It uses local text-to-speech voices and says chemistry and biology terms with science-aware pronunciation.
 
 [![CI](https://github.com/Kiwee-Co/CloudyReader/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Kiwee-Co/CloudyReader/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/Kiwee-Co/CloudyReader/blob/main/LICENSE)
 [![Platform: macOS | Apple Silicon](https://img.shields.io/badge/platform-macOS%20%7C%20Apple%20Silicon-lightgrey)](https://kiwee-co.github.io/CloudyReader/manual/getting-started/)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue)](pyproject.toml)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)](https://github.com/astral-sh/ruff)
@@ -19,7 +20,7 @@ Cloudy Reader reads US DOE National Science Bowl questions aloud on your Mac. It
 - **Reads questions as you paste them.** The parser handles toss-ups and bonuses, multiple choice (W, X, Y, Z), short answer, and the answer line. It cleans PDF leftovers: hard wraps, page footers, round titles, and glued headers.
 - **Two local voice engines.** Piper provides 5 pinned English voices. Kokoro-82M on MLX adds 28 more on Apple Silicon. The project pins 33 voices in all.
 - **Science-aware speech.** Formulas and ions are spelled (`H2O` becomes "H two O"). Units, scientific notation, exponents, and Greek letters become words. A pasted guide such as `[KREBZ SY-kul]` sets how a word sounds. A built-in lexicon covers hard science terms.
-- **Voice rotation.** Choose No rotation, or one of five modes that pick a new voice for each reading: round robin, random shuffle, US only, men only, and women only.
+- **Voice rotation.** Choose No rotation, or pick a mode that changes the voice for each reading. The modes are round robin, random shuffle, US only, men only, and women only.
 - **Optional name lookups.** PubChem and UniProt lookups are on by default. One checkbox, the `--offline` flag, or `CLOUDYREADER_OFFLINE=1` turns them off.
 - **Background voice download.** Missing pinned voices download over HTTPS. The app checks every file against a pinned SHA-256 value.
 - **Native macOS window.** The Qt (PySide6) window follows the light and dark appearance. It has the standard menus and keyboard shortcuts.
@@ -91,7 +92,7 @@ Details: [Offline and privacy](https://kiwee-co.github.io/CloudyReader/manual/of
 
 Read the full manual and the developer guide at **<https://kiwee-co.github.io/CloudyReader/>**.
 
-- Manual: [Get started](https://kiwee-co.github.io/CloudyReader/manual/getting-started/), [Use the app](https://kiwee-co.github.io/CloudyReader/manual/using-the-app/), [Voices and rotation](https://kiwee-co.github.io/CloudyReader/manual/voices/), [Pronunciation](https://kiwee-co.github.io/CloudyReader/manual/pronunciation/), [Troubleshooting](https://kiwee-co.github.io/CloudyReader/manual/troubleshooting/), [FAQ](https://kiwee-co.github.io/CloudyReader/manual/faq/).
+- Manual: [Get started](https://kiwee-co.github.io/CloudyReader/manual/getting-started/), [Use the app](https://kiwee-co.github.io/CloudyReader/manual/using-the-app/), [Voices and rotation](https://kiwee-co.github.io/CloudyReader/manual/voices/), [Pronunciation](https://kiwee-co.github.io/CloudyReader/manual/pronunciation/), [Offline and privacy](https://kiwee-co.github.io/CloudyReader/manual/offline-and-privacy/), [Settings and command line](https://kiwee-co.github.io/CloudyReader/manual/settings-and-cli/), [Troubleshooting](https://kiwee-co.github.io/CloudyReader/manual/troubleshooting/), [FAQ](https://kiwee-co.github.io/CloudyReader/manual/faq/).
 - Developer: [Build the app](https://kiwee-co.github.io/CloudyReader/developer/building/), [Architecture](https://kiwee-co.github.io/CloudyReader/developer/architecture/), [Test and CI](https://kiwee-co.github.io/CloudyReader/developer/testing/), [Contribute](https://kiwee-co.github.io/CloudyReader/developer/contributing/).
 
 ## Development
@@ -116,11 +117,16 @@ Changes land through pull requests. The `main` branch is protected, and the requ
 
 ## Third-party notices
 
-Cloudy Reader builds on the projects below. License names come from the package metadata of the versions pinned in `pyproject.toml`. Check each upstream project before you redistribute anything. This table is not legal advice.
+The source of Cloudy Reader is licensed under Apache-2.0. The built `.app` also bundles third-party components that keep their own licenses.
+
+Several of them are GPL components. They include `piper-tts` (GPL-3.0-or-later) and the `jdk4py` Java runtime (GPL v2). A build with Kokoro adds `phonemizer-fork` (GPLv3 or later). Distributing the `.app` is subject to those licenses. Read each project's license before you redistribute the `.app`.
+
+The license names below come from the package metadata of the versions that `pyproject.toml` and `uv.lock` pin. This table is not legal advice.
 
 | Component | Role in Cloudy Reader | License |
 | --- | --- | --- |
 | [Piper](https://github.com/OHF-voice/piper1-gpl) (`piper-tts` 1.8.0) | Piper engine; includes espeak-ng phonemization | GPL-3.0-or-later |
+| [phonemizer-fork](https://pypi.org/project/phonemizer-fork/) 3.3.2 | Phonemization for Kokoro (Kokoro extra) | GPLv3 or later (package classifier) |
 | [Piper voices](https://huggingface.co/rhasspy/piper-voices) | The 5 pinned voices, downloaded or bundled | Set per voice; read each model card |
 | [Kokoro-82M](https://huggingface.co/mlx-community/Kokoro-82M-bf16) (MLX conversion) | Kokoro model and 28 voices | Set by the model card |
 | [MLX](https://github.com/ml-explore/mlx) 0.32.4 and [mlx-audio](https://github.com/Blaizzy/mlx-audio) 0.6.3 | Run Kokoro on Apple Silicon | MIT |
@@ -137,8 +143,12 @@ Cloudy Reader builds on the projects below. License names come from the package 
 | [UniProt](https://www.uniprot.org) | Optional name lookups | Service terms apply |
 | [Hugging Face](https://huggingface.co) | Hosts the pinned voice files | Service terms apply |
 
-The optional Kokoro extra also installs `en-core-web-sm`, `espeakng-loader`, `phonemizer-fork`, and `num2words`.
+The optional Kokoro extra also installs `en-core-web-sm`, `espeakng-loader`, and `num2words`. Check their licenses upstream.
 
 ## License
 
-The license is not yet chosen. The repository has no `LICENSE` file. Third-party components keep their own licenses.
+Cloudy Reader is licensed under the [Apache License 2.0](https://github.com/Kiwee-Co/CloudyReader/blob/main/LICENSE). The built `.app` also ships GPL components, such as `piper-tts` and `jdk4py`, plus `phonemizer-fork` in a build with Kokoro. Distributing the `.app` is subject to their licenses. See [Third-party notices](#third-party-notices).
+
+## Affiliation
+
+Cloudy Reader is an independent project. It is not affiliated with, endorsed by, or sponsored by the U.S. Department of Energy or the National Science Bowl.

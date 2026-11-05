@@ -9,8 +9,6 @@ description: The Piper and Kokoro voices, the Voice menu, the six rotation modes
 
 Cloudy Reader has two voice engines and 33 pinned English voices. This page lists the voices, explains each rotation mode, and describes the background download.
 
-The commands on this page are untested: CI does not run them.
-
 ## Compare the engines
 
 | | Piper | Kokoro |
@@ -22,7 +20,7 @@ The commands on this page are untested: CI does not run them.
 | Languages | en-US and en-GB | en-US and en-GB |
 | Quality label | The quality in the voice file, for example `medium` | A letter grade from the model's `VOICES.md`, for example `A` |
 
-Kokoro voices show up only when the Kokoro engine can run. It needs an Apple Silicon Mac, its Python packages, and a model file whose SHA-256 value matches the pinned value. See [Troubleshooting]({{ '/manual/troubleshooting/' | relative_url }}).
+Kokoro voices appear only when the Kokoro engine can run. It needs an Apple Silicon Mac and its Python packages. It also needs model files whose SHA-256 values match the pinned values. See [Troubleshooting]({{ '/manual/troubleshooting/' | relative_url }}).
 
 ### The 5 pinned Piper voices
 
@@ -38,7 +36,7 @@ The project took these genders from upstream and has not checked them by ear. A 
 
 ### The 28 pinned Kokoro voices
 
-The first letter of a voice id gives the accent: `a` is en-US, `b` is en-GB. The second letter gives the gender: `f` is female, `m` is male. The grade comes from the model's `VOICES.md`.
+The first letter of a voice id gives the accent: `a` is en-US and `b` is en-GB. The second letter gives the gender: `f` is female and `m` is male. The grade comes from the model's `VOICES.md`.
 
 | Group | Voices (grade) |
 | --- | --- |
@@ -51,13 +49,14 @@ The menu lists six recommended voices first: `af_heart`, `af_bella`, `bf_emma`, 
 
 ## Choose a voice
 
-{% include figure.html src="voices-light.svg" alt="The Voice menu open. The headings Piper and Kokoro group the voices. Each row shows a name with its language and quality." caption="The Voice menu groups voices by engine." %}
+{% include figure.html src="voices-light.svg" alt="The Voice menu open. Piper and Kokoro voices sit under their engine names. Kokoro names carry their gender. One Kokoro voice is dimmed because it is not installed." caption="The Voice menu groups voices by engine." frame="window" %}
 
 Open **Voice**. The headings **Piper** and **Kokoro** are labels, not choices.
 
 - A row reads *name* (*language*, *quality*). Examples: `lessac (en-US, medium)` and `Heart (female) (en-US, A)`.
-- A voice that is listed but not installed ends with "not installed". It is dimmed and you cannot pick it.
-- With no installed voice, the menu is dimmed. Its placeholder reads "No voice installed". While the list loads, it reads "Loading voices…". If the list fails, it reads "Voices unavailable".
+- A voice that is listed but not installed carries the words "not installed". It is dimmed, and you cannot pick it.
+- With no installed voice, the menu is dimmed and its placeholder reads "No voice installed".
+- While the list loads, the placeholder reads "Loading voices…". If the list fails, it reads "Voices unavailable".
 - The **Speaker** box appears for a voice whose file lists more than one speaker. It counts from 0 and resets to 0 when you change the voice.
 
 The app remembers your choice. At the next start it selects the saved voice. If that voice is gone, it selects the first installed voice.
@@ -66,7 +65,7 @@ The app remembers your choice. At the next start it selects the saved voice. If 
 
 **Rotation** chooses how **Speak** and **Speak Clipboard** pick a voice. The app keeps the mode between runs.
 
-{% include figure.html src="rotation-light.svg" alt="The Rotation menu open with six modes: No rotation, Round robin, Random shuffle, US only (random shuffle), Men only, and Women only." caption="The six rotation modes." %}
+{% include figure.html src="rotation-light.svg" alt="The Rotation menu open with six modes: No rotation, Round robin, Random shuffle, US only (random shuffle), Men only, and Women only." caption="The six rotation modes." frame="window" %}
 
 | Mode | The next voice is |
 | --- | --- |
@@ -77,7 +76,7 @@ The app remembers your choice. At the next start it selects the saved voice. If 
 | Men only | The same deck, limited to male voices. |
 | Women only | The same deck, limited to female voices. |
 
-With all 33 voices installed, the deck holds 33 voices for Random shuffle, 23 for US only, 15 for Men only, and 18 for Women only.
+With all 33 voices installed, Random shuffle deals from 33 voices. US only uses 23, Men only uses 15, and Women only uses 18.
 
 ### Know which voices qualify
 
@@ -88,31 +87,33 @@ A voice joins the pool when it meets all four conditions:
 3. It is an English voice with a known gender. Kokoro voices qualify by id. Piper voices qualify only if they are one of the five in the table above.
 4. It fits the mode. US only needs en-US. Men only needs male. Women only needs female.
 
-The pool follows the order of the **Voice** menu: Piper voices by file name, then the six recommended Kokoro voices, then the other 22. A repeated voice counts once. The pool is rebuilt from the latest voice list, so a finished download changes it.
+The pool follows the order of the **Voice** menu. Piper voices come first, sorted by file name. Then come the six recommended Kokoro voices and the other 22. A repeated voice counts once. The pool is rebuilt from the latest voice list, so a finished download changes it.
 
 ### Know how each mode picks
 
-- **Round robin** takes the voice after the last one used. If you have not used a voice yet, or the last voice left the pool, it takes the first voice of the pool.
-- **The shuffle modes** build a deck: all pool voices in random order. Each reading takes the next voice. The deck must run empty before any voice repeats. A new deck never opens with the voice used last, if the pool has two or more voices.
+- **Round robin** takes the voice after the last one used. Without a last voice, or if the last voice left the pool, it takes the first voice of the pool.
+- **The shuffle modes** build a deck: all pool voices in random order. Each reading takes the next voice. The deck must run empty before any voice repeats.
+- A new deck never opens with the voice used last, if the pool has two or more voices.
 - A voice that leaves the pool drops out of the current deck. A new voice joins only when the next deck is built.
 
 ### Know when rotation advances
 
-- Rotation advances when a reading starts. It advances only after every check passes: a voice is available, no reading is in progress, and the box has text. A reading that fails later still used its voice.
+- Rotation advances when a reading starts, after every check passes. A voice must be available, no reading may be in progress, and the box must have text. A reading that fails later still used its voice.
 - **Repeat** does not advance rotation. It replays the stored audio, so it keeps the voice of the last reading.
-- A new mode drops the current deck but keeps the last voice used. Round robin then continues after that voice. A new deck never opens with it.
+- A new mode drops the current deck but keeps the last voice used. Round robin then continues after that voice.
 - The deck and the last voice live in memory only. They are gone when you quit. The mode is saved.
-- **Voice** and **Speaker** stay as you set them. The status bar names the voice that rotation used, for example "Preparing with lessac (female)…" and then "Playing 4.2 s with lessac (female).". Rotation never uses a **Speaker** number.
+- **Voice** and **Speaker** stay as you set them. Rotation uses single-speaker voices, so it never uses a **Speaker** number.
+- The status bar names the voice that rotation used. Example: "Preparing with lessac (female)…", then "Playing 4.2 s with lessac (female)."
 
 ### Handle an empty pool
 
-If no installed voice fits the mode, the reading uses the voice and speaker you chose in **Voice**. The status bar shows this warning, and it stays after the sound ends:
+If no installed voice fits the mode, the reading uses the voice and speaker you chose in **Voice**. The status bar shows a warning. The warning stays after the sound ends.
 
 ```text
 No installed voice matches “Men only”; using the selected voice.
 ```
 
-The text names the mode that found no voice. This happens, for example, when only one Piper voice is installed and you choose a mode that excludes it.
+The text names the mode that found no voice. This happens, for example, when only one Piper voice is installed and the mode excludes it.
 
 ## Know where voices come from
 
@@ -127,7 +128,7 @@ The data folder is `~/Library/Application Support/cloudyreader`. The variable `C
 
 ## Download missing voices
 
-{% include figure.html src="download-light.svg" alt="The status bar during a voice download: the text Downloading voices with a percent value and a progress bar at the right." caption="The status bar while voices download." %}
+{% include figure.html src="download-light.svg" alt="The status bar while voices download: the text Downloading voices with a percent value and a progress bar. A second strip adds the busy bar for a reading in preparation." caption="The status bar during a voice download, alone and with the busy bar." %}
 
 ### Know when it runs
 
@@ -139,36 +140,38 @@ The data folder is `~/Library/Application Support/cloudyreader`. The variable `C
 
 The download follows the pinned list `assets.lock.json`. A built app reads the copy inside its bundle. A source run reads the copy in the checkout.
 
-- It fetches only files that are missing. A file that is present and has the pinned size counts as installed and is not hashed again.
+- It fetches only files that are missing. A file that is present and has the pinned size counts as installed. The app does not hash it again.
 - A file that is present with another size is a conflict. The download leaves it alone and never overwrites it.
 - The order is: Piper configs, Piper models, the Kokoro config, the Kokoro model, then the Kokoro voices. A Piper voice appears only after its model file lands.
 - It skips the Kokoro files when this Mac cannot run Kokoro. This saves about 342 MB.
 - It never downloads the science (NER) model.
-- All pinned Piper voices total about 316 MB. The Kokoro files total about 342 MB.
+- The Piper voices total about 316 MB. The Kokoro files total about 342 MB.
 
 ### Know how it protects your Mac
 
 - It uses HTTPS only. It follows at most 5 redirects and checks that each one is HTTPS.
 - It accepts only data file types: `.onnx`, `.json`, and `.safetensors`. It never fetches pickle-style files.
 - It checks the announced length, the byte count, and the pinned SHA-256 value of every file.
-- It writes into a private `.prefetch` folder inside your data folder. It moves a file into place only after the checks pass. At the start of a run it removes leftover `.part` files that are older than 24 hours.
+- It writes into a private `.prefetch` folder inside your data folder. It moves a file into place only after the checks pass.
+- At the start of a run, it removes leftover `.part` files that are older than 24 hours.
 - It refuses to write into any folder inside an app bundle.
-- It retries a file up to 3 times after a network error, HTTP 429, an HTTP 5xx error, or a short download. It waits 2 seconds, then 4 seconds. Any other failure, such as a hash mismatch or an HTTP 404, stops that file at once.
-- The log never records URLs.
+- A network error, HTTP 429, HTTP 5xx, or a short download makes it try the file again. It makes 3 tries in all, with waits of 2 seconds, then 4 seconds.
+- Any other failure stops that file at once. Examples are a hash mismatch and an HTTP 404.
+- The log masks URLs.
 
 ### Know what you see
 
-- The status bar shows "Downloading voices… *N*%". The percent counts the bytes of all files. Hover over the text to see the file name and its progress in MB.
-- When a file lands and no voice is available yet, the **Voice** menu refreshes so you can read at once. Otherwise the menu refreshes when the run ends with at least one new file.
-- The run ends with "Voices downloaded." or with the warning "Some voices could not be downloaded. They are tried again at the next start." The tooltip names the failed files.
+- The status bar shows "Downloading voices… *N*%". The percent counts the bytes of all files. Hover over the text to see the file in progress and the MB done so far for the whole download.
+- When a file lands and no voice is available yet, the **Voice** menu refreshes so you can read at once. Otherwise the menu refreshes when a run ends with at least one new file.
+- The run ends with "Voices downloaded." or with a warning. The warning reads "Some voices could not be downloaded. They are tried again at the next start." The tooltip names the failed files.
 - Closing the window cancels the download at the next data chunk. It reports nothing.
 
 ## Add a Piper voice by hand
 
 1. Quit the app.
-2. Copy the voice file `<name>.onnx` and its config `<name>.onnx.json` into the `voices` folder of your data folder. The app lists a voice only when both files exist.
+2. Copy the voice file `<name>.onnx` and its config `<name>.onnx.json` into the `voices` folder of your data folder.
 3. Start the app. The voice appears under **Piper**.
 
-The app does not re-read voice files while it runs. Restart to pick up a replaced file. The app also lists voices in other languages, but its pronunciation rules target English. A hand-added voice never rotates, because rotation needs a known gender.
+The app lists a voice only when both files exist. It does not re-read voice files while it runs, so restart it to pick up a replaced file. The app also lists voices in other languages, but its pronunciation rules target English. A hand-added voice never rotates, because rotation needs a known gender.
 
-To remove a voice, quit the app and delete its two files. A built app links its bundled voices again at the next start.
+To remove a hand-added voice, quit the app and delete its two files. Deleting a pinned voice removes nothing for good. At every start, the download fetches each missing pinned file again, unless offline mode is on. A built app also links its bundled voices again at the next start.

@@ -59,12 +59,6 @@ To approve a blocked app:
 
 Approve only an app that you built or that comes from a source you trust.
 
-You can remove the quarantine flag in Terminal instead. This skips the Gatekeeper prompt, so use it only for an app you trust:
-
-```bash
-xattr -dr com.apple.quarantine "/Applications/Cloudy Reader.app"
-```
-
 To check that nobody changed the bundle, verify its signature. Exit code 0 means the files match the signature:
 
 ```bash
@@ -124,8 +118,8 @@ PASS
 | Result | Exit code |
 | --- | --- |
 | The last line is `PASS`. | 0 |
-| A line starting `FAIL:` appears on standard error. | 1 |
-| No Piper voice is installed. | 2 |
+| The self-test fails or raises an error. A line starting `FAIL:` appears on standard error. | 1 |
+| No Piper voice is installed. The line `FAIL: no Piper voice installed` appears on standard error. | 2 |
 
 The line `entities  regex-only` means the science model did not load. Reading still works, but the app finds fewer names. See [Troubleshooting]({{ '/manual/troubleshooting/' | relative_url }}).
 

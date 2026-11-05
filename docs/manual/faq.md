@@ -11,6 +11,10 @@ description: Short answers to common questions about Cloudy Reader.
 
 It reads US DOE National Science Bowl questions aloud on your Mac. You paste the text, choose a voice, and press **Speak**. The voices run on your Mac. The app also turns formulas, units, and symbols into words, so a voice can say them.
 
+## Is Cloudy Reader an official National Science Bowl tool?
+
+No. Cloudy Reader is an independent project. It is not affiliated with, endorsed by, or sponsored by the U.S. Department of Energy or the National Science Bowl.
+
 ## Which Macs run it?
 
 The built app needs a Mac with Apple Silicon. The current build also needs macOS 26.2 or later. See [Get started]({{ '/manual/getting-started/' | relative_url }}).
@@ -19,19 +23,19 @@ From a source checkout, the code falls back to Piper voices alone on a Mac that 
 
 ## Does it work without a network?
 
-Yes. Reading needs no network. Only two features use one: name lookups and the download of missing voices. Offline mode stops both. See [Offline and privacy]({{ '/manual/offline-and-privacy/' | relative_url }}).
+Yes. Reading needs no network. Two features use one: name lookups and the download of missing voices. Offline mode stops both. See [Offline and privacy]({{ '/manual/offline-and-privacy/' | relative_url }}).
 
 ## Does it send my questions anywhere?
 
-No. A lookup sends one chemical, protein, or gene name at a time, and never the text around it. The app has no telemetry, analytics, crash reporting, or update check.
+No. A lookup sends one chemical, protein, or gene name at a time. It never sends the text around the name. The app has no telemetry, analytics, crash reporting, or update check.
 
 ## Do online lookups change what I hear?
 
-Not in this version. Only the local OPSIN check can change how a chemical name sounds. The PubChem and UniProt answers are cached and attached to the reading, but the script builder ignores them. Clear **Online lookups** if you want to avoid the network traffic and the wait of up to 2.5 seconds. See [Pronunciation]({{ '/manual/pronunciation/' | relative_url }}).
+Not in this version. Only the local OPSIN check can change how a chemical name sounds. The app caches the PubChem and UniProt answers and attaches them to the reading. The script builder ignores them. Clear **Online lookups** to avoid the network traffic and a wait of up to 2.5 seconds. See [Pronunciation]({{ '/manual/pronunciation/' | relative_url }}).
 
 ## Which voice should I use?
 
-Try a few. The Kokoro voices carry a letter grade from the model's `VOICES.md`: `af_heart` is A, `af_bella` is A-, and `bf_emma` is B-. The project has not graded the Piper voices. The grades do not say which voice suits your room or your ears. See [Voices and rotation]({{ '/manual/voices/' | relative_url }}).
+Try a few. The Kokoro voices carry a letter grade from the model's `VOICES.md`. For example, `af_heart` is A, `af_bella` is A-, and `bf_emma` is B-. Piper voices show a quality tier from the voice file, such as `medium`. Neither label says which voice suits your room or your ears. See [Voices and rotation]({{ '/manual/voices/' | relative_url }}).
 
 ## Can I change the speaking speed?
 
@@ -43,15 +47,15 @@ The app has no export command. It keeps each reading as a WAV file in the `cache
 
 ## Can I add my own voices?
 
-You can add Piper voices. Copy the `.onnx` file and the `.onnx.json` file into the `voices` folder and restart the app. A hand-added voice never rotates. The app offers no other Kokoro voices than the 28 pinned ones. See [Voices and rotation]({{ '/manual/voices/' | relative_url }}).
+You can add Piper voices. Copy the `.onnx` file and the `.onnx.json` file into the `voices` folder, then restart the app. A hand-added voice never rotates. The app offers no Kokoro voices beyond the 28 pinned ones. See [Voices and rotation]({{ '/manual/voices/' | relative_url }}).
 
 ## Does it read languages other than English?
 
-No. The voices and the pronunciation rules target English. The app lists a Piper voice in another language if its files are in the `voices` folder, but the rules are not made for it.
+No. The voices and the pronunciation rules target English. The app lists a Piper voice in another language if its files are in the `voices` folder. The rules are not made for it.
 
 ## Why does the answer come after a long pause?
 
-The app waits 5 seconds before the answer, so a moderator or a team has time to think. Turn off **Read answer line** to skip the answer. See [Use the app]({{ '/manual/using-the-app/' | relative_url }}).
+The app inserts a pause of 5 seconds before the answer. Turn off **Read answer line** to skip the answer. See [Use the app]({{ '/manual/using-the-app/' | relative_url }}).
 
 ## Can I read a whole round at once?
 
@@ -83,7 +87,9 @@ The build signs the app ad hoc. It uses no Apple Developer ID, and Apple has not
 
 ## What is the license?
 
-The license is not yet chosen. The repository has no `LICENSE` file.
+The source of Cloudy Reader is licensed under the Apache License 2.0. The [`LICENSE` file](https://github.com/Kiwee-Co/CloudyReader/blob/main/LICENSE) holds the terms.
+
+The built app also bundles third-party components that keep their own licenses. Several are GPL components, such as `piper-tts` and `jdk4py`, plus `phonemizer-fork` in a build with Kokoro. Distributing the app is subject to those licenses. The third-party notices in the [README](https://github.com/Kiwee-Co/CloudyReader#third-party-notices) list each component. This answer is not legal advice.
 
 ## How do I report a bug or change the code?
 

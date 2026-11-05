@@ -7,7 +7,7 @@ permalink: /manual/troubleshooting/
 description: Fixes for start-up problems, missing voices, error messages, silence, and slow readings.
 ---
 
-Find your symptom, check the cause, and apply the fix. Every message on this page is the exact text that the app shows.
+Find your symptom, check the cause, and apply the fix. Quoted messages are the text that the app shows in its status bar.
 
 The commands on this page are untested: CI does not run them.
 
@@ -33,7 +33,7 @@ The app writes warnings to standard error and keeps no log file. Start the app f
 
 **Cause.** The app declares a minimum macOS version in `LSMinimumSystemVersion`. The current build declares 26.2.
 
-**Fix.** Update macOS, or rebuild the app on a Mac with the macOS you want to support. Read the declared value:
+**Fix.** Update macOS. The build takes the floor from the newest bundled library, so a rebuild lowers it only if the libraries change. Read the declared value:
 
 ```bash
 defaults read "/Applications/Cloudy Reader.app/Contents/Info" LSMinimumSystemVersion
@@ -49,11 +49,11 @@ defaults read "/Applications/Cloudy Reader.app/Contents/Info" LSMinimumSystemVer
 codesign --verify --deep --strict --verbose=2 "/Applications/Cloudy Reader.app"
 ```
 
-If the command fails, copy the app again from a clean source or rebuild it.
+If the command fails, copy the app again from a clean source, or rebuild it.
 
 ### The icon is wrong or old
 
-**Cause.** Finder and the Dock cache app icons. A rebuild with another `ICON=` value can keep the old picture. A source run shows the icon named in `assets/icons/default.txt` (the default is `cloud-atom`).
+**Cause.** Finder and the Dock cache app icons. A rebuild with another `ICON=` value can keep the old picture. A source run shows the icon named in `assets/icons/default.txt`. The default is `cloud-atom`.
 
 **Fix.** Touch the app so Finder reloads it. Log out and in if the old icon stays.
 
@@ -69,7 +69,7 @@ touch "/Applications/Cloudy Reader.app"
 
 **Fix.**
 
-1. Check offline mode. It blocks the download. Remove `--offline` and unset `CLOUDYREADER_OFFLINE`.
+1. Check offline mode. It blocks the download. Remove `--offline`, and unset `CLOUDYREADER_OFFLINE`.
 2. Wait for "Downloading voices… N%" to finish. See [Voices and rotation]({{ '/manual/voices/' | relative_url }}).
 3. In a source checkout, run `make voices`.
 4. If you set `CLOUDYREADER_DATA_DIR`, check that you look in the right folder.
@@ -78,7 +78,7 @@ touch "/Applications/Cloudy Reader.app"
 
 **Cause.** The app failed to list the voices. The status bar shows `Error:` with the reason.
 
-**Fix.** Start the app from Terminal and read the warning lines. The most common cause is a damaged voice or model file.
+**Fix.** Start the app from Terminal and read the warning lines. They show the Python error behind the message.
 
 ### Kokoro voices are missing from the menu
 
@@ -115,7 +115,7 @@ Set `CLOUDYREADER_DATA_DIR` first if you use another data folder. The check hash
 
 **Cause.** One or more files failed after up to 3 attempts. Typical reasons are no network, an HTTP error, a short download, or a SHA-256 mismatch.
 
-**Fix.** Hover over the status bar to read the file names. Check your network, then quit and start the app again. The app downloads only the missing files.
+**Fix.** Hover over the status bar to read the file names. Check your network. Then quit the app and start it again. The app downloads only the missing files.
 
 ### The download does not start
 
@@ -123,8 +123,8 @@ Set `CLOUDYREADER_DATA_DIR` first if you use another data folder. The check hash
 
 - Offline mode is on.
 - The pinned list `assets.lock.json` is missing or invalid.
-- The voices are all present already.
-- The Kokoro files are skipped because the Mac cannot run Kokoro.
+- All voices are present already.
+- The Mac cannot run Kokoro, so the app skips the Kokoro files.
 - A present file has a different size. The download leaves it untouched. Delete the file to fetch it again.
 
 ## Fix reading problems
@@ -157,15 +157,20 @@ Set `CLOUDYREADER_DATA_DIR` first if you use another data folder. The check hash
 
 **Fix.** Read the warning in the status bar. Add a guide after the word. See [Pronunciation]({{ '/manual/pronunciation/' | relative_url }}).
 
-### The first reading is slow
+### A reading is slow
 
-**Cause.** The first reading waits for the science model to load in the background. The first Kokoro reading loads the Kokoro model. A systematic chemical name starts a Java runtime for OPSIN.
+**Cause.** One of these cases applies:
 
-**Fix.** Wait. Later readings are faster.
+- The first reading waits for the science model to load in the background.
+- The first Kokoro reading loads the Kokoro model.
+- Every reading with a new systematic chemical name starts the Java runtime for OPSIN once per lookup batch. Names in the lookup cache skip OPSIN.
+- After an update that changes the script or its pauses, a question that you heard before renders once more.
+
+**Fix.** Wait. The app loads each model once per start. A repeated name or a repeated reading skips the slow step.
 
 ### A reading waits a moment when lookups are on
 
-**Cause.** A lookup may use up to 2.5 seconds. In this version the answers do not change the sound.
+**Cause.** A lookup may use up to 2.5 seconds. In this version, the answers do not change the sound.
 
 **Fix.** Clear **Online lookups**, or start with `--offline`. See [Offline and privacy]({{ '/manual/offline-and-privacy/' | relative_url }}).
 
@@ -200,16 +205,16 @@ afplay /System/Library/Sounds/Ping.aiff
 | `FAIL: no Piper voice installed` (exit code 2) | The `voices` folder has no complete Piper pair. | Install a Piper voice. |
 | `FAIL: audio too short: …` | The sample produced less than 3 seconds of audio. | Check the voice file and read the warnings. |
 | `FAIL: audio too quiet: …` | The peak is 0.01 or lower. | Check the voice file. |
-| `FAIL: WAV missing: …` or `WAV unreadable: …` | The sample produced no usable file. | Check disk space and the cache folder. |
+| `FAIL: WAV missing: …` or `FAIL: WAV unreadable: …` | The sample produced no usable file. | Check disk space and the cache folder. |
 | `FAIL: <error type>: <message>` | A step raised an error. A traceback is above. | Read the traceback. |
 
 The line `entities  regex-only` is not a failure. It means the science model did not load, so the app finds fewer names. Reinstall the model with `make models` in a source checkout, or rebuild the app.
 
 ## Reset the app
 
-- To reset the choices, quit the app and delete the preferences file. See [Settings and command line]({{ '/manual/settings-and-cli/' | relative_url }}).
+- To reset the choices, quit the app and run `defaults delete "com.cloudyreader.Cloudy Reader"`. See [Settings and command line]({{ '/manual/settings-and-cli/' | relative_url }}).
 - To free disk space, quit the app and delete `cache/wav` in the data folder.
-- To start from nothing, quit the app and delete the data folder, `~/Library/Application Support/cloudyreader`. This removes downloaded voices and all caches. A built app links its bundled voices again at the next start.
+- To start from nothing, quit the app and delete the data folder, `~/Library/Application Support/cloudyreader`. This removes downloaded voices and all caches. At the next start, a built app links its bundled voices again. The download then fetches each other missing pinned voice, unless offline mode is on.
 
 ## Report a problem
 
