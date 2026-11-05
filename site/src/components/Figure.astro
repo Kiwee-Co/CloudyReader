@@ -1,0 +1,27 @@
+---
+// One figure in a light and a dark rendering. custom.css shows the one that matches the site's
+// theme (Starlight's data-theme), so the theme menu switches it, not only the system setting.
+interface Props {
+	src: string; // file name in public/img
+	dark?: string; // the dark rendering's file name, when there is one
+	alt: string;
+	caption?: string;
+	frame?: 'window'; // draw a window frame: the window snapshots show the content only
+}
+const { src, dark, alt, caption, frame } = Astro.props;
+---
+
+<figure class:list={['cr-figure', { 'cr-figure--window': frame === 'window' }]}>
+	<div class="cr-figure__frame">
+		{frame === 'window' && (
+			<div class="cr-figure__bar" aria-hidden="true">
+				<span />
+				<span />
+				<span />
+			</div>
+		)}
+		<img class:list={['cr-figure__img', { 'cr-figure__img--light': dark }]} src={`/img/${src}`} {alt} loading="lazy" decoding="async" />
+		{dark && <img class="cr-figure__img cr-figure__img--dark" src={`/img/${dark}`} {alt} loading="lazy" decoding="async" />}
+	</div>
+	{caption && <figcaption>{caption}</figcaption>}
+</figure>

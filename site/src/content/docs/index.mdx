@@ -1,0 +1,63 @@
+---
+title: "Cloudy Reader"
+description: "Paste a National Science Bowl question and hear it read aloud on your Mac, with clear speech for formulas, units, and pronunciation guides."
+template: splash
+hero:
+  tagline: "Paste a National Science Bowl question and hear it read aloud on your Mac, with clear speech for formulas, units, and pronunciation guides."
+  image:
+    file: ../../assets/logo.svg
+  actions:
+    - text: Download
+      link: https://github.com/Kiwee-Co/CloudyReader/releases/latest
+      icon: external
+    - text: Read the manual
+      link: /manual/getting-started/
+      icon: right-arrow
+      variant: minimal
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## Start here
+
+Cloudy Reader is a macOS app for Apple Silicon. Paste a National Science Bowl question, and it reads the question aloud. It spells out chemical formulas, says units and powers of ten in words, and follows the pronunciation guides printed in brackets. The voices run on your Mac.
+
+| You paste | You hear |
+| --- | --- |
+| `NaHCO3` | "N A H C O three" |
+| `5 m/s` | "5 meters per second" |
+| `2 H2 + O2 → 2 H2O` | "2 H two plus O two yields 2 H two O" |
+| `1.6 × 10^-19 C` | "one point six times ten to the minus nineteen coulombs" |
+| `Pharynx [FAR-ingks]` | "Pharynx", said as /ˈfæɹɪŋks/ |
+
+## Quick start
+
+1. Build the app with `make app`, as [Build the app](/developer/building/) describes, or use a built copy that someone gave you.
+2. Copy `Cloudy Reader.app` to `/Applications` and open it. [Get started](/manual/getting-started/) explains the first launch.
+3. Paste a question, choose a voice, and press **Speak** (<kbd>Cmd</kbd>+<kbd>Return</kbd>).
+
+Reading works offline. With **Online lookups** on, the app can send a detected chemical, protein, or gene name to PubChem or UniProt, never the whole question. Start the app with `--offline` to turn off all network use. [Offline and privacy](/manual/offline-and-privacy/) has the details.
+
+## Manual
+
+<CardGrid>
+	<LinkCard title="Get started" description="Requirements, install, first launch, and your first reading." href="/manual/getting-started/" />
+	<LinkCard title="Use the app" description="A tour of the window, the menus, the shortcuts, and the status bar." href="/manual/using-the-app/" />
+	<LinkCard title="Voices and rotation" description="The Piper and Kokoro voices, the Voice menu, the six rotation modes, and the background voice download." href="/manual/voices/" />
+	<LinkCard title="Pronunciation" description="How Cloudy Reader turns formulas, units, symbols, and names into speech, and how to fix a word." href="/manual/pronunciation/" />
+	<LinkCard title="Offline and privacy" description="What stays on your Mac, what uses the network, how to work offline, and where the app stores files." href="/manual/offline-and-privacy/" />
+	<LinkCard title="Settings and command line" description="Every command-line option, environment variable, and saved preference of Cloudy Reader." href="/manual/settings-and-cli/" />
+	<LinkCard title="Troubleshooting" description="Fixes for start-up problems, missing voices, error messages, silence, and slow readings." href="/manual/troubleshooting/" />
+	<LinkCard title="FAQ" description="Short answers to common questions about Cloudy Reader." href="/manual/faq/" />
+</CardGrid>
+
+## Developer
+
+<CardGrid>
+	<LinkCard title="Build the app" description="Set up a checkout, run the make targets, work offline, and build the ad-hoc signed Cloudy Reader.app." href="/developer/building/" />
+	<LinkCard title="Architecture" description="How one pasted question becomes sound, and which module owns each step." href="/developer/architecture/" />
+	<LinkCard title="Test and CI" description="The test gates, the markers, the coverage floor, the live smoke checks, and the CI workflow." href="/developer/testing/" />
+	<LinkCard title="Contribute" description="How to send a change, with the branch flow, the commit style, the ci check, and the rebase merge." href="/developer/contributing/" />
+	<LinkCard title="Custom domain" description="What is set for the custom domain, what is left, and how to check DNS and HTTPS." href="/developer/custom-domain/" />
+</CardGrid>
+
