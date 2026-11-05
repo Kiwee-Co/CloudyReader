@@ -9,7 +9,8 @@
 #   format       "Multiple choice." / "Short answer." (500). Only when the paste prints the label (fmt is null in
 #                parse_cases.yaml otherwise, and nothing is announced).
 #   stem         the stem, caps kept (700 when choices follow).
-#   choices      "W. <text>" .. "Z. <text>" (400 each). W) w) W. W: all become "W." Short answer has none.
+#   choices      per choice "W." (300), then "<text>" (400): the letter's pause is exact silence in every voice.
+#                A choice without text is "W." (400) alone. W) w) W. W: all become "W." Short answer has none.
 #   answer       only when read_answer is true: the segment before it gets 5000, then "Answer. <text>." with an
 #                all-caps answer title-cased (ESOPHAGUS -> Esophagus) and W) -> W. Stems and choices keep caps.
 #   The last segment of a question gets 1500 when another question follows.
@@ -23,6 +24,7 @@
 #   ends_with         fold(text()) ends with value. Case-sensitive.
 #   segments          ordered list, one item per segment. Item: `text` (equals the segment text) or `starts_with`
 #                     (prefix, used where a respelling or formula makes the rest open), plus optional `pause_ms`.
+#                     An item with only `pause_ms` leaves the text open (a respelled choice).
 #                     pause_ms is present only where the convention states it; absent = not asserted.
 #   in_order          every item occurs, left to right, each after the end of the previous match. Case-insensitive.
 #   must_contain      every item occurs. Case-insensitive.
@@ -54,13 +56,21 @@ cases:
         pause_ms: 500
       - text: "The source of energy for the movements of crustal plates is currently thought to be the result of:"
         pause_ms: 700
-      - text: "W. tidal motion that produces a net westward movement of landmasses"
+      - text: "W."
+        pause_ms: 300
+      - text: "tidal motion that produces a net westward movement of landmasses"
         pause_ms: 400
-      - text: "X. the pulling apart of the poles resulting from the Earth’s rotation"
+      - text: "X."
+        pause_ms: 300
+      - text: "the pulling apart of the poles resulting from the Earth’s rotation"
         pause_ms: 400
-      - text: "Y. convection currents produced within the mantle"
+      - text: "Y."
+        pause_ms: 300
+      - text: "convection currents produced within the mantle"
         pause_ms: 400
-      - text: "Z. remnant magnetism"
+      - text: "Z."
+        pause_ms: 300
+      - text: "remnant magnetism"
         pause_ms: 400
     must_not_contain:
       - "["
@@ -81,14 +91,18 @@ cases:
         pause_ms: 500
       - text: "Which of the following is NOT part of the human respiratory system?"
         pause_ms: 700
-      - starts_with: "W."
-        pause_ms: 400
-      - starts_with: "X."
-        pause_ms: 400
-      - starts_with: "Y."
-        pause_ms: 400
-      - starts_with: "Z."
-        pause_ms: 400
+      - text: "W."
+        pause_ms: 300
+      - pause_ms: 400
+      - text: "X."
+        pause_ms: 300
+      - pause_ms: 400
+      - text: "Y."
+        pause_ms: 300
+      - pause_ms: 400
+      - text: "Z."
+        pause_ms: 300
+      - pause_ms: 400
     in_order:
       - "Which of the following is"
       - "NOT part of the human respiratory system?"
@@ -150,14 +164,18 @@ cases:
         pause_ms: 500
       - text: "Which of the following is NOT part of the human respiratory system?"
         pause_ms: 700
-      - starts_with: "W."
-        pause_ms: 400
-      - starts_with: "X."
-        pause_ms: 400
-      - starts_with: "Y."
-        pause_ms: 400
-      - starts_with: "Z."
-        pause_ms: 5000
+      - text: "W."
+        pause_ms: 300
+      - pause_ms: 400
+      - text: "X."
+        pause_ms: 300
+      - pause_ms: 400
+      - text: "Y."
+        pause_ms: 300
+      - pause_ms: 400
+      - text: "Z."
+        pause_ms: 300
+      - pause_ms: 5000
       - text: "Answer. Y. Esophagus."
     in_order:
       - "Which of the following is"
@@ -1259,13 +1277,21 @@ cases:
         pause_ms: 500
       - text: "Which instrument is used to measure atmospheric pressure?"
         pause_ms: 700
-      - text: "W. Anemometer"
+      - text: "W."
+        pause_ms: 300
+      - text: "Anemometer"
         pause_ms: 400
-      - text: "X. Barometer"
+      - text: "X."
+        pause_ms: 300
+      - text: "Barometer"
         pause_ms: 400
-      - text: "Y. Hygrometer"
+      - text: "Y."
+        pause_ms: 300
+      - text: "Hygrometer"
         pause_ms: 400
-      - text: "Z. Thermometer"
+      - text: "Z."
+        pause_ms: 300
+      - text: "Thermometer"
         pause_ms: 400
     must_not_contain:
       - "["
@@ -1290,13 +1316,21 @@ cases:
         pause_ms: 400
       - text: "Which gas makes up most of Earth's atmosphere?"
         pause_ms: 700
-      - text: "W. Oxygen"
+      - text: "W."
+        pause_ms: 300
+      - text: "Oxygen"
         pause_ms: 400
-      - text: "X. Carbon dioxide"
+      - text: "X."
+        pause_ms: 300
+      - text: "Carbon dioxide"
         pause_ms: 400
-      - text: "Y. Nitrogen"
+      - text: "Y."
+        pause_ms: 300
+      - text: "Nitrogen"
         pause_ms: 400
-      - text: "Z. Argon"
+      - text: "Z."
+        pause_ms: 300
+      - text: "Argon"
         pause_ms: 400
     must_not_contain:
       - "["
@@ -1349,13 +1383,21 @@ cases:
         pause_ms: 500
       - text: "Which element has the highest electronegativity?"
         pause_ms: 700
-      - text: "W. Oxygen"
+      - text: "W."
+        pause_ms: 300
+      - text: "Oxygen"
         pause_ms: 400
-      - text: "X. Fluorine"
+      - text: "X."
+        pause_ms: 300
+      - text: "Fluorine"
         pause_ms: 400
-      - text: "Y. Chlorine"
+      - text: "Y."
+        pause_ms: 300
+      - text: "Chlorine"
         pause_ms: 400
-      - text: "Z. Nitrogen"
+      - text: "Z."
+        pause_ms: 300
+      - text: "Nitrogen"
         pause_ms: 400
     must_not_contain:
       - "["
@@ -1511,13 +1553,21 @@ cases:
         pause_ms: 500
       - text: "Which of the following is a vector quantity?"
         pause_ms: 700
-      - text: "W. Speed"
+      - text: "W."
+        pause_ms: 300
+      - text: "Speed"
         pause_ms: 400
-      - text: "X. Distance"
+      - text: "X."
+        pause_ms: 300
+      - text: "Distance"
         pause_ms: 400
-      - text: "Y. Velocity"
+      - text: "Y."
+        pause_ms: 300
+      - text: "Velocity"
         pause_ms: 400
-      - text: "Z. Mass"
+      - text: "Z."
+        pause_ms: 300
+      - text: "Mass"
         pause_ms: 400
     must_not_contain:
       - "["
@@ -1910,13 +1960,21 @@ cases:
         pause_ms: 500
       - text: "Which of the following changes would increase the gravitational force between two masses?"
         pause_ms: 700
-      - text: "W. Doubling the distance between them"
+      - text: "W."
+        pause_ms: 300
+      - text: "Doubling the distance between them"
         pause_ms: 400
-      - text: "X. Doubling one of the masses"
+      - text: "X."
+        pause_ms: 300
+      - text: "Doubling one of the masses"
         pause_ms: 400
-      - text: "Y. Halving one of the masses"
+      - text: "Y."
+        pause_ms: 300
+      - text: "Halving one of the masses"
         pause_ms: 400
-      - text: "Z. Removing the air between them"
+      - text: "Z."
+        pause_ms: 300
+      - text: "Removing the air between them"
         pause_ms: 400
     must_not_contain:
       - "["
@@ -1949,13 +2007,21 @@ cases:
         pause_ms: 500
       - text: "Which of the following is a nonrenewable energy source?"
         pause_ms: 700
-      - text: "W. Wind"
+      - text: "W."
+        pause_ms: 300
+      - text: "Wind"
         pause_ms: 400
-      - text: "X. Natural gas"
+      - text: "X."
+        pause_ms: 300
+      - text: "Natural gas"
         pause_ms: 400
-      - text: "Y. Geothermal"
+      - text: "Y."
+        pause_ms: 300
+      - text: "Geothermal"
         pause_ms: 400
-      - text: "Z. Hydroelectric"
+      - text: "Z."
+        pause_ms: 300
+      - text: "Hydroelectric"
         pause_ms: 1500
       - text: "Question number three."
         pause_ms: 400
@@ -1990,14 +2056,18 @@ cases:
         pause_ms: 500
       - starts_with: "Which structure closes over the"
         pause_ms: 700
-      - starts_with: "W."
-        pause_ms: 400
-      - starts_with: "X."
-        pause_ms: 400
-      - starts_with: "Y."
-        pause_ms: 400
-      - starts_with: "Z."
-        pause_ms: 1500
+      - text: "W."
+        pause_ms: 300
+      - pause_ms: 400
+      - text: "X."
+        pause_ms: 300
+      - pause_ms: 400
+      - text: "Y."
+        pause_ms: 300
+      - pause_ms: 400
+      - text: "Z."
+        pause_ms: 300
+      - pause_ms: 1500
       - text: "Bonus number eight."
         pause_ms: 400
       - text: "Chemistry."

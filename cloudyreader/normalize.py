@@ -34,6 +34,7 @@ HEADER_PAUSE_MS = 400
 CATEGORY_PAUSE_MS = 300
 FORMAT_PAUSE_MS = 500
 STEM_PAUSE_MS = 700
+LETTER_PAUSE_MS = 300
 CHOICE_PAUSE_MS = 400
 ANSWER_LEAD_MS = 5000
 QUESTION_GAP_MS = 1500
@@ -139,7 +140,7 @@ def _usable(override: Override | None, warnings: list[str]) -> Override | None:
 
 
 class ScriptNormalizer:
-    """Builds a `SpokenScript`: header, stem, choices and optional answer, one Segment each.
+    """Builds a `SpokenScript`, one Segment each: header, stem, choice letter, choice text, answer.
 
     `speak_formulas`, `speak_units` and `to_ipa` default to the real stages; tests inject fakes.
     """
@@ -216,7 +217,10 @@ class ScriptNormalizer:
         add(stem, STEM_PAUSE_MS if q.choices else 0, overrides)
         for choice in q.choices:
             text, overrides = self._speak(choice.text, choice.respellings, names, warnings)
-            add(f"{choice.letter}. {text}".rstrip(), CHOICE_PAUSE_MS, overrides)
+            # The letter is its own segment: its pause is exact silence in every engine, not
+            # each voice's own reading of the period.
+            add(f"{choice.letter}.", LETTER_PAUSE_MS if text else CHOICE_PAUSE_MS)
+            add(text, CHOICE_PAUSE_MS, overrides)
         if opts.read_answer and q.answer:
             text, overrides = self._speak_answer(q.answer, names, warnings)
             if text and segments:

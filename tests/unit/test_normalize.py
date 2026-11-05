@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from cloudyreader import respell
+from cloudyreader import normalize, respell
 from cloudyreader.models import (
     Choice,
     Fmt,
@@ -204,13 +204,20 @@ def test_brief_example_multiple_choice():
         "Earth Science.",
         "Multiple choice.",
         "The source of energy is:",
-        "W. tidal motion",
-        "X. the Earth’s rotation",
-        "Y. convection",
-        "Z. remnant magnetism",
+        "W.",
+        "tidal motion",
+        "X.",
+        "the Earth’s rotation",
+        "Y.",
+        "convection",
+        "Z.",
+        "remnant magnetism",
     ]
-    assert pauses(s) == [400, 300, 500, 700, 400, 400, 400, 400]
+    assert pauses(s) == [400, 300, 500, 700, 300, 400, 300, 400, 300, 400, 300, 400]
     assert s.text() == " ".join(texts(s))
+    assert s.text().endswith(
+        "is: W. tidal motion X. the Earth’s rotation Y. convection Z. remnant magnetism"
+    )
 
 
 def test_short_answer_has_no_choice_segments_and_no_stem_pause():
@@ -221,12 +228,72 @@ def test_short_answer_has_no_choice_segments_and_no_stem_pause():
 
 def test_markers_are_always_dot_style():
     s = script(question("Pick.", choices=abcd("a", "b", "c", "d")))
-    assert [t[:2] for t in texts(s)[1:]] == ["W.", "X.", "Y.", "Z."]
+    assert texts(s)[1::2] == ["W.", "X.", "Y.", "Z."]
 
 
 def test_no_questions_gives_empty_script():
     s = script()
     assert (s.segments, s.warnings, s.text()) == ((), (), "")
+
+
+# --- choice letters: own segment, exact pause in every engine ---------------------------------
+
+CHOICES = ["W.", "a", "X.", "b", "Y.", "c", "Z.", "d"]
+CHOICE_PAUSES = [300, 400] * 4
+
+
+def test_pause_values():
+    paused = (normalize.STEM_PAUSE_MS, normalize.LETTER_PAUSE_MS, normalize.CHOICE_PAUSE_MS)
+    assert paused == (700, 300, 400)
+
+
+def test_each_choice_is_its_letter_then_its_text():
+    s = script(question("Pick.", choices=abcd("tides", "convection", "rotation", "dust")))
+    assert texts(s) == ["Pick.", "W.", "tides", "X.", "convection", "Y.", "rotation", "Z.", "dust"]
+    assert pauses(s) == [700, *CHOICE_PAUSES]
+    assert s.text() == "Pick. W. tides X. convection Y. rotation Z. dust"
+
+
+def test_choice_overrides_stay_on_the_text_segment():
+    lex = FakeLexicon({"larynx": "LEX"})
+    q = question(
+        "Pick.",
+        choices=(
+            Choice("W", "Pharynx", (Respelling("Pharynx", "FAR-ingks"),)),
+            Choice("X", "Larynx"),
+            Choice("Y", "c"),
+            Choice("Z", "d"),
+        ),
+    )
+    s = script(q, norm=make(lex))
+    assert [(seg.text, seg.pause_after_ms, seg.overrides) for seg in s.segments[1:5]] == [
+        ("W.", 300, ()),
+        ("Pharynx", 400, (Override("Pharynx", "<FAR-ingks>", "respelling"),)),
+        ("X.", 300, ()),
+        ("Larynx", 400, (Override("Larynx", "LEX", "lexicon"),)),
+    ]
+
+
+@pytest.mark.parametrize("empty", ["", "[2]"], ids=["blank", "footnote-only"])
+def test_a_choice_without_text_is_its_letter_with_the_choice_pause(empty):
+    s = script(question("Pick.", choices=abcd("a", empty, "c", "d")))
+    assert texts(s) == ["Pick.", "W.", "a", "X.", "Y.", "c", "Z.", "d"]
+    assert pauses(s) == [700, 300, 400, 400, 300, 400, 300, 400]
+
+
+def test_letter_pauses_with_several_questions_in_one_paste():
+    mc = question("One?", choices=abcd("a", "b", "c", "d"))
+    sa = question("Two?", fmt=Fmt.SHORT_ANSWER)
+    s = script(mc, sa, mc)
+    assert texts(s) == ["One?", *CHOICES, "Short answer.", "Two?", "One?", *CHOICES]
+    assert pauses(s) == [700, *CHOICE_PAUSES[:-1], 1500, 500, 1500, 700, *CHOICE_PAUSES]
+
+
+def test_the_answer_lead_follows_the_last_choice_text():
+    q = question("Which?", choices=abcd("a", "b", "c", "d"), answer="Y) ESOPHAGUS")
+    s = script(q, opts=READ)
+    assert texts(s)[-3:] == ["Z.", "d", "Answer. Y. Esophagus."]
+    assert pauses(s)[-3:] == [300, 5000, 0]
 
 
 # --- several questions -----------------------------------------------------------------------
@@ -238,7 +305,7 @@ def test_gap_between_questions_is_on_the_last_segment():
     c = question("Three?", kind=Kind.BONUS, number=3)
     s = script(a, b, c)
     assert texts(s)[:2] == ["Toss-up number one.", "One?"]
-    assert pauses(s) == [400, 1500, 700, 400, 400, 400, 1500, 400, 0]
+    assert pauses(s) == [400, 1500, 700, *CHOICE_PAUSES[:-1], 1500, 400, 0]
     assert texts(s)[-1] == "Three?"
 
 
@@ -355,7 +422,7 @@ def test_units_then_formulas_on_stem_choices_and_answer():
     s = script(q, norm=make(formulas=formulas, units=units), opts=READ)
     assert calls[:2] == ["u:stem", "f:stem!"]
     assert texts(s)[0] == "STEM!"
-    assert texts(s)[1] == "W. A!"
+    assert texts(s)[1:3] == ["W.", "A!"]  # the letter skips the stages
     assert len(calls) == 2 * 6
 
 
@@ -407,9 +474,10 @@ def test_stem_and_choice_respellings_become_overrides_on_their_segments():
     assert by_text["The Okazaki fragments join."] == (
         Override("Okazaki", "<oh-kuh-ZAH-kee>", "respelling"),
     )
-    assert by_text["W. Pharynx"] == (Override("Pharynx", "<FAR-ingks>", "respelling"),)
-    assert by_text["X. Larynx"] == ()
-    assert by_text["Y. Esophagus"] == (Override("Esophagus", "<i-SOF-uh-guhs>", "respelling"),)
+    assert by_text["Pharynx"] == (Override("Pharynx", "<FAR-ingks>", "respelling"),)
+    assert by_text["Larynx"] == ()
+    assert by_text["Esophagus"] == (Override("Esophagus", "<i-SOF-uh-guhs>", "respelling"),)
+    assert by_text["W."] == by_text["X."] == by_text["Y."] == by_text["Z."] == ()
     assert s.warnings == ()
     assert "FAR" not in s.text()
 
@@ -433,7 +501,7 @@ def test_real_respell_module_is_the_default_converter():
         ),
     )
     norm = ScriptNormalizer(FakeLexicon(), speak_formulas=lambda t: t, speak_units=lambda t: t)  # type: ignore[arg-type]
-    (ov,) = norm.to_script([q], NO_RESOLUTIONS, DEFAULT).segments[1].overrides
+    (ov,) = norm.to_script([q], NO_RESOLUTIONS, DEFAULT).segments[2].overrides
     assert ov.ipa == respell.to_ipa("FAR-ingks")
 
 
@@ -681,9 +749,10 @@ def test_guides_of_every_kind_on_choices():
         ),
     )
     s = script(q)
-    assert texts(s)[1:] == ["W. F A D", "X. g of 1", "Y. Pharynx", "Z. d"]
-    assert s.segments[1].overrides == s.segments[2].overrides == ()
-    assert s.segments[3].overrides == (Override("Pharynx", "<FAR-ingks>", "respelling"),)
+    assert texts(s)[1:] == ["W.", "F A D", "X.", "g of 1", "Y.", "Pharynx", "Z.", "d"]
+    assert all(seg.overrides == () for seg in s.segments[1::2])  # letters carry none
+    assert s.segments[2].overrides == s.segments[4].overrides == ()
+    assert s.segments[6].overrides == (Override("Pharynx", "<FAR-ingks>", "respelling"),)
 
 
 def test_a_phonetic_guide_next_to_a_say_as_guide_keeps_both_working():
@@ -807,10 +876,14 @@ def test_real_stages_spell_acronyms_in_stem_choices_and_answer():
     s = ScriptNormalizer().to_script([q], NO_RESOLUTIONS, READ)
     assert texts(s) == [
         "Does D N A bind p fifty-three?",
-        "W. A T P",
-        "X. B R C A one",
-        "Y. NOT",
-        "Z. NASA",
+        "W.",
+        "A T P",
+        "X.",
+        "B R C A one",
+        "Y.",
+        "NOT",
+        "Z.",
+        "NASA",
         "Answer. D N A Ligase.",
     ]
 
@@ -887,9 +960,9 @@ def test_iupac_resolution_adds_an_iupac_override_and_keeps_the_text():
     lex = FakeLexicon(iupac={name: "IPA"})
     q = question("Which is isobutyl alcohol?", choices=abcd("butan-1-ol", name, "a", "b"))
     s = script(q, norm=make(lex), res=iupac_res(name))
-    assert texts(s)[2] == f"X. {name}"
-    assert s.segments[2].overrides == (Override(name, "IPA", "iupac"),)
-    assert s.segments[1].overrides == ()
+    assert texts(s)[3:5] == ["X.", name]
+    assert s.segments[4].overrides == (Override(name, "IPA", "iupac"),)
+    assert s.segments[2].overrides == s.segments[3].overrides == ()
     assert "isobutanol" not in s.text()
 
 
@@ -1072,10 +1145,17 @@ def test_golden_harness_catches_a_violation():
         check_spoken(
             {"segments": [{"text": "a", "pause_ms": 300}]}, Script(), [], multiple_choice=False
         )
+    with pytest.raises(AssertionError):  # a pause-only item still pins its pause
+        check_spoken(
+            {"segments": [{"pause_ms": 300}, {"text": "b"}]}, Script(), [], multiple_choice=False
+        )
     check_spoken(
         {"segments": [{"text": "a", "pause_ms": 400}, {"starts_with": "b"}]},
         Script(),
         [],
         multiple_choice=False,
+    )
+    check_spoken(
+        {"segments": [{"pause_ms": 400}, {"pause_ms": 0}]}, Script(), [], multiple_choice=False
     )
     assert fold("a  b\u00a0c") == "a b c"
