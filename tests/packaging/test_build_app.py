@@ -246,11 +246,11 @@ def test_empty_icon_reads_default_txt(fake_root: Path) -> None:
 
 
 def test_plain_make_app_uses_the_chosen_icon() -> None:
-    # The user picked cloud-voice: `make app` with no ICON must build it (reads the real repo).
+    # The user picked cloud-atom: `make app` with no ICON must build it (reads the real repo).
     result = resolve_icon(ROOT, "")
 
     assert result.returncode == 0, result.stderr
-    icon = ROOT / "assets" / "icons" / "cloud-voice" / "AppIcon.icns"
+    icon = ROOT / "assets" / "icons" / "cloud-atom" / "AppIcon.icns"
     assert result.stdout.splitlines()[-1] == f"ICON_PATH={icon}"
     assert icon.is_file()
 

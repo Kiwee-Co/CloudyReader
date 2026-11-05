@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import filecmp
 import importlib.util
 import os
 import plistlib
@@ -286,6 +287,16 @@ def test_built_bundle_carries_one_of_our_icons() -> None:
     ours = {p.read_bytes() for p in ICONS.glob("*/AppIcon.icns")}
 
     assert bundled.read_bytes() in ours, "not an assets/icons design: PyInstaller's generic icon?"
+
+
+@pytest.mark.slow
+@needs_built_app
+def test_built_bundle_carries_the_default_cloud_atom_icon() -> None:
+    # The user's pick; test_build_app pins that assets/icons/default.txt names it.
+    bundled = BUILT_APP / "Contents" / "Resources" / "AppIcon.icns"
+    atom = ICONS / "cloud-atom" / "AppIcon.icns"
+
+    assert filecmp.cmp(bundled, atom, shallow=False), f"{bundled} differs from {atom}"
 
 
 @pytest.mark.slow
