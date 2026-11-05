@@ -1,8 +1,8 @@
 """Extract text from the NSB sample-question PDFs into a git-ignored cache.
 
 Usage: python -I scripts/extract_samples.py [--src DIR] [--dst DIR] [--force]
-Source: --src, else $CLOUDYREADER_SAMPLES_SRC, else the NSB checkout. It is read-only: nothing is
-ever written under it. Output mirrors <set>/<name>.txt; outputs newer than their PDF are skipped.
+Source: --src, else $CLOUDYREADER_SAMPLES_SRC; one is required. It is read-only: nothing is ever
+written under it. Output mirrors <set>/<name>.txt; outputs newer than their PDF are skipped.
 Needs poppler's pdftotext (`brew install poppler`). Stdlib only.
 """
 
@@ -15,7 +15,6 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_SRC = Path("NSB/science-bowl/sample-questions")
 DEFAULT_DST = ROOT / ".data" / "samples"
 # -layout, not default or -raw: default mode prints the tail of the stem before its head (571 of
 # 11267 stems) when "N) Category - Format" is a separate table cell; -raw glues the page footer
@@ -96,14 +95,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--src",
         type=Path,
-        default=Path(os.environ.get("CLOUDYREADER_SAMPLES_SRC") or DEFAULT_SRC),
-        help="PDF tree (read-only); default $CLOUDYREADER_SAMPLES_SRC or the NSB checkout",
+        default=os.environ.get("CLOUDYREADER_SAMPLES_SRC") or None,
+        help="PDF tree (read-only); default $CLOUDYREADER_SAMPLES_SRC",
     )
     parser.add_argument(
         "--dst", type=Path, default=DEFAULT_DST, help="cache dir (default .data/samples)"
     )
     parser.add_argument("--force", action="store_true", help="re-extract up-to-date outputs too")
     args = parser.parse_args(argv)
+    if args.src is None:
+        parser.error("no PDF tree: pass --src DIR or set CLOUDYREADER_SAMPLES_SRC")
     return run(args.src, args.dst, args.force)
 
 

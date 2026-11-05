@@ -67,7 +67,7 @@ corpus_report = _load_script("corpus_report")
 
 needs_corpus = pytest.mark.skipif(
     not (SAMPLES.is_dir() and any(SAMPLES.rglob("*.txt"))),
-    reason=f"no corpus at {SAMPLES}: run `uv run --frozen python -I scripts/extract_samples.py`",
+    reason=f"no corpus at {SAMPLES}: run `CLOUDYREADER_SAMPLES_SRC=DIR make samples`",
 )
 
 
@@ -165,6 +165,53 @@ def test_extract_without_pdftotext_says_how_to_install_it(tmp_path, monkeypatch,
 
     assert extract_samples.run(_fake_corpus(tmp_path), tmp_path / "dst") == 2
     assert "brew install poppler" in capsys.readouterr().err
+
+
+def _record_run(monkeypatch):
+    """Stand in for run(): keep the source main() hands it, extract nothing."""
+    seen: list[Path] = []
+
+    def fake_run(src, dst, force=False):
+        seen.append(src)
+        return 0
+
+    monkeypatch.setattr(extract_samples, "run", fake_run)
+    return seen
+
+
+def test_main_without_a_source_exits_2_and_names_the_env_variable(monkeypatch, capsys):
+    seen = _record_run(monkeypatch)
+    monkeypatch.delenv("CLOUDYREADER_SAMPLES_SRC", raising=False)
+
+    with pytest.raises(SystemExit) as exc:
+        extract_samples.main([])
+
+    err = capsys.readouterr().err
+    assert exc.value.code == 2 and not seen
+    assert "CLOUDYREADER_SAMPLES_SRC" in err and "--src DIR" in err
+    assert "/Volumes/" not in err and "/Users/" not in err
+
+
+def test_main_takes_the_source_from_the_env_variable(tmp_path, monkeypatch):
+    seen = _record_run(monkeypatch)
+    monkeypatch.setenv("CLOUDYREADER_SAMPLES_SRC", str(tmp_path / "pdfs"))
+
+    assert extract_samples.main([]) == 0
+    assert seen == [tmp_path / "pdfs"]
+
+
+def test_main_src_option_beats_the_env_variable(tmp_path, monkeypatch):
+    seen = _record_run(monkeypatch)
+    monkeypatch.setenv("CLOUDYREADER_SAMPLES_SRC", str(tmp_path / "env"))
+
+    assert extract_samples.main(["--src", str(tmp_path / "cli")]) == 0
+    assert seen == [tmp_path / "cli"]
+
+
+def test_extractor_hardcodes_no_disk_path():
+    text = (ROOT / "scripts" / "extract_samples.py").read_text(encoding="utf-8")
+
+    assert "/Volumes/" not in text and "/Users/" not in text
 
 
 # --------------------------------------------------------------------------- harvest (fast)

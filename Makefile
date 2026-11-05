@@ -216,7 +216,7 @@ icons: ## Regenerate the 4 icon candidates and assets/icons/preview.png
 open-icons: ## Open assets/icons/preview.png
 	@if [ -f assets/icons/preview.png ]; then open assets/icons/preview.png; else echo "assets/icons/preview.png missing: run make icons"; fi
 
-samples: ## Extract NSB sample PDFs to .data/samples (scripts/extract_samples.py; needs pdftotext)
+samples: ## Extract NSB sample PDFs to .data/samples: CLOUDYREADER_SAMPLES_SRC=DIR make samples (needs pdftotext)
 	@if [ -f scripts/extract_samples.py ]; then $(UV_RUN) $(PYTHON) scripts/extract_samples.py; else echo "pending: scripts/extract_samples.py (corpus agent) not written yet"; fi
 
 smoke-live: ## Live PubChem + UniProt check (scripts/live_smoke.py); never in ci
