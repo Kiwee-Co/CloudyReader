@@ -25,7 +25,7 @@ min_macos = runpy.run_path(str(ROOT / "packaging" / "min_macos.py"))["min_macos"
 COLLECT_ALL = [
     "cloudyreader", "spacy", "thinc", "srsly", "cymem", "preshed", "blis", "murmurhash",
     "catalogue", "confection", "wasabi", "langcodes", "en_ner_craft_md", "piper",
-    "jdk4py", "py2opsin", "sounddevice", "inflect",
+    "jdk4py", "py2opsin", "inflect",
 ]
 if KOKORO:
     # misaki's English G2P: espeak fallback via phonemizer, whose deps load JSON data at import.
@@ -41,18 +41,25 @@ EXCLUDES = [
     "onnxruntime.transformers", "onnxruntime.quantization", "onnxruntime.tools",
     "pytest", "_pytest", "pytestqt", "pytest_cov", "pytest_mock", "respx", "coverage", "ruff",
     "tkinter", "_tkinter", "IPython", "matplotlib",
+    # Windows only: elsewhere it raises ImportError, which dateutil.tz catches. It loads user32.
+    "dateutil.tz.win",
 ]
 if not KOKORO:
     EXCLUDES += ["mlx", "mlx_audio", "misaki", "scipy"]
 
+# collect_all imports what it collects. Skipped: test suites, catalogue's backport for Python < 3.8
+# (imports the absent zipp) and piper's training code (imports the absent torch).
+SKIP_SUBMODULES = ("catalogue._importlib_metadata", "piper.train")
 
-def _not_tests(name: str) -> bool:
-    return ".tests" not in name and not name.endswith(".tests")
+
+def _collectable(name: str) -> bool:
+    skipped = any(name == skip or name.startswith(f"{skip}.") for skip in SKIP_SUBMODULES)
+    return ".tests" not in name and not name.endswith(".tests") and not skipped
 
 
 datas, binaries, hiddenimports = [], [], []
 for package in COLLECT_ALL:
-    d, b, h = collect_all(package, filter_submodules=_not_tests)
+    d, b, h = collect_all(package, filter_submodules=_collectable)
     datas += d
     binaries += b
     hiddenimports += h
@@ -72,6 +79,8 @@ a = Analysis(  # noqa: F821
     datas=datas,
     hiddenimports=hiddenimports,
     excludes=EXCLUDES,
+    # Override hooks for upstream ones whose hidden imports name modules gone from the lock.
+    hookspath=[str(ROOT / "packaging" / "hooks")],
     # mlx-audio finds its model types by listing its own package folder: ship that as files too.
     module_collection_mode={"mlx_audio": "pyz+py"} if KOKORO else {},
     noarchive=False,

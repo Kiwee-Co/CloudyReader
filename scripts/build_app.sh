@@ -178,15 +178,45 @@ resolve_kokoro() {
   esac
 }
 
+# PyInstaller warnings that are expected and harmless on macOS, matched exactly after the
+# timestamp. Every other line of PyInstaller's output, warning or error, still prints.
+BENIGN_WARNINGS=(
+  # filelock imports filelock._windows on every OS; its WinDLL("ntdll") runs only on Windows.
+  "WARNING: Library ntdll required via ctypes not found"
+  # transformers' import_utils probes CUDA with CDLL("libcudart.so"); macOS has no CUDA.
+  "WARNING: Library libcudart.so required via ctypes not found"
+)
+
+# Prints the PyInstaller log $1 without the BENIGN_WARNINGS lines, then how many it hid.
+show_pyinstaller_log() {
+  BENIGN=$(printf '%s\n' "${BENIGN_WARNINGS[@]}") awk -v path="${1#"$ROOT"/}" '
+    BEGIN {
+      n = split(ENVIRON["BENIGN"], lines, "\n")
+      for (i = 1; i <= n; i++) if (lines[i] != "") known[lines[i]] = 1
+    }
+    { msg = $0; sub(/^[0-9]+ /, "", msg) }
+    msg in known { hidden++; next }
+    { print }
+    END {
+      if (hidden) printf "build_app: %d known-benign PyInstaller warnings hidden; full log: %s\n", hidden, path
+    }
+  ' "$1"
+}
+
 build_bundle() {
-  local t0
+  local t0 log=$ROOT/build/pyinstaller.log rc=0
   t0=$(now)
   say "PyInstaller $("${PYI[@]}" --version) (entry: $ENTRY, kokoro: $KOKORO)"
-  # PyInstaller imports modules to scan them; the HF flags stop any import-time Hub download.
-  HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYINSTALLER_CONFIG_DIR=$ROOT/build/pyinstaller-config \
+  # PyInstaller imports modules to scan them. The HF flags stop any import-time Hub download; the
+  # other two mute transformers' notice that PyTorch is absent (only its tokenizers are used).
+  HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+    TRANSFORMERS_VERBOSITY=error TRANSFORMERS_NO_ADVISORY_WARNINGS=1 \
+    PYINSTALLER_CONFIG_DIR=$ROOT/build/pyinstaller-config \
     CR_ENTRY=$ENTRY_SCRIPT CR_APP_NAME=$APP_NAME CR_ICON=$ICON_PATH CR_KOKORO=$KOKORO \
     "${PYI[@]}" --noconfirm --log-level WARN --distpath "$ROOT/build/dist" \
-    --workpath "$ROOT/build/work" "$SPEC"
+    --workpath "$ROOT/build/work" "$SPEC" >"$log" 2>&1 || rc=$?
+  show_pyinstaller_log "$log"
+  ((rc == 0)) || die "PyInstaller exited $rc (log: build/pyinstaller.log)"
   [[ -x $STAGE_APP/Contents/MacOS/$APP_NAME ]] || die "PyInstaller made no $STAGE_APP"
   PYI_SECONDS=$(since "$t0")
 }

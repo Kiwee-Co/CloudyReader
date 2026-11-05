@@ -159,9 +159,18 @@ def test_read_versions_stops_at_malformed_load_commands(tmp_path: Path) -> None:
 def spec_calls(
     monkeypatch: pytest.MonkeyPatch, binaries: list[tuple[str, str, str]] | None = None
 ) -> dict[str, dict[str, Any]]:
-    """Run the spec on stand-ins for PyInstaller's API whose Analysis collects `binaries`."""
+    """Run the spec on stand-ins for PyInstaller's API whose Analysis collects `binaries`.
+
+    calls["collect_all"] maps each package the spec collects to the keywords it passed.
+    """
+    calls: dict[str, dict[str, Any]] = {"collect_all": {}}
+
+    def collect_all(package: str, **kw: Any) -> tuple[list, list, list]:
+        calls["collect_all"][package] = kw
+        return [], [], []
+
     hooks = types.ModuleType("PyInstaller.utils.hooks")
-    hooks.collect_all = lambda package, **kw: ([], [], [])  # type: ignore[attr-defined]
+    hooks.collect_all = collect_all  # type: ignore[attr-defined]
     hooks.collect_data_files = lambda package, **kw: []  # type: ignore[attr-defined]
     hooks.collect_submodules = lambda package, **kw: []  # type: ignore[attr-defined]
     hooks.copy_metadata = lambda dist, **kw: []  # type: ignore[attr-defined]
@@ -171,7 +180,6 @@ def spec_calls(
     for key in ("CR_ENTRY", "CR_APP_NAME", "CR_ICON", "CR_KOKORO"):
         monkeypatch.delenv(key, raising=False)
     toc = types.SimpleNamespace(pure=[], scripts=[], binaries=binaries or [], datas=[])
-    calls: dict[str, dict[str, Any]] = {}
 
     def recorder(kind: str) -> Any:
         def call(*args: Any, **kwargs: Any) -> Any:
