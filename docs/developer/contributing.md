@@ -54,10 +54,11 @@ docs: add the manual, the developer guide, and the README
 
 ## Change the version
 
-The version lives in two places. Change both together:
+The version lives in three places. Change all three together:
 
 - `version` in `pyproject.toml`. The bundle's `Info.plist` and the package metadata read it.
 - `__version__` in `cloudyreader/__init__.py`. The HTTP `User-Agent` of lookups uses it.
+- `version` in the `cloudyreader` entry of `uv.lock`. Re-lock with the safe command on [Build the app]({{ '/developer/building/' | relative_url }}) to update it.
 
 ## Edit the documentation
 
