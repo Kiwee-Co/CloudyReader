@@ -538,6 +538,12 @@ def font_kw(font: QFont) -> dict[str, object]:
     }
 
 
+def fit(text: str, font: QFont) -> dict[str, object]:
+    """Hold a line to the width Qt laid it out at: a viewer's font may run a little wider."""
+    width = QFontMetricsF(font).horizontalAdvance(text)
+    return {"textLength": round(width, 2), "lengthAdjust": "spacingAndGlyphs"}
+
+
 def pts(*xy: float) -> str:
     """'x y' pairs for path data."""
     return " ".join(num(v) for v in xy)
@@ -697,8 +703,9 @@ class Canvas:
         if doc.isEmpty():
             r = e.cursorRect(QTextCursor(doc))
             y = view.top() + r.top() + QFontMetricsF(e.font()).ascent()
-            where = attrs(x=view.left() + r.left(), y=y)
-            lines.append(f"<text{where}>{escape(e.placeholderText())}</text>")
+            hint = e.placeholderText()
+            where = attrs(x=view.left() + r.left(), y=y, **fit(hint, e.font()))
+            lines.append(f"<text{where}>{escape(hint)}</text>")
         block = doc.firstBlock()
         while block.isValid() and not doc.isEmpty():
             layout = block.layout()
@@ -711,7 +718,8 @@ class Canvas:
                 cursor = QTextCursor(doc)
                 cursor.setPosition(block.position() + start)
                 r = e.cursorRect(cursor)
-                where = attrs(x=view.left() + r.left(), y=view.top() + r.top() + line.ascent())
+                x, y = view.left() + r.left(), view.top() + r.top() + line.ascent()
+                where = attrs(x=x, y=y, **fit(chunk, e.font()))
                 lines.append(f"<text{where}>{escape(chunk)}</text>")
             block = block.next()
         ink = text_paint(e.palette().color(role))
@@ -1247,6 +1255,11 @@ def write_callouts(out: Path, name: str, markers: Sequence[Marker]) -> None:
     print(f"{path.name:34} {len(markers)} callouts")
 
 
+# A marker beside a control sits this far from it: clear of the label even when a phone shows
+# the figure at half size and the marker keeps its 1rem floor.
+SIDE = 26.0
+
+
 def button_rect(canvas: Canvas, b: QPushButton) -> QRectF:
     """A push button's drawn bezel, as Canvas.button draws it."""
     opt = QStyleOptionButton()
@@ -1301,9 +1314,10 @@ def fig_window_tour(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
         voice = c.popup_bezel(win.voice_picker.combo)
         rotation = c.popup_bezel(win.rotation_combo)
         checks = (win.read_answer_check, win.online_lookups_check)
-        options_x = max(check_text_right(c, check) for check in checks) + 18
+        options_x = max(check_text_right(c, check) for check in checks) + SIDE
         options_y = sum(c.geo(check).center().y() for check in checks) / 2
-        paste, speak = button_rect(c, win.paste_button), button_rect(c, win.speak_button)
+        clip = button_rect(c, win.speak_clipboard_button)
+        repeat = button_rect(c, win.repeat_button)
         toggle = c.geo(win.script_toggle)
         toggle_text = QFontMetricsF(win.script_toggle.font()).horizontalAdvance(
             win.script_toggle.text()
@@ -1312,12 +1326,13 @@ def fig_window_tour(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
         bar = c.geo(win.statusBar())
         markers = [
             marker(1, "question box", svg, question.right(), question.bottom()),
-            marker(2, "Voice menu", svg, voice.right() + 18, voice.center().y()),
-            marker(3, "Rotation menu", svg, rotation.right() + 18, rotation.center().y()),
+            marker(2, "Voice menu", svg, voice.right() + SIDE, voice.center().y()),
+            marker(3, "Rotation menu", svg, rotation.right() + SIDE, rotation.center().y()),
             marker(4, "options", svg, options_x, options_y),
-            marker(5, "Paste and Speak Clipboard", svg, paste.left(), paste.top()),
-            marker(6, "Repeat, Stop, and Speak", svg, speak.right(), speak.top()),
-            marker(7, "Spoken script", svg, toggle_x + 18, toggle.center().y()),
+            # In the empty stretch between the two button groups, beside the group each names.
+            marker(5, "Paste and Speak Clipboard", svg, clip.right() + SIDE, clip.center().y()),
+            marker(6, "Repeat, Stop, and Speak", svg, repeat.left() - SIDE, repeat.center().y()),
+            marker(7, "Spoken script", svg, toggle_x + SIDE, toggle.center().y()),
             marker(8, "status bar", svg, bar.right() - 32, bar.center().y()),
         ]
     return svg, markers
@@ -1569,7 +1584,7 @@ def fig_options(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
                 n,
                 check.text(),
                 svg,
-                check_text_right(c, check) + 18 - area.left(),
+                check_text_right(c, check) + SIDE - area.left(),
                 c.geo(check).center().y() - area.top(),
             )
             for n, check in enumerate(checks, start=1)
