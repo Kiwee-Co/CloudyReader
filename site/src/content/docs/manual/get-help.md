@@ -59,10 +59,10 @@ The app keeps no log file. It prints warnings to standard error, which Terminal 
 ## Report a problem
 
 1. Open the [issues page on GitHub](https://github.com/Kiwee-Co/CloudyReader/issues) and search for your message.
-2. If an issue matches, add your details to it. If none matches, choose **New issue**. You need a free GitHub account.
+2. If an issue matches, add your details to it. If none matches, open a new issue. You need a free GitHub account.
 3. Write a title that names the symptom.
 4. Paste the details you collected, and say what you expected to happen.
-5. Remove any text you do not want to share, then choose **Submit new issue**.
+5. Remove any text you do not want to share, then submit the issue.
 
 :::caution
 An issue is public. Anyone can read it, so leave out names, school details, and question text that you do not want to share.
