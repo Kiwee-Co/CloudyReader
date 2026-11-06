@@ -24,11 +24,6 @@ CONTROLS = (
     "busy_bar",
     "prefetch_bar",
 )
-# Controls with neither a tooltip nor a description yet, and the work item that adds one.
-UNDESCRIBED = {
-    "busy_bar": 8,
-    "prefetch_bar": 8,
-}
 
 
 def control(window, path: str):
@@ -44,19 +39,11 @@ def accessible_text(widget, kind: QAccessible.Text) -> str:
     return interface.text(kind)
 
 
-def described(path: str):
-    item = UNDESCRIBED.get(path)
-    if item is None:
-        return path
-    reason = f"work item {item} adds the description"
-    return pytest.param(path, marks=pytest.mark.xfail(strict=True, reason=reason))
-
-
 @pytest.mark.parametrize("path", CONTROLS)
 def test_every_control_has_an_accessible_name(window, path):
     assert accessible_text(control(window, path), QAccessible.Text.Name)
 
 
-@pytest.mark.parametrize("path", [described(path) for path in CONTROLS])
+@pytest.mark.parametrize("path", CONTROLS)
 def test_every_control_has_an_accessible_description(window, path):
     assert accessible_text(control(window, path), QAccessible.Text.Description)

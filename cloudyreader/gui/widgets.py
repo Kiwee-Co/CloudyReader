@@ -5,10 +5,20 @@ from __future__ import annotations
 import enum
 
 from PySide6.QtCore import QEvent, QObject, QPoint, QRect, QRectF, QSize, Qt
-from PySide6.QtGui import QColor, QFont, QPainter, QPaintEvent, QPalette, QPen
+from PySide6.QtGui import (
+    QColor,
+    QFont,
+    QHelpEvent,
+    QPainter,
+    QPaintEvent,
+    QPalette,
+    QPen,
+    QResizeEvent,
+)
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
+    QLabel,
     QPlainTextEdit,
     QStatusBar,
     QStyle,
@@ -16,6 +26,7 @@ from PySide6.QtWidgets import (
     QStyleOptionFocusRect,
     QStylePainter,
     QToolButton,
+    QToolTip,
     QVBoxLayout,
     QWidget,
 )
@@ -26,12 +37,20 @@ _LEFT_CENTER = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
 _FOLLOW = {QEvent.Type.FocusIn, QEvent.Type.FocusOut, QEvent.Type.Move, QEvent.Type.Resize}
 _FOLLOW |= {QEvent.Type.Show, QEvent.Type.Hide}
 _SHOWN = {QEvent.Type.ShowToParent, QEvent.Type.HideToParent}  # a child shown or hidden itself
+_TABULAR = QFont.Tag("tnum")  # OpenType tabular figures: every digit one width
 
 
 def text_style(points: int) -> QFont:
     """The system font at one step of the type ramp, scaled with the system body size."""
     font = QFont(QApplication.font())
     font.setPointSizeF(font.pointSizeF() * points / tokens.TEXT_BODY_PT)
+    return font
+
+
+def tabular(font: QFont) -> QFont:
+    """The font with tabular figures, so a number that counts up does not jitter."""
+    font = QFont(font)
+    font.setFeature(_TABULAR, 1)
     return font
 
 
@@ -236,6 +255,32 @@ class FocusRing(QWidget):
             painter.drawRoundedRect(edge.adjusted(-middle, -middle, middle, middle), radius, radius)
 
 
+class ElidedLabel(QLabel):
+    """A one-line label that gives up width first: short of room it elides at the end, and its
+    tooltip then shows the whole text above the tooltip it was given."""
+
+    def minimumSizeHint(self) -> QSize:
+        return QSize(0, super().minimumSizeHint().height())
+
+    def is_elided(self) -> bool:
+        return self.fontMetrics().horizontalAdvance(self.text()) > self.contentsRect().width()
+
+    def paintEvent(self, _event: QPaintEvent) -> None:
+        painter = QPainter(self)
+        rect = self.contentsRect()
+        text = self.fontMetrics().elidedText(self.text(), Qt.TextElideMode.ElideRight, rect.width())
+        role = QPalette.ColorRole.WindowText
+        self.style().drawItemText(painter, rect, _LEFT_CENTER, self.palette(), True, text, role)
+
+    def event(self, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.ToolTip and isinstance(event, QHelpEvent):
+            if self.is_elided():
+                whole = "\n".join(text for text in (self.text(), self.toolTip()) if text)
+                QToolTip.showText(event.globalPos(), whole, self)
+                return True
+        return super().event(event)
+
+
 class StatusBar(QStatusBar):
     """QStatusBar that draws its message after a tone icon, at the window margin, elided.
 
@@ -245,8 +290,10 @@ class StatusBar(QStatusBar):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._tone = Tone.INFO
-        self.setFont(text_style(tokens.TEXT_CALLOUT_PT))
+        self._cluster: QWidget | None = None
+        self.setFont(tabular(text_style(tokens.TEXT_CALLOUT_PT)))  # "Playing 2.4 s." holds still
         self.setSizeGripEnabled(False)  # macOS windows resize from any edge; no grip to make room
+        self.setMinimumHeight(tokens.STATUS_LINE_HEIGHT)
         # Permanent widgets (the busy bar) keep the window margin; the message starts at it.
         self.setContentsMargins(tokens.MARGIN, 0, tokens.MARGIN, 0)
         self.messageChanged.connect(self._on_message_changed)
@@ -254,6 +301,22 @@ class StatusBar(QStatusBar):
     @property
     def tone(self) -> Tone:
         return self._tone
+
+    def add_cluster(self, cluster: QWidget) -> None:
+        """Add a permanent widget that gives up width before the message does: whatever it
+        holds, the message keeps MESSAGE_MIN_SHARE of the line."""
+        self._cluster = cluster
+        self.addPermanentWidget(cluster)
+        self._cap_cluster()
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self._cap_cluster()
+
+    def _cap_cluster(self) -> None:
+        if self._cluster is not None:
+            room = self.contentsRect().width() * (1 - tokens.MESSAGE_MIN_SHARE)
+            self._cluster.setMaximumWidth(max(0, int(room) - tokens.GROUP_SPACING))
 
     def show_message(self, text: str, tone: Tone = Tone.INFO) -> None:
         self._tone = tone

@@ -47,6 +47,8 @@ STRINGS = [
 VOICEOVER_ONLY = [
     ("voice_picker.combo", "accessibleDescription", "Choose the voice that reads the question."),
     ("voice_picker.speaker_spin", "accessibleDescription", "Choose a speaker of this voice."),
+    ("busy_bar", "accessibleDescription", "A reading is being prepared."),
+    ("prefetch_bar", "accessibleDescription", "Voice download progress."),
 ]
 ROTATION_ITEMS = [
     "No rotation",

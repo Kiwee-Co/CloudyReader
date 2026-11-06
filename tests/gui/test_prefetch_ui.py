@@ -6,6 +6,7 @@ from dataclasses import replace
 
 import pytest
 import shiboken6
+from PySide6.QtCore import QPoint
 
 from cloudyreader.gui import tokens
 from cloudyreader.gui.fake_service import FAKE_VOICES, FakeReaderService
@@ -368,63 +369,52 @@ def test_reports_queued_before_close_are_ignored_after_it(qtbot, window):
     assert not window._refreshing
 
 
-# --- the gap between the two bars ------------------------------------------------------------
+# --- one bar at a time ----------------------------------------------------------------------
 # Busy goes through _set_busy(): what Speak does, with no reading held on a thread.
 
 
 def right_margin(window, widget) -> int:
     bar = window.statusBar()
     bar.layout().activate()
-    return bar.width() - widget.geometry().right() - 1
-
-
-def gap_between_the_bars(window) -> bool:
-    gap = window._bar_gap  # private on purpose: a spacer widget has no public face
-    window.statusBar().layout().activate()
-    return (
-        not gap.isHidden()
-        and window.prefetch_bar.geometry().right() < gap.geometry().left()
-        and gap.geometry().right() < window.busy_bar.geometry().left()
-    )
+    widget.parentWidget().layout().activate()  # the download bar sits in its cluster
+    return bar.width() - widget.mapTo(bar, QPoint(widget.width(), 0)).x()
 
 
 def test_a_download_bar_alone_keeps_the_window_margin(window):
     window._on_prefetch_progress(progress(1, 50))  # private on purpose: a report, no thread
 
     assert window.busy_bar.isHidden()
-    assert window._bar_gap.isHidden()
     assert right_margin(window, window.prefetch_bar) == tokens.MARGIN
 
 
 @pytest.mark.parametrize("download_first", [True, False])
-def test_both_bars_get_the_gap_and_the_busy_bar_keeps_the_margin(window, download_first):
+def test_a_reading_prepared_during_a_download_shows_only_the_download_bar(window, download_first):
     if download_first:
         window._on_prefetch_progress(progress(1, 50))
     window._set_busy(True)
     if not download_first:
         window._on_prefetch_progress(progress(1, 50))
 
-    assert gap_between_the_bars(window)
-    assert window._bar_gap.width() == tokens.CONTROL_SPACING
-    assert right_margin(window, window.busy_bar) == tokens.MARGIN
+    assert window.busy_bar.isHidden()
+    assert window.prefetch_bar.isVisible()
+    assert right_margin(window, window.prefetch_bar) == tokens.MARGIN
 
 
-def test_the_gap_goes_when_the_busy_bar_hides_during_a_download(window):
+def test_the_busy_bar_stays_hidden_when_the_reading_ends_during_a_download(window):
     window._on_prefetch_progress(progress(1, 50))
     window._set_busy(True)
 
     window._set_busy(False)
 
     assert window.busy_bar.isHidden()
-    assert window._bar_gap.isHidden()
     assert right_margin(window, window.prefetch_bar) == tokens.MARGIN
 
 
-def test_the_gap_goes_when_the_download_ends_during_a_reading(window):
+def test_the_busy_bar_returns_when_the_download_ends_during_a_reading(window):
     window._on_prefetch_progress(progress(1, 50))
     window._set_busy(True)
 
     window._on_prefetch_done(PrefetchResult("nothing"))
 
-    assert window._bar_gap.isHidden()
+    assert window.busy_bar.isVisible()
     assert right_margin(window, window.busy_bar) == tokens.MARGIN

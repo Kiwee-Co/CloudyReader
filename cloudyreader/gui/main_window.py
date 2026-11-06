@@ -57,9 +57,11 @@ from cloudyreader.gui.voice_picker import LOADING, VoicePicker
 from cloudyreader.gui.widgets import (
     Card,
     DisclosureButton,
+    ElidedLabel,
     FocusRing,
     StatusBar,
     Tone,
+    tabular,
     text_style,
 )
 from cloudyreader.models import AudioPlayer, ReaderService, Reading, RenderOptions, VoiceInfo
@@ -427,20 +429,25 @@ class MainWindow(QMainWindow):
         self._focus_ring.track(self.script_view, self.script_panel, tokens.CARD_RADIUS)
 
         # Voice downloads report in permanent widgets, so the message slot stays free for
-        # "Preparing…" and "Playing…". Added before the busy bar, which stays rightmost.
-        self.prefetch_label = QLabel()
-        self.prefetch_label.setFont(text_style(tokens.TEXT_CALLOUT_PT))  # as the status message
+        # "Preparing…" and "Playing…". The label and its bar form one cluster that gives up width
+        # before the message does: the label elides first. Added before the busy bar.
+        self.prefetch_label = ElidedLabel()
+        self.prefetch_label.setFont(tabular(text_style(tokens.TEXT_CALLOUT_PT)))  # as the message
         self.prefetch_bar = QProgressBar()
         self.prefetch_bar.setRange(0, 100)  # percent of the group, else of the whole run
         self.prefetch_bar.setTextVisible(False)
         self.prefetch_bar.setFixedWidth(tokens.PROGRESS_BAR_WIDTH)
         self.prefetch_bar.setAccessibleName(_DOWNLOADING)
-        # Keeps the two bars apart, so they never read as one; shown only while both are.
-        self._bar_gap = QWidget()
-        self._bar_gap.setFixedWidth(tokens.CONTROL_SPACING)
-        self._prefetch_widgets = (self.prefetch_label, self.prefetch_bar)
-        for widget in (*self._prefetch_widgets, self._bar_gap):
-            self._status.addPermanentWidget(widget)
+        self.prefetch_bar.setAccessibleDescription("Voice download progress.")
+        cluster = QWidget()
+        row = QHBoxLayout(cluster)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(tokens.CONTROL_SPACING)
+        row.addWidget(self.prefetch_label, 1)
+        row.addWidget(self.prefetch_bar)
+        self._status.add_cluster(cluster)
+        self._prefetch_widgets = (cluster, self.prefetch_label, self.prefetch_bar)
+        for widget in self._prefetch_widgets:
             widget.hide()
 
         self.busy_bar = QProgressBar()
@@ -448,8 +455,14 @@ class MainWindow(QMainWindow):
         self.busy_bar.setTextVisible(False)
         self.busy_bar.setFixedWidth(tokens.PROGRESS_BAR_WIDTH)
         self.busy_bar.setAccessibleName("Preparing")
+        self.busy_bar.setAccessibleDescription("A reading is being prepared.")
         self._status.addPermanentWidget(self.busy_bar)
         self.busy_bar.hide()
+        # On macOS a box layout pads itself by the layout margins of the progress bars in it,
+        # hidden ones too, which lifts the download label off the message's line: lay them out
+        # by their widget rect.
+        for bar in (self.prefetch_bar, self.busy_bar):
+            bar.setAttribute(Qt.WidgetAttribute.WA_LayoutUsesWidgetRect)
 
         order = [
             self.question_edit,
@@ -624,7 +637,7 @@ class MainWindow(QMainWindow):
             self.prefetch_bar.setAccessibleName(_DOWNLOADING)
         for widget in self._prefetch_widgets:
             widget.show()
-        self._sync_bar_gap()
+        self._update_busy_bar()
         # A new group means the last one ended: its voices are listed while the next downloads.
         previous, self._prefetch_group = self._prefetch_group, progress.group
         ended = previous != "" and progress.group not in ("", previous)
@@ -640,7 +653,7 @@ class MainWindow(QMainWindow):
             return
         for widget in self._prefetch_widgets:
             widget.hide()
-        self._sync_bar_gap()
+        self._update_busy_bar()
         outcome = getattr(result, "outcome", None)
         skips = [_skip_line(entry) for entry in getattr(result, "skipped", ())]
         actionable = [line for line, can_act in skips if can_act]
@@ -721,13 +734,10 @@ class MainWindow(QMainWindow):
         self.busy_changed.emit(busy)
 
     def _update_busy_bar(self) -> None:
-        self.busy_bar.setVisible(self._busy or self._loading_voices)
-        self._sync_bar_gap()
-
-    def _sync_bar_gap(self) -> None:
-        # Alone, either bar must end at the window margin, as the busy bar always has.
-        both = not self.prefetch_bar.isHidden() and not self.busy_bar.isHidden()
-        self._bar_gap.setVisible(both)
+        # One bar at a time: beside a download bar, two bars read as one control or compete.
+        # "Preparing…" in the message still carries the state.
+        busy = self._busy or self._loading_voices
+        self.busy_bar.setVisible(busy and self.prefetch_bar.isHidden())
 
     def _notify(self, text: str, *, tooltip: str | None = None, tone: Tone = Tone.INFO) -> None:
         self._status.show_message(text, tone)
