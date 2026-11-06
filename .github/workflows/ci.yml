@@ -258,22 +258,33 @@ jobs:
     name: docs
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    env:
+      ASTRO_TELEMETRY_DISABLED: '1'
+      NPM_CONFIG_IGNORE_SCRIPTS: 'true'
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      # Standard library only; ubuntu-24.04 ships Python 3.12. It runs before the slower build.
-      - name: Check the site source
-        run: python3 scripts/check_site.py docs
-
-      # Pages deploys from branch main, folder /docs; nothing deploys here.
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697 # v1.0.13
+      # site/.node-version names the Node release; site/package.json allows 22.23.4 or later.
+      # No npm cache: `npm ci` takes seconds, and a restored cache is one more input to trust.
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          source: ./docs
-          destination: ./_site
+          node-version-file: site/.node-version
+
+      - name: Install the locked packages
+        working-directory: site
+        run: npm ci
+
+      - name: Build the site
+        working-directory: site
+        run: npm run build
+
+      # Standard library only. It reads the built HTML, so it checks what visitors get.
+      - name: Check the built site
+        run: python3 scripts/check_site.py site/dist
 
   lock:
     name: lock

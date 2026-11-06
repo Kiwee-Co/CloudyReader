@@ -151,9 +151,19 @@ def test_the_test_job_runs_the_make_gate_offline_and_writes_both_reports() -> No
     assert "--junitxml=" in gate["run"] and "--cov-report=xml:" in gate["run"]
 
 
-def test_the_docs_job_checks_the_source_before_the_jekyll_build() -> None:
-    names = [s.get("name") for s in steps("docs")]
-    assert names.index("Check the site source") < names.index("Build with Jekyll")
+def test_the_docs_job_installs_from_the_lockfile_builds_then_checks_the_build() -> None:
+    job = load()["jobs"]["docs"]
+    names = [s.get("name") for s in job["steps"]]
+    assert names.index("Install the locked packages") < names.index("Build the site")
+    assert names.index("Build the site") < names.index("Check the built site")
+    by_name = {s.get("name"): s for s in job["steps"]}
+    assert by_name["Install the locked packages"]["run"] == "npm ci"
+    assert by_name["Install the locked packages"]["working-directory"] == "site"
+    assert by_name["Build the site"]["run"] == "npm run build"
+    assert by_name["Check the built site"]["run"] == "python3 scripts/check_site.py site/dist"
+    assert job["env"]["NPM_CONFIG_IGNORE_SCRIPTS"] == "true"
+    node = next(s for s in job["steps"] if s.get("uses", "").startswith("actions/setup-node@"))
+    assert node["with"] == {"node-version-file": "site/.node-version"}, "no npm cache input"
 
 
 def test_every_setup_uv_step_pins_the_same_uv_version() -> None:
