@@ -29,3 +29,11 @@ def test_the_voices_figure_lists_the_voices_in_the_apps_order(snapshots, tmp_pat
 
     assert [v.key for v in voices] == [v.key for v in sorted(voices, key=voice_sort_key)]
     assert list(dict.fromkeys(v.engine for v in voices)) == ["kokoro", "piper"]
+
+
+def test_the_engine_catalog_lists_the_engine_groups_between_kokoro_and_piper(snapshots, tmp_path):
+    voices = snapshots.with_engine_rows(snapshots.real_voices(tmp_path))
+
+    assert [v.key for v in voices] == [v.key for v in sorted(voices, key=voice_sort_key)]
+    engines = list(dict.fromkeys(v.engine for v in voices))
+    assert engines == ["kokoro", "chatterbox_turbo", "qwen3_tts", "piper"]

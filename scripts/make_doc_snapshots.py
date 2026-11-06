@@ -1,4 +1,4 @@
-"""Render the documentation figures in docs/assets/img as vector SVG from the live app window.
+"""Render the documentation figures in site/public/img as vector SVG from the live app window.
 
 Usage, with the app's own environment so the figures show the current UI:
   uv run --frozen --offline --project <repo> python scripts/make_doc_snapshots.py --out <dir>
@@ -36,10 +36,12 @@ sys.dont_write_bytecode = True  # never leave .pyc files in the app checkout
 
 from PySide6.QtCore import QPoint, QRectF, QSettings, Qt  # noqa: E402
 from PySide6.QtGui import (  # noqa: E402
+    QAction,
     QColor,
     QFont,
     QFontMetricsF,
     QIcon,
+    QKeySequence,
     QPainterPath,
     QPalette,
     QTextCursor,
@@ -72,9 +74,26 @@ MENU_RADIUS = 8.0
 MENU_TEXT = 21.0
 MENU_TAIL = 24.0
 GAP = 18.0  # between stacked status strips
+CALLOUT_BAND = 36.0  # empty band above a status strip where its numbered markers sit
 LESSAC = "piper:en_US-lessac-medium"
+HEART = "kokoro:af_heart"  # the top voice: where the Voice menu opens on a fresh install
 MISSING = "kokoro:am_adam"  # the one voice shown as not installed: the last Kokoro row, in view
 ROUND = {"stroke_linecap": "round", "stroke_linejoin": "round"}
+# SQ1 of the manual plan, written for the manual: every window figure shows this paste.
+MANUAL_QUESTION = (
+    "TOSS-UP\n"
+    "1) CHEMISTRY Multiple Choice Which gas forms when sodium bicarbonate, NaHCO3, reacts with "
+    "acetic acid?\n"
+    "W) Oxygen\nX) Hydrogen\nY) Carbon dioxide\nZ) Nitrogen\n"
+    "ANSWER: Y) CARBON DIOXIDE"
+)
+# A malformed respelling (all syllables in capitals gives no stress): the normalizer warns.
+GUIDE_QUESTION = (
+    "TOSS-UP\n"
+    "3) EARTH AND SPACE Short Answer What green mineral, olivine [OL-UH-VEEN], is common in "
+    "Earth's upper mantle?\n"
+    "ANSWER: OLIVINE"
+)
 
 
 # --- SVG writing -------------------------------------------------------------------------------
@@ -116,6 +135,8 @@ class Svg:
 
     def __init__(self, width: float, height: float, title: str, desc: str) -> None:
         self.width, self.height, self.title, self.desc = width, height, title, desc
+        self.scale = 1.0  # display size over viewBox: 2 shows a small panel at twice its size
+        self.origin = (0.0, 0.0)  # viewBox corner: a crop draws the whole window, shows a part
         self._defs: list[str] = []
         self._body: list[str] = []
         self._ids = itertools.count(1)
@@ -170,11 +191,13 @@ class Svg:
 
     def xml(self) -> str:
         w, h = num(self.width), num(self.height)
+        shown_w, shown_h = num(self.width * self.scale), num(self.height * self.scale)
         defs = f"<defs>{''.join(self._defs)}</defs>\n" if self._defs else ""
         return (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
-            f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" '
-            f'viewBox="0 0 {w} {h}" role="img" aria-labelledby="title desc" '
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{shown_w}" height="{shown_h}" '
+            f'viewBox="{num(self.origin[0])} {num(self.origin[1])} {w} {h}" role="img" '
+            'aria-labelledby="title desc" '
             f"font-family={quoteattr(FONT)}>\n"
             f'<title id="title">{escape(self.title)}</title>\n'
             f'<desc id="desc">{escape(self.desc)}</desc>\n'
@@ -331,7 +354,7 @@ def look_for(dark: bool, palette: QPalette | None) -> Look:
 class Env:
     """The QApplication, a temp folder, the real voice catalog, and helpers to drive windows."""
 
-    def __init__(self, platform: str) -> None:
+    def __init__(self, platform: str, *, engines: bool = False) -> None:
         argv = ["make_doc_snapshots", "-platform", platform]
         self.app = QApplication.instance() or QApplication(argv)
         self.tmp = Path(tempfile.mkdtemp(prefix="cloudyreader-docs-"))
@@ -344,6 +367,8 @@ class Env:
         if icon.is_file():  # what a source checkout shows in the About box
             self.app.setWindowIcon(QIcon(str(icon)))
         self.voices = real_voices(self.tmp)
+        if engines:  # the 0.0.2 catalog: Chatterbox Turbo and Qwen3-TTS rows among the voices
+            self.voices = with_engine_rows(self.voices)
         self.service_class = doc_service_class()
         self._ids = itertools.count(1)
 
@@ -364,17 +389,28 @@ class Env:
             time.sleep(0.005)
 
     @contextmanager
-    def window(self, *, rotation: str | None = None, **knobs: object) -> Iterator[tuple[Any, Any]]:
-        """A shown-offscreen MainWindow with its voices listed, and its fake service."""
+    def window(
+        self,
+        *,
+        rotation: str | None = None,
+        voices: Sequence[Any] | None = None,
+        saved_voice: str = LESSAC,
+        **knobs: object,
+    ) -> Iterator[tuple[Any, Any]]:
+        """A shown-offscreen MainWindow with its voices listed, and its fake service.
+
+        voices replaces the full catalog, as at a first launch with nothing downloaded yet.
+        """
         from cloudyreader.gui.fake_service import FakeClipboard, FakePlayer
         from cloudyreader.gui.main_window import MainWindow
 
         path = self.tmp / f"window{next(self._ids)}.ini"
         settings = QSettings(str(path), QSettings.Format.IniFormat)
-        settings.setValue("voice", LESSAC)
+        settings.setValue("voice", saved_voice)
         if rotation is not None:
             settings.setValue("voice_rotation", rotation)
-        service = self.service_class(voices=self.voices, **knobs)
+        listed = self.voices if voices is None else list(voices)
+        service = self.service_class(voices=listed, **knobs)
         win = MainWindow(service, FakePlayer(), settings=settings, clipboard=FakeClipboard())
         win.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen)
         win.show()
@@ -459,10 +495,8 @@ def doc_service_class() -> type:
 
 
 def sample_question() -> str:
-    """The toss-up the app's own self-test reads."""
-    from cloudyreader.__main__ import SELF_TEST_PASTE
-
-    return SELF_TEST_PASTE.strip()
+    """The paste every window figure shows: SQ1, the manual's own sample question."""
+    return MANUAL_QUESTION
 
 
 # --- drawing the widgets -----------------------------------------------------------------------
@@ -920,19 +954,31 @@ def fig_window(env: Env, look: Look) -> Svg:
     return svg
 
 
-def fig_menu(env: Env, look: Look, which: str) -> Svg:
+def fig_menu(env: Env, look: Look, which: str, *, top: bool = False) -> Svg:
+    """A popup menu open over the window. top: the Voice menu at Heart, the first voice listed."""
     with env.window() as (win, _service):
         win.question_edit.setPlainText(sample_question())
+        if top:
+            win.voice_picker.select_voice(HEART)
         env.app.processEvents()
         combo = win.voice_picker.combo if which == "voices" else win.rotation_combo
         items, current = combo_items(combo), combo.currentIndex()
-        if which == "voices":
+        if top:
+            hover = current  # macOS opens the menu with the pointer on the current item
+        elif which == "voices":
             hover = next(i for i, item in enumerate(items) if item.text.startswith("Heart"))
         else:
             hover = next(i for i, item in enumerate(items) if item.text == "Random shuffle")
         probe = Canvas(Svg(1, 1, "", ""), look, win, 0, 0)
         menu = menu_rect(probe.popup_bezel(combo), items, current, combo.font())
-        if which == "voices":
+        if top:
+            title = "Voice menu, top of the list"
+            desc = (
+                f"The Voice menu open in {appearance(look.dark)} at its top: the Kokoro heading, "
+                "then the highest-graded voices, starting with Heart (female) (en-US, A), and a "
+                "scroll arrow where the list goes on."
+            )
+        elif which == "voices":
             title = "Voice menu"
             desc = (
                 f"The Voice menu open in {appearance(look.dark)}: the end of the Kokoro list, best "
@@ -949,16 +995,22 @@ def fig_menu(env: Env, look: Look, which: str) -> Svg:
         svg = Svg(win.width(), win.height(), title, desc)
         bounds = draw_content(svg, look, win)
         shown = draw_menu(svg, look, menu, items, (current, hover), combo.font(), bounds)
-        if which == "voices" and not any("not installed" in items[i].text for i in shown):
+        # A voice row that is dimmed (not installed, or not downloaded yet) must stay in view.
+        dimmed = [i for i in shown if not items[i].enabled and "(" in items[i].text]
+        if which == "voices" and not top and not dimmed:
             raise RuntimeError(f"{MISSING} is out of view: pick a voice higher in the menu")
     return svg
 
 
-def status_strip(svg: Svg, look: Look, win: Any, y: float, caption: str) -> float:
-    """The window's status bar as a square strip under a caption; returns the next free y."""
+def status_strip(svg: Svg, look: Look, win: Any, y: float, caption: str | None) -> float:
+    """The window's status bar as a square strip, under a caption if one is given.
+
+    Returns the next free y. A strip figure of its own passes no caption: the page writes it.
+    """
     bar = win.statusBar()
-    svg.text(0, y + 13, caption, font_size=12, font_weight=600, **paint(look.ink))
-    y += 22
+    if caption is not None:
+        svg.text(0, y + 13, caption, font_size=12, font_weight=600, **paint(look.ink))
+        y += 22
     r = QRectF(0, y, win.width(), bar.height())
     svg.rect(r, **paint(look.window))
     clip = svg.clip(f"<rect{rect_attrs(r)}/>")
@@ -971,15 +1023,28 @@ def status_strip(svg: Svg, look: Look, win: Any, y: float, caption: str) -> floa
     return y + bar.height() + GAP
 
 
-def download_event() -> Any:
-    """A progress report at 42% of every voice file in assets.lock.json."""
+def download_event(
+    percent: int = 42, file: str = "af_bella.safetensors", files_done: int = 12
+) -> Any:
+    """A progress report at percent of every voice file in assets.lock.json."""
     from cloudyreader.prefetch import PrefetchProgress
 
     lock = json.loads((ROOT / "assets.lock.json").read_text(encoding="utf-8"))
     sizes = [a["size"] for a in lock["assets"] if a["group"] in ("voices", "kokoro")]
     total = sum(sizes)
-    done = -(-total * 42 // 100)  # rounded up, so the window's floored percent reads 42
-    return PrefetchProgress("af_bella.safetensors", done, total, 12, len(sizes))
+    done = -(-total * percent // 100)  # rounded up, so the window's floored percent reads it
+    return PrefetchProgress(file, done, total, files_done, len(sizes))
+
+
+def download_knobs(event: Any) -> dict[str, object]:
+    """A fake download that reports one event and then holds, so its widgets stay up."""
+    from cloudyreader.prefetch import PrefetchResult
+
+    return {
+        "prefetch_result": PrefetchResult("complete", files=1),
+        "prefetch_events": [event],
+        "prefetch_gate": threading.Event(),
+    }
 
 
 def fig_download(env: Env, look: Look) -> Svg:
@@ -1066,8 +1131,440 @@ def fig_about(env: Env, look: Look, logo: Logo) -> Svg:
             "the version, a one-line description, and an OK button."
         )
         svg = Svg(box.width(), box.height(), "About Cloudy Reader", desc)
+        svg.scale = 2  # a 251-point panel reads too small at its own size beside the text
         draw_content(svg, look, box, icon=lambda r: logo.draw(svg, r))
         box.close()
+    return svg
+
+
+# --- manual figures: first launch, the window tour, status strips, the Reading menu ------------
+
+Marker = dict[str, object]
+
+
+def marker(n: int, part: str, svg: Svg, x: float, y: float) -> Marker:
+    """One numbered callout for the Figure component: its centre in percent of the figure."""
+    return {
+        "n": n,
+        "part": part,
+        "x": round(100 * x / svg.width, 2),
+        "y": round(100 * y / svg.height, 2),
+    }
+
+
+def write_callouts(out: Path, name: str, markers: Sequence[Marker]) -> None:
+    """The sidecar of a figure: light and dark share it, so the markers never drift."""
+    path = out / f"{name}.callouts.json"
+    body = {"image": name, "callouts": list(markers)}
+    path.write_text(json.dumps(body, indent=2) + "\n", encoding="utf-8")
+    print(f"{path.name:34} {len(markers)} callouts")
+
+
+def button_rect(canvas: Canvas, b: QPushButton) -> QRectF:
+    """A push button's drawn bezel, as Canvas.button draws it."""
+    opt = QStyleOptionButton()
+    b.initStyleOption(opt)
+    item = b.style().subElementRect(QStyle.SubElement.SE_PushButtonLayoutItem, opt, b)
+    return QRectF(item).translated(canvas.geo(b).topLeft())
+
+
+def check_text_right(canvas: Canvas, c: QCheckBox) -> float:
+    opt = QStyleOptionButton()
+    c.initStyleOption(opt)
+    content = c.style().subElementRect(QStyle.SubElement.SE_CheckBoxContents, opt, c)
+    return (
+        canvas.geo(c).left() + content.left() + QFontMetricsF(c.font()).horizontalAdvance(c.text())
+    )
+
+
+def fig_first_launch(env: Env, look: Look) -> Svg:
+    """The first start: nothing downloaded yet, so no voice, while the download runs."""
+    event = download_event(4, "en_US-lessac-medium.onnx", files_done=5)  # the 5 configs are in
+    with env.window(voices=[], **download_knobs(event)) as (win, _service):
+        env.pump(lambda: not win.prefetch_label.isHidden(), "download progress")
+        env.pump(lambda: win.statusBar().currentMessage() == "No voice is installed.", "no voice")
+        desc = (
+            f"The main window in {appearance(look.dark)} at its first start: an empty question "
+            "box with its hint, the Voice menu dimmed with No voice installed, Speak and Speak "
+            "Clipboard dimmed, and the status No voice is installed. with a warning icon, beside "
+            "Downloading voices… 4% and its progress bar."
+        )
+        svg = Svg(win.width(), win.height(), "Cloudy Reader at first start", desc)
+        draw_content(svg, look, win)
+    return svg
+
+
+def fig_window_tour(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
+    """The main window during a reading, with markers for its eight parts."""
+    from cloudyreader.gui import tokens
+
+    with env.window() as (win, _service):
+        env.speak(win, sample_question())
+        win.script_toggle.setChecked(True)
+        env.pump(lambda: win.statusBar().currentMessage() == "Playing 2.0 s.", "playing status")
+        desc = (
+            f"The main window in {appearance(look.dark)} during a reading: the question box, the "
+            "Voice and Rotation menus, the two options, the Paste and Speak Clipboard buttons, "
+            "the Repeat, Stop, and Speak buttons, the Spoken script, and the status bar."
+        )
+        svg = Svg(win.width(), win.height(), "The parts of the Cloudy Reader window", desc)
+        draw_content(svg, look, win)
+        c = Canvas(svg, look, win, 0, 0)
+        question = c.geo(win.question_edit)
+        voice = c.popup_bezel(win.voice_picker.combo)
+        rotation = c.popup_bezel(win.rotation_combo)
+        checks = (win.read_answer_check, win.online_lookups_check)
+        options_x = max(check_text_right(c, check) for check in checks) + 18
+        options_y = sum(c.geo(check).center().y() for check in checks) / 2
+        paste, speak = button_rect(c, win.paste_button), button_rect(c, win.speak_button)
+        toggle = c.geo(win.script_toggle)
+        toggle_text = QFontMetricsF(win.script_toggle.font()).horizontalAdvance(
+            win.script_toggle.text()
+        )
+        toggle_x = toggle.left() + tokens.DISCLOSURE_SIZE + tokens.INDICATOR_SPACING + toggle_text
+        bar = c.geo(win.statusBar())
+        markers = [
+            marker(1, "question box", svg, question.right(), question.bottom()),
+            marker(2, "Voice menu", svg, voice.right() + 18, voice.center().y()),
+            marker(3, "Rotation menu", svg, rotation.right() + 18, rotation.center().y()),
+            marker(4, "options", svg, options_x, options_y),
+            marker(5, "Paste and Speak Clipboard", svg, paste.left(), paste.top()),
+            marker(6, "Repeat, Stop, and Speak", svg, speak.right(), speak.top()),
+            marker(7, "Spoken script", svg, toggle_x + 18, toggle.center().y()),
+            marker(8, "status bar", svg, bar.right() - 32, bar.center().y()),
+        ]
+    return svg, markers
+
+
+def fig_strip(look: Look, win: Any, title: str, desc: str, *, band: float = 0) -> Svg:
+    """The status bar alone; band leaves room above it for numbered markers."""
+    svg = Svg(win.width(), band + win.statusBar().height(), title, desc)
+    status_strip(svg, look, win, band, None)
+    return svg
+
+
+def fig_download_progress(env: Env, look: Look) -> Svg:
+    with env.window(**download_knobs(download_event())) as (win, _service):
+        env.pump(lambda: not win.prefetch_label.isHidden(), "download progress")
+        desc = (
+            f"The status bar in {appearance(look.dark)} during the voice download: Downloading "
+            "voices… 42% and a progress bar."
+        )
+        return fig_strip(look, win, "Voice download progress", desc)
+
+
+def fig_status_busy(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
+    """A reading prepared during the download: the four parts of a busy status bar."""
+    with env.window(**download_knobs(download_event())) as (win, service):
+        env.pump(lambda: not win.prefetch_label.isHidden(), "download progress")
+        env.hold_reading(win, service)
+        desc = (
+            f"The status bar in {appearance(look.dark)} while a reading is prepared during the "
+            "voice download: Preparing… on the left, Downloading voices… 42% with its progress "
+            "bar, and the busy bar on the right."
+        )
+        svg = fig_strip(look, win, "A busy status bar", desc, band=CALLOUT_BAND)
+        bar = win.statusBar()
+        origin = bar.mapTo(win, QPoint(0, 0))
+        c = Canvas(svg, look, win, -origin.x(), CALLOUT_BAND - origin.y())
+        _icon, text, _elided = bar.message_layout()
+        message = QRectF(text).translated(c.geo(bar).topLeft())
+        y = CALLOUT_BAND / 2
+        markers = [
+            marker(1, "message", svg, message.left() + 12, y),
+            marker(2, "download label", svg, c.geo(win.prefetch_label).center().x(), y),
+            marker(3, "download progress bar", svg, c.geo(win.prefetch_bar).center().x(), y),
+            marker(4, "busy bar", svg, c.geo(win.busy_bar).center().x(), y),
+        ]
+    return svg, markers
+
+
+def fig_status_warning(env: Env, look: Look) -> Svg:
+    from cloudyreader.gui.widgets import Tone
+    from cloudyreader.prefetch import PrefetchResult
+
+    partial = PrefetchResult("partial", failed=(f"{MISSING.partition(':')[2]}.safetensors",))
+    with env.window(prefetch_result=partial) as (win, _service):
+        env.pump(lambda: win.statusBar().tone is Tone.WARNING, "warning")
+        desc = (
+            f"The status bar in {appearance(look.dark)} with a warning: the warning icon, then "
+            "Some voices could not be downloaded. They are tried again at the next start."
+        )
+        return fig_strip(look, win, "A status bar warning", desc)
+
+
+def fig_guide_warning(env: Env, look: Look) -> Svg:
+    """The warning a malformed pronunciation guide raises, from the real normalizer."""
+    with env.window() as (win, _service):
+        env.speak(win, GUIDE_QUESTION)
+        env.pump(lambda: win.statusBar().currentMessage().startswith("Warning:"), "guide warning")
+        message = win.statusBar().currentMessage()
+        desc = f"The status bar in {appearance(look.dark)} with a warning icon and: {message}"
+        return fig_strip(look, win, "A pronunciation guide warning", desc)
+
+
+# --- 0.0.2 engine states: Chatterbox Turbo and Qwen3-TTS (branch pause and later) -------------
+
+QWEN_RYAN = "qwen3_tts:ryan"
+LOAD_HINT = "loading Chatterbox Turbo (first use only)"
+
+
+def engine_rows() -> list[Any]:
+    """The GUI fake's engine rows: Chatterbox Turbo dimmed with its reason, Ryan, Aiden."""
+    from cloudyreader.gui.fake_service import ENGINE_FAKE_VOICES, FAKE_VOICES
+
+    return list(ENGINE_FAKE_VOICES[len(FAKE_VOICES) :])
+
+
+def with_engine_rows(voices: Sequence[Any]) -> list[Any]:
+    """The catalog with the engine rows, in the order TtsService.voices() lists them."""
+    from cloudyreader.voice_meta import voice_sort_key
+
+    return sorted([*voices, *engine_rows()], key=voice_sort_key)
+
+
+def engine_catalog(env: Env) -> list[Any]:
+    """Every pinned voice plus the engine rows, whether or not --engines is on."""
+    folder = env.tmp / f"engines{next(env._ids)}"
+    folder.mkdir()  # real_voices() makes its voices folder inside, without parents
+    return with_engine_rows(real_voices(folder))
+
+
+def fig_voices_engines(env: Env, look: Look) -> Svg:
+    """The Voice menu open at Ryan: the engine groups between Kokoro and Piper."""
+    with env.window(voices=engine_catalog(env), saved_voice=QWEN_RYAN) as (win, _service):
+        win.question_edit.setPlainText(sample_question())
+        env.app.processEvents()
+        combo = win.voice_picker.combo
+        items, current = combo_items(combo), combo.currentIndex()
+        probe = Canvas(Svg(1, 1, "", ""), look, win, 0, 0)
+        menu = menu_rect(probe.popup_bezel(combo), items, current, combo.font())
+        desc = (
+            f"The Voice menu open in {appearance(look.dark)} at Ryan (male): the end of the "
+            "Kokoro list, the Chatterbox Turbo heading with its built-in voice dimmed and the "
+            "reason not downloaded yet, the Qwen3-TTS heading with Ryan and Aiden, then Piper."
+        )
+        svg = Svg(win.width(), win.height(), "Voice menu with the engine groups", desc)
+        bounds = draw_content(svg, look, win)
+        draw_menu(svg, look, menu, items, (current, current), combo.font(), bounds)
+    return svg
+
+
+def engine_event(percent: int = 42) -> Any:
+    """A report inside the Qwen3-TTS group, as the startup run sends it for an engine."""
+    from cloudyreader.prefetch import PrefetchProgress
+
+    group_total = 1_973 * 10**6
+    group_done = -(-group_total * percent // 100)  # rounded up: the floored percent reads it
+    return PrefetchProgress(
+        "model.safetensors",
+        2_100 * 10**6,
+        3_050 * 10**6,
+        44,
+        64,
+        group="qwen3_tts",
+        group_done_bytes=group_done,
+        group_total_bytes=group_total,
+    )
+
+
+def fig_download_engine(env: Env, look: Look) -> Svg:
+    with env.window(**download_knobs(engine_event())) as (win, _service):
+        env.pump(lambda: not win.prefetch_label.isHidden(), "engine download progress")
+        desc = (
+            f"The status bar in {appearance(look.dark)} while an engine downloads: "
+            f"{win.prefetch_label.text()} and the group's progress bar."
+        )
+        return fig_strip(look, win, "Engine download progress", desc)
+
+
+def fig_voice_note(env: Env, look: Look) -> Svg:
+    """The saved voice is a dimmed engine row: the window falls back and says why, once."""
+    catalog = [
+        replace(v, installed=False, reason="not downloaded yet") if v.key == QWEN_RYAN else v
+        for v in engine_catalog(env)
+    ]
+    with env.window(voices=catalog, saved_voice=QWEN_RYAN) as (win, _service):
+        env.pump(lambda: "is not ready" in win.statusBar().currentMessage(), "saved-voice note")
+        message = win.statusBar().currentMessage()
+        desc = f"The status bar in {appearance(look.dark)} at start: {message}"
+        return fig_strip(look, win, "Saved voice not ready", desc)
+
+
+def fig_engine_skip(env: Env, look: Look) -> Svg:
+    """An engine download skipped for disk space: a warning at the end of the run."""
+    from cloudyreader.engine_catalog import LOW_DISK
+    from cloudyreader.gui.widgets import Tone
+    from cloudyreader.prefetch import PrefetchResult
+
+    reason = f"qwen3_tts: {LOW_DISK}: needs 3.2 GB, 1.1 GB free"
+    with env.window(prefetch_result=PrefetchResult("nothing", skipped=(reason,))) as (win, _):
+        env.pump(lambda: win.statusBar().tone is Tone.WARNING, "skip warning")
+        message = win.statusBar().currentMessage()
+        desc = f"The status bar in {appearance(look.dark)} with a warning icon and: {message}"
+        return fig_strip(look, win, "Engine download skipped", desc)
+
+
+def fig_load_hint(env: Env, look: Look) -> Svg:
+    """The first reading with an engine voice: Preparing… names the model it loads."""
+    with env.window(load_hint=LOAD_HINT) as (win, service):
+        env.hold_reading(win, service)
+        desc = (
+            f"The status bar in {appearance(look.dark)} during a first reading: "
+            f"{win.statusBar().currentMessage()} with the busy bar."
+        )
+        return fig_strip(look, win, "First use of an engine", desc)
+
+
+def crop(svg: Svg, area: QRectF) -> None:
+    """Show only area of what svg draws: the viewBox moves, the drawing stays whole."""
+    svg.origin = (area.left(), area.top())
+    svg.width, svg.height = area.width(), area.height()
+
+
+def fig_rotation_fallback(env: Env, look: Look) -> Svg:
+    """Men only with no installed male voice: the reading uses the selected voice and says so."""
+    from cloudyreader.rotation import RotationMode
+    from cloudyreader.voice_meta import profile_of
+
+    def not_male(voice: Any) -> bool:
+        profile = profile_of(voice)
+        return profile is None or profile.gender != "male"
+
+    women = [v for v in env.voices if not_male(v)]
+    with env.window(rotation=str(RotationMode.MEN_SHUFFLE), voices=women) as (win, _service):
+        env.speak(win, sample_question())
+        env.pump(lambda: win.statusBar().currentMessage().startswith("No installed"), "fallback")
+        message = win.statusBar().currentMessage()
+        desc = f"The status bar in {appearance(look.dark)} with a warning icon and: {message}"
+        return fig_strip(look, win, "Rotation found no voice", desc)
+
+
+def fig_script_formula(env: Env, look: Look) -> Svg:
+    """The Spoken script view after SQ1: NaHCO3 reads N A H C O three."""
+    with env.window() as (win, _service):
+        env.speak(win, sample_question())
+        win.script_toggle.setChecked(True)
+        env.pump(lambda: win.statusBar().currentMessage() == "Playing 2.0 s.", "playing status")
+        desc = (
+            f"The Spoken script in {appearance(look.dark)} after a reading: the question as the "
+            "voice says it, with NaHCO3 written as N A H C O three."
+        )
+        svg = Svg(win.width(), win.height(), "The spoken script", desc)
+        draw_content(svg, look, win)
+        c = Canvas(svg, look, win, 0, 0)
+        area = c.geo(win.script_toggle).united(c.geo(win.script_view)).adjusted(-12, -10, 12, 12)
+        crop(svg, area)
+    return svg
+
+
+def fig_options(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
+    """The two options as they start: Read answer line off, Online lookups on."""
+    with env.window() as (win, _service):
+        desc = (
+            f"The two options in {appearance(look.dark)}: Read answer line, not selected, and "
+            "Online lookups, selected."
+        )
+        svg = Svg(win.width(), win.height(), "The options", desc)
+        svg.scale = 2  # a two-row crop reads too small at its own size
+        draw_content(svg, look, win)
+        c = Canvas(svg, look, win, 0, 0)
+        checks = (win.read_answer_check, win.online_lookups_check)
+        right = max(check_text_right(c, check) for check in checks)
+        label = next(w for w in win.findChildren(QLabel) if w.text() == "Options:")
+        rows = c.geo(checks[0]).united(c.geo(checks[1])).united(c.geo(label))
+        area = QRectF(
+            rows.left() - 12, rows.top() - 4, right + 60 - rows.left(), rows.height() + 12
+        )
+        crop(svg, area)
+        markers = [
+            marker(
+                n,
+                check.text(),
+                svg,
+                check_text_right(c, check) + 18 - area.left(),
+                c.geo(check).center().y() - area.top(),
+            )
+            for n, check in enumerate(checks, start=1)
+        ]
+    return svg, markers
+
+
+def mac_keys(action: QAction) -> str:
+    """The shortcut as a macOS menu draws it: Qt writes Return as ↵, the menu as ↩."""
+    native = action.shortcuts()[0].toString(QKeySequence.SequenceFormat.NativeText)
+    return native.replace("↵", "↩")
+
+
+def fig_reading_menu(env: Env, look: Look) -> Svg:
+    """The menu bar with the Reading menu open, drawn from the window's own actions."""
+    with env.window() as (win, _service):
+        env.speak(win, sample_question())  # a reading plays: all four commands are on
+        actions = [win.speak_action, win.speak_clipboard_action, None, win.repeat_action]
+        actions.append(win.stop_action)
+        font = QFont(win.font())
+        bold = QFont(font)
+        bold.setBold(True)
+        metrics, bold_metrics = QFontMetricsF(font), QFontMetricsF(bold)
+        titles = [("Cloudy Reader", bold), ("File", font), ("Edit", font)]
+        titles += [("Reading", font), ("Window", font)]
+        rows = [(a.text(), mac_keys(a), a.isEnabled()) if a else None for a in actions]
+        text_w = max(metrics.horizontalAdvance(r[0]) for r in rows if r)
+        keys_w = max(metrics.horizontalAdvance(r[1]) for r in rows if r)
+        bar_h, sep_h = 24.0, 11.0
+        x, spans = 14.0, []
+        for title, f in titles:
+            w = (bold_metrics if f is bold else metrics).horizontalAdvance(title)
+            spans.append((title, f, x, w))
+            x += w + 20
+        reading = next(s for s in spans if s[0] == "Reading")
+        menu_w = MENU_TEXT + text_w + 36 + keys_w + 16
+        menu_h = 2 * MENU_PAD + sum(MENU_ROW if r else sep_h for r in rows)
+        menu = QRectF(reading[2] - 10, bar_h + 3, menu_w, menu_h)
+        width, height = max(x, menu.right() + 24), menu.bottom() + 24
+        desc = (
+            f"The menu bar in {appearance(look.dark)} with the Reading menu open: Speak ⌘↩, "
+            "Speak Clipboard ⇧⌘V, then Repeat ⌘R and Stop ⌘."
+        )
+        svg = Svg(width, height, "The Reading menu", desc)
+        svg.rect(QRectF(0, 0, width, bar_h), **paint(look.menu))
+        svg.path(
+            f"M0 {num(bar_h - 0.25)}H{num(width)}",
+            stroke_width=0.5,
+            **paint(look.separator, "stroke"),
+        )
+        for title, f, left, w in spans:
+            if title == "Reading":
+                lit = QRectF(left - 7, 3, w + 14, bar_h - 6)
+                svg.rect(lit, 5, **paint(rgba(look.label.name(), 0.12)))
+            y = baseline(0, bar_h, f)
+            svg.text(left, y, title, **font_kw(f), **paint(look.label))
+        blur = svg.blur(9)
+        svg.rect(menu.translated(0, 6), MENU_RADIUS, filter=f"url(#{blur})", **paint(look.shadow))
+        edge = paint(look.menu_edge, "stroke")
+        svg.rect(menu, MENU_RADIUS, stroke_width=0.5, **paint(look.menu), **edge)
+        secondary = rgba(look.label.name(), 0.5)
+        y = menu.top() + MENU_PAD
+        for row in rows:
+            if row is None:
+                mid = y + sep_h / 2
+                line = f"M{pts(menu.left() + 10, mid)}H{num(menu.right() - 10)}"
+                svg.path(line, stroke_width=1, **paint(look.separator, "stroke"))
+                y += sep_h
+                continue
+            text, keys, on = row
+            ink = look.label if on else look.disabled
+            base = baseline(y, MENU_ROW, font)
+            svg.text(menu.left() + MENU_TEXT, base, text, **font_kw(font), **paint(ink))
+            svg.text(
+                menu.right() - 16,
+                base,
+                keys,
+                text_anchor="end",
+                **font_kw(font),
+                **paint(secondary if on else look.disabled),
+            )
+            y += MENU_ROW
     return svg
 
 
@@ -1238,26 +1735,214 @@ def fig_pipeline(dark: bool) -> Svg:
     return svg
 
 
+def legend(svg: Svg, ink: Ink, x: float, y: float) -> None:
+    """The local and network swatches of the diagrams."""
+    swatch = {"stroke_width": 1, **paint(ink.local), **paint(ink.edge, "stroke")}
+    svg.rect(QRectF(x, y, 18, 14), 4, **swatch)
+    svg.text(x + 24, y + 12, "on the Mac", font_size=12, **paint(ink.soft))
+    net = {"stroke_width": 1.2, "stroke_dasharray": "3 3"}
+    svg.rect(
+        QRectF(x + 120, y, 18, 14), 4, **paint(ink.net), **paint(ink.net_edge, "stroke"), **net
+    )
+    svg.text(x + 144, y + 12, "network (HTTPS)", font_size=12, **paint(ink.soft))
+
+
+def step_number(svg: Svg, ink: Ink, box: QRectF, n: int) -> None:
+    """A numbered disc at a box's left edge, for diagrams read in order."""
+    cx, cy = box.left() + 24, box.top() + 19
+    svg.circle(cx, cy, 11, **paint(ink.net_edge))
+    svg.text(
+        cx, cy + 4.5, str(n), text_anchor="middle", font_size=13, font_weight=700, fill="#FFFFFF"
+    )
+
+
+def numbered_box(
+    d: Diagram, r: QRectF, n: int, title: str, lines: Sequence[str], *, net: bool = False
+) -> QRectF:
+    """A diagram box whose title follows a step number."""
+    d.box(r, "", net=net)
+    svg, ink = d.svg, d.ink
+    step_number(svg, ink, r, n)
+    title_ink = ink.net_edge if net else ink.text
+    svg.text(r.left() + 44, r.top() + 24, title, font_size=14, font_weight=600, **paint(title_ink))
+    for i, text in enumerate(lines):
+        svg.text(r.left() + 44, r.top() + 44 + 17 * i, text, font_size=12, **paint(ink.soft))
+    return r
+
+
+def arrow_label(svg: Svg, ink: Ink, x: float, y: float, text: str, anchor: str = "middle") -> None:
+    """A label on the paper beside an arrow."""
+    svg.text(x, y, text, text_anchor=anchor, font_size=12, **paint(ink.soft))
+
+
+def fig_network(dark: bool) -> Svg:
+    """What leaves the Mac: one name to PubChem or UniProt, voice files from Hugging Face."""
+    ink = diagram_ink(dark)
+    desc = (
+        "The Mac, with the question box and a voice, and three outside services: a name lookup "
+        "sends one detected name to PubChem or UniProt, and the voice download requests voice "
+        "files from Hugging Face. --offline or CLOUDYREADER_OFFLINE=1 stops both; Online lookups "
+        "off stops only the name lookups. Everything else stays on the Mac."
+    )
+    width, height = 520, 458
+    svg = Svg(width, height, "What uses the network", desc)
+    svg.rect(QRectF(0, 0, width, height), 16, **paint(ink.paper))
+    d = Diagram(svg, ink)
+    svg.text(32, 44, "What uses the network", font_size=18, font_weight=700, **paint(ink.text))
+    legend(svg, ink, 32, 60)
+    mac = QRectF(32, 92, 456, 138)
+    svg.rect(mac, 12, stroke_width=1, **paint(ink.paper), **paint(ink.edge, "stroke"))
+    svg.text(46, 114, "Your Mac", font_size=14, font_weight=600, **paint(ink.text))
+    question = d.box(QRectF(48, 126, 276, 84), "Question box", ["the pasted question"])
+    voice = d.box(QRectF(340, 126, 132, 84), "Voice", ["Piper or Kokoro"])
+    top = 300
+    pubchem = d.box(QRectF(48, top, 130, 64), "PubChem", ["chemical names"], net=True)
+    uniprot = d.box(QRectF(194, top, 130, 64), "UniProt", ["proteins, genes"], net=True)
+    hub = d.box(QRectF(340, top, 132, 64), "Hugging Face", ["voice files"], net=True)
+    for service in (pubchem, uniprot):
+        x = service.center().x()
+        d.link((x, question.bottom()), (x, service.top()), dashed=True)
+    arrow_label(
+        svg, ink, (pubchem.center().x() + uniprot.center().x()) / 2, 262, "one detected name"
+    )
+    d.link((hub.center().x(), hub.top()), (hub.center().x(), voice.bottom()), dashed=True)
+    arrow_label(svg, ink, hub.center().x() + 8, 262, "voice files", anchor="start")
+    d.box(QRectF(32, 386, 456, 52), "", [])
+    note = [
+        "Offline mode (--offline or CLOUDYREADER_OFFLINE=1) stops both.",
+        "Online lookups off stops only the name lookups.",
+    ]
+    for i, text in enumerate(note):
+        svg.text(46, 406 + 17 * i, text, font_size=12, **paint(ink.soft))
+    return svg
+
+
+def fig_stages(dark: bool) -> Svg:
+    """A reading in five steps, in the reader's words; only the lookup step can use the network."""
+    ink = diagram_ink(dark)
+    steps = [
+        ("Clean up and parse", ["find the question, its category, and its choices"], 64),
+        ("Find names", ["chemicals, proteins, and genes in the text"], 64),
+        ("Look up names", ["the OPSIN check runs on the Mac;"], 112),
+        ("Build the spoken script", ["formulas, units, symbols, and guides become words"], 64),
+        ("Speak with a local voice", ["Piper or Kokoro, on your Mac"], 64),
+    ]
+    desc = (
+        "A vertical flow of five steps from pasted text to sound: clean up and parse, find names, "
+        "look up names, build the spoken script, and speak with a local voice. In the lookup "
+        "step the OPSIN check runs on the Mac; PubChem and UniProt are online and optional."
+    )
+    width, top, gap = 460, 92, 26
+    height = top + sum(h for *_, h in steps) + gap * (len(steps) - 1) + 28
+    svg = Svg(width, height, "From pasted text to sound", desc)
+    svg.rect(QRectF(0, 0, width, height), 16, **paint(ink.paper))
+    d = Diagram(svg, ink)
+    svg.text(32, 44, "From pasted text to sound", font_size=18, font_weight=700, **paint(ink.text))
+    legend(svg, ink, 32, 60)
+    y, boxes = float(top), []
+    for n, (title, lines, h) in enumerate(steps, start=1):
+        box = numbered_box(d, QRectF(32, y, 396, h), n, title, lines)
+        if n == 3:  # the online part sits inside the step: optional, and the only network use
+            inner = QRectF(box.left() + 44, box.top() + 56, box.width() - 60, 40)
+            d.box(inner, "", net=True)
+            svg.text(
+                inner.left() + 12,
+                inner.top() + 25,
+                "PubChem and UniProt are online and optional",
+                font_size=12,
+                font_weight=600,
+                **paint(ink.net_edge),
+            )
+        boxes.append(box)
+        y += h + gap
+    for a, b in itertools.pairwise(boxes):
+        d.link((a.center().x(), a.bottom()), (b.center().x(), b.top()))
+    return svg
+
+
+def fig_install_flow(dark: bool) -> Svg:
+    """The first open of a downloaded copy, as four steps. Not a picture of macOS itself."""
+    ink = diagram_ink(dark)
+    steps = [
+        ("Download the zip", ["from the Download page"]),
+        ("Move Cloudy Reader to Applications", ["unzip it, then drag the app into Applications"]),
+        ("Open it", ["macOS blocks the first open of this app"]),
+        ("Click Open Anyway in Privacy & Security", ["System Settings > Privacy & Security"]),
+    ]
+    desc = (
+        "Four steps of the first open: download the zip, move Cloudy Reader to Applications, "
+        "open it, then click Open Anyway in System Settings > Privacy & Security."
+    )
+    width, top, h, gap = 460, 60, 64, 26
+    height = top + len(steps) * h + (len(steps) - 1) * gap + 28
+    svg = Svg(width, height, "Install and first open", desc)
+    svg.rect(QRectF(0, 0, width, height), 16, **paint(ink.paper))
+    d = Diagram(svg, ink)
+    svg.text(32, 40, "Install and first open", font_size=18, font_weight=700, **paint(ink.text))
+    boxes = [
+        numbered_box(d, QRectF(32, top + i * (h + gap), 396, h), i + 1, title, lines)
+        for i, (title, lines) in enumerate(steps)
+    ]
+    for a, b in itertools.pairwise(boxes):
+        d.link((a.center().x(), a.bottom()), (b.center().x(), b.top()))
+    return svg
+
+
 # --- main --------------------------------------------------------------------------------------
 
-FIGURES = ("logo", "pipeline", "window", "about", "voices", "rotation", "download", "status-states")
+FIGURES = (
+    "logo",
+    "pipeline",
+    "window",
+    "about",
+    "voices",
+    "rotation",
+    "download",
+    "status-states",
+    "window-first-launch",
+    "window-tour",
+    "voices-top",
+    "download-progress",
+    "status-busy-download",
+    "status-warning",
+    "status-guide-warning",
+    "menu-reading",
+    "network-use",
+    "reading-stages",
+    "install-flow",
+    "status-rotation-fallback",
+    "script-formula",
+    "options",
+    "voices-engines",
+    "download-engine",
+    "status-voice-note",
+    "status-engine-skip",
+    "status-load-hint",
+)
 
 
 def write(svg: Svg, out: Path, name: str) -> None:
     path = out / f"{name}.svg"
     path.write_text(svg.xml(), encoding="utf-8")
-    print(f"{path.name:26} {path.stat().st_size / 1024:6.1f} KB")
+    print(f"{path.name:34} {path.stat().st_size / 1024:6.1f} KB")
 
 
-def build(out: Path, platform: str, only: Sequence[str]) -> int:
+def build(out: Path, platform: str, only: Sequence[str], *, engines: bool = False) -> int:
     out.mkdir(parents=True, exist_ok=True)
-    env = Env(platform)
+    env = Env(platform, engines=engines)
     logo = Logo()
     if "logo" in only:
         write(fig_logo(logo), out, "logo")
-    if "pipeline" in only:
-        write(fig_pipeline(False), out, "pipeline")
-        write(fig_pipeline(True), out, "pipeline-dark")
+    diagrams: dict[str, Callable[[bool], Svg]] = {
+        "pipeline": fig_pipeline,
+        "network-use": fig_network,
+        "reading-stages": fig_stages,
+        "install-flow": fig_install_flow,
+    }
+    for name, draw in diagrams.items():
+        if name in only:
+            for dark in (False, True):
+                write(draw(dark), out, f"{name}-{'dark' if dark else 'light'}")
     makers: dict[str, Callable[[Look], Svg]] = {
         "window": lambda look: fig_window(env, look),
         "about": lambda look: fig_about(env, look, logo),
@@ -1265,18 +1950,44 @@ def build(out: Path, platform: str, only: Sequence[str]) -> int:
         "rotation": lambda look: fig_menu(env, look, "rotation"),
         "download": lambda look: fig_download(env, look),
         "status-states": lambda look: fig_states(env, look),
+        "window-first-launch": lambda look: fig_first_launch(env, look),
+        "voices-top": lambda look: fig_menu(env, look, "voices", top=True),
+        "download-progress": lambda look: fig_download_progress(env, look),
+        "status-warning": lambda look: fig_status_warning(env, look),
+        "status-guide-warning": lambda look: fig_guide_warning(env, look),
+        "menu-reading": lambda look: fig_reading_menu(env, look),
+        "status-rotation-fallback": lambda look: fig_rotation_fallback(env, look),
+        "script-formula": lambda look: fig_script_formula(env, look),
+        "voices-engines": lambda look: fig_voices_engines(env, look),
+        "download-engine": lambda look: fig_download_engine(env, look),
+        "status-voice-note": lambda look: fig_voice_note(env, look),
+        "status-engine-skip": lambda look: fig_engine_skip(env, look),
+        "status-load-hint": lambda look: fig_load_hint(env, look),
+    }
+    # Figures with numbered markers: one sidecar each, from the light pass.
+    marked: dict[str, Callable[[Look], tuple[Svg, list[Marker]]]] = {
+        "window-tour": lambda look: fig_window_tour(env, look),
+        "status-busy-download": lambda look: fig_status_busy(env, look),
+        "options": lambda look: fig_options(env, look),
     }
     for dark in (False, True):
         look = env.scheme(dark)
+        theme = "dark" if dark else "light"
         for name, make in makers.items():
             if name in only:
-                write(make(look), out, f"{name}-{'dark' if dark else 'light'}")
+                write(make(look), out, f"{name}-{theme}")
+        for name, make_marked in marked.items():
+            if name in only:
+                svg, markers = make_marked(look)
+                write(svg, out, f"{name}-{theme}")
+                if not dark:
+                    write_callouts(out, name, markers)
     return 0
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Render the docs figures as vector SVG.")
-    parser.add_argument("--out", type=Path, default=Path("docs/assets/img"), help="output folder")
+    parser.add_argument("--out", type=Path, default=Path("site/public/img"), help="output folder")
     default = "cocoa" if sys.platform == "darwin" else "offscreen"
     parser.add_argument(
         "--platform",
@@ -1285,8 +1996,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         help=f"Qt platform for the layout (default here: {default}); windows are never shown",
     )
     parser.add_argument("--only", nargs="+", choices=FIGURES, default=list(FIGURES))
+    parser.add_argument(
+        "--engines",
+        action="store_true",
+        help="list the Chatterbox Turbo and Qwen3-TTS rows too (0.0.2); the 0.0.1 manual omits it",
+    )
     args = parser.parse_args(argv)
-    return build(args.out, args.platform, args.only)
+    return build(args.out, args.platform, args.only, engines=args.engines)
 
 
 if __name__ == "__main__":
