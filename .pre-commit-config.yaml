@@ -64,7 +64,7 @@ repos:
         name: prettier --check
         entry: prettier --check
         language: system
-        types_or: [markdown, yaml, json]
+        types_or: [markdown, mdx, yaml, json]
         exclude: |
           (?x)^(
             README\.md
@@ -85,7 +85,7 @@ repos:
         name: markdownlint
         entry: markdownlint
         language: system
-        types: [markdown]
+        types_or: [markdown, mdx]
         exclude: |
           (?x)^(
             docs/index\.md

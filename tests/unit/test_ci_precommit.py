@@ -150,13 +150,13 @@ def test_format_hooks_run_the_local_tool_over_the_right_file_kinds(hook_id: str)
     assert hook["language"] == "system"
     assert hook["entry"].split()[0] == hook_id
     kinds = hook.get("types_or") or hook.get("types")
-    assert "markdown" in kinds
+    assert {"markdown", "mdx"} <= set(kinds), "identify tags .mdx as mdx, not markdown"
 
 
-def test_prettier_checks_without_writing_and_covers_markdown_yaml_and_json() -> None:
+def test_prettier_checks_without_writing_and_covers_markdown_mdx_yaml_and_json() -> None:
     hook = hooks()["prettier"]
     assert hook["entry"] == "prettier --check"
-    assert set(hook["types_or"]) == {"markdown", "yaml", "json"}
+    assert set(hook["types_or"]) == {"markdown", "mdx", "yaml", "json"}
 
 
 @pytest.mark.parametrize("hook_id", FORMAT_HOOKS)
