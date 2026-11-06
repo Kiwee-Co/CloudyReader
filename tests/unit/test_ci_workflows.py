@@ -1,6 +1,6 @@
-"""The CI workflow against the rules it must keep: triggers, permissions, pins, and the `ci` gate.
+"""The CI and Pages workflows against the rules they keep: triggers, permissions, pins, the gate.
 
-These read .github/workflows/ci.yml as data. They stand in for what actionlint and zizmor check,
+These read .github/workflows/*.yml as data. They stand in for what actionlint and zizmor check,
 and they run on every test job, so an edit that breaks a rule fails here first.
 """
 
@@ -16,14 +16,16 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOWS = ROOT / ".github" / "workflows"
 CI = WORKFLOWS / "ci.yml"
+PAGES = WORKFLOWS / "pages.yml"
+WORKFLOW_FILES = (CI, PAGES)
 JOBS = ("guards", "lint", "pre-commit", "format", "test", "docs", "lock")
 USES = re.compile(r"^\s*(?:-\s+)?uses:\s*(?P<ref>\S+)(?P<rest>.*)$")
 PINNED = re.compile(r"^[\w.-]+/[\w./-]+@[0-9a-f]{40}$")
 VERSION_NOTE = re.compile(r"^\s+# v\d+\.\d+\.\d+\s*$")
 
 
-def load() -> dict:
-    return yaml.safe_load(CI.read_text(encoding="utf-8"))
+def load(path: Path = CI) -> dict:
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
 def triggers(doc: dict) -> dict:
@@ -34,8 +36,8 @@ def steps(job: str) -> list[dict]:
     return load()["jobs"][job]["steps"]
 
 
-def test_only_the_ci_workflow_exists() -> None:
-    assert sorted(p.name for p in WORKFLOWS.iterdir()) == ["ci.yml"]
+def test_only_the_ci_and_pages_workflows_exist() -> None:
+    assert sorted(p.name for p in WORKFLOWS.iterdir()) == ["ci.yml", "pages.yml"]
 
 
 def test_job_ids_and_visible_names_match() -> None:
@@ -64,35 +66,43 @@ def test_concurrency_cancels_pull_request_runs_only() -> None:
     )
 
 
-def test_every_job_has_a_timeout_and_a_pinned_runner() -> None:
-    for job_id, job in load()["jobs"].items():
+@pytest.mark.parametrize("path", WORKFLOW_FILES, ids=lambda p: p.name)
+def test_every_job_has_a_timeout_and_a_pinned_runner(path: Path) -> None:
+    for job_id, job in load(path)["jobs"].items():
         assert isinstance(job["timeout-minutes"], int), job_id
         assert not job["runs-on"].endswith("-latest"), job_id
+
+
+def test_the_test_job_runs_on_macos() -> None:
     assert load()["jobs"]["test"]["runs-on"] == "macos-15"
 
 
-def test_every_uses_line_is_a_full_commit_sha_with_a_version_note() -> None:
-    lines = [m for line in CI.read_text().splitlines() if (m := USES.match(line))]
+@pytest.mark.parametrize("path", WORKFLOW_FILES, ids=lambda p: p.name)
+def test_every_uses_line_is_a_full_commit_sha_with_a_version_note(path: Path) -> None:
+    lines = [m for line in path.read_text().splitlines() if (m := USES.match(line))]
     assert lines, "no uses: lines found"
     for match in lines:
         assert PINNED.match(match["ref"]), match["ref"]
         assert VERSION_NOTE.match(match["rest"]), match["ref"]
 
 
-def test_run_blocks_never_hold_an_expression() -> None:
-    for job_id, job in load()["jobs"].items():
+@pytest.mark.parametrize("path", WORKFLOW_FILES, ids=lambda p: p.name)
+def test_run_blocks_never_hold_an_expression(path: Path) -> None:
+    for job_id, job in load(path)["jobs"].items():
         for step in job["steps"]:
             assert "${{" not in step.get("run", ""), f"{job_id}: {step.get('name')}"
 
 
-def test_no_secrets_no_privileged_trigger_and_no_environment_file_writes() -> None:
-    text = CI.read_text(encoding="utf-8")
+@pytest.mark.parametrize("path", WORKFLOW_FILES, ids=lambda p: p.name)
+def test_no_secrets_no_privileged_trigger_and_no_environment_file_writes(path: Path) -> None:
+    text = path.read_text(encoding="utf-8")
     for needle in ("secrets.", "pull_request" + "_target", "GITHUB_ENV", "GITHUB_PATH"):
         assert needle not in text, needle
 
 
-def test_every_checkout_drops_the_token() -> None:
-    for job_id, job in load()["jobs"].items():
+@pytest.mark.parametrize("path", WORKFLOW_FILES, ids=lambda p: p.name)
+def test_every_checkout_drops_the_token(path: Path) -> None:
+    for job_id, job in load(path)["jobs"].items():
         for step in job["steps"]:
             if step.get("uses", "").startswith("actions/checkout@"):
                 assert step["with"]["persist-credentials"] is False, job_id
@@ -248,9 +258,10 @@ def test_actionlint_prints_each_finding_as_an_annotation() -> None:
     assert 'actionlint -format "$format"' in step["run"]
 
 
-def test_no_inline_zizmor_ignore_hides_a_finding() -> None:
+@pytest.mark.parametrize("path", WORKFLOW_FILES, ids=lambda p: p.name)
+def test_no_inline_zizmor_ignore_hides_a_finding(path: Path) -> None:
     # The gate is the severity threshold; an ignore comment would silence Medium and High too.
-    assert "zizmor: ignore" not in CI.read_text(encoding="utf-8")
+    assert "zizmor: ignore" not in path.read_text(encoding="utf-8")
 
 
 def test_the_summarize_step_also_prints_failure_annotations_to_stdout() -> None:
@@ -262,3 +273,59 @@ def test_the_summarize_step_also_prints_failure_annotations_to_stdout() -> None:
     assert run.count("--annotate") == 1
     annotate = next(line for line in run.splitlines() if "--annotate" in line)
     assert ">>" not in annotate and ">" not in annotate.replace("-->", ""), "stdout only"
+
+
+# --- pages.yml: the one workflow that publishes -------------------------------------------------
+
+
+def test_the_pages_workflow_runs_on_main_pushes_and_manual_runs_only() -> None:
+    assert triggers(load(PAGES)) == {"push": {"branches": ["main"]}, "workflow_dispatch": None}
+
+
+def test_pages_grants_nothing_by_default_and_each_job_only_what_it_uses() -> None:
+    doc = load(PAGES)
+    assert doc["permissions"] == {}
+    assert doc["jobs"]["build"]["permissions"] == {"contents": "read"}
+    assert doc["jobs"]["deploy"]["permissions"] == {"pages": "write", "id-token": "write"}
+
+
+def test_only_the_deploy_job_has_the_environment_and_it_waits_for_the_build() -> None:
+    jobs = load(PAGES)["jobs"]
+    assert jobs["deploy"]["environment"]["name"] == "github-pages"
+    assert jobs["deploy"]["needs"] == "build"
+    assert "environment" not in jobs["build"]
+
+
+def test_pages_deploys_never_overlap_and_a_started_deploy_is_not_cancelled() -> None:
+    assert load(PAGES)["concurrency"] == {"group": "pages", "cancel-in-progress": False}
+
+
+def test_pages_builds_from_the_lockfile_checks_the_build_and_uploads_that_folder() -> None:
+    job = load(PAGES)["jobs"]["build"]
+    names = [s["name"] for s in job["steps"]]
+    assert names == [
+        "Check out",
+        "Set up Node",
+        "Install the locked packages",
+        "Build the site",
+        "Check the built site",
+        "Upload the site",
+    ]
+    by_name = {s["name"]: s for s in job["steps"]}
+    assert by_name["Upload the site"]["with"] == {"path": "site/dist"}
+    assert by_name["Set up Node"]["with"] == {"node-version-file": "site/.node-version"}
+    assert job["env"]["NPM_CONFIG_IGNORE_SCRIPTS"] == "true"
+
+
+def test_the_ci_docs_job_and_the_pages_build_run_the_same_build_steps() -> None:
+    shared = (
+        "Set up Node",
+        "Install the locked packages",
+        "Build the site",
+        "Check the built site",
+    )
+
+    def pick(job_steps: list[dict]) -> list[dict]:
+        return [s for s in job_steps if s.get("name") in shared]
+
+    assert pick(steps("docs")) == pick(load(PAGES)["jobs"]["build"]["steps"])
