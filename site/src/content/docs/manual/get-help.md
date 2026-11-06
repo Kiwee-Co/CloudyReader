@@ -74,7 +74,7 @@ To ask a question, open an issue in the same way and say in the title that it is
 
 A security issue is a flaw that lets someone read or change your files, run code, or send data from your Mac without your action. Report it in private. Do not open a public issue.
 
-1. Open the [private report form on GitHub](https://github.com/Kiwee-Co/CloudyReader/security/advisories/new). <!-- needs-fact: owner enables private vulnerability reporting -->
+1. Open the [private report form on GitHub](https://github.com/Kiwee-Co/CloudyReader/security/advisories/new). Sign in to GitHub if it asks.
 2. Describe the flaw, the app version, your macOS version, and the steps that show it.
 3. Leave out real personal data.
 

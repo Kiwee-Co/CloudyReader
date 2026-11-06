@@ -95,5 +95,3 @@ The build signs the app with no entitlements file and sets no usage-description 
 ## Report a vulnerability
 
 Report a security vulnerability privately, and do not post it in a public issue. Use the private vulnerability reporting of the repository on GitHub: open the **Security** tab of the repository and click **Report a vulnerability**. See [Report a security issue](/manual/get-help/#report-a-security-issue) for what to include.
-
-<!-- needs-fact: the owner enables GitHub private vulnerability reporting on Kiwee-Co/CloudyReader (plan Q7); until then this section names a channel that is not open, and the button labels are unverified -->

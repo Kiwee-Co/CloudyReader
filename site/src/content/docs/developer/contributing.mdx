@@ -106,7 +106,9 @@ npm ci
 npm run dev
 ```
 
-`npm run dev` prints the local address. `site/.npmrc` turns off install scripts, and `npm ci` installs the exact versions in `site/package-lock.json`.
+`npm run dev` prints the local address. The server keeps running in the background. Stop it with `npx astro dev stop`.
+
+`site/.npmrc` turns off install scripts, and `npm ci` installs the exact versions in `site/package-lock.json`.
 
 Build the site and check the build before you push:
 
@@ -117,7 +119,7 @@ cd ..
 python3 scripts/check_site.py site/dist
 ```
 
-`npm run preview` in `site/` serves the build.
+`npm run preview` in `site/` serves the build. Stop it with `npx astro preview stop`.
 
 The checker reads the built HTML and reports:
 
