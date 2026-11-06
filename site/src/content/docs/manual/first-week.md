@@ -1,6 +1,9 @@
 ---
 title: Your first week
 description: Five short practice sessions for your first week, from reading one question to running a full practice.
+prev:
+  link: /manual/getting-started/
+  label: Get started
 sidebar:
   order: 3
 ---
