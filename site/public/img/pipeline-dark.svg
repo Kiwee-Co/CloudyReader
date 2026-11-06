@@ -35,7 +35,7 @@
 <text x="686" y="348" font-size="12" fill="#ffffff" fill-opacity="0.62">Read answer line is on</text>
 <rect x="432" y="270" width="200" height="96" rx="10" fill="#2c2c2e" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1"/>
 <text x="446" y="294" font-size="14" font-weight="600" fill="#ffffff" fill-opacity="0.88">Respelling to IPA</text>
-<text x="446" y="314" font-size="12" fill="#ffffff" fill-opacity="0.62">NSB brackets to IPA;</text>
+<text x="446" y="314" font-size="12" fill="#ffffff" fill-opacity="0.62">Bracket guides to IPA;</text>
 <text x="446" y="331" font-size="12" fill="#ffffff" fill-opacity="0.62">Kokoro: misaki</text>
 <rect x="232" y="270" width="160" height="96" rx="10" fill="#2c2c2e" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1"/>
 <text x="246" y="294" font-size="14" font-weight="600" fill="#ffffff" fill-opacity="0.88">Voice</text>
