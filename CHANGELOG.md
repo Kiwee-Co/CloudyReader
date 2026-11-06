@@ -4,6 +4,22 @@ All notable changes to Cloudy Reader are recorded in this file, which follows Ke
 
 <!-- markdownlint-disable MD024 -->
 
+## [0.0.3] - 2026-11-06
+
+### Added
+
+- `make release` stops when the app carries a folder path of the build machine. The check reads raw files, zip entries, entries of the packed app archive, the packed Python modules, and link targets.
+- `make release` refuses a build Python under the home folder, because its path would ship inside the app.
+
+### Changed
+
+- `make release` runs `hdiutil verify` up to 3 times, and only an EAGAIN failure gets a retry. A failure prints the last 20 lines of the log.
+- A run from the checkout, or from a dev build made with `make app`, shows one random test-fixture question at start. A release build starts empty.
+
+### Fixed
+
+- The choice letters W, X, Y and Z are now said by name on Qwen3-TTS (Ryan, Aiden) and Chatterbox Turbo, not read as words like "way" or "see". Each letter plays a checked recording made with the same voice.
+
 ## [0.0.2] - 2026-11-06
 
 ### Added
@@ -57,5 +73,6 @@ All notable changes to Cloudy Reader are recorded in this file, which follows Ke
 - Offline mode: `--offline` or `CLOUDYREADER_OFFLINE=1` stops the lookups and the voice download.
 - The manual at <https://cloudyreader.com>.
 
+[0.0.3]: https://github.com/Kiwee-Co/CloudyReader/releases/tag/v0.0.3
 [0.0.2]: https://github.com/Kiwee-Co/CloudyReader/releases/tag/v0.0.2
 [0.0.1]: https://github.com/Kiwee-Co/CloudyReader/releases/tag/v0.0.1

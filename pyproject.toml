@@ -1,6 +1,6 @@
 [project]
 name = "cloudyreader"
-version = "0.0.2"
+version = "0.0.3"
 description = "Reads US DOE National Science Bowl questions aloud with science-aware pronunciation."
 requires-python = ">=3.12,<3.13"
 dependencies = [
