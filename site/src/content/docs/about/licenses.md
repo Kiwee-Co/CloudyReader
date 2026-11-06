@@ -5,7 +5,7 @@ sidebar:
   order: 3
 ---
 
-This page lists the license of Cloudy Reader, the license of each main component that the app bundles, and the sources of the voices and models that it downloads. This page is not legal advice.
+This page lists the license of Cloudy Reader, the licenses of its main components, and the sources of its voices and models. This page is not legal advice.
 
 ## Cloudy Reader
 
@@ -27,7 +27,7 @@ These components carry a GPL license. The Source column links the PyPI release p
 | `phonemizer-fork` | 3.3.2    | GPLv3 or later (package classifier) | Phonemization for Kokoro                         | [phonemizer-fork 3.3.2 on PyPI](https://pypi.org/project/phonemizer-fork/3.3.2/) |
 | `jdk4py`          | 25.0.2.1 | GPL v2 (package classifier)         | Java runtime that runs OPSIN                     | [jdk4py on GitHub](https://github.com/activeviam/jdk4py)                         |
 
-The `jdk4py` runtime is OpenJDK Runtime Environment Temurin-25.0.2+10. Its `legal/java.base` folder holds the GNU GPL version 2 and an `ASSEMBLY_EXCEPTION` file.
+The `jdk4py` runtime reports itself as `OpenJDK Runtime Environment Temurin-25.0.2+10`. Its `legal/java.base` folder holds the GNU GPL version 2 and an `ASSEMBLY_EXCEPTION` file.
 
 [PyInstaller](https://pyinstaller.org) 6.22.3 builds the app. Its license is GPLv2-or-later with a build exception.
 
@@ -68,13 +68,16 @@ The table lists the other main components in alphabetical order.
 
 ## Voices and models
 
-The release zip holds no voice files. At the first launch the app downloads the voices from two Hugging Face repositories, each pinned to one revision: [rhasspy/piper-voices](https://huggingface.co/rhasspy/piper-voices) at `b4e358ffcb232591bf73a540e70f7de528e4174a` for the 5 Piper voices, and [mlx-community/Kokoro-82M-bf16](https://huggingface.co/mlx-community/Kokoro-82M-bf16) at `a71e4d38b236d968966a2002c4c895dbd12b1c3c` for the Kokoro model and its 28 voices.
+Cloudy Reader does not include voice files. At the first launch the app downloads them from Hugging Face repositories, each pinned to one revision:
+
+- [rhasspy/piper-voices](https://huggingface.co/rhasspy/piper-voices) at `b4e358ffcb232591bf73a540e70f7de528e4174a` holds the Piper voices.
+- [mlx-community/Kokoro-82M-bf16](https://huggingface.co/mlx-community/Kokoro-82M-bf16) at `a71e4d38b236d968966a2002c4c895dbd12b1c3c` holds the Kokoro model and its voices.
 
 The voice files and the Kokoro model are third-party works. They are not part of the Cloudy Reader source, and they keep the terms of their publishers. Read the model card of each repository for those terms.
 
 The name-detection model `en_ner_craft_md` 0.5.4 ships inside the app. It is the scispaCy CRAFT model, and its license is CC BY-SA 3.0.
 
-<!-- needs-fact: license on each Piper voice model card (5 voices) and on the Kokoro-82M-bf16 model card; the facts sheet marks both as not checked -->
+<!-- needs-fact: license on each Piper voice model card and on the Kokoro-82M-bf16 model card; the facts sheet marks both as not checked -->
 
 ## Online services
 
@@ -88,8 +91,8 @@ The app can send requests to PubChem, UniProt, and Hugging Face. Each service ap
 
 Cloudy Reader builds on the work of these projects and data sources:
 
-- [Piper](https://github.com/OHF-voice/piper1-gpl) and its voices, [rhasspy/piper-voices](https://huggingface.co/rhasspy/piper-voices): speech for the five Piper voices.
-- [Kokoro-82M](https://huggingface.co/mlx-community/Kokoro-82M-bf16), converted for MLX: the Kokoro model and its 28 voices. The voice grades come from the model's `VOICES.md` file.
+- [Piper](https://github.com/OHF-voice/piper1-gpl) and its voices, [rhasspy/piper-voices](https://huggingface.co/rhasspy/piper-voices): speech for the Piper voices.
+- [Kokoro-82M](https://huggingface.co/mlx-community/Kokoro-82M-bf16), converted for MLX: the Kokoro model and its voices. The voice grades come from the model's `VOICES.md` file.
 - [MLX](https://github.com/ml-explore/mlx) and [mlx-audio](https://github.com/Blaizzy/mlx-audio): they run Kokoro on Apple silicon.
 - [OPSIN](https://github.com/dan2097/opsin), through [py2opsin](https://github.com/JacksonBurns/py2opsin): the check of systematic chemical names.
 - [scispaCy](https://allenai.github.io/scispacy/): the name-detection model, trained on CRAFT.
