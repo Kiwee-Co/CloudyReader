@@ -1,11 +1,13 @@
 ---
 layout: default
 ---
-
-{%- comment -%} A manual or developer page inside the Architect theme's default layout. The theme
-header shows the site name, so this layout prints the page title as the page's own h1. {%-
-endcomment -%}
-<nav class="manual-nav" aria-label="Documentation">{% include nav.html context="page" %}</nav>
+{%- comment -%}
+A manual or developer page inside the Architect theme's default layout. The theme header shows
+the site name, so this layout prints the page title as the page's own h1.
+{%- endcomment -%}
+<nav class="manual-nav" aria-label="Documentation">
+{% include nav.html context="page" %}
+</nav>
 <h1 class="page-title">{{ page.title }}</h1>
 {{ content }}
 <p class="edit-link"><a href="{{ site.edit_url }}{{ page.path }}">Edit this page on GitHub</a></p>

@@ -1,16 +1,16 @@
 ---
 ---
 
-@import '{{ site.theme }}';
+@import "{{ site.theme }}";
 
 /* Architects Daughter, the theme's heading font, served from this site (SIL OFL 1.1, see
    assets/fonts/OFL.txt), so no page asks Google Fonts for it. */
 @font-face {
-  font-family: 'Architects Daughter';
+  font-family: "Architects Daughter";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("{{ '/assets/fonts/ArchitectsDaughter-Regular.ttf' | relative_url }}") format('truetype');
+  src: url("{{ '/assets/fonts/ArchitectsDaughter-Regular.ttf' | relative_url }}") format("truetype");
 }
 
 /* Small additions for the manual, in the theme's own colors. On the #fafafa page: text #666
@@ -76,7 +76,7 @@
   text-decoration: underline;
 }
 
-#main-content .manual-nav a[aria-current='page'] {
+#main-content .manual-nav a[aria-current="page"] {
   font-weight: bold;
   color: #444;
 }

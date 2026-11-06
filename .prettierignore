@@ -19,3 +19,10 @@ node_modules/
 assets.lock.json
 cloudyreader/data/*.json
 tests/golden/*.yaml
+
+# Jekyll templates hold Liquid, which Prettier rewrites and breaks.
+docs/_includes/
+docs/_layouts/
+docs/404.html
+docs/assets/
+docs/_sass/

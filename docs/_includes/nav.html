@@ -1,29 +1,19 @@
-{%- comment -%} Documentation pages grouped by nav_group (in the order of site.nav_groups), sorted
-by nav_order. include.context keeps the label ids unique when the list appears twice on a page. {%-
-endcomment -%} {%- assign nav_context = include.context | default: "nav" -%} {%- for group in
-site.nav_groups -%} {%- assign group_pages = site.pages | where: "nav_group", group | sort:
-"nav_order" -%} {%- if group_pages.size > 0 -%} {%- assign group_id = nav_context | append: "-" |
-append: group | slugify -%}
+{%- comment -%}
+Documentation pages grouped by nav_group (in the order of site.nav_groups), sorted by nav_order.
+include.context keeps the label ids unique when the list appears twice on a page.
+{%- endcomment -%}
+{%- assign nav_context = include.context | default: "nav" -%}
+{%- for group in site.nav_groups -%}
+{%- assign group_pages = site.pages | where: "nav_group", group | sort: "nav_order" -%}
+{%- if group_pages.size > 0 -%}
+{%- assign group_id = nav_context | append: "-" | append: group | slugify -%}
 <div class="nav-group">
-  <p class="nav-group__title" id="{{ group_id }}">{{ group }}</p>
-  <ul class="nav-group__list" aria-labelledby="{{ group_id }}">
-    {%- for item in group_pages %}
-    <li>
-      <a
-        href="{{ item.url | relative_url }}"
-        {%
-        if
-        item.url=""
-        ="page.url"
-        %}
-        aria-current="page"
-        {%
-        endif
-        %}
-        >{{ item.nav_title | default: item.title }}</a
-      >
-    </li>
-    {%- endfor %}
-  </ul>
+<p class="nav-group__title" id="{{ group_id }}">{{ group }}</p>
+<ul class="nav-group__list" aria-labelledby="{{ group_id }}">
+{%- for item in group_pages %}
+<li><a href="{{ item.url | relative_url }}"{% if item.url == page.url %} aria-current="page"{% endif %}>{{ item.nav_title | default: item.title }}</a></li>
+{%- endfor %}
+</ul>
 </div>
-{%- endif -%} {%- endfor -%}
+{%- endif -%}
+{%- endfor -%}
