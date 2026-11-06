@@ -1,0 +1,50 @@
+---
+title: Status messages
+description: Every status bar message in Cloudy Reader on one printable page, with what each one means and what to do next.
+sidebar:
+  order: 3
+---
+
+<div class="cr-cheatsheet">
+
+This page lists every message in the Cloudy Reader status bar, what it means, and what to do. A message stays until a later message replaces it, unless its row says that it clears.
+
+## Information messages
+
+Information messages show no icon before the text.
+
+| Message                                                                                   | What it means and what to do                                                                            |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Loading voices…                                                                           | The app lists the voices, then the message clears.                                                      |
+| [Downloading voices… _N_%](/manual/troubleshooting/#the-voice-download-does-not-progress) | A download runs. Failed files count in _N_, so check the **Voice** menu. Closing the window cancels it. |
+| Voices downloaded.                                                                        | The download finished. Nothing to do.                                                                   |
+| [Paste a question first.](/manual/troubleshooting/#the-app-finds-nothing-to-read)         | The question box has no text. Paste or type one.                                                        |
+| [Clipboard is empty.](/manual/troubleshooting/#the-app-finds-nothing-to-read)             | The clipboard has no text. Copy the text again.                                                         |
+| Preparing…                                                                                | The app prepares the reading. Wait. With rotation: Preparing with _voice_ (_gender_)…                   |
+| Playing _n_ s.                                                                            | The sound plays. With rotation: Playing _n_ s with _voice_ (_gender_). It clears at the end.            |
+| Repeating.                                                                                | Repeat plays it again. It clears at the end.                                                            |
+| Stopped.                                                                                  | Stop ended the sound. Repeat plays it again.                                                            |
+
+## Warnings
+
+A warning icon comes before the text.
+
+| Message                                                                                                                                      | What it means and what to do                                                                                                           |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| [No voice is installed.](/manual/troubleshooting/#no-voice-is-installed)                                                                     | Wait for the download. A failed download adds no message. It clears when a voice appears.                                              |
+| [Some voices could not be downloaded. They are tried again at the next start.](/manual/troubleshooting/#some-voices-could-not-be-downloaded) | The tooltip lists the failed files. Quit and reopen the app to retry.                                                                  |
+| No installed voice matches “_mode_”; using the selected voice.                                                                               | No installed voice fits the mode, so the selected voice plays. See [When no voice fits](/manual/reference/voices/#when-no-voice-fits). |
+| [Warning: _text_](/manual/troubleshooting/#a-word-sounds-wrong)                                                                              | The reading plays. See [Pronunciation guides](/manual/reference/pronunciation-guides/).                                                |
+| _n_ warnings: _text_; _text_                                                                                                                 | Several warnings. Read each one.                                                                                                       |
+
+## Errors
+
+An error icon comes before the text.
+
+| Message                                                                                                                        | What it means and what to do                                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Error: nothing to read](/manual/troubleshooting/#the-app-finds-nothing-to-read)                                               | The app found no question. Paste it again.                                                                                                            |
+| [Error: cannot run /usr/bin/afplay: _error_ or Error: WAV not found: _path_](/manual/troubleshooting/#the-player-cannot-start) | macOS cannot start the player, or the audio file is gone.                                                                                             |
+| Error: _first line_                                                                                                            | A step failed. Hover to read all of it. See [A voice error appears](/manual/troubleshooting/#a-voice-error-appears) or [Get help](/manual/get-help/). |
+
+</div>
