@@ -46,6 +46,41 @@ the published site never has a dead sidebar link.
 
 Change the footer's `version` only after the manual is checked against that release.
 
+## Search
+
+The search box uses Pagefind, which indexes the pages at build time. `pagefind.ranking.termFrequency`
+in `site/astro.config.mjs` is 0.5 instead of Starlight's 0.1, so a page that keeps naming a message,
+such as "No voice is installed.", ranks above a page that names it once.
+
+The search test (check G8 of the manual plan) runs 20 queries. It passes when the expected page is
+among the first three results for at least 18 of them. The result on 2026-11-05 was 20 of 20.
+
+| Query                 | Expected page in the first three                                                                      |
+| --------------------- | ----------------------------------------------------------------------------------------------------- |
+| open anyway           | `/manual/tasks/first-open/`                                                                           |
+| cannot verify         | `/manual/tasks/first-open/` or `/manual/troubleshooting/`                                             |
+| damaged               | `/manual/troubleshooting/`                                                                            |
+| intel                 | `/manual/getting-started/` or `/manual/faq/`                                                          |
+| macos version         | `/manual/getting-started/`, `/manual/faq/`, or `/download/`                                           |
+| no voice is installed | `/manual/troubleshooting/` or `/manual/reference/status-messages/`                                    |
+| download voices       | `/manual/tasks/voices-and-storage/` or `/manual/getting-started/`                                     |
+| offline               | `/manual/tasks/work-offline/`                                                                         |
+| privacy               | `/about/privacy/`                                                                                     |
+| keyboard shortcuts    | `/manual/reference/keyboard-shortcuts/`                                                               |
+| rotation              | `/manual/tutorials/voice-rotation/` or `/manual/reference/voices/`                                    |
+| men only              | `/manual/reference/voices/`                                                                           |
+| fraction              | `/manual/reference/pronunciation-examples/`                                                           |
+| bracket               | `/manual/reference/pronunciation-guides/`                                                             |
+| KREBZ                 | `/manual/tutorials/fix-a-word/` or `/manual/reference/pronunciation-guides/`                          |
+| answer line           | `/manual/tasks/practice-alone/`, `/manual/reference/window/`, or `/manual/reference/question-format/` |
+| no sound              | `/manual/troubleshooting/`                                                                            |
+| self-test             | `/manual/reference/command-line/` or `/manual/get-help/`                                              |
+| uninstall             | `/manual/tasks/install/`                                                                              |
+| GPL                   | `/about/licenses/`                                                                                    |
+
+For "macos version", the FAQ and Download pages count as correct as well as Get started, by the
+lead's decision: both link to "Check your Mac" on Get started in one click.
+
 ## Custom domain
 
 The custom domain `cloudyreader.com` is set in **Settings > Pages**. This is the state on
