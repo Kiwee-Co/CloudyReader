@@ -1,0 +1,114 @@
+---
+title: Practice on your own
+description: 'Practice National Science Bowl questions alone: hear each question, answer in the pause, then hear the answer line.'
+sidebar:
+  order: 4
+---
+
+import { Steps } from '@astrojs/starlight/components';
+import Figure from '../../../../components/Figure.astro';
+
+Use this page to practice alone. Cloudy Reader reads a question, you answer out loud in the pause, and then the app reads the answer line. The app does not time or score you.
+
+## Set up a practice session
+
+Let the voices download before your first session. See [Let the voices download](/manual/getting-started/#let-the-voices-download).
+
+<Steps>
+
+1. Open Cloudy Reader.
+2. Select **Read answer line**. The app then reads the answer after each question.
+3. Choose a voice in **Voice**, or choose a mode in **Rotation**.
+4. Click the question box and press Command-V to paste your questions.
+5. Press Command-Return.
+
+</Steps>
+
+The status bar shows "Preparing…", then "Playing _n_ s." With a rotation mode, both messages name the voice. You hear the question, a pause, and the answer. The app saves your rotation mode, **Read answer line**, and **Online lookups** for the next session. It saves a voice that you choose yourself.
+
+The **Options** row holds the two checkboxes that matter for practice:
+
+<Figure
+  src="options-light.svg"
+  dark="options-dark.svg"
+  callouts="options"
+  alt="The two checkboxes in the window: Read answer line, not selected, and Online lookups, selected."
+  caption="At the first launch, Read answer line is not selected and Online lookups is selected."
+/>
+
+1. **Read answer line**: reads the answer after each question.
+2. **Online lookups**: allows name lookups.
+
+## Answer before the answer line
+
+With **Read answer line** selected, the app pauses for 5 seconds after the question. Then it says "Answer." and the answer. Some voices add their own silence around each line, so the pause can run longer. See [Voices and voice engines](/manual/concepts/voice-engines/).
+
+<Steps>
+
+1. Listen to the question. The status bar shows "Playing _n_ s." while the sound plays.
+2. Say your answer out loud when the question ends.
+3. Listen to the answer line. It starts with "Answer."
+4. Press Command-R to hear the whole reading again, or paste the next question.
+
+</Steps>
+
+:::note
+The pause is fixed. The app does not time your answer. For answer times, use your competition's rules.
+:::
+
+The app reads the main answer and stops at the first judge note, such as `(ACCEPT:` or `(PROMPT:`. An answer in capital letters is read in title case, so the line `ANSWER: Y) CARBON DIOXIDE` is read as "Answer. Y. Carbon Dioxide." Deselect **Read answer line** to hear no answers.
+
+## Work through a question set
+
+To go one question at a time, use the keyboard loop:
+
+<Steps>
+
+1. Copy one question from your PDF. See [Paste questions from a PDF or web page](/manual/tasks/paste-questions/).
+2. Press Command-Tab to switch to Cloudy Reader.
+3. Press Command-Shift-V. **Speak Clipboard** replaces the question box with the clipboard text and reads it.
+4. Answer out loud, then hear the answer line.
+5. Press Command-R to hear the question again, or go back to step 1 for the next question.
+
+</Steps>
+
+To read a set in one run, paste all of it and press **Speak**. The app reads the questions in order and leaves 1.5 seconds between them. You cannot skip ahead: **Stop** ends the reading, and **Repeat** starts it again from the first question. Paste a few questions at a time.
+
+## Vary the voices
+
+Rotation picks a voice each time a reading starts. Choose a mode in **Rotation**:
+
+- **Round robin** goes through the voices in menu order.
+- **Random shuffle** deals the voices in random order, and no voice repeats until all have played.
+- **US only (random shuffle)**, **Men only**, and **Women only** deal from a smaller group of voices.
+
+Some gender labels are guesses that nobody has checked by ear. See [Rotation modes](/manual/reference/voices/#rotation-modes) for the groups and the exact rules.
+
+The status bar names the voice: "Preparing with _voice_…", then "Playing _n_ s with _voice_."
+
+Rotation picks one voice for each reading, so a paste with several questions is read in one voice. Paste one question at a time to hear a different voice for each question. **Repeat** plays the same audio and keeps the voice.
+
+While the first download runs, the **Voice** menu lists only the first voice to arrive. Use rotation after the download label and progress bar leave the status bar.
+
+To learn rotation step by step, see [Practice with voice rotation](/manual/tutorials/voice-rotation/).
+
+## Practice without a network
+
+After the first launch downloads the voices, reading needs no network.
+
+<Steps>
+
+1. Check that the **Voice** menu lists voices. If the menu is dimmed and empty, see [No voice is installed](/manual/troubleshooting/#no-voice-is-installed).
+2. Deselect **Online lookups** to stop name lookups. The app saves this choice.
+3. Read as usual.
+
+</Steps>
+
+Name lookups do not change how a question sounds. You hear the same words and pronunciations with **Online lookups** selected or deselected. To stop lookups and the voice download for one launch, see [Work offline](/manual/tasks/work-offline/).
+
+## Related
+
+- [Keyboard shortcuts](/manual/reference/keyboard-shortcuts/)
+- [Practice with voice rotation](/manual/tutorials/voice-rotation/)
+- [Work offline](/manual/tasks/work-offline/)
+- [Question format and reading order](/manual/reference/question-format/)

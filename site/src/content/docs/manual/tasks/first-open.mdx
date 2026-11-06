@@ -1,0 +1,109 @@
+---
+title: Open the app the first time
+description: 'Approve Cloudy Reader in Privacy & Security when macOS blocks the first launch, and check that the app is intact.'
+sidebar:
+  order: 2
+---
+
+import Figure from '../../../../components/Figure.astro';
+
+macOS blocks Cloudy Reader the first time you open it. The app has an ad-hoc signature, which uses no Apple Developer ID, and it is not notarized. macOS flags a downloaded copy as quarantined. Gatekeeper, the macOS check for downloaded apps, then blocks the first launch and says that it cannot verify the app.
+
+Use this page to approve the app once, to find a missing **Open Anyway** button, and to check that the app is intact.
+
+<Figure
+  src="install-flow-light.svg"
+  dark="install-flow-dark.svg"
+  alt="Four steps of the first open: download Cloudy Reader, move it to Applications, open it, then click Open Anyway in System Settings > Privacy & Security."
+  caption="This page covers steps 3 and 4: macOS blocks the first open, and Open Anyway approves the app."
+/>
+
+## Approve the app
+
+Approve the app only after you check the download. See [Download Cloudy Reader](/download/).
+
+1. Open Cloudy Reader once from the **Applications** folder. Close the warning dialog, and do not move the app to the Trash.
+2. Open **System Settings > Privacy & Security**.
+3. Scroll to **Security**. Find the message about Cloudy Reader.
+4. Click **Open Anyway**. Confirm with your password or Touch ID.
+5. Open Cloudy Reader again and click **Open**.
+
+{/* needs-fact: owner checklist: exact first-open dialog title, body, and button labels on macOS REL-MACOS-FLOOR, and how long Open Anyway stays */}
+
+The Cloudy Reader window opens. You approve the app once.
+
+:::note
+The dialog wording differs between macOS versions. Look for the buttons **Open Anyway** and **Open**.
+:::
+
+Next, let the voices download. See [Let the voices download](/manual/getting-started/#let-the-voices-download).
+
+## If Open Anyway is missing
+
+Start with these two cases.
+
+### Open the app again
+
+macOS shows **Open Anyway** only for a while after a blocked attempt. Ask macOS to block the app again:
+
+1. Open Cloudy Reader again, then close the warning dialog.
+2. Go back to **System Settings > Privacy & Security** at once, and scroll to **Security**.
+3. Click **Open Anyway**.
+
+### Ask the administrator
+
+A Mac that a school or an employer manages can hide **Open Anyway**. Ask the administrator to approve Cloudy Reader. Do not work around the policy.
+
+Give the administrator the bundle identifier, `com.cloudyreader.CloudyReader`, the [Security and code signing](/about/security/) page, and the SHA-256 on [Download Cloudy Reader](/download/).
+
+For other causes, see [Open Anyway is missing](/manual/troubleshooting/#open-anyway-is-missing).
+
+## Check that the app is intact
+
+Run this check when macOS says that Cloudy Reader is damaged. Run it also to confirm that no file inside the app changed after signing. For the message itself, see [macOS says the app is damaged](/manual/troubleshooting/#macos-says-the-app-is-damaged).
+
+Do not edit files inside the app. Any change breaks the signature. Run this command in Terminal:
+
+```bash
+codesign --verify --deep --strict --verbose=2 "/Applications/Cloudy Reader.app"
+echo $?
+```
+
+The command prints one `--prepared:` line and one `--validated:` line for each code file in the app. When the files match the signature, the last lines are:
+
+```text
+/Applications/Cloudy Reader.app: valid on disk
+/Applications/Cloudy Reader.app: satisfies its Designated Requirement
+0
+```
+
+The last line, `0`, is the exit code. If a file changed, the output includes `a sealed resource is missing or invalid` and a `file modified:` line that names the file, and the exit code is 1. In that case:
+
+1. Move the app to the Trash.
+2. Download Cloudy Reader again and check its SHA-256. See [Download Cloudy Reader](/download/).
+3. Install the app again. See [Install, update, and uninstall](/manual/tasks/install/).
+4. Run the check again.
+
+If the check fails again and the SHA-256 matched, see [Report a problem](/manual/get-help/#report-a-problem).
+
+## Remove the quarantine flag
+
+This step is for advanced users. It replaces the approval in **Privacy & Security**.
+
+:::caution
+Removing the quarantine flag skips the Gatekeeper check for this app. Use it only for an app you trust, and never against the policy of a managed Mac. Run this command in Terminal:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Cloudy Reader.app"
+```
+
+:::
+
+The option `-d` deletes the flag, and `-r` applies the command to every file inside the app. Then open Cloudy Reader. Gatekeeper no longer blocks the first launch.
+
+## Related
+
+- [Install, update, and uninstall](/manual/tasks/install/)
+- [Security and code signing](/about/security/)
+- [Troubleshooting](/manual/troubleshooting/)
+- [Get help](/manual/get-help/)
