@@ -17,19 +17,22 @@
 # downloads them at first launch), only assets.lock.json; an audit then proves it.
 # `build_app.sh release VERSION` (make release) zips the dist bundle and checks the zip itself.
 #
-# Env inputs: APP_NAME, ICON, KOKORO=auto|0|1, BUNDLE_VOICES=1|0, OUT, CLOUDYREADER_DATA_DIR (asset
-# source, default .data), ENTRY=auto|app|probe, SELFTEST_TIMEOUT (s).
+# Env inputs: APP_NAME, ICON, KOKORO=auto|0|1, ENGINES=auto|0|1, BUNDLE_VOICES=1|0, OUT,
+# CLOUDYREADER_DATA_DIR (asset source, default .data), ENTRY=auto|app|probe, SELFTEST_TIMEOUT
+# and PROBE_TIMEOUT (s).
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 APP_NAME=${APP_NAME:-Cloudy Reader}
 ICON=${ICON:-}
 KOKORO=${KOKORO:-auto}
+ENGINES=${ENGINES:-auto}
 BUNDLE_VOICES=${BUNDLE_VOICES:-1}
 OUT=${OUT:-dist}
 DATA=${CLOUDYREADER_DATA_DIR:-$ROOT/.data}
 ENTRY=${ENTRY:-auto}
 SELFTEST_TIMEOUT=${SELFTEST_TIMEOUT:-300}
+PROBE_TIMEOUT=${PROBE_TIMEOUT:-120}
 UV=${UV:-uv}
 export UV_CACHE_DIR=${UV_CACHE_DIR:-$ROOT/.cache/uv}
 
@@ -113,6 +116,17 @@ sys.exit(0 if want and all(p.is_file() and p.stat().st_size == n for p, n in pat
 EOF
 }
 
+# assets.lock.json pins at least one engine's weights (scripts/pin_engine_assets.py writes them).
+engines_pinned() {
+  "$PY" -I - "$ROOT/assets.lock.json" <<'EOF'
+import json, sys
+from pathlib import Path
+
+groups = {a["group"] for a in json.loads(Path(sys.argv[1]).read_text())["assets"]}
+sys.exit(0 if groups & {"chatterbox_turbo", "qwen3_tts"} else 1)
+EOF
+}
+
 # mlx-audio imports, and misaki's spaCy model is installed (misaki loads it at first use).
 kokoro_extra_installed() {
   "$PY" -I -c 'import importlib.util as u, sys, mlx_audio
@@ -130,6 +144,7 @@ resolve_inputs() {
   if [[ $ENTRY == app ]]; then ENTRY_SCRIPT=$ROOT/packaging/launcher.py; else ENTRY_SCRIPT=$ROOT/packaging/probe_app.py; fi
   resolve_icon
   resolve_kokoro
+  resolve_engines
   resolve_bundle_voices
   resolve_out
   STAGE_APP=$ROOT/build/dist/$APP_NAME.app
@@ -195,6 +210,30 @@ resolve_kokoro() {
   esac
 }
 
+# ENGINES=auto|0|1 -> BUILD_ENGINES (0|1) for the first build. auto tries the engines only with
+# Kokoro (they ride its extra) and with weights pinned in the lock (without, the app never offers
+# them); build_staged then keeps them only if the probe passes.
+resolve_engines() {
+  case $ENGINES in
+    auto)
+      BUILD_ENGINES=0
+      if [[ $KOKORO != 1 ]]; then
+        say "engines: not tried: they ride the kokoro extra (KOKORO=0)"
+      elif ! engines_pinned; then
+        say "engines: not tried: assets.lock.json pins no engine weights (make pin-engine)"
+      else
+        BUILD_ENGINES=1
+      fi
+      ;;
+    1)
+      [[ $KOKORO == 1 ]] || die "ENGINES=1 needs KOKORO=1: the engines ride the kokoro extra"
+      BUILD_ENGINES=1
+      ;;
+    0) BUILD_ENGINES=0 ;;
+    *) die "ENGINES must be auto, 0 or 1, got '$ENGINES'" ;;
+  esac
+}
+
 # PyInstaller warnings that are expected and harmless on macOS, matched exactly after the
 # timestamp. Every other line of PyInstaller's output, warning or error, still prints.
 BENIGN_WARNINGS=(
@@ -224,19 +263,76 @@ build_bundle() {
   local t0 log=$ROOT/build/pyinstaller.log rc=0
   t0=$(now)
   mkdir -p -- "$ROOT/build" # a fresh clone has none until the first build
-  say "PyInstaller $("${PYI[@]}" --version) (entry: $ENTRY, kokoro: $KOKORO)"
+  say "PyInstaller $("${PYI[@]}" --version)" \
+    "(entry: $ENTRY, kokoro: $KOKORO, engines: ${BUILD_ENGINES:-0})"
   # PyInstaller imports modules to scan them. The HF flags stop any import-time Hub download; the
   # other two mute transformers' notice that PyTorch is absent (only its tokenizers are used).
   HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
     TRANSFORMERS_VERBOSITY=error TRANSFORMERS_NO_ADVISORY_WARNINGS=1 \
     PYINSTALLER_CONFIG_DIR=$ROOT/build/pyinstaller-config \
     CR_ENTRY=$ENTRY_SCRIPT CR_APP_NAME=$APP_NAME CR_ICON=$ICON_PATH CR_KOKORO=$KOKORO \
+    CR_ENGINES=${BUILD_ENGINES:-0} \
     "${PYI[@]}" --noconfirm --log-level WARN --distpath "$ROOT/build/dist" \
     --workpath "$ROOT/build/work" "$SPEC" >"$log" 2>&1 || rc=$?
   show_pyinstaller_log "$log"
   ((rc == 0)) || die "PyInstaller exited $rc (log: build/pyinstaller.log)"
   [[ -x $STAGE_APP/Contents/MacOS/$APP_NAME ]] || die "PyInstaller made no $STAGE_APP"
   PYI_SECONDS=$(since "$t0")
+}
+
+# Runs the staged bundle's engine import probe (packaging/launcher.py hands it to
+# cloudyreader/engines/bundle_probe.py), offline. On failure prints only the failing imports.
+probe_engines() {
+  local log=$ROOT/build/engines-probe.log pid rc=0 ticks=0 line
+  CLOUDYREADER_PROBE=engines CLOUDYREADER_OFFLINE=1 HF_HUB_OFFLINE=1 \
+    "$STAGE_APP/Contents/MacOS/$APP_NAME" >"$log" 2>&1 &
+  pid=$!
+  while kill -0 "$pid" 2>/dev/null; do
+    if ((ticks >= PROBE_TIMEOUT * 10)); then
+      kill -TERM "$pid" 2>/dev/null || true
+      wait "$pid" || true
+      say "engines: the probe timed out after ${PROBE_TIMEOUT}s (full output: build/engines-probe.log)"
+      return 1
+    fi
+    sleep 0.1
+    ticks=$((ticks + 1))
+  done
+  wait "$pid" || rc=$?
+  if ((rc == 0)); then return 0; fi
+  say "engines: the probe exited $rc; failing imports (full output: build/engines-probe.log):"
+  while IFS= read -r line; do say "  $line"; done < <(grep '^FAIL ' "$log" || true)
+  return 1
+}
+
+# The staged bundle: with the engines first when BUILD_ENGINES=1, kept only if the probe passes.
+# Then ENGINES=auto rebuilds without them and ENGINES=1 stops the build.
+build_staged() {
+  build_bundle
+  ((BUILD_ENGINES)) || return 0
+  if probe_engines; then
+    say "engines: the probe passed: engines stay in"
+    return 0
+  fi
+  [[ $ENGINES == auto ]] || die "ENGINES=1 but the engine probe failed (log: build/engines-probe.log)"
+  say "engines: the probe failed (above): rebuilding without them"
+  BUILD_ENGINES=0
+  build_bundle
+}
+
+# The engines' own folders under a bundle's Contents ($1) with their sizes, then their sum. Not
+# transformers or tokenizers: Kokoro's mlx-audio ships them in every build. Symlinks count nothing.
+engine_growth() {
+  local contents=$1 dir bytes total=0 rows=() row
+  while IFS= read -r -d '' dir; do
+    bytes=$(find "$dir" -type f -exec stat -f %z {} + | awk '{ s += $1 } END { print s + 0 }')
+    total=$((total + bytes))
+    rows+=("$(awk -v b="$bytes" -v p="${dir#"$contents"/}" 'BEGIN { printf "%7.1f MB  %s", b / 1e6, p }')")
+  done < <(find "$contents" -type d \( -name chatterbox_turbo -o -name qwen3_tts \) -prune -print0 |
+    sort -z)
+  say "engine folders: $(awk -v b="$total" 'BEGIN { printf "%.1f MB", b / 1e6 }') in ${#rows[@]} folders"
+  if ((${#rows[@]})); then
+    for row in "${rows[@]}"; do say "  $row"; done
+  fi
 }
 
 # The lock always ships: the downloader reads it. Voices and the Kokoro model only with
@@ -400,10 +496,12 @@ summary() {
   for onnx in "${VOICES[@]}"; do names+=("$(basename -- "$onnx" .onnx)"); done
   say "built: $FINAL_APP"
   say "size: $(du -sh -- "$FINAL_APP" | cut -f 1), PyInstaller ${PYI_SECONDS}s, total ${SECONDS}s"
+  if [[ ${BUILD_ENGINES:-0} == 1 ]]; then engine_growth "$FINAL_APP/Contents"; fi
   say "entry: $ENTRY ($(basename -- "$ENTRY_SCRIPT")), icon: ${ICON_PATH:-PyInstaller default}"
   say "voices from $DATA/voices: ${names[*]}"
   say "voices and Kokoro model: $([[ $BUNDLE_VOICES == 1 ]] && echo "bundled" || echo "not bundled, downloaded at first launch")"
   say "kokoro: $([[ $KOKORO == 1 ]] && echo "included" || echo "not included")"
+  say "engines: $([[ ${BUILD_ENGINES:-0} == 1 ]] && echo "included (the probe passed)" || echo "not included")"
   say "self-test wall time: first ${SELFTEST_SECONDS[1]}s, second ${SELFTEST_SECONDS[2]}s"
   say "largest components (MB):"
   du -sk -- "$FINAL_APP"/Contents/Frameworks/* "$FINAL_APP"/Contents/Resources/* |
@@ -416,7 +514,7 @@ main() {
   SELFTEST_SECONDS=()
   preflight
   resolve_inputs
-  build_bundle
+  build_staged
   add_assets
   check_bundle
   if [[ $BUNDLE_VOICES == 0 ]]; then audit_voices "$STAGE_APP"; fi

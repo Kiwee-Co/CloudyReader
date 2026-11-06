@@ -1,6 +1,6 @@
 # PyInstaller spec for "Cloudy Reader.app" (one-folder BUNDLE, arm64, ad-hoc signed later).
 # scripts/build_app.sh drives it through env vars: CR_ENTRY (script), CR_APP_NAME, CR_ICON
-# (an .icns path or empty for PyInstaller's default), CR_KOKORO (1 = bundle mlx-audio).
+# (an .icns path or empty for PyInstaller's default), CR_KOKORO (1 = bundle mlx-audio), CR_ENGINES.
 import os
 import runpy
 import tomllib
@@ -13,6 +13,8 @@ APP_NAME = os.environ.get("CR_APP_NAME", "Cloudy Reader")
 ENTRY = os.environ.get("CR_ENTRY", str(ROOT / "packaging" / "launcher.py"))
 ICON = os.environ.get("CR_ICON") or None
 KOKORO = os.environ.get("CR_KOKORO") == "1"
+# Chatterbox Turbo and Qwen3-TTS ride the kokoro extra, so CR_ENGINES=1 counts only with Kokoro.
+ENGINES = KOKORO and os.environ.get("CR_ENGINES") == "1"
 VERSION = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
 COPYRIGHT = "Copyright © 2026 the Cloudy Reader authors."
 MIN_MACOS_FLOOR = "11.0"  # PyInstaller's arm64 bootloader; a collected binary may need newer
@@ -72,6 +74,25 @@ if KOKORO:
     binaries += b
     hiddenimports += h + collect_submodules("mlx_audio.tts.models.kokoro")
     hiddenimports += ["mlx_audio.tts.utils", "misaki.en", "misaki.espeak"]
+if ENGINES:
+    # The two engines (engine_catalog imports them by name), their mlx-audio models and the
+    # transformers tokenizer code they load by name; the metadata is what transformers checks at
+    # import. Weights never ship: they download.
+    hiddenimports += ["cloudyreader.engines.chatterbox_turbo", "cloudyreader.engines.qwen3_tts"]
+    for package in (
+        "mlx_audio.tts.models.chatterbox_turbo", "mlx_audio.tts.models.qwen3_tts",
+        "transformers.models.auto", "transformers.models.qwen2", "transformers.models.gpt2",
+    ):
+        hiddenimports += collect_submodules(package)
+    d, b, h = collect_all("tokenizers")
+    datas += d
+    binaries += b
+    hiddenimports += h
+    for dist in (
+        "transformers", "tokenizers", "huggingface-hub", "safetensors", "regex", "packaging",
+        "tqdm", "numpy", "pyyaml", "filelock",
+    ):
+        datas += copy_metadata(dist)
 a = Analysis(  # noqa: F821
     [ENTRY],
     pathex=[str(ROOT)],

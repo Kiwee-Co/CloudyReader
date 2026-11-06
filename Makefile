@@ -28,10 +28,14 @@ APP_NAME ?= Cloudy Reader
 ICON ?=
 ## bundle the Kokoro engine in `make app`: auto, 0 or 1
 KOKORO ?= auto
+## bundle Chatterbox Turbo and Qwen3-TTS in `make app`: auto (needs KOKORO=1, kept if its probe passes), 0 or 1
+ENGINES ?= auto
 ## voices and Kokoro model inside `make app`: 1 (self-contained) or 0 (downloaded at first launch)
 BUNDLE_VOICES ?= 1
 ## output dir for `make app`
 OUT ?= dist
+## engine for `make pin-engine`: chatterbox_turbo or qwen3_tts
+ENGINE ?=
 ## version `make release` checks and names the zip with; PYPROJECT_VERSION is pyproject.toml's
 VERSION ?= $(PYPROJECT_VERSION)
 
@@ -50,7 +54,7 @@ FETCH_NET = $(if $(filter 1,$(OFFLINE)),--offline)
 GATE_MARKERS = not model and not voice and not network and not java
 FAST_MARKERS = not slow and not network and not model and not voice and not java
 
-run test test-fast samples smoke-live app release: export CLOUDYREADER_DATA_DIR := $(CURDIR)/.data
+run test test-fast samples smoke-live app release pin-engine smoke-engines: export CLOUDYREADER_DATA_DIR := $(CURDIR)/.data
 
 # doctor UV ONLINE VERIFY VOICE...: read-only checks; exit 1 when a required item is missing.
 define DOCTOR_SH
@@ -127,7 +131,8 @@ if [ -e build ]; then rm -r build; fi
 endef
 
 .PHONY: help setup deps lock models voices kokoro doctor run test test-fast check fmt precommit \
-        ci app release icons open-icons samples smoke-live smoke-voices clean clean-app clean-all FORCE
+        ci app release icons open-icons samples smoke-live smoke-voices pin-engine smoke-engines \
+        clean clean-app clean-all FORCE
 
 help: ## Show targets and overridable variables
 	@echo "usage: make <target> [VAR=value ...]"
@@ -212,14 +217,17 @@ ci: guards ## Commit gate: guards, check, then test, then precommit
 guards: ## Policy guards: vendor domain, public lock hosts, disk paths, workflow triggers
 	python3 -I -X pycache_prefix=$(CURDIR)/.cache/pycache scripts/ci_guards.py
 
-app: $(STAMPS)/deps $(STAMPS)/models $(STAMPS)/packaging ## Build dist/Cloudy Reader.app (ad-hoc signed); ICON=<name> KOKORO=auto|0|1 BUNDLE_VOICES=1|0
+app: $(STAMPS)/deps $(STAMPS)/models $(STAMPS)/packaging ## Build dist/Cloudy Reader.app (ad-hoc signed); ICON=<name> KOKORO=auto|0|1 BUNDLE_VOICES=1|0 ENGINES=auto|0|1
 	@case "$(KOKORO)" in auto|0|1) ;; *) echo "KOKORO must be auto, 0 or 1 (got '$(KOKORO)')" >&2; exit 1 ;; esac
 	@case "$(BUNDLE_VOICES)" in 0|1) ;; *) echo "BUNDLE_VOICES must be 0 or 1 (got '$(BUNDLE_VOICES)')" >&2; exit 1 ;; esac
-	@if [ -f scripts/build_app.sh ]; then APP_NAME="$(APP_NAME)" ICON="$(ICON)" KOKORO="$(KOKORO)" BUNDLE_VOICES="$(BUNDLE_VOICES)" OUT="$(OUT)" bash scripts/build_app.sh; else echo "pending: scripts/build_app.sh (pkg agent) not written yet; it builds \"$(OUT)/$(APP_NAME).app\""; fi
+	@case "$(ENGINES)" in auto|0|1) ;; *) echo "ENGINES must be auto, 0 or 1 (got '$(ENGINES)')" >&2; exit 1 ;; esac
+	@if [ -f scripts/build_app.sh ]; then APP_NAME="$(APP_NAME)" ICON="$(ICON)" KOKORO="$(KOKORO)" BUNDLE_VOICES="$(BUNDLE_VOICES)" ENGINES="$(ENGINES)" OUT="$(OUT)" bash scripts/build_app.sh; else echo "pending: scripts/build_app.sh (pkg agent) not written yet; it builds \"$(OUT)/$(APP_NAME).app\""; fi
 
+# ENGINES=0 until assets.lock.json pins engine weights: the commit that adds those pins flips it to
+# auto (or 1), so a release never bundles engines whose weights the app cannot download.
 release: ## Lean app (voices download at first launch) as a checked zip + SHA-256 in dist/; VERSION=x.y.z; never uploads
 	APP_NAME="$(APP_NAME)" OUT="$(OUT)" bash scripts/build_app.sh release-preflight "$(VERSION)"
-	$(MAKE) --no-print-directory app BUNDLE_VOICES=0 OFFLINE=1 ICON=cloud-atom KOKORO=1
+	$(MAKE) --no-print-directory app BUNDLE_VOICES=0 OFFLINE=1 ICON=cloud-atom KOKORO=1 ENGINES=0
 	APP_NAME="$(APP_NAME)" OUT="$(OUT)" bash scripts/build_app.sh release "$(VERSION)"
 
 # After models, so two uv processes never write .venv at once under make -j.
@@ -244,6 +252,16 @@ smoke-live: ## Live PubChem + UniProt check (scripts/live_smoke.py); never in ci
 smoke-voices: ## Live voice-download check (scripts/live_smoke_voices.py, about 0.55 MB); never in ci
 	@echo "smoke-voices needs internet access to the voice hosts: run it OUTSIDE the agent sandbox."
 	$(UV_RUN) $(PYTHON) scripts/live_smoke_voices.py
+
+# Pins one engine's Hugging Face files in assets.lock.json and installs them into .data.
+pin-engine: ## Pin ENGINE=chatterbox_turbo|qwen3_tts in assets.lock.json and install it (scripts/pin_engine_assets.py); network, never in ci
+	@case "$(ENGINE)" in chatterbox_turbo|qwen3_tts) ;; "") echo "usage: make pin-engine ENGINE=chatterbox_turbo|qwen3_tts" >&2; exit 1 ;; *) echo "ENGINE must be chatterbox_turbo or qwen3_tts (got '$(ENGINE)')" >&2; exit 1 ;; esac
+	@echo "pin-engine needs internet access to Hugging Face: run it OUTSIDE the agent sandbox."
+	@if [ -f scripts/pin_engine_assets.py ]; then $(UV_RUN) $(PYTHON) scripts/pin_engine_assets.py $(ENGINE) --write --install; else echo "pending: scripts/pin_engine_assets.py (P5) not written yet"; fi
+
+# Reads the engine weights in .data; writes only into its own temp dir; no network.
+smoke-engines: ## Engine smoke on the installed weights: load, letters, header phrases, RTF, peak RSS (scripts/live_smoke_engines.py); never in ci
+	$(UV_RUN) $(PYTHON) scripts/live_smoke_engines.py
 
 clean: clean-app ## Remove caches and build artifacts (runs clean-app); never .data/ or .venv/
 	$(CLEAN_CMDS)
