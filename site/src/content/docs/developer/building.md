@@ -267,14 +267,15 @@ Each self-test run has a time limit of `SELFTEST_TIMEOUT` seconds. Logs go to `b
 
 The bundle carries these values:
 
-| Item                        | Value                                                                                    |
-| --------------------------- | ---------------------------------------------------------------------------------------- |
-| Bundle identifier           | `com.cloudyreader.CloudyReader`                                                          |
-| Version keys                | `CFBundleShortVersionString` and `CFBundleVersion` hold `version` from `pyproject.toml`. |
-| `LSMinimumSystemVersion`    | The newest macOS minimum among the bundled binaries, never below 11.0.                   |
-| `LSApplicationCategoryType` | `public.app-category.education`                                                          |
-| Copyright                   | `Copyright © 2026 the Cloudy Reader authors.`                                            |
-| Architecture                | arm64                                                                                    |
+| Item                        | Value                                                                                                             |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Bundle identifier           | `com.cloudyreader.CloudyReader`                                                                                   |
+| Version keys                | `CFBundleShortVersionString` and `CFBundleVersion` hold `version` from `pyproject.toml`.                          |
+| `LSMinimumSystemVersion`    | The newest macOS minimum among the bundled binaries, never below 11.0.                                            |
+| `LSApplicationCategoryType` | `public.app-category.education`                                                                                   |
+| Copyright                   | `Copyright © 2026 the Cloudy Reader authors.`                                                                     |
+| Architecture                | arm64                                                                                                             |
+| Letter clips                | The 12 recordings and `manifest.json` in `Contents/Resources/cloudyreader/engines/letter_clips/`, in every build. |
 
 `packaging/min_macos.py` reads the Mach-O load commands of the bundled files. The spec excludes `scispacy`, `sklearn`, and `nmslib` because the model loads without them. Without Kokoro, it also excludes `mlx`, `mlx_audio`, `misaki`, and `scipy`.
 
@@ -296,11 +297,11 @@ ICON=cloud-wave make app
 
 `make release` builds the files that a GitHub release carries: a zip and a disk image, each with a SHA-256 file. Both hold the same lean app: no voice files, no Kokoro model, and no test-fixture question. The app downloads them at first launch. `make release` never uploads anything.
 
-Set the version in every place that [Change the version](/developer/contributing/#change-the-version) lists. Then run the sync step, so that `.venv` knows the version, and build. This example builds version 0.0.2:
+Set the version in every place that [Change the version](/developer/contributing/#change-the-version) lists. Then run the sync step, so that `.venv` knows the version, and build. This example builds version 0.0.3:
 
 ```bash
 make .cache/stamps/packaging kokoro
-make release VERSION=0.0.2
+make release VERSION=0.0.3
 ```
 
 The sync step needs the network and the public package index. `VERSION` defaults to `version` in `pyproject.toml`.

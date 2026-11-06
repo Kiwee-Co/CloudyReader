@@ -325,7 +325,7 @@ The status bar shows an error that names a voice or a voice engine. The message 
 
 The status bar shows "Error: _engine_ could not say '_part_'; try another voice".
 
-**Cause.** The engine made no usable sound for that part after its tries. For a short part, such as a choice letter, the app tries twice, and then once more with the part repeated three times. If every try fails, the app stops the reading and shows the error.
+**Cause.** The engine made no usable sound for that part after its tries. For a short part, such as a single hard word, the app tries twice, and then once more with the part repeated three times. If every try fails, the app stops the reading and shows the error. A choice letter on its own does not take these tries: the voice plays a short recording of it.
 
 **Fix.** Choose another voice and click **Speak**. The app repeats the same tries for the same voice and text, so reading it again with that voice does not help.
 

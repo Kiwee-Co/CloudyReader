@@ -103,7 +103,7 @@ After a choice letter, the app cuts the voice's own silence in every voice, so t
 
 After the stem and after a choice, a Piper or Kokoro voice keeps its own silence. A Kokoro voice therefore pauses about 0.8 seconds longer there than the inserted silence. A Chatterbox Turbo or Qwen3-TTS voice pauses at most about 0.13 seconds longer than the inserted silence.
 
-Sometimes a Chatterbox Turbo or Qwen3-TTS voice fails to say a short part alone, such as a choice letter. The app then keeps some of the voice's own silence after that part, so that pause can be longer.
+Sometimes a Chatterbox Turbo or Qwen3-TTS voice fails to say a short part alone, such as a single hard word. The app then keeps some of the voice's own silence after that part, so that pause can be longer. A choice letter on its own is not such a part: these voices play a short recording of it.
 
 To hear the difference, read the same question with one voice from each engine and listen after the stem. See [Hear a sample question](/manual/getting-started/#hear-a-sample-question) for a question to use, and [Question format and reading order](/manual/reference/question-format/) for every pause.
 
