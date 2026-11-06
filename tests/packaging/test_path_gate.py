@@ -195,9 +195,31 @@ def test_the_path_gate_reads_zip_members(root):
     assert "Contents/Resources/base_library.zip!site.pyc: 1 hit" in result.stdout + result.stderr
 
 
-@pytest.mark.parametrize("kind", ["file", "folder"])
-def test_the_path_gate_reads_link_text_and_never_follows_it(root, kind):
+# Each link test runs on a clean PKG and PYZ, where the link alone fails the gate (needs
+# PyInstaller), and with no PKG, as the CI venv can: there the named hit line is the proof.
+LINK_APPS = pytest.mark.parametrize("frozen_app", [True, False], ids=["clean-pkg", "no-pkg"])
+
+
+def link_app(root: Path, tmp_path: Path, frozen_app: bool) -> Path:
     bundle = app(root)
+    if frozen_app:
+        frozen(bundle, tmp_path, CLEAN)
+    return bundle
+
+
+def assert_link_hit(result, link: str, frozen_app: bool) -> None:
+    out = result.stdout + result.stderr
+    assert result.returncode == 1
+    assert f"path gate: {link} (link target): 1 hit" in result.stdout  # names that very link
+    assert "the app carries this build host's paths" in result.stderr  # it failed on a hit
+    if frozen_app:
+        assert UNCOVERED not in out and "path gate: 1 hit(s)" in out  # the link alone
+
+
+@LINK_APPS
+@pytest.mark.parametrize("kind", ["file", "folder"])
+def test_the_path_gate_reads_link_text_and_never_follows_it(root, tmp_path, kind, frozen_app):
+    bundle = link_app(root, tmp_path, frozen_app)
     if kind == "file":  # rel-sec's M06: a link to a file in the home folder
         rel, target = "Contents/Resources/voice.onnx", Path("/home/testowner/remi/secret.txt")
     else:  # M07 as a link to a real folder: os.walk lists it with the folders, never enters it
@@ -208,25 +230,25 @@ def test_the_path_gate_reads_link_text_and_never_follows_it(root, kind):
 
     result = gate(root, bundle)
 
-    assert result.returncode == 1
+    assert_link_hit(result, rel, frozen_app)
     out = result.stdout + result.stderr
-    assert f"{rel} (link target): 1 hit" in out
-    assert "the app carries this build host's paths" in result.stderr
     assert "x.txt" not in out  # read as text, never followed
     assert "testowner" not in out and str(root) not in out  # the file and a count only
 
 
-def test_the_path_gate_reads_a_link_entry_inside_a_zip_as_link_text(root):
-    bundle = app(root)
+@LINK_APPS
+def test_the_path_gate_reads_a_link_entry_inside_a_zip_as_link_text(root, tmp_path, frozen_app):
+    bundle = link_app(root, tmp_path, frozen_app)
+    library = bundle / "Contents" / "Resources" / "base_library.zip"
     link = zipfile.ZipInfo("lib")
     link.external_attr = (stat.S_IFLNK | 0o755) << 16  # a zip stores a link's target as its data
-    with zipfile.ZipFile(bundle / "Contents" / "Resources" / "base_library.zip", "w") as archive:
-        archive.writestr(link, "/home/testowner/remi")
+    with zipfile.ZipFile(library, "w") as archive:
+        archive.writestr(link, "/home/testowner/remi", compress_type=zipfile.ZIP_DEFLATED)
+    assert b"testowner" not in library.read_bytes()  # compressed: only the member scan sees it
 
     result = gate(root, bundle)
 
-    assert result.returncode == 1
-    assert "Contents/Resources/base_library.zip!lib (link target): 1 hit" in result.stdout
+    assert_link_hit(result, "Contents/Resources/base_library.zip!lib", frozen_app)
 
 
 @pytest.mark.parametrize("planted", [True, False])
