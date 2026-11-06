@@ -15,7 +15,7 @@
 <rect x="564" y="603" width="6" height="6" rx="3" fill="#1c6cdc"/>
 <rect x="20.5" y="20.5" width="639" height="323" stroke-width="1" fill="#171717" stroke="#101010"/>
 <path d="M21 20.5H659" stroke-width="1" stroke="#0d0d0d"/>
-<g clip-path="url(#clip2)" font-size="13" fill="#ffffff" fill-opacity="0.85"><text x="27" y="39.56" fill="#8e8e93">Paste a National Science Bowl question, then press ⌘↵ to hear it.</text></g>
+<g clip-path="url(#clip2)" font-size="13" fill="#ffffff" fill-opacity="0.85"><text x="27" y="39.56" textLength="392.38" lengthAdjust="spacingAndGlyphs" fill="#8e8e93">Paste a National Science Bowl question, then press ⌘↵ to hear it.</text></g>
 <text x="37" y="382.56" font-size="13" fill="#ffffff" fill-opacity="0.85">Voice:</text>
 <rect x="87.5" y="368.6" width="278" height="20.5" rx="5.5" fill="#000000" fill-opacity="0.25"/>
 <rect x="87.5" y="368" width="278" height="20.5" rx="5.5" fill="#4b4b4b"/>

@@ -10,37 +10,37 @@
         {
             "n": 2,
             "part": "Voice menu",
-            "x": 56.4,
+            "x": 57.57,
             "y": 42.46
         },
         {
             "n": 3,
             "part": "Rotation menu",
-            "x": 42.87,
+            "x": 44.04,
             "y": 48.59
         },
         {
             "n": 4,
             "part": "options",
-            "x": 32.26,
+            "x": 33.43,
             "y": 55.16
         },
         {
             "n": 5,
             "part": "Paste and Speak Clipboard",
-            "x": 2.94,
-            "y": 61.94
+            "x": 36.76,
+            "y": 63.55
         },
         {
             "n": 6,
             "part": "Repeat, Stop, and Speak",
-            "x": 97.06,
-            "y": 61.94
+            "x": 60.44,
+            "y": 63.55
         },
         {
             "n": 7,
             "part": "Spoken script",
-            "x": 20.45,
+            "x": 21.63,
             "y": 71.61
         },
         {

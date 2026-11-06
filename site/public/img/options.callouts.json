@@ -4,13 +4,13 @@
         {
             "n": 1,
             "part": "Read answer line",
-            "x": 87.41,
+            "x": 90.77,
             "y": 25.0
         },
         {
             "n": 2,
             "part": "Online lookups",
-            "x": 82.04,
+            "x": 85.39,
             "y": 67.86
         }
     ]
