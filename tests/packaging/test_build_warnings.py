@@ -218,6 +218,15 @@ def test_build_bundle_stops_and_names_the_log_when_pyinstaller_fails(root: Path)
     assert "PyInstaller exited 3 (log: build/pyinstaller.log)" in result.stderr
 
 
+def test_build_bundle_makes_the_build_folder_a_fresh_clone_lacks(root: Path) -> None:
+    (root / "build").rmdir()
+
+    result, _ = build_bundle(root, ["60000 INFO: done"])
+
+    assert result.returncode == 0, result.stderr
+    assert (root / "build" / "pyinstaller.log").read_text() == "60000 INFO: done\n"
+
+
 def test_each_allowlisted_warning_says_why() -> None:
     block = SCRIPT.read_text().split("BENIGN_WARNINGS=(\n", 1)[1].split("\n)\n", 1)[0]
     lines = [line.strip() for line in block.splitlines()]

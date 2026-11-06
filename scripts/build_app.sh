@@ -223,6 +223,7 @@ show_pyinstaller_log() {
 build_bundle() {
   local t0 log=$ROOT/build/pyinstaller.log rc=0
   t0=$(now)
+  mkdir -p -- "$ROOT/build" # a fresh clone has none until the first build
   say "PyInstaller $("${PYI[@]}" --version) (entry: $ENTRY, kokoro: $KOKORO)"
   # PyInstaller imports modules to scan them. The HF flags stop any import-time Hub download; the
   # other two mute transformers' notice that PyTorch is absent (only its tokenizers are used).
