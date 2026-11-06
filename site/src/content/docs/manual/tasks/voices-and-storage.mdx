@@ -71,9 +71,9 @@ Add a Piper voice when you want a voice beyond the supported voices. A voice has
 4. Copy both files into `voices`.
 5. Open Cloudy Reader. The voice appears under **Piper** in the **Voice** menu.
 
-The app lists a voice only when both files are present and the `.onnx.json` file holds valid JSON. It takes the voice name from the file name, and the language and quality from the `.onnx.json` file. The menu sorts Piper voices by quality, best first, then by name.
+The app lists a voice only when both files are present and the `.onnx.json` file holds a JSON object. It takes the voice name from the file name, and the language and quality from the `.onnx.json` file. The menu sorts Piper voices by quality, best first, then by name.
 
-If a voice does not appear, the app skipped it. It prints a line that starts with "skipping voice" in Terminal. See [Read the lines the app prints](/manual/get-help/#read-the-lines-the-app-prints).
+If a voice does not appear, check that both files are in the `voices` folder, then restart the app. When the `.onnx` file is there but its `.onnx.json` file is missing or does not hold a JSON object, the app skips the voice. It prints a line that starts with "skipping voice" in Terminal. See [Read the lines the app prints](/manual/get-help/#read-the-lines-the-app-prints).
 
 A voice you add has three limits:
 
