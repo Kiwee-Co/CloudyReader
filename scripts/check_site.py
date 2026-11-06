@@ -3,6 +3,7 @@
 It reads the HTML that `npm run build` writes in site/, so it checks what visitors get. It checks:
 - every page has exactly one h1 (a redirect page has none and is skipped);
 - every internal link resolves to a built file, and a #fragment to an id on the target page;
+- no page links to an old address that only redirects (link to the new page instead);
 - every image resolves and has an alt attribute; an image in a figure has a non-empty alt;
 - ids are unique on a page, and every figure that the Figure component draws has an id;
 - no link hard-codes the site's own host, and no page loads a resource from another origin.
@@ -140,6 +141,8 @@ def _check_ref(dist: Path, path: Path, pages: dict[Path, Page], ref: Ref) -> str
     target = _target(dist, path, parts.path) if parts.path else path
     if not target.is_relative_to(dist) or not target.is_file():
         return f"line {ref.line}: missing {ref.url}"
+    if ref.tag == "a" and target in pages and pages[target].redirect and not pages[path].redirect:
+        return f"line {ref.line}: link goes through a redirect: {ref.url}"
     if parts.fragment and target.suffix == ".html":
         ids = pages[target].ids if target in pages else parse(target).ids
         if unquote(parts.fragment) not in ids:

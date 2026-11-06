@@ -98,6 +98,7 @@ def test_problems_print_one_line_each_and_main_exits_1(check_site, tmp_path, cap
         ("/manual/voices/#nowhere", "no #nowhere in manual/voices/index.html"),
         ("#nowhere", "no #nowhere in index.html"),
         ("https://cloudyreader.com/manual/voices/", "link hard-codes the site's host"),
+        ("/custom-domain/", "link goes through a redirect: /custom-domain/"),
     ],
 )
 def test_a_bad_link_is_named(check_site, tmp_path, href, problem):
