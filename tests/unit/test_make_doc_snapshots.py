@@ -47,11 +47,72 @@ def test_the_voices_figure_lists_the_voices_in_the_apps_order(snapshots, tmp_pat
 
 
 def test_the_engine_catalog_lists_the_engine_groups_between_kokoro_and_piper(snapshots, tmp_path):
+    pytest.importorskip("cloudyreader.engine_catalog")  # 0.0.2 on
     voices = snapshots.with_engine_rows(snapshots.real_voices(tmp_path))
 
     assert [v.key for v in voices] == [v.key for v in sorted(voices, key=voice_sort_key)]
     engines = list(dict.fromkeys(v.engine for v in voices))
     assert engines == ["kokoro", "chatterbox_turbo", "qwen3_tts", "piper"]
+
+
+def _needs_groups():
+    from dataclasses import fields
+
+    from cloudyreader.prefetch import PrefetchProgress
+
+    if "group" not in {f.name for f in fields(PrefetchProgress)}:
+        pytest.skip("this code labels the download as one whole, not per group (0.0.1)")
+
+
+@pytest.mark.parametrize(
+    ("words", "said"),
+    [(["Piper"], "Piper"), (["A", "B"], "A and B"), (["A", "B", "C"], "A, B, and C")],
+)
+def test_series_lists_words_as_a_sentence_does(snapshots, words, said):
+    assert snapshots.series(words) == said
+
+
+def test_a_download_report_gives_the_files_group_and_its_share(snapshots):
+    _needs_groups()
+    import json
+
+    lock = json.loads((snapshots.ROOT / "assets.lock.json").read_text(encoding="utf-8"))
+    piper = sum(a["size"] for a in lock["assets"] if a["group"] == "voices")
+
+    first = snapshots.download_event(4, "en_US-lessac-medium.onnx", files_done=5)
+    later = snapshots.download_event(42, "af_bella.safetensors")
+
+    assert (first.group, first.group_total_bytes) == ("voices", piper)
+    assert first.group_done_bytes * 100 // first.group_total_bytes == 4
+    assert first.done_bytes == first.group_done_bytes  # Piper voices come first
+    assert later.group == "kokoro"
+    assert later.group_done_bytes * 100 // later.group_total_bytes == 42
+    assert later.done_bytes == piper + later.group_done_bytes
+
+
+def test_an_engine_report_is_a_share_of_the_engine_group(snapshots):
+    _needs_groups()
+    from cloudyreader.engine_catalog import SPECS
+
+    event = snapshots.engine_event()
+
+    assert event.group == "qwen3_tts"
+    assert event.group_total_bytes == sum(size for size, _ in SPECS["qwen3_tts"].expect.values())
+    assert event.group_done_bytes * 100 // event.group_total_bytes == 20
+    assert event.done_bytes < event.total_bytes
+
+
+def test_dimmed_engine_rows_give_their_reason(snapshots):
+    pytest.importorskip("cloudyreader.engine_catalog")
+
+    rows = snapshots.engine_rows({"qwen3_tts": "not downloaded yet"})
+
+    by_engine = {v.engine: (v.installed, v.reason) for v in rows}
+    assert by_engine == {
+        "chatterbox_turbo": (True, ""),
+        "qwen3_tts": (False, "not downloaded yet"),
+    }
+    assert all(v.installed and not v.reason for v in snapshots.engine_rows())
 
 
 # --- drawing the 0.0.2 look ------------------------------------------------------------------
@@ -158,3 +219,15 @@ def test_the_voice_menu_figure_draws_section_headers(env, snapshots):
 
     header = f'font-weight="600" fill="{tokens.TEXT_SECONDARY_LIGHT}">Kokoro</text>'
     assert header in svg
+
+
+def test_the_download_strip_describes_the_label_it_draws(env, snapshots):
+    _needs_groups()
+    import re
+
+    xml = snapshots.fig_download_progress(env, env.scheme(False)).xml()
+
+    drawn = re.findall(r">(Downloading [^<]+)</text>", xml)
+    desc = re.search(r"<desc[^>]*>([^<]*)</desc>", xml).group(1)
+    assert len(drawn) == 1
+    assert drawn[0] in desc  # the description names the label the strip shows

@@ -23,9 +23,9 @@ import sys
 import tempfile
 import threading
 import time
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, fields, replace
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -366,7 +366,9 @@ def look_for(dark: bool, palette: QPalette | None) -> Look:
 class Env:
     """The QApplication, a temp folder, the real voice catalog, and helpers to drive windows."""
 
-    def __init__(self, platform: str, *, engines: bool = False) -> None:
+    def __init__(
+        self, platform: str, *, engines: bool = False, app_version: str | None = None
+    ) -> None:
         argv = ["make_doc_snapshots", "-platform", platform]
         self.app = QApplication.instance() or QApplication(argv)
         self.tmp = Path(tempfile.mkdtemp(prefix="cloudyreader-docs-"))
@@ -382,6 +384,7 @@ class Env:
         if engines:  # the 0.0.2 catalog: Chatterbox Turbo and Qwen3-TTS rows among the voices
             self.voices = with_engine_rows(self.voices)
         self.service_class = doc_service_class()
+        self.app_version = app_version  # None: the About box shows this checkout's own version
         self._ids = itertools.count(1)
         # Every figure shows the busy bar where the app does by default, whatever this Mac's
         # Reduce Motion setting is.
@@ -617,7 +620,7 @@ class Canvas:
         color = QColor("#FFFFFF") if primary else (look.label if on else look.disabled)
         y = baseline(r.top(), r.height(), b.font())
         kw = {"text_anchor": "middle", **font_kw(b.font()), **paint(color)}
-        self.svg.text(r.center().x(), y, b.text(), **kw)
+        self.svg.text(r.center().x(), y, b.text(), **kw, **fit(b.text(), b.font()))
 
     def popup_bezel(self, c: QComboBox) -> QRectF:
         """The drawn popup button inside the widget, as measured on native renders."""
@@ -637,7 +640,7 @@ class Canvas:
         text = c.currentText() or c.placeholderText()
         color = look.label if on and c.currentIndex() >= 0 else look.disabled
         y = baseline(r.top(), r.height(), c.font())
-        svg.text(r.left() + 9, y, text, **font_kw(c.font()), **paint(color))
+        svg.text(r.left() + 9, y, text, **font_kw(c.font()), **fit(text, c.font()), **paint(color))
 
     def checkbox(self, c: QCheckBox) -> None:
         opt = QStyleOptionButton()
@@ -657,7 +660,8 @@ class Canvas:
             svg.rect(edge, 3.5, fill="none", stroke_width=0.5, **paint(look.box_edge, "stroke"))
         content = style.subElementRect(QStyle.SubElement.SE_CheckBoxContents, opt, c)
         y = baseline(g.top(), g.height(), c.font())
-        svg.text(g.left() + content.left(), y, c.text(), **font_kw(c.font()), **paint(look.label))
+        kw = {**font_kw(c.font()), **fit(c.text(), c.font()), **paint(look.label)}
+        svg.text(g.left() + content.left(), y, c.text(), **kw)
 
     def disclosure(self, d: Any) -> None:
         from cloudyreader.gui import tokens
@@ -671,7 +675,8 @@ class Canvas:
         stroke = paint(self.look.chevron, "stroke")
         self.svg.path(shape, fill="none", stroke_width=1.6, **stroke, **ROUND)
         tx, ty = x + size + tokens.INDICATOR_SPACING, baseline(g.top(), g.height(), d.font())
-        self.svg.text(tx, ty, d.text(), **font_kw(d.font()), **paint(self.look.label))
+        kw = {**font_kw(d.font()), **fit(d.text(), d.font()), **paint(self.look.label)}
+        self.svg.text(tx, ty, d.text(), **kw)
 
     def card(self, c: Any) -> None:
         """The question card or the script panel: a rounded fill, outlined when it has one."""
@@ -774,7 +779,7 @@ class Canvas:
             anchor, x = "middle", r.center().x()
         kw = {"text_anchor": anchor, **font_kw(font), **paint(self.look.label)}
         for chunk, top, ascent in rows:
-            self.svg.text(x, y0 + top + ascent, chunk, **kw)
+            self.svg.text(x, y0 + top + ascent, chunk, **kw, **fit(chunk, font))
 
     def progress(self, bar: QProgressBar) -> None:
         g, svg, look = self.geo(bar), self.svg, self.look
@@ -803,7 +808,8 @@ class Canvas:
             self.tone_icon(QRectF(icon).translated(g.topLeft()), bar.tone.value)
         t = QRectF(text_rect).translated(g.topLeft())
         y = baseline(t.top(), t.height(), bar.font())
-        svg.text(t.left(), y, elided, **font_kw(bar.font()), **paint(look.label))
+        font = bar.font()
+        svg.text(t.left(), y, elided, **font_kw(font), **fit(elided, font), **paint(look.label))
 
     def tone_icon(self, r: QRectF, tone: str) -> None:
         """The status bar's warning triangle or error disc, drawn as the system alert badges."""
@@ -938,7 +944,8 @@ def draw_menu(
             mark = f"M{pts(row.left() + 7.5, row.center().y())}l3 3l6 -7"
             svg.path(mark, fill="none", stroke_width=1.6, **paint(ink, "stroke"), **ROUND)
         base = baseline(row.top(), row.height(), font)
-        svg.text(row.left() + MENU_TEXT, base, item.text, **font_kw(font), **paint(ink))
+        kw = {**font_kw(font), **fit(item.text, font), **paint(ink)}
+        svg.text(row.left() + MENU_TEXT, base, item.text, **kw)
     cx = body.center().x()
     if top > r.top():
         arrow_y = body.top() + MENU_ROW / 2
@@ -1033,6 +1040,13 @@ def appearance(dark: bool) -> str:
     return "Dark Mode" if dark else "Light Mode"
 
 
+def series(words: Sequence[str]) -> str:
+    """Words as a sentence lists them: a; a and b; a, b, and c."""
+    if len(words) < 3:
+        return " and ".join(words)
+    return f"{', '.join(words[:-1])}, and {words[-1]}"
+
+
 def fig_window(env: Env, look: Look) -> Svg:
     with env.window(duration_s=SQ1_LESSAC_S) as (win, _service):
         env.speak(win, sample_question())
@@ -1074,11 +1088,14 @@ def fig_menu(env: Env, look: Look, which: str, *, top: bool = False) -> Svg:
             )
         elif which == "voices":
             title = "Voice menu"
+            # The engine headings after Kokoro's: Piper alone before 0.0.2.
+            later = [item.text for item in items if not item.enabled and "(" not in item.text][1:]
+            under = "under their engine name" if len(later) == 1 else "each under its heading"
             desc = (
                 f"The Voice menu open in {appearance(look.dark)}: the end of the Kokoro list, best "
                 "first, names with their gender, one voice dimmed because it is not installed, "
-                "then the Piper voices under their engine name, and a scroll arrow where the list "
-                "goes on."
+                f"then the {series(later)} voices, {under}, and a scroll arrow where the list goes "
+                "on."
             )
         else:
             title = "Rotation menu"
@@ -1096,6 +1113,12 @@ def fig_menu(env: Env, look: Look, which: str, *, top: bool = False) -> Svg:
     return svg
 
 
+def strip_caption(svg: Svg, look: Look, y: float, caption: str) -> float:
+    """A bold caption over one part of a stacked figure; returns the y where the part starts."""
+    svg.text(0, y + 13, caption, font_size=12, font_weight=600, **paint(look.ink))
+    return y + 22
+
+
 def status_strip(svg: Svg, look: Look, win: Any, y: float, caption: str | None) -> float:
     """The window's status bar as a square strip, under a caption if one is given.
 
@@ -1103,8 +1126,7 @@ def status_strip(svg: Svg, look: Look, win: Any, y: float, caption: str | None) 
     """
     bar = win.statusBar()
     if caption is not None:
-        svg.text(0, y + 13, caption, font_size=12, font_weight=600, **paint(look.ink))
-        y += 22
+        y = strip_caption(svg, look, y, caption)
     r = QRectF(0, y, win.width(), bar.height())
     svg.rect(r, **paint(look.window))
     clip = svg.clip(f"<rect{rect_attrs(r)}/>")
@@ -1120,14 +1142,34 @@ def status_strip(svg: Svg, look: Look, win: Any, y: float, caption: str | None) 
 def download_event(
     percent: int = 42, file: str = "af_bella.safetensors", files_done: int = 12
 ) -> Any:
-    """A progress report at percent of every voice file in assets.lock.json."""
-    from cloudyreader.prefetch import PrefetchProgress
+    """A progress report while file downloads, as the startup run sends it.
+
+    Code that labels the download per lock group (0.0.2 on) gets percent of the file's group;
+    older code, whose reports name no group, gets percent of every voice file.
+    """
+    from cloudyreader import prefetch
 
     lock = json.loads((ROOT / "assets.lock.json").read_text(encoding="utf-8"))
-    sizes = [a["size"] for a in lock["assets"] if a["group"] in ("voices", "kokoro")]
-    total = sum(sizes)
-    done = -(-total * percent // 100)  # rounded up, so the window's floored percent reads it
-    return PrefetchProgress(file, done, total, files_done, len(sizes))
+    assets = [a for a in lock["assets"] if a["group"] in ("voices", "kokoro")]
+    total = sum(a["size"] for a in assets)
+    if "group" not in {f.name for f in fields(prefetch.PrefetchProgress)}:
+        done = -(-total * percent // 100)  # rounded up, so the window's floored percent reads it
+        return prefetch.PrefetchProgress(file, done, total, files_done, len(assets))
+    group = next(a["group"] for a in assets if a["name"] == file)
+    group_total = sum(a["size"] for a in assets if a["group"] == group)
+    group_done = -(-group_total * percent // 100)
+    rank = prefetch.FETCHED
+    before = sum(a["size"] for a in assets if rank[a["group"]] < rank[group])
+    return prefetch.PrefetchProgress(
+        file,
+        before + group_done,
+        total,
+        files_done,
+        len(assets),
+        group=group,
+        group_done_bytes=group_done,
+        group_total_bytes=group_total,
+    )
 
 
 def download_knobs(event: Any) -> dict[str, object]:
@@ -1158,11 +1200,11 @@ def fig_download(env: Env, look: Look) -> Svg:
             if busy:
                 env.hold_reading(win, service)
             y = status_strip(svg, look, win, y, caption)
-            width = win.width()
+            width, label = win.width(), win.prefetch_label.text()
     svg.width, svg.height = width, y - GAP
     svg.desc = (
-        f"The status bar in {appearance(look.dark)} while voices download: Downloading voices 42% "
-        "with its progress bar; then the same with Preparing in the message."
+        f"The status bar in {appearance(look.dark)} while voices download: {label} with its "
+        "progress bar; then the same with Preparing in the message."
     )
     return svg
 
@@ -1205,9 +1247,12 @@ def fig_states(env: Env, look: Look) -> Svg:
 
 
 def fig_about(env: Env, look: Look, logo: Logo) -> Svg:
+    from cloudyreader.gui import main_window
+
     with env.window() as (win, _service):
         shown: list[QMessageBox] = []
         original = QMessageBox.show
+        version = main_window.app_version
 
         def hidden_show(box: QMessageBox) -> None:
             box.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen)
@@ -1215,10 +1260,13 @@ def fig_about(env: Env, look: Look, logo: Logo) -> Svg:
             original(box)
 
         QMessageBox.show = hidden_show  # type: ignore[method-assign]
+        if env.app_version is not None:  # the release's version, not this checkout's metadata
+            main_window.app_version = lambda: env.app_version
         try:
             win.about_action.trigger()
         finally:
             QMessageBox.show = original  # type: ignore[method-assign]
+            main_window.app_version = version
         box = shown[0]
         env.app.processEvents()
         desc = (
@@ -1287,7 +1335,7 @@ def fig_first_launch(env: Env, look: Look) -> Svg:
             f"The main window in {appearance(look.dark)} at its first start: an empty question "
             "box with its hint, the Voice menu dimmed with No voice installed, Speak and Speak "
             "Clipboard dimmed, and the status No voice is installed. with a warning icon, beside "
-            "Downloading voices… 4% and its progress bar."
+            f"{win.prefetch_label.text()} and its progress bar."
         )
         svg = Svg(win.width(), win.height(), "Cloudy Reader at first start", desc)
         draw_content(svg, look, win)
@@ -1349,8 +1397,8 @@ def fig_download_progress(env: Env, look: Look) -> Svg:
     with env.window(**download_knobs(download_event())) as (win, _service):
         env.pump(lambda: not win.prefetch_label.isHidden(), "download progress")
         desc = (
-            f"The status bar in {appearance(look.dark)} during the voice download: Downloading "
-            "voices… 42% and a progress bar."
+            f"The status bar in {appearance(look.dark)} during the voice download: "
+            f"{win.prefetch_label.text()} and a progress bar."
         )
         return fig_strip(look, win, "Voice download progress", desc)
 
@@ -1363,7 +1411,7 @@ def fig_status_busy(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
         env.hold_reading(win, service)
         desc = (
             f"The status bar in {appearance(look.dark)} while a reading is prepared during the "
-            "voice download: Preparing… on the left, then Downloading voices… 42% with its "
+            f"voice download: Preparing… on the left, then {win.prefetch_label.text()} with its "
             "progress bar on the right."
         )
         svg = fig_strip(look, win, "A busy status bar", desc, band=CALLOUT_BAND)
@@ -1405,36 +1453,45 @@ def fig_guide_warning(env: Env, look: Look) -> Svg:
         return fig_strip(look, win, "A pronunciation guide warning", desc)
 
 
-# --- 0.0.2 engine states: Chatterbox Turbo and Qwen3-TTS (branch pause and later) -------------
+# --- 0.0.2 engine states: Chatterbox Turbo and Qwen3-TTS (main, from 0.0.2) -------------------
 
 QWEN_RYAN = "qwen3_tts:ryan"
-LOAD_HINT = "loading Chatterbox Turbo (first use only)"
 
 
-def engine_rows() -> list[Any]:
-    """The GUI fake's engine rows: Chatterbox Turbo dimmed with its reason, Ryan, Aiden."""
+def engine_rows(dimmed: Mapping[str, str] | None = None) -> list[Any]:
+    """The engine rows of a build with both engines pinned, as the GUI fake names them.
+
+    dimmed maps an engine to the reason its rows give, as while it still downloads.
+    """
     from cloudyreader.gui.fake_service import ENGINE_FAKE_VOICES, FAKE_VOICES
 
-    return list(ENGINE_FAKE_VOICES[len(FAKE_VOICES) :])
+    reasons = dimmed or {}
+    return [
+        replace(v, installed=v.engine not in reasons, reason=reasons.get(v.engine, ""))
+        for v in ENGINE_FAKE_VOICES[len(FAKE_VOICES) :]
+    ]
 
 
-def with_engine_rows(voices: Sequence[Any]) -> list[Any]:
+def with_engine_rows(voices: Sequence[Any], dimmed: Mapping[str, str] | None = None) -> list[Any]:
     """The catalog with the engine rows, in the order TtsService.voices() lists them."""
     from cloudyreader.voice_meta import voice_sort_key
 
-    return sorted([*voices, *engine_rows()], key=voice_sort_key)
+    return sorted([*voices, *engine_rows(dimmed)], key=voice_sort_key)
 
 
-def engine_catalog(env: Env) -> list[Any]:
+def engine_catalog(env: Env, dimmed: Mapping[str, str] | None = None) -> list[Any]:
     """Every pinned voice plus the engine rows, whether or not --engines is on."""
     folder = env.tmp / f"engines{next(env._ids)}"
     folder.mkdir()  # real_voices() makes its voices folder inside, without parents
-    return with_engine_rows(real_voices(folder))
+    return with_engine_rows(real_voices(folder), dimmed)
 
 
 def fig_voices_engines(env: Env, look: Look) -> Svg:
     """The Voice menu open at Ryan: the engine groups between Kokoro and Piper."""
-    with env.window(voices=engine_catalog(env), saved_voice=QWEN_RYAN) as (win, _service):
+    from cloudyreader.engine_catalog import NOT_DOWNLOADED
+
+    catalog = engine_catalog(env, {"chatterbox_turbo": NOT_DOWNLOADED})
+    with env.window(voices=catalog, saved_voice=QWEN_RYAN) as (win, _service):
         win.question_edit.setPlainText(sample_question())
         env.app.processEvents()
         combo = win.voice_picker.combo
@@ -1444,7 +1501,7 @@ def fig_voices_engines(env: Env, look: Look) -> Svg:
         desc = (
             f"The Voice menu open in {appearance(look.dark)} at Ryan (male): the end of the "
             "Kokoro list, the Chatterbox Turbo heading with its built-in voice dimmed and the "
-            "reason not downloaded yet, the Qwen3-TTS heading with Ryan and Aiden, then Piper."
+            "reason not downloaded yet, the Qwen3-TTS heading with Aiden and Ryan, then Piper."
         )
         svg = Svg(win.width(), win.height(), "Voice menu with the engine groups", desc)
         bounds = draw_content(svg, look, win)
@@ -1452,21 +1509,32 @@ def fig_voices_engines(env: Env, look: Look) -> Svg:
     return svg
 
 
-def engine_event(percent: int = 42) -> Any:
-    """A report inside the Qwen3-TTS group, as the startup run sends it for an engine."""
-    from cloudyreader.prefetch import PrefetchProgress
+def engine_event(group: str = "qwen3_tts", done_bytes: int = 412 * 10**6) -> Any:
+    """A report inside an engine's group, after the voices and every engine fetched before it.
 
-    group_total = 1_973 * 10**6
-    group_done = -(-group_total * percent // 100)  # rounded up: the floored percent reads it
+    Engine sizes are the pin script's seeds in engine_catalog.SPECS: the lock's pins will rule.
+    """
+    from cloudyreader.engine_catalog import SPECS
+    from cloudyreader.prefetch import FETCHED, PrefetchProgress
+
+    lock = json.loads((ROOT / "assets.lock.json").read_text(encoding="utf-8"))
+    sizes: dict[str, list[int]] = {}
+    for asset in lock["assets"]:
+        if asset["group"] in ("voices", "kokoro"):
+            sizes.setdefault(asset["group"], []).append(asset["size"])
+    for engine, spec in SPECS.items():
+        sizes[engine] = [size for size, _sha256 in spec.expect.values()]
+    earlier = [s for g, part in sizes.items() if FETCHED[g] < FETCHED[group] for s in part]
+    every = [s for part in sizes.values() for s in part]
     return PrefetchProgress(
         "model.safetensors",
-        2_100 * 10**6,
-        3_050 * 10**6,
-        44,
-        64,
-        group="qwen3_tts",
-        group_done_bytes=group_done,
-        group_total_bytes=group_total,
+        sum(earlier) + done_bytes,
+        sum(every),
+        len(earlier),
+        len(every),
+        group=group,
+        group_done_bytes=done_bytes,
+        group_total_bytes=sum(sizes[group]),
     )
 
 
@@ -1482,10 +1550,9 @@ def fig_download_engine(env: Env, look: Look) -> Svg:
 
 def fig_voice_note(env: Env, look: Look) -> Svg:
     """The saved voice is a dimmed engine row: the window falls back and says why, once."""
-    catalog = [
-        replace(v, installed=False, reason="not downloaded yet") if v.key == QWEN_RYAN else v
-        for v in engine_catalog(env)
-    ]
+    from cloudyreader.engine_catalog import NOT_DOWNLOADED
+
+    catalog = engine_catalog(env, {"qwen3_tts": NOT_DOWNLOADED})
     with env.window(voices=catalog, saved_voice=QWEN_RYAN) as (win, _service):
         env.pump(lambda: "is not ready" in win.statusBar().currentMessage(), "saved-voice note")
         message = win.statusBar().currentMessage()
@@ -1509,13 +1576,63 @@ def fig_engine_skip(env: Env, look: Look) -> Svg:
 
 def fig_load_hint(env: Env, look: Look) -> Svg:
     """The first reading with an engine voice: Preparing… names the model it loads."""
-    with env.window(load_hint=LOAD_HINT) as (win, service):
+    from cloudyreader.engines.chatterbox_turbo import LOAD_HINT, VOICE_KEY
+
+    voices = engine_catalog(env)
+    with env.window(voices=voices, saved_voice=VOICE_KEY, load_hint=LOAD_HINT) as (win, service):
         env.hold_reading(win, service)
         desc = (
             f"The status bar in {appearance(look.dark)} during a first reading: "
             f"{win.statusBar().currentMessage()} with the busy bar."
         )
         return fig_strip(look, win, "First use of an engine", desc)
+
+
+def fig_engine_rows(env: Env, look: Look) -> Svg:
+    """A first launch with both engines pinned, in two parts, as P19 and P28 show it.
+
+    First the Voice menu while Qwen3-TTS downloads, its rows dimmed with their reason; then
+    the first reading with Chatterbox Turbo, whose model loads before it speaks.
+    """
+    from cloudyreader.engine_catalog import NOT_DOWNLOADED
+    from cloudyreader.engines.chatterbox_turbo import LOAD_HINT, VOICE_KEY
+
+    folder = env.tmp / f"engines{next(env._ids)}"
+    folder.mkdir()
+    voices = [replace(v, installed=True) for v in real_voices(folder)]  # the voices are all in
+    downloading = with_engine_rows(voices, {"qwen3_tts": NOT_DOWNLOADED})
+    svg = Svg(1, 1, "Engine rows and the first use of an engine", "")
+    y = strip_caption(svg, look, 0, "While an engine downloads")
+    with env.window(voices=downloading, **download_knobs(engine_event())) as (win, _service):
+        env.pump(lambda: not win.prefetch_label.isHidden(), "engine download progress")
+        win.question_edit.setPlainText(sample_question())
+        env.app.processEvents()
+        combo = win.voice_picker.combo
+        items, current = combo_items(combo), combo.currentIndex()
+        probe = Canvas(Svg(1, 1, "", ""), look, win, 0, 0)
+        menu = menu_rect(probe.popup_bezel(combo), items, current, combo.font())
+        svg.add(f'<g transform="translate(0 {num(y)})">')
+        bounds = draw_content(svg, look, win)
+        shown = draw_menu(svg, look, menu, items, (current, -1), combo.font(), bounds)
+        svg.add("</g>")
+        if not any(NOT_DOWNLOADED in items[i].text for i in shown):
+            raise RuntimeError("no dimmed engine row in view: pick a voice nearer the engines")
+        label = win.prefetch_label.text()
+        width, y = win.width(), y + win.height() + GAP
+    ready = with_engine_rows(voices)
+    with env.window(voices=ready, saved_voice=VOICE_KEY, load_hint=LOAD_HINT) as (win, service):
+        env.hold_reading(win, service)
+        y = status_strip(svg, look, win, y, "The first reading with an engine")
+        first_use = win.statusBar().currentMessage()
+    svg.width, svg.height = width, y - GAP
+    svg.desc = (
+        f"Two parts in {appearance(look.dark)}. First, the Voice menu open while an engine "
+        "downloads: the end of the Kokoro list, the Chatterbox Turbo voice, the two Qwen3-TTS "
+        f"voices dimmed with the reason {NOT_DOWNLOADED}, then the Piper voices; the status bar "
+        f"shows {label} with its progress bar. Second, the status bar during the first reading "
+        f"with Chatterbox Turbo: {first_use} with the busy bar."
+    )
+    return svg
 
 
 def crop(svg: Svg, area: QRectF) -> None:
@@ -1657,7 +1774,14 @@ def fig_reading_menu(env: Env, look: Look) -> Svg:
             text, keys, on = row
             ink = look.label if on else look.disabled
             base = baseline(y, MENU_ROW, font)
-            svg.text(menu.left() + MENU_TEXT, base, text, **font_kw(font), **paint(ink))
+            svg.text(
+                menu.left() + MENU_TEXT,
+                base,
+                text,
+                **font_kw(font),
+                **fit(text, font),
+                **paint(ink),
+            )
             svg.text(
                 menu.right() - 16,
                 base,
@@ -1966,14 +2090,17 @@ def fig_install_flow(dark: bool) -> Svg:
     """The first open of a downloaded copy, as four steps. Not a picture of macOS itself."""
     ink = diagram_ink(dark)
     steps = [
-        ("Download the zip", ["from the Download page"]),
-        ("Move Cloudy Reader to Applications", ["unzip it, then drag the app into Applications"]),
+        ("Download the disk image", ["from the Download page"]),
+        (
+            "Drag Cloudy Reader to Applications",
+            ["open the disk image and drag the app to Applications"],
+        ),
         ("Open it", ["macOS blocks the first open of this app"]),
         ("Click Open Anyway in Privacy & Security", ["System Settings > Privacy & Security"]),
     ]
     desc = (
-        "Four steps of the first open: download the zip, move Cloudy Reader to Applications, "
-        "open it, then click Open Anyway in System Settings > Privacy & Security."
+        "Four steps of the first open: download the disk image, drag Cloudy Reader to "
+        "Applications, open it, then click Open Anyway in System Settings > Privacy & Security."
     )
     width, top, h, gap = 460, 60, 64, 26
     height = top + len(steps) * h + (len(steps) - 1) * gap + 28
@@ -2020,6 +2147,7 @@ FIGURES = (
     "status-voice-note",
     "status-engine-skip",
     "status-load-hint",
+    "engine-rows",
 )
 
 
@@ -2029,9 +2157,16 @@ def write(svg: Svg, out: Path, name: str) -> None:
     print(f"{path.name:34} {path.stat().st_size / 1024:6.1f} KB")
 
 
-def build(out: Path, platform: str, only: Sequence[str], *, engines: bool = False) -> int:
+def build(
+    out: Path,
+    platform: str,
+    only: Sequence[str],
+    *,
+    engines: bool = False,
+    app_version: str | None = None,
+) -> int:
     out.mkdir(parents=True, exist_ok=True)
-    env = Env(platform, engines=engines)
+    env = Env(platform, engines=engines, app_version=app_version)
     logo = Logo()
     if "logo" in only:
         write(fig_logo(logo), out, "logo")
@@ -2065,6 +2200,7 @@ def build(out: Path, platform: str, only: Sequence[str], *, engines: bool = Fals
         "status-voice-note": lambda look: fig_voice_note(env, look),
         "status-engine-skip": lambda look: fig_engine_skip(env, look),
         "status-load-hint": lambda look: fig_load_hint(env, look),
+        "engine-rows": lambda look: fig_engine_rows(env, look),
     }
     # Figures with numbered markers: one sidecar each, from the light pass.
     marked: dict[str, Callable[[Look], tuple[Svg, list[Marker]]]] = {
@@ -2103,8 +2239,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="list the Chatterbox Turbo and Qwen3-TTS rows too (0.0.2); the 0.0.1 manual omits it",
     )
+    parser.add_argument(
+        "--app-version",
+        help="the version the About box shows (default: this checkout's installed version)",
+    )
     args = parser.parse_args(argv)
-    return build(args.out, args.platform, args.only, engines=args.engines)
+    return build(
+        args.out, args.platform, args.only, engines=args.engines, app_version=args.app_version
+    )
 
 
 if __name__ == "__main__":
