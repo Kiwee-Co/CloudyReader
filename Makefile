@@ -223,11 +223,10 @@ app: $(STAMPS)/deps $(STAMPS)/models $(STAMPS)/packaging ## Build dist/Cloudy Re
 	@case "$(ENGINES)" in auto|0|1) ;; *) echo "ENGINES must be auto, 0 or 1 (got '$(ENGINES)')" >&2; exit 1 ;; esac
 	@if [ -f scripts/build_app.sh ]; then APP_NAME="$(APP_NAME)" ICON="$(ICON)" KOKORO="$(KOKORO)" BUNDLE_VOICES="$(BUNDLE_VOICES)" ENGINES="$(ENGINES)" OUT="$(OUT)" bash scripts/build_app.sh; else echo "pending: scripts/build_app.sh (pkg agent) not written yet; it builds \"$(OUT)/$(APP_NAME).app\""; fi
 
-# ENGINES=0 until assets.lock.json pins engine weights: the commit that adds those pins flips it to
-# auto (or 1), so a release never bundles engines whose weights the app cannot download.
+# ENGINES=auto: the engines ship when assets.lock.json pins their weights and their probe passes.
 release: ## Lean app (voices download at first launch) as a checked zip and DMG, each with its SHA-256, in dist/; VERSION=x.y.z; never uploads
 	APP_NAME="$(APP_NAME)" OUT="$(OUT)" bash scripts/build_app.sh release-preflight "$(VERSION)"
-	$(MAKE) --no-print-directory app BUNDLE_VOICES=0 OFFLINE=1 ICON=cloud-atom KOKORO=1 ENGINES=0
+	$(MAKE) --no-print-directory app BUNDLE_VOICES=0 OFFLINE=1 ICON=cloud-atom KOKORO=1 ENGINES=auto
 	APP_NAME="$(APP_NAME)" OUT="$(OUT)" bash scripts/build_app.sh release "$(VERSION)"
 
 # After models, so two uv processes never write .venv at once under make -j.

@@ -87,12 +87,14 @@ def test_make_app_hands_engines_to_the_build_script():
     assert "ENGINES must be auto, 0 or 1 (got '$(ENGINES)')" in app
 
 
-def test_release_leaves_the_engines_out_even_when_asked_for_them():
-    dry = make("-n", "release", "VERSION=0.0.1", "ENGINES=auto")  # prints the commands, runs none
+def test_release_builds_with_the_engines_on_auto():
+    # The lock pins the engine weights now: auto bundles them when the frozen probe passes, and a
+    # lock without engine entries still builds lean (resolve_engines checks the pins first).
+    dry = make("-n", "release", "VERSION=0.0.1")  # prints the commands, runs none
 
     assert dry.returncode == 0, dry.stderr
     builds = [line for line in dry.stdout.splitlines() if "bash scripts/build_app.sh;" in line]
-    assert builds and all('ENGINES="0"' in line for line in builds)
+    assert builds and all('ENGINES="auto"' in line for line in builds)
 
 
 def test_real_engine_tests_are_marked_model_and_slow():
