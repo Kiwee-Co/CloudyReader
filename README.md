@@ -2,6 +2,15 @@
 
 Cloudy Reader reads US DOE National Science Bowl questions aloud on your Mac. It uses local text-to-speech voices and says chemistry and biology terms with science-aware pronunciation.
 
+## Download
+
+**[Download Cloudy Reader 0.0.1 for macOS](https://github.com/Kiwee-Co/CloudyReader/releases/latest)**
+
+- Needs an Apple Silicon Mac with macOS 26.2 or later. The download is a 459 MB zip, and the app takes about 1.1 GB on disk.
+- The zip holds no voices. The app downloads them (about 0.66 GB) the first time it opens, so keep the Mac online.
+- Check the SHA-256 on the release page before you open the app.
+- The app is ad-hoc signed and not notarized. The first launch needs a one-time approval in **System Settings > Privacy & Security**. See [Get started](https://kiwee-co.github.io/CloudyReader/manual/getting-started/).
+
 [![CI](https://github.com/Kiwee-Co/CloudyReader/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Kiwee-Co/CloudyReader/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/Kiwee-Co/CloudyReader/blob/main/LICENSE)
 [![Platform: macOS | Apple Silicon](https://img.shields.io/badge/platform-macOS%20%7C%20Apple%20Silicon-lightgrey)](https://kiwee-co.github.io/CloudyReader/manual/getting-started/)
