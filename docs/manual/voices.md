@@ -11,26 +11,26 @@ Cloudy Reader has two voice engines and 33 pinned English voices. This page list
 
 ## Compare the engines
 
-| | Piper | Kokoro |
-| --- | --- | --- |
-| Pinned voices | 5 | 28 |
-| Runs on | Any Mac that runs the app | Apple Silicon only |
-| Size | About 63 MB per voice | About 342 MB for the model and all 28 voices |
-| Voice names | Come from the voice file name, for example `lessac` | Come from the voice id, for example `Heart (female)` |
-| Languages | en-US and en-GB | en-US and en-GB |
+|               | Piper                                               | Kokoro                                                       |
+| ------------- | --------------------------------------------------- | ------------------------------------------------------------ |
+| Pinned voices | 5                                                   | 28                                                           |
+| Runs on       | Any Mac that runs the app                           | Apple Silicon only                                           |
+| Size          | About 63 MB per voice                               | About 342 MB for the model and all 28 voices                 |
+| Voice names   | Come from the voice file name, for example `lessac` | Come from the voice id, for example `Heart (female)`         |
+| Languages     | en-US and en-GB                                     | en-US and en-GB                                              |
 | Quality label | The quality in the voice file, for example `medium` | A letter grade from the model's `VOICES.md`, for example `A` |
 
 Kokoro voices appear only when the Kokoro engine can run. It needs an Apple Silicon Mac and its Python packages. It also needs model files whose SHA-256 values match the pinned values. See [Troubleshooting]({{ '/manual/troubleshooting/' | relative_url }}).
 
 ### The 5 pinned Piper voices
 
-| Voice file | Language | Gender used by rotation |
-| --- | --- | --- |
-| `en_US-lessac-medium` | en-US | Female |
-| `en_US-amy-medium` | en-US | Female |
-| `en_US-ryan-medium` | en-US | Male |
-| `en_GB-alan-medium` | en-GB | Male |
-| `en_GB-jenny_dioco-medium` | en-GB | Female |
+| Voice file                 | Language | Gender used by rotation |
+| -------------------------- | -------- | ----------------------- |
+| `en_US-lessac-medium`      | en-US    | Female                  |
+| `en_US-amy-medium`         | en-US    | Female                  |
+| `en_US-ryan-medium`        | en-US    | Male                    |
+| `en_GB-alan-medium`        | en-GB    | Male                    |
+| `en_GB-jenny_dioco-medium` | en-GB    | Female                  |
 
 The project took these genders from upstream and has not checked them by ear. A Piper voice outside this table never rotates.
 
@@ -38,12 +38,12 @@ The project took these genders from upstream and has not checked them by ear. A 
 
 The first letter of a voice id gives the accent: `a` is en-US and `b` is en-GB. The second letter gives the gender: `f` is female and `m` is male. The grade comes from the model's `VOICES.md`.
 
-| Group | Voices (grade) |
-| --- | --- |
+| Group          | Voices (grade)                                                                                                                                                                      |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | US female (11) | `af_heart` (A), `af_bella` (A-), `af_nicole` (B-), `af_aoede` (C+), `af_kore` (C+), `af_sarah` (C+), `af_alloy` (C), `af_nova` (C), `af_sky` (C-), `af_jessica` (D), `af_river` (D) |
-| US male (9) | `am_fenrir` (C+), `am_michael` (C+), `am_puck` (C+), `am_echo` (D), `am_eric` (D), `am_liam` (D), `am_onyx` (D), `am_santa` (D-), `am_adam` (F+) |
-| UK female (4) | `bf_emma` (B-), `bf_isabella` (C), `bf_alice` (D), `bf_lily` (D) |
-| UK male (4) | `bm_fable` (C), `bm_george` (C), `bm_lewis` (D+), `bm_daniel` (D) |
+| US male (9)    | `am_fenrir` (C+), `am_michael` (C+), `am_puck` (C+), `am_echo` (D), `am_eric` (D), `am_liam` (D), `am_onyx` (D), `am_santa` (D-), `am_adam` (F+)                                    |
+| UK female (4)  | `bf_emma` (B-), `bf_isabella` (C), `bf_alice` (D), `bf_lily` (D)                                                                                                                    |
+| UK male (4)    | `bm_fable` (C), `bm_george` (C), `bm_lewis` (D+), `bm_daniel` (D)                                                                                                                   |
 
 Inside Kokoro, the menu lists the best grade first. Voices with the same grade sort by name. The list starts with `af_heart` (A), `af_bella` (A-), `bf_emma` (B-), and `af_nicole` (B-).
 
@@ -53,7 +53,7 @@ Inside Kokoro, the menu lists the best grade first. Voices with the same grade s
 
 Open **Voice**. The headings **Kokoro** and **Piper** are labels, not choices. The menu lists Kokoro first. Inside an engine, the best grade or quality tier comes first, then the name.
 
-- A row reads *name* (*language*, *quality*). Examples: `lessac (en-US, medium)` and `Heart (female) (en-US, A)`.
+- A row reads _name_ (_language_, _quality_). Examples: `lessac (en-US, medium)` and `Heart (female) (en-US, A)`.
 - The five pinned Piper voices are all `medium`, so they list by name: `alan`, `amy`, `jenny_dioco`, `lessac`, and `ryan`.
 - A voice that is listed but not installed carries the words "not installed". It is dimmed, and you cannot pick it.
 - With no installed voice, the menu is dimmed and its placeholder reads "No voice installed".
@@ -70,14 +70,14 @@ Until you choose a voice, a finished download can move the selection to a better
 
 {% include figure.html src="rotation-light.svg" alt="The Rotation menu open with six modes: No rotation, Round robin, Random shuffle, US only (random shuffle), Men only, and Women only." caption="The six rotation modes." frame="window" %}
 
-| Mode | The next voice is |
-| --- | --- |
-| No rotation | The voice in **Voice**, with its speaker. |
-| Round robin | The voice after the last one used, in menu order. After the last voice, the first one. |
-| Random shuffle | The next voice from a shuffled deck of all qualifying voices. |
-| US only (random shuffle) | The same deck, limited to en-US voices. |
-| Men only | The same deck, limited to male voices. |
-| Women only | The same deck, limited to female voices. |
+| Mode                     | The next voice is                                                                      |
+| ------------------------ | -------------------------------------------------------------------------------------- |
+| No rotation              | The voice in **Voice**, with its speaker.                                              |
+| Round robin              | The voice after the last one used, in menu order. After the last voice, the first one. |
+| Random shuffle           | The next voice from a shuffled deck of all qualifying voices.                          |
+| US only (random shuffle) | The same deck, limited to en-US voices.                                                |
+| Men only                 | The same deck, limited to male voices.                                                 |
+| Women only               | The same deck, limited to female voices.                                               |
 
 With all 33 voices installed, Random shuffle deals from 33 voices. US only uses 23, Men only uses 15, and Women only uses 18.
 
@@ -120,12 +120,12 @@ The text names the mode that found no voice. This happens, for example, when onl
 
 ## Know where voices come from
 
-| Source | How the voice gets to your Mac |
-| --- | --- |
-| A built app | The app carries the voices it was built with. On every start it links them into the `voices` and `models` folders of your data folder. |
-| The background download | The app downloads missing pinned voices. See the next section. |
-| Your own files | You copy files into the `voices` folder. See "Add a Piper voice by hand". |
-| `make voices` and `make kokoro` | A source checkout fetches the pinned files into `.data`. |
+| Source                          | How the voice gets to your Mac                                                                                                         |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| A built app                     | The app carries the voices it was built with. On every start it links them into the `voices` and `models` folders of your data folder. |
+| The background download         | The app downloads missing pinned voices. See the next section.                                                                         |
+| Your own files                  | You copy files into the `voices` folder. See "Add a Piper voice by hand".                                                              |
+| `make voices` and `make kokoro` | A source checkout fetches the pinned files into `.data`.                                                                               |
 
 For the `make` targets, see [Build the app]({{ '/developer/building/' | relative_url }}).
 
@@ -166,7 +166,7 @@ The download follows the pinned list `assets.lock.json`. A built app reads the c
 
 ### Know what you see
 
-- The status bar shows "Downloading voices… *N*%". The percent counts the bytes of all files. Hover over the text to see the file in progress and the MB done so far for the whole download.
+- The status bar shows "Downloading voices… _N_%". The percent counts the bytes of all files. Hover over the text to see the file in progress and the MB done so far for the whole download.
 - When a file lands and no voice is available yet, the **Voice** menu refreshes so you can read at once. Otherwise the menu refreshes when a run ends with at least one new file.
 - The run ends with "Voices downloaded." or with a warning. The warning reads "Some voices could not be downloaded. They are tried again at the next start." The tooltip names the failed files.
 - Closing the window cancels the download at the next data chunk. It reports nothing.

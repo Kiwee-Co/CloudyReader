@@ -35,50 +35,50 @@ The code states rule R5 in several modules: a resolution decides how a token is 
 
 ## Map the modules
 
-| Module | Role |
-| --- | --- |
-| `__main__.py` | The entry point. Parses the flags, runs the self-test, links bundled assets, builds the service, and starts the window. |
-| `config.py` | `Settings` and `load_settings`. Reads `CLOUDYREADER_DATA_DIR` and `CLOUDYREADER_OFFLINE`. |
-| `models.py` | The shared dataclasses and protocols. One module owns them. Everyone else imports. |
-| `parser.py` | `QuestionParser` and `extract_guides`. Line- and regex-based. It never fails hard on odd input. |
-| `entities.py` | `SciEntityDetector`: the scispaCy CRAFT model plus regexes for formulas, IUPAC-like names, gene symbols, enzymes, and proteins. |
-| `resolvers/` | `chain.py` (`ChainResolver`), `opsin.py`, `pubchem.py`, `uniprot.py`, `http.py` (`HttpClient`), and `cache.py` (`ResolutionCache`). |
-| `lexicon.py` | `Lexicon`: the token to IPA table, and IUPAC names built from morphemes. |
-| `respell.py` | NSB respelling to IPA, driven by `data/respelling_rules.json`. |
-| `units.py` | Number words, units, symbols, and the text preparation that both stages share. |
-| `formulas.py` | Formulas, ions, scientific notation, exponents, ratios, and acronyms. |
+| Module                | Role                                                                                                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `__main__.py`         | The entry point. Parses the flags, runs the self-test, links bundled assets, builds the service, and starts the window.                                                         |
+| `config.py`           | `Settings` and `load_settings`. Reads `CLOUDYREADER_DATA_DIR` and `CLOUDYREADER_OFFLINE`.                                                                                       |
+| `models.py`           | The shared dataclasses and protocols. One module owns them. Everyone else imports.                                                                                              |
+| `parser.py`           | `QuestionParser` and `extract_guides`. Line- and regex-based. It never fails hard on odd input.                                                                                 |
+| `entities.py`         | `SciEntityDetector`: the scispaCy CRAFT model plus regexes for formulas, IUPAC-like names, gene symbols, enzymes, and proteins.                                                 |
+| `resolvers/`          | `chain.py` (`ChainResolver`), `opsin.py`, `pubchem.py`, `uniprot.py`, `http.py` (`HttpClient`), and `cache.py` (`ResolutionCache`).                                             |
+| `lexicon.py`          | `Lexicon`: the token to IPA table, and IUPAC names built from morphemes.                                                                                                        |
+| `respell.py`          | NSB respelling to IPA, driven by `data/respelling_rules.json`.                                                                                                                  |
+| `units.py`            | Number words, units, symbols, and the text preparation that both stages share.                                                                                                  |
+| `formulas.py`         | Formulas, ions, scientific notation, exponents, ratios, and acronyms.                                                                                                           |
 | `spoken_fractions.py` | Fractions, mixed numbers, and fraction glyphs to words. `mark_fractions` runs before the unit stage, `say_marked` after it, and `speak_fractions` runs both for a say-as guide. |
-| `normalize.py` | `ScriptNormalizer`: builds the segments, applies guides, and calls units, fractions, formulas, and the lexicon. |
-| `tts.py` | `TtsService`: the engine registry and the content-addressed WAV cache. |
-| `engines/` | `piper.py`, `kokoro.py`, and `misaki_ipa.py` (the IPA to misaki phoneme map). |
-| `engines/padding.py` | `trim_letter_padding`: cuts a voice's own silence next to a choice letter, so the pause after a letter lasts about the same in every voice. |
-| `voices.py` | Scans installed Piper voices. It also holds a catalog downloader, `VoiceManager`, that no app code calls. |
-| `voice_meta.py` | Gender and accent of English voices, for rotation. Also the voice listing order: `ENGINE_ORDER` and `voice_sort_key`. |
-| `rotation.py` | `RotationMode` and `VoiceRotator`. |
-| `prefetch.py` | `VoicePrefetch`: the background voice download. |
-| `frozen.py` | Support for a PyInstaller bundle: finds `Contents/Resources` and links bundled assets. |
-| `audio.py` | `AfplayPlayer`: playback through `/usr/bin/afplay`. |
-| `pipeline.py` | `Pipeline` and `build_default_service`. |
-| `gui/` | `app.py`, `main_window.py`, `voice_picker.py`, `widgets.py`, `tokens.py`, `names.py`, and `fake_service.py`. |
-| `data/` | The JSON tables. See below. |
+| `normalize.py`        | `ScriptNormalizer`: builds the segments, applies guides, and calls units, fractions, formulas, and the lexicon.                                                                 |
+| `tts.py`              | `TtsService`: the engine registry and the content-addressed WAV cache.                                                                                                          |
+| `engines/`            | `piper.py`, `kokoro.py`, and `misaki_ipa.py` (the IPA to misaki phoneme map).                                                                                                   |
+| `engines/padding.py`  | `trim_letter_padding`: cuts a voice's own silence next to a choice letter, so the pause after a letter lasts about the same in every voice.                                     |
+| `voices.py`           | Scans installed Piper voices. It also holds a catalog downloader, `VoiceManager`, that no app code calls.                                                                       |
+| `voice_meta.py`       | Gender and accent of English voices, for rotation. Also the voice listing order: `ENGINE_ORDER` and `voice_sort_key`.                                                           |
+| `rotation.py`         | `RotationMode` and `VoiceRotator`.                                                                                                                                              |
+| `prefetch.py`         | `VoicePrefetch`: the background voice download.                                                                                                                                 |
+| `frozen.py`           | Support for a PyInstaller bundle: finds `Contents/Resources` and links bundled assets.                                                                                          |
+| `audio.py`            | `AfplayPlayer`: playback through `/usr/bin/afplay`.                                                                                                                             |
+| `pipeline.py`         | `Pipeline` and `build_default_service`.                                                                                                                                         |
+| `gui/`                | `app.py`, `main_window.py`, `voice_picker.py`, `widgets.py`, `tokens.py`, `names.py`, and `fake_service.py`.                                                                    |
+| `data/`               | The JSON tables. See below.                                                                                                                                                     |
 
 ## Know the data contracts
 
 `models.py` defines these types:
 
-| Type | Holds |
-| --- | --- |
-| `Question` | Kind, number, category, format, stem, choices, answer, raw text, and the guides found in the stem. |
-| `Respelling` | A guide: the printed `surface`, the guide text, and a `kind` of `phonetic`, `spoken`, or `spell`. |
-| `EntitySpan` | A detected name: offsets, text, a label, and a source of `ner` or `regex`. |
-| `Resolution` | The answer to a lookup: kind, canonical name, ids, source, and a status of `ok`, `not_found`, `timeout`, `offline`, or `error`. |
-| `Override` | An exact pronunciation: a `surface`, neutral General American IPA, and a source of `respelling`, `lexicon`, or `iupac`. |
-| `Segment` | Text, a pause after it in milliseconds, and its overrides. |
-| `SpokenScript` | Segments and warnings. `text()` joins the segment text. |
-| `VoiceInfo` | Key, engine, name, language, quality, speaker count, installed flag, and path. |
-| `RenderOptions` | `read_answer`, `speed`, `online_lookups`, and `speaker_id`. |
-| `Audio` | The WAV path, sample rate, duration, and a cache-hit flag. |
-| `Reading` | Questions, script, entities, resolutions, audio, and warnings. |
+| Type            | Holds                                                                                                                           |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `Question`      | Kind, number, category, format, stem, choices, answer, raw text, and the guides found in the stem.                              |
+| `Respelling`    | A guide: the printed `surface`, the guide text, and a `kind` of `phonetic`, `spoken`, or `spell`.                               |
+| `EntitySpan`    | A detected name: offsets, text, a label, and a source of `ner` or `regex`.                                                      |
+| `Resolution`    | The answer to a lookup: kind, canonical name, ids, source, and a status of `ok`, `not_found`, `timeout`, `offline`, or `error`. |
+| `Override`      | An exact pronunciation: a `surface`, neutral General American IPA, and a source of `respelling`, `lexicon`, or `iupac`.         |
+| `Segment`       | Text, a pause after it in milliseconds, and its overrides.                                                                      |
+| `SpokenScript`  | Segments and warnings. `text()` joins the segment text.                                                                         |
+| `VoiceInfo`     | Key, engine, name, language, quality, speaker count, installed flag, and path.                                                  |
+| `RenderOptions` | `read_answer`, `speed`, `online_lookups`, and `speaker_id`.                                                                     |
+| `Audio`         | The WAV path, sample rate, duration, and a cache-hit flag.                                                                      |
+| `Reading`       | Questions, script, entities, resolutions, audio, and warnings.                                                                  |
 
 The protocols `Parser`, `EntityDetector`, `Resolver`, `Normalizer`, `TtsEngine`, `AudioPlayer`, and `ReaderService` describe what each part needs from the others.
 
@@ -91,13 +91,13 @@ An `Override` carries neutral IPA. The stress mark sits before the stressed syll
 
 ## Know the engines
 
-| | Piper | Kokoro |
-| --- | --- | --- |
-| Class | `PiperEngine` | `KokoroEngine` |
-| `available()` | The `piper` package is installed. | Apple Silicon, backend packages present, and model files with the pinned SHA-256 value. |
-| `voices()` | Every `.onnx` plus `.onnx.json` pair in the voices folder. | 28 voices, each with its published grade. |
-| Output | 16-bit mono WAV at the voice's sample rate. | 16-bit mono WAV at 24,000 Hz. |
-| Version string | `piper-tts-<version>+r<render revision>` | `kokoro-82m@<revision>+misaki-ipa-2` |
+|                | Piper                                                      | Kokoro                                                                                  |
+| -------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Class          | `PiperEngine`                                              | `KokoroEngine`                                                                          |
+| `available()`  | The `piper` package is installed.                          | Apple Silicon, backend packages present, and model files with the pinned SHA-256 value. |
+| `voices()`     | Every `.onnx` plus `.onnx.json` pair in the voices folder. | 28 voices, each with its published grade.                                               |
+| Output         | 16-bit mono WAV at the voice's sample rate.                | 16-bit mono WAV at 24,000 Hz.                                                           |
+| Version string | `piper-tts-<version>+r<render revision>`                   | `kokoro-82m@<revision>+misaki-ipa-2`                                                    |
 
 Both engines write the pause after a segment as exact silence in the WAV file. That silence does not depend on the voice.
 
@@ -119,14 +119,14 @@ On a miss, the service writes to a temporary file in the same folder. Then it mo
 
 ## Know the threads
 
-| Thread | Started by | Work |
-| --- | --- | --- |
-| UI thread | Qt | The window, the signals, and a 150 ms poll that detects the end of playback. |
-| One worker | `MainWindow`, a `QThreadPool` limited to one thread | `service.voices()` and `service.prepare(...)`, one call at a time. |
-| `cloudyreader-prefetch` | `MainWindow._start_prefetch` | `VoicePrefetch.run`. A daemon thread that reports by queued signals. |
-| `cloudyreader-preload` | `Pipeline.__init__` | Calls `detector.preload()` and ends. |
-| `entities-preload` | `SciEntityDetector.preload` | Loads the NER model. `detect` waits for it. |
-| `cloudyreader-lookup-N` | `ChainResolver` | Up to 16 daemon workers for one round of lookups. |
+| Thread                  | Started by                                          | Work                                                                         |
+| ----------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------- |
+| UI thread               | Qt                                                  | The window, the signals, and a 150 ms poll that detects the end of playback. |
+| One worker              | `MainWindow`, a `QThreadPool` limited to one thread | `service.voices()` and `service.prepare(...)`, one call at a time.           |
+| `cloudyreader-prefetch` | `MainWindow._start_prefetch`                        | `VoicePrefetch.run`. A daemon thread that reports by queued signals.         |
+| `cloudyreader-preload`  | `Pipeline.__init__`                                 | Calls `detector.preload()` and ends.                                         |
+| `entities-preload`      | `SciEntityDetector.preload`                         | Loads the NER model. `detect` waits for it.                                  |
+| `cloudyreader-lookup-N` | `ChainResolver`                                     | Up to 16 daemon workers for one round of lookups.                            |
 
 `AfplayPlayer` starts `afplay` as a child process, not as a thread. The process plays one clip. `stop` sends terminate, waits 2 seconds, then kills.
 
@@ -143,31 +143,31 @@ Locks guard the shared state. `_SYNTH_LOCK` in `engines/piper.py` covers Piper, 
 
 ## Know the data files
 
-| File in `cloudyreader/data/` | Used by |
-| --- | --- |
-| `elements.json` | `units.py` and `formulas.py`: the 118 symbols and how to spell them. |
-| `units.json` | `units.py` and `parser.py`: unit names with singular, plural, and aliases. |
-| `symbols.json` | `units.py` and `formulas.py`: Greek letters, operators, arrows, exponent phrases, and number templates. |
-| `ions_and_groups.json` | `formulas.py`: its keys supply the all-capital formulas that the app may spell without a digit. |
-| `pronunciations.json` | `lexicon.py`: hard words with a respelling and IPA. |
-| `iupac_morphemes.json` | `lexicon.py`: IUPAC name parts with a kind, a respelling, and IPA. |
-| `respelling_rules.json` | `respell.py`: grapheme to IPA rules. |
+| File in `cloudyreader/data/` | Used by                                                                                                 |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `elements.json`              | `units.py` and `formulas.py`: the 118 symbols and how to spell them.                                    |
+| `units.json`                 | `units.py` and `parser.py`: unit names with singular, plural, and aliases.                              |
+| `symbols.json`               | `units.py` and `formulas.py`: Greek letters, operators, arrows, exponent phrases, and number templates. |
+| `ions_and_groups.json`       | `formulas.py`: its keys supply the all-capital formulas that the app may spell without a digit.         |
+| `pronunciations.json`        | `lexicon.py`: hard words with a respelling and IPA.                                                     |
+| `iupac_morphemes.json`       | `lexicon.py`: IUPAC name parts with a kind, a respelling, and IPA.                                      |
+| `respelling_rules.json`      | `respell.py`: grapheme to IPA rules.                                                                    |
 
 ## Change common things
 
-| To change | Edit |
-| --- | --- |
-| A unit name or alias | `data/units.json` |
-| A spoken symbol | `data/symbols.json` |
-| A hard word | `data/pronunciations.json` (respelling and IPA) |
-| An IUPAC name part | `data/iupac_morphemes.json` |
-| A respelling sound | `data/respelling_rules.json` |
-| An ion or group | `data/ions_and_groups.json` |
-| An initialism spelled by letter | `_ACRONYMS` in `formulas.py` (the only list) |
-| A gene symbol without a digit | `_KNOWN_GENES` in `entities.py` and `_GENE_SYMBOLS` in `formulas.py` |
-| A pause length | The `*_MS` constants in `normalize.py` |
-| A pinned voice | `assets.lock.json`, `PIPER_GENDERS` in `voice_meta.py` (for rotation), and `VOICES` in the `Makefile` |
-| A new TTS engine | Implement `TtsEngine`, then register it in `_engines` in `pipeline.py` |
+| To change                       | Edit                                                                                                  |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| A unit name or alias            | `data/units.json`                                                                                     |
+| A spoken symbol                 | `data/symbols.json`                                                                                   |
+| A hard word                     | `data/pronunciations.json` (respelling and IPA)                                                       |
+| An IUPAC name part              | `data/iupac_morphemes.json`                                                                           |
+| A respelling sound              | `data/respelling_rules.json`                                                                          |
+| An ion or group                 | `data/ions_and_groups.json`                                                                           |
+| An initialism spelled by letter | `_ACRONYMS` in `formulas.py` (the only list)                                                          |
+| A gene symbol without a digit   | `_KNOWN_GENES` in `entities.py` and `_GENE_SYMBOLS` in `formulas.py`                                  |
+| A pause length                  | The `*_MS` constants in `normalize.py`                                                                |
+| A pinned voice                  | `assets.lock.json`, `PIPER_GENDERS` in `voice_meta.py` (for rotation), and `VOICES` in the `Makefile` |
+| A new TTS engine                | Implement `TtsEngine`, then register it in `_engines` in `pipeline.py`                                |
 
 Run `make test` after each change.
 

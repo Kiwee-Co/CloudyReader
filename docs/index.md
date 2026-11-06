@@ -9,13 +9,13 @@ description: Paste a National Science Bowl question and hear it read aloud on yo
 
 Cloudy Reader is a macOS app for Apple Silicon. Paste a National Science Bowl question, and it reads the question aloud. It spells out chemical formulas, says units and powers of ten in words, and follows the pronunciation guides printed in brackets. The voices run on your Mac.
 
-| You paste | You hear |
-| --- | --- |
-| `NaHCO3` | "N A H C O three" |
-| `5 m/s` | "5 meters per second" |
-| `2 H2 + O2 → 2 H2O` | "2 H two plus O two yields 2 H two O" |
-| `1.6 × 10^-19 C` | "one point six times ten to the minus nineteen coulombs" |
-| `Pharynx [FAR-ingks]` | "Pharynx", said as /ˈfæɹɪŋks/ |
+| You paste             | You hear                                                 |
+| --------------------- | -------------------------------------------------------- |
+| `NaHCO3`              | "N A H C O three"                                        |
+| `5 m/s`               | "5 meters per second"                                    |
+| `2 H2 + O2 → 2 H2O`   | "2 H two plus O two yields 2 H two O"                    |
+| `1.6 × 10^-19 C`      | "one point six times ten to the minus nineteen coulombs" |
+| `Pharynx [FAR-ingks]` | "Pharynx", said as /ˈfæɹɪŋks/                            |
 
 ## Quick start
 

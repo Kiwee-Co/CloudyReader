@@ -13,14 +13,14 @@ The commands on this page are untested: CI does not run them.
 
 ## Check the prerequisites
 
-| Tool | Why | Notes |
-| --- | --- | --- |
-| macOS on Apple Silicon | `make app` builds an arm64 bundle and refuses other CPUs. | On other Macs, the code falls back to Piper alone. CI does not test that. |
-| Python 3.12 | The project pins `>=3.12,<3.13`. | `.python-version` holds `3.12`. |
-| [uv](https://docs.astral.sh/uv/) | Manages the environment and the lock file. | `brew install uv`. CI uses uv 0.9.28. |
-| GNU Make | Runs the targets. | The Makefile also works with the Make 3.81 that macOS ships. |
-| ShellCheck, Prettier, and markdownlint | `make precommit` and `make ci` run them as hooks. | Install ShellCheck with `uv tool install shellcheck-py`. Install the other two with `npm install --global prettier markdownlint-cli`, which needs Node. |
-| Xcode command line tools | `make app` needs `codesign`. | `xcode-select --install`. |
+| Tool                                   | Why                                                       | Notes                                                                                                                                                   |
+| -------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| macOS on Apple Silicon                 | `make app` builds an arm64 bundle and refuses other CPUs. | On other Macs, the code falls back to Piper alone. CI does not test that.                                                                               |
+| Python 3.12                            | The project pins `>=3.12,<3.13`.                          | `.python-version` holds `3.12`.                                                                                                                         |
+| [uv](https://docs.astral.sh/uv/)       | Manages the environment and the lock file.                | `brew install uv`. CI uses uv 0.9.28.                                                                                                                   |
+| GNU Make                               | Runs the targets.                                         | The Makefile also works with the Make 3.81 that macOS ships.                                                                                            |
+| ShellCheck, Prettier, and markdownlint | `make precommit` and `make ci` run them as hooks.         | Install ShellCheck with `uv tool install shellcheck-py`. Install the other two with `npm install --global prettier markdownlint-cli`, which needs Node. |
+| Xcode command line tools               | `make app` needs `codesign`.                              | `xcode-select --install`.                                                                                                                               |
 
 ## Set up a checkout
 
@@ -45,32 +45,32 @@ Every download goes through `scripts/fetch_assets.py`. The script reads `assets.
 
 Run `make help` to print this list with the variables.
 
-| Target | What it does |
-| --- | --- |
-| `setup` | `deps`, then `models`, then `voices`. Skips finished steps. |
-| `deps` | Sync `.venv` to `uv.lock`. |
-| `lock` | Re-resolve `uv.lock` from `pyproject.toml`. Needs the network unless `OFFLINE=1`. |
-| `models` | Fetch the scispaCy model and install it into `.venv`. |
-| `voices` | Fetch the Piper voices listed in `VOICES` into `.data/voices`. |
-| `kokoro` | Apple Silicon only. Sync the `kokoro` extra and fetch the pinned Kokoro files. |
-| `doctor` | Read-only health report. |
-| `run` | Start the app. |
-| `test` | Run the gate tests with the coverage floor. |
-| `test-fast` | Run the quick tests. No models, no network. |
-| `check` | `ruff check` and `ruff format --check`. |
-| `fmt` | `ruff format` and `ruff check --fix`. |
-| `precommit` | `pre-commit run -a`, or print how to install it. The hooks need `shellcheck`, `prettier`, and `markdownlint` on the `PATH`. |
-| `guards` | The policy guards: vendor domain, lock hosts, disk paths, and workflow triggers. Needs only `python3` and `git`. |
-| `ci` | The commit gate: `guards`, `check`, `test`, then `precommit`. |
-| `app` | Build `dist/Cloudy Reader.app`. |
-| `icons` | Regenerate the four icon candidates and `assets/icons/preview.png`. |
-| `open-icons` | Open `assets/icons/preview.png`. |
-| `samples` | Extract NSB sample PDFs to `.data/samples`. Needs `pdftotext` and a source folder: run `CLOUDYREADER_SAMPLES_SRC=<pdf folder> make samples`. Without a source, it exits with status 2 and a message. |
-| `smoke-live` | Live PubChem and UniProt check. Never part of `ci`. |
-| `smoke-voices` | Live check of the voice download, about 0.55 MB. Never part of `ci`. |
-| `clean` | Remove caches and build artifacts. Never touches `.data/` or `.venv/`. |
-| `clean-app` | Remove only `dist/Cloudy Reader.app` and `build/`. |
-| `clean-all` | `clean`, plus `.venv` and `.cache`. Needs `CONFIRM=yes`. Never touches `.data/`. |
+| Target         | What it does                                                                                                                                                                                         |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `setup`        | `deps`, then `models`, then `voices`. Skips finished steps.                                                                                                                                          |
+| `deps`         | Sync `.venv` to `uv.lock`.                                                                                                                                                                           |
+| `lock`         | Re-resolve `uv.lock` from `pyproject.toml`. Needs the network unless `OFFLINE=1`.                                                                                                                    |
+| `models`       | Fetch the scispaCy model and install it into `.venv`.                                                                                                                                                |
+| `voices`       | Fetch the Piper voices listed in `VOICES` into `.data/voices`.                                                                                                                                       |
+| `kokoro`       | Apple Silicon only. Sync the `kokoro` extra and fetch the pinned Kokoro files.                                                                                                                       |
+| `doctor`       | Read-only health report.                                                                                                                                                                             |
+| `run`          | Start the app.                                                                                                                                                                                       |
+| `test`         | Run the gate tests with the coverage floor.                                                                                                                                                          |
+| `test-fast`    | Run the quick tests. No models, no network.                                                                                                                                                          |
+| `check`        | `ruff check` and `ruff format --check`.                                                                                                                                                              |
+| `fmt`          | `ruff format` and `ruff check --fix`.                                                                                                                                                                |
+| `precommit`    | `pre-commit run -a`, or print how to install it. The hooks need `shellcheck`, `prettier`, and `markdownlint` on the `PATH`.                                                                          |
+| `guards`       | The policy guards: vendor domain, lock hosts, disk paths, and workflow triggers. Needs only `python3` and `git`.                                                                                     |
+| `ci`           | The commit gate: `guards`, `check`, `test`, then `precommit`.                                                                                                                                        |
+| `app`          | Build `dist/Cloudy Reader.app`.                                                                                                                                                                      |
+| `icons`        | Regenerate the four icon candidates and `assets/icons/preview.png`.                                                                                                                                  |
+| `open-icons`   | Open `assets/icons/preview.png`.                                                                                                                                                                     |
+| `samples`      | Extract NSB sample PDFs to `.data/samples`. Needs `pdftotext` and a source folder: run `CLOUDYREADER_SAMPLES_SRC=<pdf folder> make samples`. Without a source, it exits with status 2 and a message. |
+| `smoke-live`   | Live PubChem and UniProt check. Never part of `ci`.                                                                                                                                                  |
+| `smoke-voices` | Live check of the voice download, about 0.55 MB. Never part of `ci`.                                                                                                                                 |
+| `clean`        | Remove caches and build artifacts. Never touches `.data/` or `.venv/`.                                                                                                                               |
+| `clean-app`    | Remove only `dist/Cloudy Reader.app` and `build/`.                                                                                                                                                   |
+| `clean-all`    | `clean`, plus `.venv` and `.cache`. Needs `CONFIRM=yes`. Never touches `.data/`.                                                                                                                     |
 
 `run`, `test`, `test-fast`, `samples`, `smoke-live`, and `app` set `CLOUDYREADER_DATA_DIR` to `.data` in the checkout. `make run` does not enable offline mode in the app. It only keeps `uv` off the network.
 
@@ -78,19 +78,19 @@ Run `make help` to print this list with the variables.
 
 Pass a variable on the command line, as in `make voices VOICES="en_US-amy-medium"`.
 
-| Variable | Default | Effect |
-| --- | --- | --- |
-| `UV` | `uv` | The uv executable. |
-| `COV_MIN` | `75` | The coverage floor for `make test`, in percent. |
-| `VOICES` | The five pinned Piper ids | The Piper voices for `make voices`. Ids come from `assets.lock.json`. |
-| `OFFLINE` | `0` | `1` makes uv use `--offline` and makes the fetcher refuse downloads. |
-| `CONFIRM` | `no` | `yes` lets `clean-all` delete `.venv` and `.cache`. |
-| `ONLINE` | `0` | `1` makes `make doctor` also check PubChem and UniProt. |
-| `VERIFY` | `0` | `1` makes `make doctor` check the SHA-256 value of each asset. |
-| `APP_NAME` | `Cloudy Reader` | The bundle name for `make app`. |
-| `ICON` | Empty | An icon folder under `assets/icons/`. Empty reads `assets/icons/default.txt`. |
-| `KOKORO` | `auto` | `auto`, `0`, or `1`. Whether `make app` bundles Kokoro. |
-| `OUT` | `dist` | The output folder for `make app`. |
+| Variable   | Default                   | Effect                                                                        |
+| ---------- | ------------------------- | ----------------------------------------------------------------------------- |
+| `UV`       | `uv`                      | The uv executable.                                                            |
+| `COV_MIN`  | `75`                      | The coverage floor for `make test`, in percent.                               |
+| `VOICES`   | The five pinned Piper ids | The Piper voices for `make voices`. Ids come from `assets.lock.json`.         |
+| `OFFLINE`  | `0`                       | `1` makes uv use `--offline` and makes the fetcher refuse downloads.          |
+| `CONFIRM`  | `no`                      | `yes` lets `clean-all` delete `.venv` and `.cache`.                           |
+| `ONLINE`   | `0`                       | `1` makes `make doctor` also check PubChem and UniProt.                       |
+| `VERIFY`   | `0`                       | `1` makes `make doctor` check the SHA-256 value of each asset.                |
+| `APP_NAME` | `Cloudy Reader`           | The bundle name for `make app`.                                               |
+| `ICON`     | Empty                     | An icon folder under `assets/icons/`. Empty reads `assets/icons/default.txt`. |
+| `KOKORO`   | `auto`                    | `auto`, `0`, or `1`. Whether `make app` bundles Kokoro.                       |
+| `OUT`      | `dist`                    | The output folder for `make app`.                                             |
 
 ## Work offline
 
@@ -160,14 +160,14 @@ Each self-test run has a time limit of `SELFTEST_TIMEOUT` seconds. The default i
 
 ### Know what the bundle holds
 
-| Item | Value |
-| --- | --- |
-| Bundle identifier | `com.cloudyreader.CloudyReader` |
-| Version keys | The `version` from `pyproject.toml` |
-| `LSMinimumSystemVersion` | The newest macOS minimum among the bundled binaries, never below 11.0. `packaging/min_macos.py` reads the Mach-O load commands. |
-| `LSApplicationCategoryType` | `public.app-category.education` |
-| Copyright | `Copyright © 2026 the Cloudy Reader authors.` |
-| Architecture | arm64 |
+| Item                        | Value                                                                                                                           |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Bundle identifier           | `com.cloudyreader.CloudyReader`                                                                                                 |
+| Version keys                | The `version` from `pyproject.toml`                                                                                             |
+| `LSMinimumSystemVersion`    | The newest macOS minimum among the bundled binaries, never below 11.0. `packaging/min_macos.py` reads the Mach-O load commands. |
+| `LSApplicationCategoryType` | `public.app-category.education`                                                                                                 |
+| Copyright                   | `Copyright © 2026 the Cloudy Reader authors.`                                                                                   |
+| Architecture                | arm64                                                                                                                           |
 
 The spec excludes `scispacy`, `sklearn`, and `nmslib` because the model loads without them. Without Kokoro, it also excludes `mlx`, `mlx_audio`, `misaki`, and `scipy`.
 
@@ -183,11 +183,11 @@ ICON=cloud-wave make app
 
 ## Fix build errors
 
-| Message starts with | Fix |
-| --- | --- |
-| `build_app: error: no .venv` | Run `make deps`. |
-| `no Piper voice (.onnx + .onnx.json) in …` | Run `make voices`. |
-| `scispaCy model en_ner_craft_md is not installed` | Run `make models`. |
-| `codesign not found` | Run `xcode-select --install`. |
-| `KOKORO=1 but …` | Run `make kokoro`, or build with `KOKORO=auto` or `KOKORO=0`. |
-| `self-test run … timed out` | Read `build/selftest-N.log`. Raise `SELFTEST_TIMEOUT` on a slow Mac. |
+| Message starts with                               | Fix                                                                  |
+| ------------------------------------------------- | -------------------------------------------------------------------- |
+| `build_app: error: no .venv`                      | Run `make deps`.                                                     |
+| `no Piper voice (.onnx + .onnx.json) in …`        | Run `make voices`.                                                   |
+| `scispaCy model en_ner_craft_md is not installed` | Run `make models`.                                                   |
+| `codesign not found`                              | Run `xcode-select --install`.                                        |
+| `KOKORO=1 but …`                                  | Run `make kokoro`, or build with `KOKORO=auto` or `KOKORO=0`.        |
+| `self-test run … timed out`                       | Read `build/selftest-N.log`. Raise `SELFTEST_TIMEOUT` on a slow Mac. |

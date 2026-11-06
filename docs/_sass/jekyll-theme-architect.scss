@@ -1,8 +1,8 @@
 // pages-themes/architect v0.2.0 (commit d6a5e16c0ea91c4088f57f7dfe6f893a26064054), the theme
 // version the GitHub Pages build ships, _sass/jekyll-theme-architect.scss, CC0-1.0. One change:
 // the Google Fonts @import is gone; assets/css/style.scss loads the self-hosted font instead.
-@import "normalize";
-@import "rouge-github";
+@import 'normalize';
+@import 'rouge-github';
 
 /* LAYOUT STYLES */
 body {
@@ -123,9 +123,10 @@ aside a.button {
   background: transparent url(../images/download-button.png) 0 0 no-repeat;
 }
 
-code, pre {
+code,
+pre {
   margin-bottom: 30px;
-  font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
+  font-family: Monaco, 'Bitstream Vera Sans Mono', 'Lucida Console', Terminal, monospace;
   font-size: 13px;
   color: #222;
 }
@@ -150,10 +151,11 @@ pre code {
   border: none;
 }
 
-ul, ol, dl {
+ul,
+ol,
+dl {
   margin-bottom: 20px;
 }
-
 
 /* COMMON STYLES */
 
@@ -183,9 +185,7 @@ td {
 form {
   padding: 20px;
   background: #f2f2f2;
-
 }
-
 
 /* GENERAL ELEMENT TYPE STYLES */
 
@@ -204,7 +204,7 @@ form {
   padding-right: 0.3em;
   margin-left: -0.9em;
   color: #9ddcff;
-  content: "/";
+  content: '/';
 }
 
 #main-content h2 {
@@ -218,7 +218,7 @@ form {
 #main-content h2:before {
   padding-right: 0.3em;
   margin-left: -1.5em;
-  content: "//";
+  content: '//';
   color: #9ddcff;
 }
 
@@ -235,7 +235,7 @@ form {
 #main-content h3:before {
   padding-right: 0.3em;
   margin-left: -2em;
-  content: "///";
+  content: '///';
   color: #9ddcff;
 }
 
@@ -251,7 +251,7 @@ form {
 h4:before {
   padding-right: 0.3em;
   margin-left: -2.8em;
-  content: "////";
+  content: '////';
   color: #9ddcff;
 }
 
@@ -265,21 +265,21 @@ h4:before {
 h5:before {
   padding-right: 0.3em;
   margin-left: -3.2em;
-  content: "/////";
+  content: '/////';
   color: #9ddcff;
 }
 
 #main-content h6 {
   margin-bottom: 8px;
   font-family: 'Architects Daughter', 'Helvetica Neue', Helvetica, Arial, serif;
-  font-size: .8em;
+  font-size: 0.8em;
   color: #474747;
   text-indent: 3px;
 }
 h6:before {
   padding-right: 0.3em;
   margin-left: -3.7em;
-  content: "//////";
+  content: '//////';
   color: #9ddcff;
 }
 
@@ -343,22 +343,30 @@ footer a:hover {
   content: '.';
 }
 
-.clearfix {display: inline-block;}
-* html .clearfix {height: 1%;}
-.clearfix {display: block;}
+.clearfix {
+  display: inline-block;
+}
+* html .clearfix {
+  height: 1%;
+}
+.clearfix {
+  display: block;
+}
 
 /* #Media Queries
 ================================================== */
 
 /* Smaller than standard 960 (devices and browsers) */
-@media only screen and (max-width: 959px) { }
+@media only screen and (max-width: 959px) {
+}
 
 /* Tablet Portrait size to standard 960 (devices and browsers) */
 @media only screen and (min-width: 768px) and (max-width: 959px) {
   .inner {
     width: 740px;
   }
-  header h1, header h2 {
+  header h1,
+  header h2 {
     width: 340px;
   }
   header h1 {
@@ -393,7 +401,8 @@ footer a:hover {
   header .inner {
     position: relative;
   }
-  header h1, header h2 {
+  header h1,
+  header h2 {
     width: 100%;
   }
   header h1 {
@@ -426,7 +435,7 @@ footer a:hover {
   #main-content,
   aside#sidebar {
     float: none;
-    width: 100% ! important;
+    width: 100% !important;
   }
   aside#sidebar {
     min-height: 0;
@@ -451,7 +460,9 @@ footer a:hover {
 }
 
 /* Mobile Landscape Size to Tablet Portrait (devices and browsers) */
-@media only screen and (min-width: 480px) and (max-width: 767px) { }
+@media only screen and (min-width: 480px) and (max-width: 767px) {
+}
 
 /* Mobile Portrait Size to Mobile Landscape Size (devices and browsers) */
-@media only screen and (max-width: 479px) { }
+@media only screen and (max-width: 479px) {
+}

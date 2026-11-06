@@ -13,13 +13,13 @@ The commands on this page are untested: CI does not run them.
 
 ## Check the requirements
 
-| Item | You need |
-| --- | --- |
-| Mac | Apple Silicon (arm64). The app is built for arm64 only. |
-| macOS | 26.2 or later. This is the floor of the current build. |
-| Sound | A working output device. The app plays audio with `/usr/bin/afplay`. |
+| Item       | You need                                                                               |
+| ---------- | -------------------------------------------------------------------------------------- |
+| Mac        | Apple Silicon (arm64). The app is built for arm64 only.                                |
+| macOS      | 26.2 or later. This is the floor of the current build.                                 |
+| Sound      | A working output device. The app plays audio with `/usr/bin/afplay`.                   |
 | Disk space | About 63 MB for each Piper voice. About 342 MB for the Kokoro model and its 28 voices. |
-| Network | Optional. Reading works offline. Name lookups and voice downloads need it. |
+| Network    | Optional. Reading works offline. Name lookups and voice downloads need it.             |
 
 The build writes the oldest macOS version that loads every bundled file into `LSMinimumSystemVersion`. The value can change when the bundled libraries change. Read the value from your copy of the app:
 
@@ -42,9 +42,9 @@ Copy the app before the first launch. On every start the app links its bundled v
 
 The build signs the app ad hoc. An ad-hoc signature uses no Apple Developer ID, and the app is not notarized. macOS reacts in two ways:
 
-| How the app reached your Mac | What macOS does |
-| --- | --- |
-| You built it on this Mac. | The app opens normally. No download flag is set. |
+| How the app reached your Mac                          | What macOS does                                                                                            |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| You built it on this Mac.                             | The app opens normally. No download flag is set.                                                           |
 | You downloaded it, or received it by AirDrop or chat. | macOS flags the file as quarantined. Gatekeeper blocks the first launch and says it cannot verify the app. |
 
 This table describes macOS, not Cloudy Reader. The dialog wording differs between macOS versions.
@@ -115,11 +115,11 @@ wall      <seconds> s
 PASS
 ```
 
-| Result | Exit code |
-| --- | --- |
-| The last line is `PASS`. | 0 |
-| The self-test fails or raises an error. A line starting `FAIL:` appears on standard error. | 1 |
-| No Piper voice is installed. The line `FAIL: no Piper voice installed` appears on standard error. | 2 |
+| Result                                                                                            | Exit code |
+| ------------------------------------------------------------------------------------------------- | --------- |
+| The last line is `PASS`.                                                                          | 0         |
+| The self-test fails or raises an error. A line starting `FAIL:` appears on standard error.        | 1         |
+| No Piper voice is installed. The line `FAIL: no Piper voice installed` appears on standard error. | 2         |
 
 The line `entities  regex-only` means the science model did not load. Reading still works, but the app finds fewer names. See [Troubleshooting]({{ '/manual/troubleshooting/' | relative_url }}).
 

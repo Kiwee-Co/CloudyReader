@@ -11,13 +11,13 @@ Cloudy Reader changes how a word sounds. It never changes which word is said. Th
 
 ## Follow the stages
 
-| Step | What the app does | Network |
-| --- | --- | --- |
-| 1. Clean and parse | Fixes PDF leftovers. Finds the header, number, category, format, stem, choices, and answer. Takes bracket guides out of the text. | No |
-| 2. Detect names | Marks formulas, chemical names, genes, and proteins in the stem and the choices. It marks the answer too when **Read answer line** is on. | No |
-| 3. Look up names | Asks OPSIN on your Mac about systematic names. Asks PubChem and UniProt about other names. | PubChem and UniProt only |
-| 4. Build the script | Applies guides, then units and symbols, then fractions, then formulas and notation, then the lexicon. | No |
-| 5. Speak | The voice engine turns the script and the pronunciation overrides into audio. | No |
+| Step                | What the app does                                                                                                                         | Network                  |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| 1. Clean and parse  | Fixes PDF leftovers. Finds the header, number, category, format, stem, choices, and answer. Takes bracket guides out of the text.         | No                       |
+| 2. Detect names     | Marks formulas, chemical names, genes, and proteins in the stem and the choices. It marks the answer too when **Read answer line** is on. | No                       |
+| 3. Look up names    | Asks OPSIN on your Mac about systematic names. Asks PubChem and UniProt about other names.                                                | PubChem and UniProt only |
+| 4. Build the script | Applies guides, then units and symbols, then fractions, then formulas and notation, then the lexicon.                                     | No                       |
+| 5. Speak            | The voice engine turns the script and the pronunciation overrides into audio.                                                             | No                       |
 
 The **Spoken script** view shows the words that step 4 builds. Step 4 also sets the silent pause after each part of a question. See [Use the app]({{ '/manual/using-the-app/' | relative_url }}) for the view and the pause table.
 
@@ -38,27 +38,27 @@ Pasted text from PDFs and web pages is messy. The parser handles these cases:
 
 The unit stage runs first. The fraction stage runs second. The formula stage runs third. Plain numbers stay as digits, and the voice reads them. The app turns digits into words inside fractions, formulas, exponents, scientific notation, isotope names, gene symbols, and the header number.
 
-| In the question | In the spoken script |
-| --- | --- |
-| `H2O` | H two O |
-| `NaCl` | N A C L |
-| `C6H12O6` | C six H twelve O six |
-| `Ca(OH)2` | C A open parenthesis O H close parenthesis two |
-| `Fe3+` | F E three plus |
-| `SO4 2-` | S O four two minus |
-| `2H2 + O2 → 2H2O` | two H two plus O two yields two H two O |
-| `Cu(s)` | C U solid |
-| `[H+]` | H plus |
-| `6.02 × 10^23` | six point oh two times ten to the twenty-third |
-| `x^2` | x squared |
-| `5 m/s` | 5 meters per second |
-| `37 °C` | 37 degrees Celsius |
-| `890 kJ/mol` | 890 kilojoules per mole |
-| `1 eV` | 1 electron volt |
-| `ATP` | A T P |
-| `α-helix` | alpha-helix |
-| `x ≤ 5` | x is less than or equal to 5 |
-| `√144` | square root of 144 |
+| In the question   | In the spoken script                           |
+| ----------------- | ---------------------------------------------- |
+| `H2O`             | H two O                                        |
+| `NaCl`            | N A C L                                        |
+| `C6H12O6`         | C six H twelve O six                           |
+| `Ca(OH)2`         | C A open parenthesis O H close parenthesis two |
+| `Fe3+`            | F E three plus                                 |
+| `SO4 2-`          | S O four two minus                             |
+| `2H2 + O2 → 2H2O` | two H two plus O two yields two H two O        |
+| `Cu(s)`           | C U solid                                      |
+| `[H+]`            | H plus                                         |
+| `6.02 × 10^23`    | six point oh two times ten to the twenty-third |
+| `x^2`             | x squared                                      |
+| `5 m/s`           | 5 meters per second                            |
+| `37 °C`           | 37 degrees Celsius                             |
+| `890 kJ/mol`      | 890 kilojoules per mole                        |
+| `1 eV`            | 1 electron volt                                |
+| `ATP`             | A T P                                          |
+| `α-helix`         | alpha-helix                                    |
+| `x ≤ 5`           | x is less than or equal to 5                   |
+| `√144`            | square root of 144                             |
 
 The examples come from the project's tests for the unit stage and the formula stage. The full script runs both stages, so spacing can differ.
 
@@ -119,12 +119,12 @@ The app decides what is a fraction on the text as you pasted it, before the unit
 
 The app spells these 37 initialisms by letter:
 
-| Group | Initialisms |
-| --- | --- |
-| Biochemistry | DNA, RNA, ATP, ADP, AMP, GMP, CMP, UMP, GTP, GDP, CTP, UTP, NAD, NADH, NADP, NADPH, FAD, FADH |
-| Other science terms | HIV, PCR, UV, IR, DC, AC, LED, LCD, CFC |
-| Technology and medicine | GPS, MRI, EKG, ECG, CPU |
-| Organizations and places | USA, UK, UN, EU, DOE |
+| Group                    | Initialisms                                                                                   |
+| ------------------------ | --------------------------------------------------------------------------------------------- |
+| Biochemistry             | DNA, RNA, ATP, ADP, AMP, GMP, CMP, UMP, GTP, GDP, CTP, UTP, NAD, NADH, NADP, NADPH, FAD, FADH |
+| Other science terms      | HIV, PCR, UV, IR, DC, AC, LED, LCD, CFC                                                       |
+| Technology and medicine  | GPS, MRI, EKG, ECG, CPU                                                                       |
+| Organizations and places | USA, UK, UN, EU, DOE                                                                          |
 
 NASA and LASER are words, so they are not on the list.
 
@@ -134,11 +134,11 @@ Gene symbols follow the same idea, with number words. `TP53` is "T P fifty-three
 
 A guide is text in square brackets after the word it describes. Some questions carry guides. The app takes each guide out of the text and uses it. There are three kinds.
 
-| Kind | Example in the question | What the app does |
-| --- | --- | --- |
-| Phonetic respelling | `Krebs cycle [KREBZ SY-kul]` | Speaks "Krebs cycle" with the sounds of the guide. |
-| Say-as | `4 2/7 [4 and two-sevenths]` | Speaks the guide's words in place of the expression. `[yields]` after an arrow reads the arrow as "yields". |
-| Spell | `FAD [F.A.D.]` | Speaks the letters: "F A D". `[H-E-2-S-1]` is "H E two S one". |
+| Kind                | Example in the question      | What the app does                                                                                           |
+| ------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Phonetic respelling | `Krebs cycle [KREBZ SY-kul]` | Speaks "Krebs cycle" with the sounds of the guide.                                                          |
+| Say-as              | `4 2/7 [4 and two-sevenths]` | Speaks the guide's words in place of the expression. `[yields]` after an arrow reads the arrow as "yields". |
+| Spell               | `FAD [F.A.D.]`               | Speaks the letters: "F A D". `[H-E-2-S-1]` is "H E two S one".                                              |
 
 The forms `(read as: …)` and `(pronounced: …)` work like brackets. The app accepts a trailing `Read as: …` as well. The app drops a bracket that holds a moderator note. Example: `[NOTE: STUDENTS MUST GIVE BOTH ANSWERS]`.
 
@@ -165,17 +165,17 @@ If the rules cannot place every part of a guide, the app speaks the printed word
 
 Lookups need a network, except for the OPSIN check. They are on by default. Turn them off with the **Online lookups** checkbox, the `--offline` flag, or `CLOUDYREADER_OFFLINE=1`.
 
-| Question | Answer |
-| --- | --- |
-| What gets looked up? | Names marked chemical, protein, or gene. Never formulas, and never text around a name. |
-| What is skipped? | A name the lexicon already knows. A name that is empty, has non-printable characters, or is longer than 256 characters. |
-| How often? | Once per unique name in a reading. |
-| Which service? | A systematic-looking chemical name goes to OPSIN first. A chemical that OPSIN cannot parse, or that is not systematic, goes to PubChem. A protein or gene goes to UniProt. |
-| How long may it take? | 2.5 seconds for the whole reading. One request may take up to 4 seconds, within what is left of the budget. |
-| How fast? | At most 5 requests per second. After HTTP 429 or 503, the app retries up to twice, after 0.5 and 1 second, if time is left. |
-| What if time runs out? | The app counts unfinished lookups as "timeout" and drops late answers. The reading goes on. |
-| Does the app store anything? | Yes. It caches found names for 30 days and names not found for 1 day. It never caches timeouts, offline results, or errors. |
-| What do the answers change? | See the note below. |
+| Question                     | Answer                                                                                                                                                                     |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| What gets looked up?         | Names marked chemical, protein, or gene. Never formulas, and never text around a name.                                                                                     |
+| What is skipped?             | A name the lexicon already knows. A name that is empty, has non-printable characters, or is longer than 256 characters.                                                    |
+| How often?                   | Once per unique name in a reading.                                                                                                                                         |
+| Which service?               | A systematic-looking chemical name goes to OPSIN first. A chemical that OPSIN cannot parse, or that is not systematic, goes to PubChem. A protein or gene goes to UniProt. |
+| How long may it take?        | 2.5 seconds for the whole reading. One request may take up to 4 seconds, within what is left of the budget.                                                                |
+| How fast?                    | At most 5 requests per second. After HTTP 429 or 503, the app retries up to twice, after 0.5 and 1 second, if time is left.                                                |
+| What if time runs out?       | The app counts unfinished lookups as "timeout" and drops late answers. The reading goes on.                                                                                |
+| Does the app store anything? | Yes. It caches found names for 30 days and names not found for 1 day. It never caches timeouts, offline results, or errors.                                                |
+| What do the answers change?  | See the note below.                                                                                                                                                        |
 
 **What the answers change.** In this version, only the local OPSIN result changes what you hear. The app fetches PubChem and UniProt answers, caches them, and attaches them to the reading. The script builder ignores them. A lookup therefore adds network traffic. When the services are slow, it adds up to 2.5 seconds of waiting. It does not change the sound. See [Offline and privacy]({{ '/manual/offline-and-privacy/' | relative_url }}) for what leaves your Mac.
 
@@ -183,16 +183,16 @@ Lookups need a network, except for the OPSIN check. They are on by default. Turn
 
 When the app cannot honor something, the status bar shows a warning, and the reading goes on. The full text is in the tooltip.
 
-| Warning starts with | What it means |
-| --- | --- |
-| `Guide [` … `] dropped:` | The word that the guide describes is not in the text. |
-| `No pronunciation for respelling` | The rules could not place the guide. The app speaks the word plain. |
-| `Pronunciation for` … `dropped` | The IPA held punctuation, which would cause a pause. |
-| `piper: dropped IPA symbol` | The Piper voice has no such sound. The app keeps the rest. |
-| `piper: override` … | The override had no usable symbols, or its word was not in the segment. |
-| `Kokoro: could not pronounce` | Kokoro could not turn the word into sounds. It skipped the word, so the voice says nothing for it. |
-| `Kokoro: dropped`, `Kokoro: no usable phonemes`, `Kokoro: override surface` | The Kokoro engine could not use an override. |
-| `entity detection failed`, `name lookup failed`, `pronunciation check failed` | A stage that only refines the speech failed. The reading continues without it. |
+| Warning starts with                                                           | What it means                                                                                      |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `Guide [` … `] dropped:`                                                      | The word that the guide describes is not in the text.                                              |
+| `No pronunciation for respelling`                                             | The rules could not place the guide. The app speaks the word plain.                                |
+| `Pronunciation for` … `dropped`                                               | The IPA held punctuation, which would cause a pause.                                               |
+| `piper: dropped IPA symbol`                                                   | The Piper voice has no such sound. The app keeps the rest.                                         |
+| `piper: override` …                                                           | The override had no usable symbols, or its word was not in the segment.                            |
+| `Kokoro: could not pronounce`                                                 | Kokoro could not turn the word into sounds. It skipped the word, so the voice says nothing for it. |
+| `Kokoro: dropped`, `Kokoro: no usable phonemes`, `Kokoro: override surface`   | The Kokoro engine could not use an override.                                                       |
+| `entity detection failed`, `name lookup failed`, `pronunciation check failed` | A stage that only refines the speech failed. The reading continues without it.                     |
 
 ## Fix a word that sounds wrong
 

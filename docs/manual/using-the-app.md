@@ -15,20 +15,20 @@ This page explains every control in the Cloudy Reader window and what each statu
 
 The window opens at 680 by 620 points. The smallest size is 560 by 480 points. The app saves the size and position when you close the window. It restores them at the next start.
 
-| Control | What it does |
-| --- | --- |
-| Question box | Holds the text to read. Paste or type here. The placeholder names the Speak shortcut. Tab leaves the box. |
-| **Voice** | Chooses the voice. The headings **Piper** and **Kokoro** group the voices. A **Speaker** box appears only for a voice with more than one speaker. |
-| **Rotation** | Chooses how **Speak** picks the next voice. |
-| **Read answer line** | Reads the answer after the question. Off by default. |
-| **Online lookups** | Allows name lookups at PubChem and UniProt. On by default. |
-| **Paste** | Replaces the question with the clipboard text. |
-| **Speak Clipboard** | Replaces the question with the clipboard text and reads it at once. |
-| **Repeat** | Plays the last audio again. |
-| **Stop** | Stops the sound. |
-| **Speak** | Reads the question box. This is the default button. |
-| **Spoken script** | Shows or hides the words that the voice speaks. The view is empty until the first reading. |
-| Status bar | Shows messages, the download progress, and a busy bar. |
+| Control              | What it does                                                                                                                                      |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Question box         | Holds the text to read. Paste or type here. The placeholder names the Speak shortcut. Tab leaves the box.                                         |
+| **Voice**            | Chooses the voice. The headings **Piper** and **Kokoro** group the voices. A **Speaker** box appears only for a voice with more than one speaker. |
+| **Rotation**         | Chooses how **Speak** picks the next voice.                                                                                                       |
+| **Read answer line** | Reads the answer after the question. Off by default.                                                                                              |
+| **Online lookups**   | Allows name lookups at PubChem and UniProt. On by default.                                                                                        |
+| **Paste**            | Replaces the question with the clipboard text.                                                                                                    |
+| **Speak Clipboard**  | Replaces the question with the clipboard text and reads it at once.                                                                               |
+| **Repeat**           | Plays the last audio again.                                                                                                                       |
+| **Stop**             | Stops the sound.                                                                                                                                  |
+| **Speak**            | Reads the question box. This is the default button.                                                                                               |
+| **Spoken script**    | Shows or hides the words that the voice speaks. The view is empty until the first reading.                                                        |
+| Status bar           | Shows messages, the download progress, and a busy bar.                                                                                            |
 
 For the rotation modes, see [Voices and rotation]({{ '/manual/voices/' | relative_url }}).
 
@@ -48,12 +48,12 @@ The box accepts more than one question. Paste a whole round and the app reads ea
 
 ### Know which buttons are enabled
 
-| Button | Enabled when |
-| --- | --- |
-| **Paste** | Always. |
-| **Speak** and **Speak Clipboard** | A voice is selected and no reading is in preparation. |
-| **Repeat** | A reading has played and no reading is in preparation. |
-| **Stop** | Audio is playing. |
+| Button                            | Enabled when                                           |
+| --------------------------------- | ------------------------------------------------------ |
+| **Paste**                         | Always.                                                |
+| **Speak** and **Speak Clipboard** | A voice is selected and no reading is in preparation.  |
+| **Repeat**                        | A reading has played and no reading is in preparation. |
+| **Stop**                          | Audio is playing.                                      |
 
 ## Hear the answer too
 
@@ -67,16 +67,16 @@ Turn on **Read answer line**. The app then adds a pause of 5 seconds after the l
 
 Each part of a question becomes a segment. A choice becomes two segments: its letter and its text. The app adds a silent pause after most segments.
 
-| Part | What is spoken | Pause after |
-| --- | --- | --- |
-| Header | "Toss-up number two.", "Bonus number twelve.", or "Question number five." With no number, "Toss-up." or "Bonus." | 400 ms |
-| Category | The category in title case, for example "Earth Science." | 300 ms |
-| Format | "Multiple choice." or "Short answer." | 500 ms |
-| Stem | The question text | 700 ms if choices follow, else none |
-| Choice letter | "W.", "X.", "Y.", or "Z." | 300 ms |
-| Choice text | The text of the choice | 400 ms |
-| Answer | "Answer." and the answer text | 5000 ms before it |
-| End of a question | Nothing | 1500 ms before the next question |
+| Part              | What is spoken                                                                                                   | Pause after                         |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| Header            | "Toss-up number two.", "Bonus number twelve.", or "Question number five." With no number, "Toss-up." or "Bonus." | 400 ms                              |
+| Category          | The category in title case, for example "Earth Science."                                                         | 300 ms                              |
+| Format            | "Multiple choice." or "Short answer."                                                                            | 500 ms                              |
+| Stem              | The question text                                                                                                | 700 ms if choices follow, else none |
+| Choice letter     | "W.", "X.", "Y.", or "Z."                                                                                        | 300 ms                              |
+| Choice text       | The text of the choice                                                                                           | 400 ms                              |
+| Answer            | "Answer." and the answer text                                                                                    | 5000 ms before it                   |
+| End of a question | Nothing                                                                                                          | 1500 ms before the next question    |
 
 The app skips a part that the pasted text does not have. A paste without a number or a header has no header segment. A choice with no text gets one pause of 400 ms after its letter.
 
@@ -92,23 +92,23 @@ The audio cache key includes the pauses. After an update that changes a pause, t
 
 Cmd is the Command key.
 
-| Action | Menu | Shortcut |
-| --- | --- | --- |
-| Speak | Reading | Cmd+Return or Cmd+Enter |
-| Speak Clipboard | Reading | Cmd+Shift+V |
-| Repeat | Reading | Cmd+R |
-| Stop | Reading | Cmd+. (period) |
-| Close Window | File | Cmd+W |
-| Minimize | Window | Cmd+M |
-| Zoom | Window | None |
-| Undo | Edit | Cmd+Z |
-| Redo | Edit | Shift+Cmd+Z |
-| Cut | Edit | Cmd+X |
-| Copy | Edit | Cmd+C |
-| Paste | Edit | Cmd+V |
-| Select All | Edit | Cmd+A |
-| About Cloudy Reader | Cloudy Reader | None |
-| Quit Cloudy Reader | Cloudy Reader | Cmd+Q |
+| Action              | Menu          | Shortcut                |
+| ------------------- | ------------- | ----------------------- |
+| Speak               | Reading       | Cmd+Return or Cmd+Enter |
+| Speak Clipboard     | Reading       | Cmd+Shift+V             |
+| Repeat              | Reading       | Cmd+R                   |
+| Stop                | Reading       | Cmd+. (period)          |
+| Close Window        | File          | Cmd+W                   |
+| Minimize            | Window        | Cmd+M                   |
+| Zoom                | Window        | None                    |
+| Undo                | Edit          | Cmd+Z                   |
+| Redo                | Edit          | Shift+Cmd+Z             |
+| Cut                 | Edit          | Cmd+X                   |
+| Copy                | Edit          | Cmd+C                   |
+| Paste               | Edit          | Cmd+V                   |
+| Select All          | Edit          | Cmd+A                   |
+| About Cloudy Reader | Cloudy Reader | None                    |
+| Quit Cloudy Reader  | Cloudy Reader | Cmd+Q                   |
 
 The Edit commands act on the text field that has focus. A command is dimmed when it cannot act, for example **Cut** without a selection. macOS moves **About** and **Quit** into the application menu. The Help menu then stays empty, and macOS hides it.
 
@@ -120,24 +120,24 @@ The status bar shows one message at a time. A warning or an error also shows a s
 
 {% include figure.html src="status-states-light.svg" alt="The status bar in five states: ready and empty, preparing with the rotated voice named, playing with that voice named, a warning that some voices could not be downloaded, and an error." caption="Status bar states: ready, preparing, playing, warning, and error." %}
 
-| Message | When it appears | Tone |
-| --- | --- | --- |
-| Loading voices… | The app lists the installed voices at start. | Information |
-| No voice is installed. | The voice list finishes loading and holds no installed voice. | Warning |
-| Paste a question first. | You press **Speak** with an empty box. | Information |
-| Clipboard is empty. | **Paste** or **Speak Clipboard** found no text. | Information |
-| Preparing… | A reading is in preparation. A busy bar shows at the right. | Information |
-| Preparing with *voice*… | Rotation picked *voice*. The text shows its name and gender. | Information |
-| No installed voice matches “*mode*”; using the selected voice. | Rotation found no voice. The reading uses the voice in **Voice**. | Warning |
-| Playing *n* s. | Audio starts. With rotation: "Playing *n* s with *voice*." | Information |
-| Repeating. | You pressed **Repeat**. | Information |
-| Stopped. | You pressed **Stop**. | Information |
-| Warning: *text* | The reading has one pronunciation or engine warning. It replaces "Playing". | Warning |
-| *n* warnings: *text*; *text* | The reading has several warnings. | Warning |
-| Error: *first line* | A step failed. The tooltip holds the whole message. | Error |
-| Downloading voices… *N*% | A voice download runs. A progress bar sits beside the text. | Information |
-| Voices downloaded. | A download finished, and no other message was showing. | Information |
-| Some voices could not be downloaded. They are tried again at the next start. | A download ended with failures. The tooltip lists the files. | Warning |
+| Message                                                                      | When it appears                                                             | Tone        |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------- |
+| Loading voices…                                                              | The app lists the installed voices at start.                                | Information |
+| No voice is installed.                                                       | The voice list finishes loading and holds no installed voice.               | Warning     |
+| Paste a question first.                                                      | You press **Speak** with an empty box.                                      | Information |
+| Clipboard is empty.                                                          | **Paste** or **Speak Clipboard** found no text.                             | Information |
+| Preparing…                                                                   | A reading is in preparation. A busy bar shows at the right.                 | Information |
+| Preparing with _voice_…                                                      | Rotation picked _voice_. The text shows its name and gender.                | Information |
+| No installed voice matches “_mode_”; using the selected voice.               | Rotation found no voice. The reading uses the voice in **Voice**.           | Warning     |
+| Playing _n_ s.                                                               | Audio starts. With rotation: "Playing _n_ s with _voice_."                  | Information |
+| Repeating.                                                                   | You pressed **Repeat**.                                                     | Information |
+| Stopped.                                                                     | You pressed **Stop**.                                                       | Information |
+| Warning: _text_                                                              | The reading has one pronunciation or engine warning. It replaces "Playing". | Warning     |
+| _n_ warnings: _text_; _text_                                                 | The reading has several warnings.                                           | Warning     |
+| Error: _first line_                                                          | A step failed. The tooltip holds the whole message.                         | Error       |
+| Downloading voices… _N_%                                                     | A voice download runs. A progress bar sits beside the text.                 | Information |
+| Voices downloaded.                                                           | A download finished, and no other message was showing.                      | Information |
+| Some voices could not be downloaded. They are tried again at the next start. | A download ended with failures. The tooltip lists the files.                | Warning     |
 
 "Playing …" and "Repeating." clear when the sound ends. "Loading voices…" clears when the list loads. "No voice is installed." clears when a voice appears. The other messages stay until a newer message replaces them. A download result never replaces a message that is already showing.
 

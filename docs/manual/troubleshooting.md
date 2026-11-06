@@ -84,12 +84,12 @@ touch "/Applications/Cloudy Reader.app"
 
 **Cause.** The Kokoro engine lists its voices only when it can run. The app checks these conditions in this order:
 
-| Check | What fails | Fix |
-| --- | --- | --- |
-| Apple Silicon | Kokoro needs an Apple Silicon Mac (arm64) | Use a Mac with Apple Silicon. |
-| Python packages | Kokoro backend packages missing: `mlx`, `mlx_audio`, `misaki`, or `en_core_web_sm` | Build the app with Kokoro, or run `make kokoro` in a source checkout. |
-| Model files | Kokoro model file missing: `config.json` or `kokoro-v1_0.safetensors` in `models/kokoro` | Wait for the download, or run `make kokoro`. |
-| Model hash | SHA256 mismatch: the app refuses to load the file | Delete the file and restart. The download fetches it again. |
+| Check           | What fails                                                                               | Fix                                                                   |
+| --------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Apple Silicon   | Kokoro needs an Apple Silicon Mac (arm64)                                                | Use a Mac with Apple Silicon.                                         |
+| Python packages | Kokoro backend packages missing: `mlx`, `mlx_audio`, `misaki`, or `en_core_web_sm`       | Build the app with Kokoro, or run `make kokoro` in a source checkout. |
+| Model files     | Kokoro model file missing: `config.json` or `kokoro-v1_0.safetensors` in `models/kokoro` | Wait for the download, or run `make kokoro`.                          |
+| Model hash      | SHA256 mismatch: the app refuses to load the file                                        | Delete the file and restart. The download fetches it again.           |
 
 The app does not show the reason. A developer can read it in a source checkout:
 
@@ -200,13 +200,13 @@ afplay /System/Library/Sounds/Ping.aiff
 
 ## Read the self-test failures
 
-| Line on standard error | Cause | Fix |
-| --- | --- | --- |
-| `FAIL: no Piper voice installed` (exit code 2) | The `voices` folder has no complete Piper pair. | Install a Piper voice. |
-| `FAIL: audio too short: …` | The sample produced less than 3 seconds of audio. | Check the voice file and read the warnings. |
-| `FAIL: audio too quiet: …` | The peak is 0.01 or lower. | Check the voice file. |
-| `FAIL: WAV missing: …` or `FAIL: WAV unreadable: …` | The sample produced no usable file. | Check disk space and the cache folder. |
-| `FAIL: <error type>: <message>` | A step raised an error. A traceback is above. | Read the traceback. |
+| Line on standard error                              | Cause                                             | Fix                                         |
+| --------------------------------------------------- | ------------------------------------------------- | ------------------------------------------- |
+| `FAIL: no Piper voice installed` (exit code 2)      | The `voices` folder has no complete Piper pair.   | Install a Piper voice.                      |
+| `FAIL: audio too short: …`                          | The sample produced less than 3 seconds of audio. | Check the voice file and read the warnings. |
+| `FAIL: audio too quiet: …`                          | The peak is 0.01 or lower.                        | Check the voice file.                       |
+| `FAIL: WAV missing: …` or `FAIL: WAV unreadable: …` | The sample produced no usable file.               | Check disk space and the cache folder.      |
+| `FAIL: <error type>: <message>`                     | A step raised an error. A traceback is above.     | Read the traceback.                         |
 
 The line `entities  regex-only` is not a failure. It means the science model did not load, so the app finds fewer names. Reinstall the model with `make models` in a source checkout, or rebuild the app.
 

@@ -17,11 +17,11 @@ These steps run locally: parsing, name detection, the OPSIN name check, pronunci
 
 ## See what uses the network
 
-| Feature | Host | When it runs | What it sends |
-| --- | --- | --- | --- |
-| Name lookup | `pubchem.ncbi.nlm.nih.gov` | **Online lookups** is on and offline mode is off. A chemical name is not in the lexicon, not in the cache, and not parsed by OPSIN. | The name, in the URL path. |
-| Name lookup | `rest.uniprot.org` | The same conditions, for a protein or gene name. | The name, as a query value. |
-| Voice download | `huggingface.co`, then any HTTPS host that it redirects to | Pinned voice files are missing and offline mode is off. | A GET request for each missing file. |
+| Feature        | Host                                                       | When it runs                                                                                                                        | What it sends                        |
+| -------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Name lookup    | `pubchem.ncbi.nlm.nih.gov`                                 | **Online lookups** is on and offline mode is off. A chemical name is not in the lexicon, not in the cache, and not parsed by OPSIN. | The name, in the URL path.           |
+| Name lookup    | `rest.uniprot.org`                                         | The same conditions, for a protein or gene name.                                                                                    | The name, as a query value.          |
+| Voice download | `huggingface.co`, then any HTTPS host that it redirects to | Pinned voice files are missing and offline mode is off.                                                                             | A GET request for each missing file. |
 
 No other code in the app opens a network connection.
 
@@ -48,11 +48,11 @@ When the Kokoro engine loads, the app sets `HF_HUB_OFFLINE=1` in its own process
 
 Choose one way. The flag and the variable stop both the lookups and the voice download.
 
-| Way | How |
-| --- | --- |
-| Command-line flag | Start the app with `--offline`. |
-| Environment variable | Set `CLOUDYREADER_OFFLINE` to `1`, `true`, `yes`, or `on`, in any letter case. |
-| Checkbox | Clear **Online lookups**. This stops the lookups only. The app remembers the choice. |
+| Way                  | How                                                                                  |
+| -------------------- | ------------------------------------------------------------------------------------ |
+| Command-line flag    | Start the app with `--offline`.                                                      |
+| Environment variable | Set `CLOUDYREADER_OFFLINE` to `1`, `true`, `yes`, or `on`, in any letter case.       |
+| Checkbox             | Clear **Online lookups**. This stops the lookups only. The app remembers the choice. |
 
 Quit the app, then start it with the flag:
 
@@ -84,14 +84,14 @@ The app writes log lines for warnings to standard error. It does not save them t
 
 The data folder is `~/Library/Application Support/cloudyreader`. Set `CLOUDYREADER_DATA_DIR` to use another folder. Finder hides Library. Choose Go > Go to Folder and paste the path.
 
-| Item | Location | Content |
-| --- | --- | --- |
-| Piper voices | `voices/` | A `.onnx` file and a `.onnx.json` file per voice. A built app links them to its bundle. |
-| Kokoro files | `models/kokoro/` | `config.json`, `kokoro-v1_0.safetensors`, and `voices/*.safetensors`. A built app links them to its bundle. |
-| Audio cache | `cache/wav/` | One WAV file per distinct reading. The file name is a SHA-256 value. |
-| Lookup cache | `cache/resolutions.sqlite` | The names you looked up, the kind and the status of each, the resolved name when a lookup found one, the ids, the source, and an expiry time. SQLite may add `-wal` and `-shm` files. |
-| Download staging | `.prefetch/` | Partial downloads with the suffix `.part`. |
-| Preferences | `~/Library/Preferences/com.cloudyreader.Cloudy Reader.plist` | Window position, voice, rotation mode, and the two checkboxes. |
+| Item             | Location                                                     | Content                                                                                                                                                                               |
+| ---------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Piper voices     | `voices/`                                                    | A `.onnx` file and a `.onnx.json` file per voice. A built app links them to its bundle.                                                                                               |
+| Kokoro files     | `models/kokoro/`                                             | `config.json`, `kokoro-v1_0.safetensors`, and `voices/*.safetensors`. A built app links them to its bundle.                                                                           |
+| Audio cache      | `cache/wav/`                                                 | One WAV file per distinct reading. The file name is a SHA-256 value.                                                                                                                  |
+| Lookup cache     | `cache/resolutions.sqlite`                                   | The names you looked up, the kind and the status of each, the resolved name when a lookup found one, the ids, the source, and an expiry time. SQLite may add `-wal` and `-shm` files. |
+| Download staging | `.prefetch/`                                                 | Partial downloads with the suffix `.part`.                                                                                                                                            |
+| Preferences      | `~/Library/Preferences/com.cloudyreader.Cloudy Reader.plist` | Window position, voice, rotation mode, and the two checkboxes.                                                                                                                        |
 
 ### Clean up
 

@@ -16,14 +16,14 @@ The commands on this page are untested: CI does not run them.
 
 This is the state on 2026-11-05.
 
-| Part | State |
-| --- | --- |
-| Custom domain in **Settings > Pages** | Set to `cloudyreader.com`. GitHub recorded it in `docs/CNAME`. |
-| DNS records | Done. The apex has four `A` records for the GitHub Pages addresses. `www` is a `CNAME` to `kiwee-co.github.io`. |
-| GitHub DNS check | GitHub reports the domain valid. |
-| Certificate | GitHub reports it approved. |
-| Domain verification | Open. It is optional and happens at organization level. |
-| Enforce HTTPS | Open. Turn it on after the site is live. |
+| Part                                  | State                                                                                                           |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Custom domain in **Settings > Pages** | Set to `cloudyreader.com`. GitHub recorded it in `docs/CNAME`.                                                  |
+| DNS records                           | Done. The apex has four `A` records for the GitHub Pages addresses. `www` is a `CNAME` to `kiwee-co.github.io`. |
+| GitHub DNS check                      | GitHub reports the domain valid.                                                                                |
+| Certificate                           | GitHub reports it approved.                                                                                     |
+| Domain verification                   | Open. It is optional and happens at organization level.                                                         |
+| Enforce HTTPS                         | Open. Turn it on after the site is live.                                                                        |
 
 - **Do not edit or delete `docs/CNAME`.** GitHub created the file and reads it.
 - GitHub redirects the project address, `kiwee-co.github.io/CloudyReader/`, to the custom domain.
@@ -31,11 +31,11 @@ This is the state on 2026-11-05.
 
 ## Plan the remaining steps
 
-| Step | State | Where | What it does |
-| --- | --- | --- | --- |
-| 1. Verify the domain | Open, optional | GitHub organization settings | Reserves `cloudyreader.com` for your organization. |
-| 2. Set the DNS records | Done | Your DNS host or registrar | Points the name at GitHub Pages. |
-| 3. Enforce HTTPS | Open | Repository **Settings > Pages** | Turns on HTTPS for the name, once the site is live. |
+| Step                   | State          | Where                           | What it does                                        |
+| ---------------------- | -------------- | ------------------------------- | --------------------------------------------------- |
+| 1. Verify the domain   | Open, optional | GitHub organization settings    | Reserves `cloudyreader.com` for your organization.  |
+| 2. Set the DNS records | Done           | Your DNS host or registrar      | Points the name at GitHub Pages.                    |
+| 3. Enforce HTTPS       | Open           | Repository **Settings > Pages** | Turns on HTTPS for the name, once the site is live. |
 
 Do step 1 even though it is optional. DNS already points at GitHub Pages, so verification is the protection against a takeover. It ties the name to your organization. If the claim in the repository ever lapses, nobody else can serve the name from another repository. A lapse happens, for example, when someone deletes `docs/CNAME`.
 
@@ -63,12 +63,12 @@ Some DNS hosts want the full name in the host field. Others add the domain thems
 
 These records are in place at the DNS host. The host field for the apex is `@`, empty, or `cloudyreader.com`, depending on the host.
 
-| Type | Host | Value |
-| --- | --- | --- |
-| `A` | apex | `185.199.108.153` |
-| `A` | apex | `185.199.109.153` |
-| `A` | apex | `185.199.110.153` |
-| `A` | apex | `185.199.111.153` |
+| Type    | Host  | Value                |
+| ------- | ----- | -------------------- |
+| `A`     | apex  | `185.199.108.153`    |
+| `A`     | apex  | `185.199.109.153`    |
+| `A`     | apex  | `185.199.110.153`    |
+| `A`     | apex  | `185.199.111.153`    |
 | `CNAME` | `www` | `kiwee-co.github.io` |
 
 The `CNAME` target is the organization address without the repository name. The apex is the custom domain, so GitHub redirects `www.cloudyreader.com` to it.
@@ -109,17 +109,17 @@ The first command prints a redirect, such as `HTTP/1.1 301 Moved Permanently`. T
 
 GitHub shows the check result under **Custom domain**. GitHub words these messages in its own way and can change them. Match by meaning.
 
-| What Settings > Pages shows | What it means | What to do |
-| --- | --- | --- |
-| DNS check in progress | GitHub is checking the records. | Wait a few minutes. Reload the page. |
-| DNS check successful | The records point at GitHub Pages. GitHub can request the certificate. | Wait for the certificate. Then enforce HTTPS. |
-| DNS check unsuccessful: "Domain does not resolve to the GitHub Pages server" | The name resolves, but not to the GitHub Pages addresses. | Compare the `dig` output with the table in step 2. Remove stale `A` and `AAAA` records. Turn off a proxy. |
-| DNS check unsuccessful: "Domain's DNS record could not be retrieved" | GitHub got no DNS answer for the name. | Check the spelling. Check that the records live at the DNS host that your registrar points to. Wait for propagation. |
-| DNS check unsuccessful: "Both cloudyreader.com and its alternate name are improperly configured" | Neither the apex nor `www` passes. | Fix the apex records and the `www` `CNAME`. |
-| DNS check unsuccessful, with a message about `www` and a `CNAME` record | The `www` record is missing, or it is not a `CNAME` to `kiwee-co.github.io`. | Add or fix the `www` record. |
-| **Enforce HTTPS** unavailable: a certificate has not yet been issued | GitHub waits for a passing DNS check, then issues the certificate. | Wait. Reload the page. |
-| **Enforce HTTPS** unavailable: the domain is not properly configured to support HTTPS | The DNS check fails, or a `CAA` record blocks Let's Encrypt. | Fix the DNS records. Allow `letsencrypt.org` in `CAA`. |
-| A message that another repository or account uses the domain | Another site claims the name. | Verify the domain for the organization (step 1). If the message stays, contact GitHub support. |
+| What Settings > Pages shows                                                                      | What it means                                                                | What to do                                                                                                           |
+| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| DNS check in progress                                                                            | GitHub is checking the records.                                              | Wait a few minutes. Reload the page.                                                                                 |
+| DNS check successful                                                                             | The records point at GitHub Pages. GitHub can request the certificate.       | Wait for the certificate. Then enforce HTTPS.                                                                        |
+| DNS check unsuccessful: "Domain does not resolve to the GitHub Pages server"                     | The name resolves, but not to the GitHub Pages addresses.                    | Compare the `dig` output with the table in step 2. Remove stale `A` and `AAAA` records. Turn off a proxy.            |
+| DNS check unsuccessful: "Domain's DNS record could not be retrieved"                             | GitHub got no DNS answer for the name.                                       | Check the spelling. Check that the records live at the DNS host that your registrar points to. Wait for propagation. |
+| DNS check unsuccessful: "Both cloudyreader.com and its alternate name are improperly configured" | Neither the apex nor `www` passes.                                           | Fix the apex records and the `www` `CNAME`.                                                                          |
+| DNS check unsuccessful, with a message about `www` and a `CNAME` record                          | The `www` record is missing, or it is not a `CNAME` to `kiwee-co.github.io`. | Add or fix the `www` record.                                                                                         |
+| **Enforce HTTPS** unavailable: a certificate has not yet been issued                             | GitHub waits for a passing DNS check, then issues the certificate.           | Wait. Reload the page.                                                                                               |
+| **Enforce HTTPS** unavailable: the domain is not properly configured to support HTTPS            | The DNS check fails, or a `CAA` record blocks Let's Encrypt.                 | Fix the DNS records. Allow `letsencrypt.org` in `CAA`.                                                               |
+| A message that another repository or account uses the domain                                     | Another site claims the name.                                                | Verify the domain for the organization (step 1). If the message stays, contact GitHub support.                       |
 
 ## Check DNS with dig
 
@@ -167,13 +167,13 @@ With DNS records, the browser connects to GitHub directly. GitHub presents the c
 
 ## Fix common errors
 
-| Symptom | Likely cause | Fix |
-| --- | --- | --- |
-| The Pages settings report a DNS problem | A missing record, a typo, or a stale `A` record | Compare `dig` output with the table in step 2. Delete the stale record. |
-| The domain stays unverified | A wrong `TXT` name or value, or a doubled domain in the name | Run the `dig` query from step 1. Fix the record. |
-| **Enforce HTTPS** stays unavailable | The certificate is pending, a `CAA` record blocks Let's Encrypt, or a proxy sits in front of the records | Wait. Allow `letsencrypt.org` in `CAA`. Set the records to "DNS only". |
-| GitHub shows a 404 page on the new name | The site build failed, or `docs/CNAME` is missing | Open the **Actions** tab and check the latest Pages build. Check that `docs/CNAME` exists. |
-| `www` shows a certificate warning | The `www` record is missing, or it is not a `CNAME` to `kiwee-co.github.io` | Add or fix the record. |
-| The browser reports too many redirects | A registrar redirect points back at the project address | Remove the redirect. Use the DNS records. |
+| Symptom                                 | Likely cause                                                                                             | Fix                                                                                        |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| The Pages settings report a DNS problem | A missing record, a typo, or a stale `A` record                                                          | Compare `dig` output with the table in step 2. Delete the stale record.                    |
+| The domain stays unverified             | A wrong `TXT` name or value, or a doubled domain in the name                                             | Run the `dig` query from step 1. Fix the record.                                           |
+| **Enforce HTTPS** stays unavailable     | The certificate is pending, a `CAA` record blocks Let's Encrypt, or a proxy sits in front of the records | Wait. Allow `letsencrypt.org` in `CAA`. Set the records to "DNS only".                     |
+| GitHub shows a 404 page on the new name | The site build failed, or `docs/CNAME` is missing                                                        | Open the **Actions** tab and check the latest Pages build. Check that `docs/CNAME` exists. |
+| `www` shows a certificate warning       | The `www` record is missing, or it is not a `CNAME` to `kiwee-co.github.io`                              | Add or fix the record.                                                                     |
+| The browser reports too many redirects  | A registrar redirect points back at the project address                                                  | Remove the redirect. Use the DNS records.                                                  |
 
 To undo the change, clear **Custom domain** in **Settings > Pages**, then remove the records from your DNS host. Do not delete `docs/CNAME` by hand while the domain is set.
