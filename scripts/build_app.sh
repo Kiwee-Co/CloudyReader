@@ -773,7 +773,8 @@ release_main() {
 }
 
 # Bytes the app downloads at first launch: its own VoicePrefetch.plan() for lock $1 and an empty
-# data folder, run by the build venv's Python on this repo's code. Skipped groups go to stderr.
+# data folder, run by the build venv's Python on this repo's code. Exits 3, with the reasons on
+# stderr, when this Mac skips a group (an extra or the room missing) that a first launch fetches.
 download_bytes() {
   local data
   data=$(fresh_dir figures-data)
@@ -789,6 +790,8 @@ from cloudyreader.prefetch import VoicePrefetch
 plan = VoicePrefetch(load_settings(), lock_path=Path(sys.argv[2])).plan()
 for reason in plan.skipped:
     print(f"build_app: the first-launch plan skips {reason}", file=sys.stderr)
+if plan.skipped:
+    sys.exit(3)
 print(plan.total_bytes)
 EOF
 }
@@ -797,7 +800,7 @@ EOF
 # each match their .sha256: six KEY=value lines. APP_BYTES sums the dist app's regular files;
 # DOWNLOAD_BYTES is the first-launch download that the app's own lock gives.
 release_figures() {
-  local version=${1:-} out=${2:-} file sha bytes app_bytes download figures=()
+  local version=${1:-} out=${2:-} file sha bytes app_bytes download rc figures=()
   [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "VERSION must look like 1.2.3, got '$version'"
   [[ -n $out ]] || die "usage: build_app.sh figures VERSION FILE"
   resolve_out
@@ -812,8 +815,14 @@ release_figures() {
   done
   app_bytes=$(find "$FINAL_APP" -type f -exec stat -f %z {} + |
     awk '{ s += $1 } END { printf "%.0f", s }')
-  download=$(download_bytes "$FINAL_APP/Contents/Resources/assets/assets.lock.json" | tail -n 1) ||
+  download=$(download_bytes "$FINAL_APP/Contents/Resources/assets/assets.lock.json") || {
+    rc=$?
+    ((rc != 3)) ||
+      die "this Mac's plan skips a group (above), so DOWNLOAD_BYTES would undercount:" \
+        "build on a Mac with every extra and room for every group"
     download=
+  }
+  download=$(tail -n 1 <<<"$download")
   [[ $download =~ ^[1-9][0-9]*$ ]] ||
     die "the first-launch plan downloads nothing ('$download'): check the app's assets.lock.json"
   printf 'APP_BYTES=%s\nZIP_BYTES=%s\nSHA256=%s\nDMG_BYTES=%s\nDMG_SHA256=%s\nDOWNLOAD_BYTES=%s\n' \

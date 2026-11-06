@@ -701,8 +701,13 @@ def release_files(root: Path, lock: bytes = b"{}") -> None:
 
 FAKE_PLAN_PY = r"""#!/bin/bash
 # The build venv's Python in the figures step: logs its arguments and data folder, prints FAKE_PLAN.
+# With FAKE_SKIP it answers as the plan does when this Mac skips a group: the reason, exit 3.
 cat >/dev/null
 printf '%s\n' "$@" "$CLOUDYREADER_DATA_DIR" >"$FAKE_ARGS"
+if [[ -n ${FAKE_SKIP:-} ]]; then
+  echo "build_app: the first-launch plan skips $FAKE_SKIP" >&2
+  exit 3
+fi
 echo "${FAKE_PLAN-3046503217}"
 """
 
@@ -756,6 +761,19 @@ def test_figures_writes_nothing_when_the_first_launch_plan_downloads_nothing(roo
 
     assert result.returncode == 1
     assert "the first-launch plan downloads nothing" in result.stderr
+    assert not out.exists()
+
+
+def test_figures_stop_when_this_mac_skips_a_group_a_first_launch_downloads(root):
+    release_files(root)
+    out = root / "figures.txt"
+    skipped = "kokoro: Kokoro needs an Apple Silicon Mac with mlx-audio"
+
+    result = figures(root, out, **fake_plan(root), FAKE_SKIP=skipped)
+
+    assert result.returncode == 1
+    assert f"the first-launch plan skips {skipped}" in result.stderr
+    assert "so DOWNLOAD_BYTES would undercount" in result.stderr
     assert not out.exists()
 
 
