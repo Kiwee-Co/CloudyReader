@@ -35,7 +35,7 @@ To save download time, download the zip once and copy it to the other Macs. Copy
 
 Each Mac downloads the voices at its first launch. To skip that download, copy the voices from a Mac where they work. See [Manage voices and storage](/manual/tasks/voices-and-storage/).
 
-A Mac that a school or an employer manages can need the administrator's approval. See [If Open Anyway is missing](/manual/tasks/first-open/#if-open-anyway-is-missing).
+On a Mac that a school or an employer manages, ask the administrator to approve the app. See [If Open Anyway is missing](/manual/tasks/first-open/#if-open-anyway-is-missing).
 
 ## Update to a new version
 

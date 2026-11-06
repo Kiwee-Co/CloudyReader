@@ -68,6 +68,8 @@ The app keeps no log file. It prints warnings to standard error, which Terminal 
 An issue is public. Anyone can read it, so leave out names, school details, and question text that you do not want to share.
 :::
 
+To ask a question, open an issue in the same way and say in the title that it is a question.
+
 ## Report a security issue
 
 A security issue is a flaw that lets someone read or change your files, run code, or send data from your Mac without your action. Report it in private. Do not open a public issue.

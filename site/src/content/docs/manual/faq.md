@@ -84,7 +84,7 @@ The app is signed ad hoc and is not notarized, so macOS asks you to approve it t
 
 ## Can I use it on a school-managed Mac?
 
-That depends on your administrator, because the app is signed ad hoc and is not notarized, and a managed Mac can block such an app. [Privacy](/about/privacy/) lists the network hosts that the app contacts, and [Security and code signing](/about/security/) explains the signature.
+That depends on your administrator. The app is signed ad hoc and is not notarized, so ask the administrator to approve it. [Privacy](/about/privacy/) lists the network hosts that the app contacts, and [Security and code signing](/about/security/) explains the signature.
 
 ## How much disk space and memory does it use?
 
