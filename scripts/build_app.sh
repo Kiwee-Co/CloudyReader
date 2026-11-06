@@ -575,21 +575,35 @@ create_dmg() {
   }
 }
 
-# The release DMG $2 of app $1 for version $3: the app beside an Applications link, and the app's
-# icon as the volume icon (the FinderInfo custom-icon flag; diskutil keeps it, hdiutil drops it).
+# The release DMG $2 of app $1, its volume named "<APP_NAME>". With dmgbuild in the build venv,
+# packaging/dmg_layout.py styles the window (docs-ia's spec section 7). dmgbuild still drives
+# hdiutil, whose create, attach and convert flags macOS 27 deprecates: a later macOS may break that
+# path, and the plain image (diskutil image, hdiutil before it) stays the fallback.
 make_dmg() {
-  local app=$1 dmg=$2 version=$3 stage icon
+  local app=$1 dmg=$2 stage icon name
   local custom_icon=0000000000000000040000000000000000000000000000000000000000000000
+  name=$(basename -- "$dmg")
   stage=$(fresh_dir dmg-stage)
   ditto --norsrc --noextattr "$app" "$stage/$APP_NAME.app" # as in the zip: no forks, no xattrs
-  ln -s /Applications "$stage/Applications"
   icon=$(plutil -extract CFBundleIconFile raw -o - "$app/Contents/Info.plist" 2>/dev/null) || icon=
   icon=$app/Contents/Resources/${icon%.icns}.icns
-  if [[ -f $icon ]]; then
+  [[ -f $icon ]] || icon=
+  PY=${PY:-$ROOT/.venv/bin/python}
+  if "$PY" -I -c 'import dmgbuild' >/dev/null 2>&1; then
+    "$PY" -I "$ROOT/packaging/dmg_layout.py" "$stage/$APP_NAME.app" "$dmg" "$icon" \
+      >"$ROOT/build/dmg-create.log" 2>&1 || die "dmgbuild could not make $name (log: build/dmg-create.log)"
+    say "release: $name: the window styled by dmgbuild"
+    return
+  fi
+  say "release: $name is plain: dmgbuild is not in the build venv (make .cache/stamps/packaging)"
+  # The app's icon as the volume icon: the FinderInfo custom-icon flag; diskutil keeps it, hdiutil
+  # drops it (a cosmetic loss on macOS before diskutil image).
+  ln -s /Applications "$stage/Applications"
+  if [[ -n $icon ]]; then
     cp -- "$icon" "$stage/.VolumeIcon.icns"
     xattr -wx com.apple.FinderInfo "$custom_icon" "$stage"
   fi
-  create_dmg "$stage" "$dmg" "$APP_NAME $version"
+  create_dmg "$stage" "$dmg" "$APP_NAME"
 }
 
 # One SHA-256 over a tree's files (content and mode), folders (mode) and links (target): two trees
@@ -604,7 +618,8 @@ tree_digest() {
   )
 }
 
-# Ejects the volume check_dmg attached, if any; the EXIT trap runs it however the checks end.
+# Ejects the image check_dmg attached, if any; the EXIT trap runs it however the checks end. Only
+# a device that image_device confirmed reaches here, so the forced detach can hit nothing else.
 eject_dmg() {
   if [[ -n ${DMG_DEVICE:-} ]]; then
     "$DISKUTIL" eject "$DMG_DEVICE" >/dev/null 2>&1 ||
@@ -613,21 +628,31 @@ eject_dmg() {
   fi
 }
 
-# The mounted volume $1 of DMG $2 for version $3: named "<APP_NAME> <version>", holding only the
-# app, an Applications link to /Applications and the volume icon.
+# The whole-disk device in attach output $1, once diskutil confirms that it is a disk image.
+image_device() {
+  local device bus
+  device=$(awk '/^\/dev\/disk[0-9]+[[:space:]]/ { print $1; exit }' <<<"$1")
+  [[ -n $device ]] || return 1
+  bus=$("$DISKUTIL" info -plist "$device" | plutil -extract BusProtocol raw -o - - 2>/dev/null) ||
+    return 1
+  [[ $bus == "Disk Image" ]] || return 1
+  printf '%s\n' "$device"
+}
+
+# The mounted volume $1 of DMG $2: named "<APP_NAME>", holding only the app, an Applications link
+# to /Applications, the volume icon, and dmgbuild's window layout and art when styled.
 check_volume() {
-  local mnt=$1 name=$2 version=$3 entry volume
+  local mnt=$1 name=$2 entry volume
   while IFS= read -r -d '' entry; do
     case ${entry##*/} in
-      "$APP_NAME.app" | Applications | .VolumeIcon.icns) ;;
+      "$APP_NAME.app" | Applications | .VolumeIcon.icns | .DS_Store | .background.tiff) ;;
       *) die "$name: unexpected ${entry##*/} on its volume" ;;
     esac
   done < <(find "$mnt" -mindepth 1 -maxdepth 1 -print0)
   [[ -L $mnt/Applications && $(readlink "$mnt/Applications") == /Applications ]] ||
     die "$name: no Applications link to /Applications on its volume"
   volume=$("$DISKUTIL" info -plist "$mnt" | plutil -extract VolumeName raw -o - -) || volume=
-  [[ $volume == "$APP_NAME $version" ]] ||
-    die "$name: its volume is named '$volume', not '$APP_NAME $version'"
+  [[ $volume == "$APP_NAME" ]] || die "$name: its volume is named '$volume', not '$APP_NAME'"
   say "release: $name: verified; volume $volume holds the app and an Applications link"
 }
 
@@ -647,8 +672,9 @@ check_dmg() {
   else
     out=$("$HDIUTIL" attach -readonly -nobrowse -noverify -mountpoint "$mnt" "$dmg" 2>&1)
   fi || die "$name: cannot attach it: $out"
-  DMG_DEVICE=$(awk '/^\/dev\/disk/ { print $1; exit }' <<<"$out")
-  check_volume "$mnt" "$name" "$version"
+  DMG_DEVICE=$(image_device "$out") ||
+    die "$name: attached at $mnt, but no disk-image device was confirmed; eject it by hand: $out"
+  check_volume "$mnt" "$name"
   app=$mnt/$APP_NAME.app
   if ! codesign --verify --deep --strict "$app" >"$ROOT/build/dmg-codesign.log" 2>&1; then
     tail -n 20 "$ROOT/build/dmg-codesign.log" >&2
@@ -735,7 +761,7 @@ release_main() {
   run_self_test release "$app" "$data"
   ((SELFTEST_RC == 0)) || die "the extracted copy's self-test exited $SELFTEST_RC (log: build/selftest-release.log)"
   say "release: the extracted copy passes codesign, the voice audit and the self-test"
-  make_dmg "$app" "$dmg" "$version"
+  make_dmg "$app" "$dmg"
   write_checksum "$dmg"
   (cd -- "$OUT" && shasum -a 256 -c -s "$(basename -- "$dmg").sha256") ||
     die "$(basename -- "$dmg") does not match its .sha256"

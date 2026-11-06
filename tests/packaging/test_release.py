@@ -429,7 +429,7 @@ def test_release_writes_a_dmg_of_the_zips_app_and_checks_it(root, real_dmg_host)
     digest = hashlib.sha256((root / "dist" / DMG).read_bytes()).hexdigest()
     assert (root / "dist" / f"{DMG}.sha256").read_text() == f"{digest}  {DMG}\n"
     out = result.stdout
-    volume = "volume Cloudy Reader 0.0.1 holds the app and an Applications link"
+    volume = "volume Cloudy Reader holds the app and an Applications link"
     assert f"release: {DMG}: verified; {volume}" in out
     assert (
         f"release: {DMG}: its app passes codesign, --version and the voice audit, "
@@ -446,7 +446,7 @@ def test_check_dmg_fails_and_still_ejects_the_volume(root, real_dmg_host):
     path, _ = stub_codesign(root)
     snippet = (
         'APP_NAME="Cloudy Reader"; app="$ROOT/dist/Cloudy Reader.app"; '
-        'make_dmg "$app" "$ROOT/dist/t.dmg" 0.0.1 && '
+        'make_dmg "$app" "$ROOT/dist/t.dmg" && '
         'chmod 600 "$app/Contents/Info.plist" && '  # now the zip's copy differs in one mode
         'check_dmg "$ROOT/dist/t.dmg" "$app" 0.0.1 "$(fresh_dir data)"'
     )
@@ -467,7 +467,7 @@ def test_the_dmg_falls_back_to_hdiutil_where_diskutil_has_no_image_verb(root, re
     old.chmod(0o755)
     snippet = (
         'APP_NAME="Cloudy Reader"; app="$ROOT/dist/Cloudy Reader.app"; '
-        'make_dmg "$app" "$ROOT/dist/t.dmg" 0.0.1 && '
+        'make_dmg "$app" "$ROOT/dist/t.dmg" && '
         'check_dmg "$ROOT/dist/t.dmg" "$app" 0.0.1 "$(fresh_dir data)"'
     )
 
@@ -539,7 +539,7 @@ def test_the_dmg_uses_diskutil_image_from_macos_26(root):
     assert result.returncode == 0, result.stderr
     recorded = calls.read_text().splitlines()
     assert any(
-        "diskutil image create from --format ULFO --volumeName Cloudy Reader 0.0.1 " in line
+        "diskutil image create from --format ULFO --volumeName Cloudy Reader /" in line
         for line in recorded
     )
     assert not any(line.startswith("hdiutil") for line in recorded)
@@ -558,49 +558,118 @@ def test_a_failed_dmg_creation_prints_the_tools_own_message(root):
 
 
 FAKE_DISKUTIL = r"""#!/bin/bash
-# `info -plist PATH` names the volume FAKE_VOLUME; nothing else is expected here.
+# `info -plist PATH`: a volume named FAKE_VOLUME on a disk whose bus is FAKE_BUS. Nothing else.
 [[ ${1:-} == info && ${2:-} == -plist ]] || exit 1
 printf '<?xml version="1.0" encoding="UTF-8"?>\n<plist version="1.0"><dict>'
-printf '<key>VolumeName</key><string>%s</string></dict></plist>\n' "$FAKE_VOLUME"
+printf '<key>VolumeName</key><string>%s</string>' "${FAKE_VOLUME:-}"
+printf '<key>BusProtocol</key><string>%s</string></dict></plist>\n' "${FAKE_BUS:-Disk Image}"
 """
+
+
+def fake_diskutil(root: Path) -> str:
+    fake = root / "fake-diskutil"
+    fake.write_text(FAKE_DISKUTIL)
+    fake.chmod(0o755)
+    return str(fake)
 
 
 @pytest.mark.parametrize(
     ("change", "volume", "message"),
     [
-        (None, "Cloudy Reader 0.0.1", None),
-        ("README", "Cloudy Reader 0.0.1", "t.dmg: unexpected README on its volume"),
-        ("no-link", "Cloudy Reader 0.0.1", "t.dmg: no Applications link to /Applications"),
-        ("bad-link", "Cloudy Reader 0.0.1", "t.dmg: no Applications link to /Applications"),
-        (None, "Cloudy Reader 9.9.9", "its volume is named 'Cloudy Reader 9.9.9', not 'Cloudy"),
+        (None, "Cloudy Reader", None),
+        ("styled", "Cloudy Reader", None),  # dmgbuild's window layout and art
+        ("README", "Cloudy Reader", "t.dmg: unexpected README on its volume"),
+        ("no-link", "Cloudy Reader", "t.dmg: no Applications link to /Applications"),
+        ("bad-link", "Cloudy Reader", "t.dmg: no Applications link to /Applications"),
+        (None, "Cloudy Reader 0.0.1", "its volume is named 'Cloudy Reader 0.0.1', not 'Cloudy"),
     ],
 )
 def test_the_dmg_volume_holds_only_the_app_its_link_and_icon(root, change, volume, message):
     mnt = root / "volume"
     (mnt / "Cloudy Reader.app" / "Contents").mkdir(parents=True)
     (mnt / ".VolumeIcon.icns").write_bytes(b"icon")
+    if change == "styled":
+        (mnt / ".DS_Store").write_bytes(b"layout")
+        (mnt / ".background.tiff").write_bytes(b"art")
     if change == "README":
         (mnt / "README").write_text("hi")
     if change != "no-link":
         (mnt / "Applications").symlink_to("/Applications" if change != "bad-link" else "/tmp")
-    fake = root / "fake-diskutil"
-    fake.write_text(FAKE_DISKUTIL)
-    fake.chmod(0o755)
 
     result = bash_fn(
         root,
-        'APP_NAME="Cloudy Reader"; check_volume "$1" t.dmg 0.0.1',
+        'APP_NAME="Cloudy Reader"; check_volume "$1" t.dmg',
         str(mnt),
-        DISKUTIL=str(fake),
+        DISKUTIL=fake_diskutil(root),
         FAKE_VOLUME=volume,
     )
 
     if message is None:
         assert result.returncode == 0, result.stderr
-        assert "release: t.dmg: verified; volume Cloudy Reader 0.0.1 holds the app" in result.stdout
+        assert "release: t.dmg: verified; volume Cloudy Reader holds the app" in result.stdout
     else:
         assert result.returncode == 1
         assert message in result.stderr
+
+
+ATTACHED = (
+    "/dev/disk12  \tGUID_partition_scheme\n/dev/disk12s1\tApple_APFS\n"
+    "/dev/disk13  \tApple_APFS_Container\n/dev/disk13s1\tApple_APFS_Volume\t/tmp/m\n"
+)
+
+
+@pytest.mark.parametrize(
+    ("output", "bus", "device"),
+    [(ATTACHED, "Disk Image", "/dev/disk12"), (ATTACHED, "Apple Fabric", None), ("", None, None)],
+)
+def test_only_a_confirmed_disk_image_may_be_ejected(root, output, bus, device):
+    env = {"DISKUTIL": fake_diskutil(root)} | ({"FAKE_BUS": bus} if bus else {})
+
+    result = bash_fn(root, 'image_device "$1"', output, **env)
+
+    if device:
+        assert result.returncode == 0, result.stderr
+        assert result.stdout == f"{device}\n"
+    else:
+        assert result.returncode != 0
+        assert result.stdout == ""
+
+
+FAKE_PY = r"""#!/bin/bash
+# The build venv's Python: has dmgbuild when FAKE_DMGBUILD=1, and "runs" dmg_layout.py by writing
+# its arguments to FAKE_OUT and a stand-in image to the DMG path.
+if [[ $1 == -I && $2 == -c ]]; then [[ ${FAKE_DMGBUILD:-0} == 1 ]]; exit; fi
+if [[ $1 == -I && $2 == */packaging/dmg_layout.py ]]; then
+  shift 2; printf '%s\n' "$@" >"$FAKE_OUT"; echo image >"$2"; exit 0
+fi
+exit 1
+"""
+
+
+@pytest.mark.parametrize("dmgbuild", ["1", "0"])
+def test_make_dmg_styles_the_window_when_the_build_venv_has_dmgbuild(root, dmgbuild):
+    fake_app(root)
+    python = root / "fake-python"
+    python.write_text(FAKE_PY)
+    python.chmod(0o755)
+    snippet = (
+        'APP_NAME="Cloudy Reader"; create_dmg() { echo "plain image named $3"; }; '
+        'make_dmg "$ROOT/dist/Cloudy Reader.app" "$ROOT/dist/t.dmg"'
+    )
+    out = root / "layout.args"
+
+    result = bash_fn(root, snippet, PY=str(python), FAKE_DMGBUILD=dmgbuild, FAKE_OUT=str(out))
+
+    assert result.returncode == 0, result.stderr
+    if dmgbuild == "1":
+        app, dmg = out.read_text().splitlines()[:2]
+        assert re.fullmatch(rf"{re.escape(str(root))}/build/dmg-stage\.\w+/Cloudy Reader\.app", app)
+        assert dmg == str(root / "dist" / "t.dmg")
+        assert "release: t.dmg: the window styled by dmgbuild" in result.stdout
+    else:
+        assert not out.exists()
+        assert "plain image named Cloudy Reader" in result.stdout
+        assert "release: t.dmg is plain: dmgbuild is not in the build venv" in result.stdout
 
 
 def test_release_preflight_needs_the_dmg_tools(root):
