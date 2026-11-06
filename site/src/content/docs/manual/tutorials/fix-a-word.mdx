@@ -1,0 +1,146 @@
+---
+title: Fix a mispronounced word
+description: Learn to write a pronunciation guide in brackets, check it in the spoken script, and read its warnings, in about 15 minutes.
+sidebar:
+  order: 3
+---
+
+import { Steps } from '@astrojs/starlight/components';
+import Figure from '../../../../components/Figure.astro';
+
+You add a [pronunciation guide](/manual/reference/glossary/#pronunciation-guide) to a question, then check it in the spoken script and the status bar. At the end, you can fix a word that a voice says wrong with any of the three kinds of guide. This tutorial takes about 15 minutes and needs Cloudy Reader open with a voice installed.
+
+## Before you start
+
+A pronunciation guide is text in square brackets right after a word. The app takes each guide out of the text and uses it. The voice never says the brackets.
+
+You check every guide in two places: the **Spoken script** view and the status bar. If the view is closed, click **Spoken script** to open it.
+
+## Add a phonetic respelling
+
+A phonetic respelling writes the sounds of a word in plain English letters. Join the syllables with hyphens, and write the stressed syllable in capitals. Copy this line:
+
+```text wrap
+In eukaryotic cells, the reactions of the Krebs cycle [KREBZ SY-kul] take place in which part of the mitochondrion?
+```
+
+<Steps>
+
+1. Select the line above and press Command-C.
+2. Click **Paste**.
+3. Press Command-Return.
+
+   The status bar shows "Playing _n_ s." with no warning.
+
+4. Read the **Spoken script**.
+
+   It shows "In eukaryotic cells, the reactions of the Krebs cycle take place in which part of the mitochondrion?" The brackets are gone, and the printed words stay.
+
+</Steps>
+
+The script keeps the printed words because the voice receives the sounds from the guide separately. A phonetic respelling covers every place its word appears in the question.
+
+## See a guide warning
+
+The app refuses a respelling in which every syllable is in capitals, because it shows no stress. Copy this line:
+
+```text wrap
+The mineral olivine [OL-UH-VEEN] is common in the upper mantle.
+```
+
+<Steps>
+
+1. Select the line above and press Command-C.
+2. Click **Paste**.
+3. Press Command-Return.
+
+   The status bar shows a warning in place of "Playing": "Warning: No pronunciation for respelling [OL-UH-VEEN]: 'olivine' is spoken plain." The warning stays after the sound ends.
+
+</Steps>
+
+<Figure
+  src="status-guide-warning-light.svg"
+  dark="status-guide-warning-dark.svg"
+  alt="The status bar with a warning icon and the message Warning: No pronunciation for respelling [OL-UH-VEEN]: 'olivine' is spoken plain."
+  caption="The warning names the guide that the app could not use and the word it spoke plain."
+/>
+
+The reading still plays, and the voice says "olivine" without your guide. The app never guesses: it uses a respelling or it speaks the word plain.
+
+Fix the guide by capitalizing only the stressed syllable. Copy this line:
+
+```text wrap
+The mineral olivine [OL-uh-veen] is common in the upper mantle.
+```
+
+<Steps>
+
+1. Select the line above and press Command-C.
+2. Click **Paste**.
+3. Press Command-Return.
+
+   The status bar shows "Playing _n_ s." and the warning is gone.
+
+</Steps>
+
+## Replace an expression with say-as words
+
+A say-as guide gives the words to say in place of the printed expression. Copy this line:
+
+```text wrap
+x2 [x squared] plus 4 2/7 [4 and two-sevenths]
+```
+
+<Steps>
+
+1. Select the line above and press Command-C.
+2. Click **Paste**.
+3. Press Command-Return.
+
+   The status bar shows "Playing _n_ s." with no warning.
+
+4. Read the **Spoken script**.
+
+   It shows "x squared plus 4 and two-sevenths". The words from the brackets take the place of `x2` and `4 2/7`.
+
+</Steps>
+
+Without the two guides, the script reads "x squared plus four and two sevenths". A say-as guide replaces only the expression that it follows.
+
+## Spell an abbreviation
+
+A spell guide makes the app say each letter. Without a guide, a Kokoro voice says the abbreviation SEM as the word "sem", and a Piper voice spells it. Copy this line:
+
+```text wrap
+What kind of beam does the SEM [S.E.M.] scan across a sample?
+```
+
+<Steps>
+
+1. Select the line above and press Command-C.
+2. Click **Paste**.
+3. Press Command-Return.
+
+   The status bar shows "Playing _n_ s." with no warning.
+
+4. Read the **Spoken script**.
+
+   It shows "What kind of beam does the S E M scan across a sample?" With the guide, a Kokoro voice and a Piper voice both spell the letters.
+
+</Steps>
+
+The Piper voices say the abbreviation ETC as "et cetera" until you add `[E.T.C.]`, and a Kokoro voice already spells it. In a spell guide, digits become number words: `[H-2-S]` gives "H two S".
+
+## What you learned
+
+- A guide is text in square brackets right after the word or expression it describes.
+- A phonetic respelling sets the sounds: hyphens between syllables, and the stressed syllable in capitals.
+- A say-as guide replaces the printed expression with the words in brackets. A spell guide says each letter.
+- Say-as and spell guides change the **Spoken script**. A phonetic respelling leaves the printed word there.
+- A guide the app cannot use raises a warning in the status bar, and the word is spoken plain.
+
+## Next steps
+
+- [Pronunciation guides](/manual/reference/pronunciation-guides/) lists the exact syntax and every warning.
+- [Pronunciation examples](/manual/reference/pronunciation-examples/) shows what the app says for formulas, units, and fractions.
+- [Status messages](/manual/reference/status-messages/) explains every message in the status bar.

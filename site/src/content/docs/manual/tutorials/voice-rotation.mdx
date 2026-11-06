@@ -1,0 +1,205 @@
+---
+title: Practice with voice rotation
+description: Learn to choose a voice and use the six rotation modes so each question is read by a different voice, in about 10 minutes.
+sidebar:
+  order: 2
+---
+
+import { Steps } from '@astrojs/starlight/components';
+import Figure from '../../../../components/Figure.astro';
+
+You choose a voice, then switch on rotation so the app picks a different voice for each reading. At the end, you can name the voice of every reading from the status bar. This tutorial takes about 10 minutes and needs the first-launch download to be finished.
+
+## Before you start
+
+Let the first-launch download finish before you start. During the download, the **Voice** menu lists only the first voice to arrive, and the other voices appear as the download finishes. See [Manage voices and storage](/manual/tasks/voices-and-storage/) to check which voices are installed.
+
+Set the Mac's volume before you start. The app has no volume control.
+
+## Choose a voice
+
+The **Voice** menu groups voices under a heading for each [voice engine](/manual/reference/glossary/#voice-engine). The headings are labels, not choices. Each row shows the voice's name, its language, and a quality label.
+
+<Figure
+  src="voices-top-light.svg"
+  dark="voices-top-dark.svg"
+  alt="The Voice menu open at the top: the Kokoro heading, then the highest-graded voices, starting with Heart (female) (en-US, A)."
+  caption="The Voice menu lists voices under an engine heading, and each row ends with its language and quality label."
+  frame="window"
+/>
+
+Copy this question. You use it in every step of this tutorial.
+
+```text wrap
+TOSS-UP
+1) CHEMISTRY Multiple Choice Which gas forms when sodium bicarbonate, NaHCO3, reacts with acetic acid?
+W) Oxygen
+X) Hydrogen
+Y) Carbon dioxide
+Z) Nitrogen
+ANSWER: Y) CARBON DIOXIDE
+```
+
+<Steps>
+
+1. Select the question above and press Command-C.
+2. Click **Paste** in the Cloudy Reader window.
+
+   The question box shows the question, starting with TOSS-UP.
+
+3. Open the **Voice** menu and choose a voice other than the one it shows.
+
+   The **Voice** menu shows the voice you chose.
+
+4. Press Command-Return.
+
+   The status bar shows "Preparing…", then "Playing _n_ s." You hear the question in the voice you chose.
+
+</Steps>
+
+The app saves your choice and selects the same voice at the next start.
+
+## Turn on Round robin
+
+**Round robin** reads each question with the next voice in the **Voice** menu.
+
+<Figure
+  src="rotation-light.svg"
+  dark="rotation-dark.svg"
+  alt="The Rotation menu open with six modes: No rotation, Round robin, Random shuffle, US only (random shuffle), Men only, and Women only."
+  caption="The Rotation menu offers six modes; No rotation is the default."
+  frame="window"
+/>
+
+<Steps>
+
+1. Open the **Rotation** menu and choose **Round robin**.
+
+   The **Rotation** menu shows Round robin.
+
+2. Press Command-Return.
+
+   The status bar shows "Preparing with _voice_…", then "Playing _n_ s with _voice_." The _voice_ is a name and a gender. It is the first voice in the **Voice** menu when you have not used rotation since the app started. Otherwise it is the voice after the last one that rotation used.
+
+3. When the sound starts, press Command-Return again.
+
+   The status bar names the next voice in the **Voice** menu.
+
+4. When the sound starts, press Command-Return a third time.
+
+   The status bar names the voice after that.
+
+</Steps>
+
+The **Voice** menu still shows the voice you chose, because rotation never changes it.
+
+## Try a random deck
+
+**Random shuffle** deals the voices like a shuffled deck. No voice repeats until every voice has played.
+
+<Steps>
+
+1. Open the **Rotation** menu and choose **Random shuffle**.
+
+   The **Rotation** menu shows Random shuffle.
+
+2. Press Command-Return.
+
+   The status bar names a voice.
+
+3. When the sound starts, press Command-Return again.
+
+   The status bar names a different voice.
+
+4. When the sound starts, press Command-Return a third time.
+
+   The status bar names a third voice that differs from the first two.
+
+</Steps>
+
+## Practice with one group of voices
+
+Three modes deal from a smaller group of voices: **Men only**, **Women only**, and **US only (random shuffle)**.
+
+<Steps>
+
+1. Open the **Rotation** menu and choose **Men only**.
+
+   The **Rotation** menu shows Men only.
+
+2. Press Command-Return.
+
+   The status bar names a voice followed by "(male)", for example "Daniel (male)".
+
+3. When the sound starts, press Command-Return again.
+
+   The status bar names another voice followed by "(male)".
+
+</Steps>
+
+Choose **Women only** and repeat the steps to see "(female)".
+
+The status bar does not show an accent. To check **US only (random shuffle)**, look up the voice name in the **Voice** menu: every row it deals from says en-US.
+
+:::note
+The gender labels come from the voice data, and the project has not verified every label by ear. [Voices and voice engines](/manual/concepts/voice-engines/) explains the labels.
+:::
+
+If no installed voice fits the mode, the reading uses the voice in the **Voice** menu. The status bar shows a warning that stays after the sound ends.
+
+<Figure
+  src="status-rotation-fallback-light.svg"
+  dark="status-rotation-fallback-dark.svg"
+  alt="The status bar with the warning No installed voice matches “Men only”; using the selected voice."
+  caption="The warning names the mode that found no voice."
+/>
+
+## Repeat without changing the voice
+
+<Steps>
+
+1. Press Command-Return.
+
+   The status bar names a voice. Note it.
+
+2. When the sound ends, press Command-R.
+
+   The status bar shows "Repeating." and you hear the same voice again.
+
+3. Press Command-Return.
+
+   The status bar names a different voice.
+
+</Steps>
+
+**Repeat** replays the stored audio, so it does not move rotation to the next voice.
+
+## Turn rotation off
+
+<Steps>
+
+1. Open the **Rotation** menu and choose **No rotation**.
+
+   The **Rotation** menu shows No rotation.
+
+2. Press Command-Return.
+
+   The status bar shows "Playing _n_ s." with no voice name. You hear the voice that the **Voice** menu shows.
+
+</Steps>
+
+The app saves the rotation mode and restores it at the next start. It does not save the deck or the last voice.
+
+## What you learned
+
+- The **Voice** menu groups voices under a heading for each voice engine, and each row shows a quality label.
+- **Round robin** takes the next voice in menu order. **Random shuffle** deals every voice once before any voice repeats.
+- **Men only**, **Women only**, and **US only (random shuffle)** deal from a smaller group.
+- The status bar names the voice of each rotation reading while the sound plays.
+- **Repeat** replays the last audio and does not move rotation on.
+
+## Next steps
+
+- [Voices and rotation modes](/manual/reference/voices/#rotation-modes) lists the exact rule for each mode.
+- [Voices and voice engines](/manual/concepts/voice-engines/) explains the voice engines and how to choose a voice for practice.
+- [Fix a mispronounced word](/manual/tutorials/fix-a-word/) teaches pronunciation guides.

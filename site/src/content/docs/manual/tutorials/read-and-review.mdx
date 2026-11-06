@@ -1,0 +1,166 @@
+---
+title: Read and review a question
+description: Learn to read a question aloud, stop and repeat it, check the spoken script, and hear the answer, in about 10 minutes.
+sidebar:
+  order: 1
+---
+
+import { Steps } from '@astrojs/starlight/components';
+import Figure from '../../../../components/Figure.astro';
+
+You paste a question, play it, stop and repeat it, read the spoken script, and hear the answer line. At the end, you can run a full reading from the keyboard and check what the voice received. This tutorial takes about 10 minutes and needs Cloudy Reader open with a voice installed.
+
+## Before you start
+
+Open Cloudy Reader and check that the **Voice** menu shows a voice. If the menu is dimmed, no voice is installed yet: see [No voice is installed](/manual/troubleshooting/#no-voice-is-installed). If you have not installed the app yet, start with [Get started](/manual/getting-started/).
+
+Set the Mac's volume before you start. The app has no volume control.
+
+## Paste a question
+
+The question box sits at the top of the window. Below it are the **Voice** and **Rotation** menus, two options, and a row of buttons. The **Spoken script** control and the status bar are at the bottom.
+
+<Figure
+  src="window-light.svg"
+  dark="window-dark.svg"
+  alt="The Cloudy Reader window with a pasted toss-up question, the voice lessac, rotation off, the spoken script open, and the status Playing 2.0 s."
+  caption="The window while the sample question plays; the playing time on your screen differs."
+  frame="window"
+/>
+
+Copy this question.
+
+```text wrap
+TOSS-UP
+1) CHEMISTRY Multiple Choice Which gas forms when sodium bicarbonate, NaHCO3, reacts with acetic acid?
+W) Oxygen
+X) Hydrogen
+Y) Carbon dioxide
+Z) Nitrogen
+ANSWER: Y) CARBON DIOXIDE
+```
+
+<Steps>
+
+1. Select the question above and press Command-C.
+2. Click the question box in the Cloudy Reader window.
+3. Press Command-V.
+
+   The question box shows the text, starting with TOSS-UP.
+
+</Steps>
+
+You can click **Paste** instead of pressing Command-V. It replaces the question with the clipboard text.
+
+## Listen and control playback
+
+The keyboard shortcuts work while Cloudy Reader is the active app.
+
+<Steps>
+
+1. Press Command-Return.
+
+   The status bar shows "Preparing…" with a busy bar at the right. The first reading after the app opens takes longer, because the app loads its name-detection model once. Then the status bar shows "Playing _n_ s." and you hear "Toss-up number one. Chemistry. Multiple choice." followed by the question. The playing message clears when the sound ends.
+
+2. While the sound plays, press Command-Period (.).
+
+   The sound ends and the status bar shows "Stopped."
+
+3. Press Command-R.
+
+   The status bar shows "Repeating." and the whole reading plays again.
+
+</Steps>
+
+Each of these shortcuts has a button: **Speak**, **Stop**, and **Repeat**. **Stop** is available only while sound plays. **Repeat** is available after a reading has played.
+
+## Check the spoken script
+
+<Steps>
+
+1. Click **Spoken script**.
+
+   The view opens below the buttons.
+
+2. Read the text in the view.
+
+   It shows the words that the voice received: "Toss-up number one. Chemistry. Multiple choice. Which gas forms when sodium bicarbonate, N A H C O three, reacts with acetic acid? W. Oxygen X. Hydrogen Y. Carbon dioxide Z. Nitrogen"
+
+</Steps>
+
+<Figure
+  src="script-formula-light.svg"
+  dark="script-formula-dark.svg"
+  alt="The Spoken script after a reading, with NaHCO3 written as N A H C O three."
+  caption="The script spells the formula letter by letter."
+/>
+
+Compare the script with the question you pasted:
+
+- `TOSS-UP` and `1)` became "Toss-up number one."
+- `NaHCO3` became "N A H C O three", so the voice spells the formula.
+- `W)`, `X)`, `Y)`, and `Z)` became "W.", "X.", "Y.", and "Z."
+- The answer line is not in the script.
+
+## Hear the answer
+
+<Steps>
+
+1. Select **Read answer line**.
+
+   The checkbox shows selected.
+
+2. Press Command-Return.
+
+   After the last choice, the app is silent for 5 seconds. Then you hear "Answer. Y. Carbon Dioxide." The **Spoken script** now ends with that sentence.
+
+</Steps>
+
+The app saves this choice. Deselect **Read answer line** to skip the answer again.
+
+## Read two questions in a row
+
+Copy these two questions. A paste can hold several questions.
+
+```text wrap
+TOSS-UP
+2) PHYSICS Short Answer A cart moves 90 meters in 6 seconds at a constant speed. What is its speed in m/s?
+ANSWER: 15
+
+BONUS
+2) PHYSICS Short Answer What is the kinetic energy, in joules, of a 2 kg cart that moves at 3 m/s?
+ANSWER: 9
+```
+
+<Steps>
+
+1. Deselect **Read answer line**.
+2. Select the two questions above and press Command-C.
+3. Switch to Cloudy Reader with Command-Tab, or click its window.
+4. Press Command-Shift-V.
+
+   The question box now holds both questions. The status bar shows "Preparing…", then "Playing _n_ s."
+
+5. Look at the **Spoken script**.
+
+   It shows the toss-up first, beginning "Toss-up number two. Physics. Short answer." The unit `m/s` became "meters per second". The bonus follows, beginning "Bonus number two. Physics. Short answer." The app pauses 1.5 seconds between the two questions.
+
+</Steps>
+
+:::tip
+Command-Shift-V is **Speak Clipboard**. It replaces the question with the clipboard text and speaks it in one step.
+:::
+
+## What you learned
+
+- Command-Return speaks the question, Command-Period (.) stops the sound, and Command-R plays the last reading again.
+- The **Spoken script** shows the words the voice receives, such as a formula spelled out letter by letter.
+- **Read answer line** adds the answer after a pause of 5 seconds.
+- One paste can hold several questions. The app reads them in order.
+- Command-Shift-V pastes the clipboard and speaks it in one step.
+
+## Next steps
+
+- [Practice with voice rotation](/manual/tutorials/voice-rotation/) reads each question with a different voice.
+- [Question format and reading order](/manual/reference/question-format/) lists the pauses and what the app cleans up.
+- [Keyboard shortcuts](/manual/reference/keyboard-shortcuts/) holds every key on one page.
