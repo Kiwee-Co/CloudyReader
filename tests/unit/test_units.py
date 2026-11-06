@@ -152,8 +152,9 @@ def test_quantities(raw: str, spoken: str) -> None:
 
 
 def test_plural_follows_the_number_not_the_symbol() -> None:
+    # "3 m/s^2" is plural by its number; "A 2 kg block" is a modifier after "a", so singular.
     assert speak_units("A 2 kg block at 3 m/s^2.") == (
-        "A 2 kilograms block at 3 meters per second squared."
+        "A 2 kilogram block at 3 meters per second squared."
     )
 
 
@@ -864,9 +865,9 @@ ATTACHED_LETTERS = [
         "A bob of mass m is replaced with one of mass 4m.",
         "A bob of mass m is replaced with one of mass 4m.",
     ),
-    ("a 5m rope", "a 5 meters rope"),
+    ("a 5m rope", "a 5 meter rope"),
     ("10g of salt", "10 grams of salt"),
-    ("a 58g/L solution", "a 58 grams per liter solution"),
+    ("a 58g/L solution", "a 58 gram per liter solution"),
 ]
 
 

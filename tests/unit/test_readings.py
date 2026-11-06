@@ -258,3 +258,26 @@ def test_a_say_as_guide_after_a_function_name_reads_alone():
         "sine of theta sub 1 equals cosine of theta sub 2",
         "cosine of theta sub 1 equals cosine of theta sub 2",
     ]
+
+
+# --- a quantity used as a modifier -------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("raw", "words"),
+    [
+        # After "a" or "an" the quantity describes the noun, so the unit is singular.
+        ("a 2 kg cart", "a 2 kilogram cart"),
+        ("A 2 kg block at 3 m/s^2.", "A 2 kilogram block at 3 meters per second squared."),
+        ("an 8 cm piece", "an 8 centimeter piece"),
+        ("a 5m rope", "a 5 meter rope"),
+        ("a 58g/L solution", "a 58 gram per liter solution"),
+        ("a 1.5 m long rope", "a 1.5 meter long rope"),
+        # Without the article the count decides, as before.
+        ("2 kg of salt", "2 kilograms of salt"),
+        ("the 2 kg cart", "the 2 kilograms cart"),
+        ("data 2 kg", "data 2 kilograms"),
+    ],
+)
+def test_a_quantity_after_a_or_an_is_singular(raw, words):
+    assert spoken(raw) == words

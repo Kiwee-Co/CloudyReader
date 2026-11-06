@@ -914,7 +914,7 @@ GOLDEN_STEMS = [
     ),
     (
         "A 2 kg block is accelerated at 3 m/s^2 by a single net force.",
-        "A 2 kilograms block is accelerated at 3 meters per second squared by a single net force.",
+        "A 2 kilogram block is accelerated at 3 meters per second squared by a single net force.",
     ),
     (
         "One electron volt, eV, is approximately equal to how many joules?",

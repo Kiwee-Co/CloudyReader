@@ -445,6 +445,10 @@ _OPERATOR_AFTER = re.compile(
 _ATTACHED_LETTER_ALONE = re.compile(r"(?<![\w.^/\u2212-])(?<![\d.]\s)([mg])(?![\w.^/\u2212-])")
 
 
+# "a 2 kg cart": after "a" or "an" the quantity describes a noun, so its unit is singular.
+_ARTICLE_BEFORE = re.compile(r"(?<![\w'-])(?:a|an|A|An|AN)\s$")
+
+
 def _speak_quantity(
     m: re.Match[str], units: Mapping[str, UnitName], alone: frozenset[str] = frozenset()
 ) -> str:
@@ -461,7 +465,8 @@ def _speak_quantity(
     if surface == "pm" and _HOUR_OF_DAY.fullmatch(num):
         return m.group()  # "5 pm" is a time of day
     names = units[surface]
-    singular = (num.replace(",", "") == "1" or sep == "-") and "10^" not in num
+    modifier = _ARTICLE_BEFORE.search(m.string, max(0, m.start() - 4), m.start())
+    singular = (num.replace(",", "") == "1" or sep == "-" or modifier) and "10^" not in num
     return f"{num}{'-' if sep == '-' else ' '}{names.singular if singular else names.plural}"
 
 
