@@ -78,6 +78,7 @@ The status bar shows "Preparing…", then "Playing _n_ s." [Keyboard shortcuts](
 ## Work around the known limits
 
 - The app announces errors only. Warnings and information messages show only in the status bar.
+- To move to buttons, checkboxes, and pop-up menus with Tab, turn on **Keyboard navigation** in **System Settings > Keyboard**.
 - The app has no speed control and no volume control. It plays at the macOS output volume.
 
 ## Related
