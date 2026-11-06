@@ -11,8 +11,6 @@ This page records what each Cloudy Reader release changed, with its requirements
 
 Released November 5, 2026. Version 0.0.1 was the first public release.
 
-<!-- needs-fact: confirm the publication date on the GitHub release page; the changelog dates 0.0.1 2026-11-05 -->
-
 ### Requirements
 
 Version 0.0.1 needs a Mac with Apple silicon and macOS 26.2 or later. See [Check your Mac](/manual/getting-started/#check-your-mac) for disk space and the network.

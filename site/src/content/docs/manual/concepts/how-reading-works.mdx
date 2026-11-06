@@ -41,7 +41,7 @@ The figure shows the spoken script for the sample question in [Get started](/man
   caption="The spoken script spells NaHCO3 as N A H C O three and adds the header and the format."
 />
 
-The script adds the spoken header, such as "Toss-up number two.", and it spells symbols and numbers as words. It never replaces a term with a different term. The only way to replace the words is a [say-as guide](/manual/reference/glossary/#say-as-guide) or a [spell guide](/manual/reference/glossary/#spell-guide) that you write yourself.
+The script adds the spoken header, such as "Toss-up number two.", and it writes formulas, units, and symbols as words. It never replaces a term with a different term. The only way to replace the words is a [say-as guide](/manual/reference/glossary/#say-as-guide) or a [spell guide](/manual/reference/glossary/#spell-guide) that you write yourself.
 
 ## How formulas and symbols are read
 
@@ -99,7 +99,7 @@ See [Pronunciation guides](/manual/reference/pronunciation-guides/) for the synt
 
 The app saves the audio of every reading in the [audio cache](/manual/reference/glossary/#audio-cache). Each file has a key that covers the spoken script, its pauses and pronunciations, the voice, and the version of the voice engine. When the key matches a saved file, the app plays that file and skips speech synthesis.
 
-On the project's test Mac, finding a saved reading took 0.01 seconds. Rendering a reading that was not saved takes longer, and the time depends on the voice engine: see [Voices and voice engines](/manual/concepts/voice-engines/) for measured times. **Repeat** always plays the saved file of the last reading.
+On a Mac with an M2 Ultra chip, finding a saved reading took 0.01 seconds. Rendering a reading that was not saved takes longer, and the time depends on the voice engine: see [Voices and voice engines](/manual/concepts/voice-engines/) for measured times. **Repeat** always plays the saved file of the last reading.
 
 A different voice, a different guide, or a different script gives a different key, so the app renders the reading again. Turning on **Read answer line** adds the answer to the script, so it also gives a different key. The audio cache has no size limit and no cleanup: see [Files, settings, and limits](/manual/reference/files-and-settings/#data-folder).
 

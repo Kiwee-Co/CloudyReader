@@ -24,16 +24,16 @@ Removing the [quarantine flag](/manual/reference/glossary/#quarantine-flag), `co
 Before you approve the app, you can:
 
 - Read the source in the [public repository](https://github.com/Kiwee-Co/CloudyReader), which is licensed under the Apache License 2.0.
-- Compare the SHA-256 of your download with the value on the [release page](https://github.com/Kiwee-Co/CloudyReader/releases/tag/vREL-VERSION) and on [Download Cloudy Reader](/download/).
+- Compare the SHA-256 of your download with the value on [Download Cloudy Reader](/download/#check-the-download).
 - Verify the signature of the installed app.
 - Read what the app sends and stores in [Privacy](/about/privacy/).
 - Build the app yourself with [Build from source](/developer/building/).
 
 ## Check your download
 
-Compare the SHA-256 of your download with the value on the release page and on [Download Cloudy Reader](/download/). That page holds the file name, the size, and the checksum command.
+Compare the SHA-256 of your download with the value on [Download Cloudy Reader](/download/#check-the-download). That page holds the file name, the size, and the checksum command.
 
-A match shows that your copy is the file whose SHA-256 is published. It does not show who built the file.
+A match shows that your copy is the file whose SHA-256 is published there. It does not show who built the file.
 
 Any other result means the file is damaged or changed. Download Cloudy Reader again, or see [The checksum does not match](/manual/troubleshooting/#the-checksum-does-not-match).
 

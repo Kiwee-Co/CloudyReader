@@ -26,9 +26,13 @@ The engines run on your Mac. The table compares them.
 
 Together, the voice files take REL-VOICES-SIZE, and the first launch downloads them. The first Kokoro reading after the app starts also loads the Kokoro model. The status bar shows only "Preparing…" while it loads.
 
-In the project's tests on a Mac with an M2 Ultra chip, peak memory use was about 2.3 GB with only the name-detection model loaded. It was about 2.5 GB after a reading with a Piper voice, and about 3.0 GB after a reading with a Kokoro voice in the same session.
+Measurements on a Mac with an M2 Ultra chip and 192 GB of memory found these peak memory values:
 
-The tests ran the app's code without the window, and the installed app was not measured. These numbers are test results, not requirements, and the project states no minimum.
+- About 2.3 GB in a process that loaded only the name-detection model.
+- About 2.5 GB in a session after a reading with a Piper voice.
+- About 3.0 GB in the same session after a later reading with a Kokoro voice.
+
+The measurements ran the app's code without the window, and they did not include the installed app. The values are not requirements, and the project states no minimum.
 
 ## What grades and quality labels mean
 
@@ -66,7 +70,7 @@ No grade or tier decides which voice is best for you. Try two or three voices wi
 
 - Start voice: the app starts on the first voice in the menu until you choose a voice.
 - Pauses: after the stem and after each choice, a Piper voice pauses closer to the inserted silence than a Kokoro voice does.
-- Speed: after the first reading, a Piper reading took 0.2 to 0.6 seconds to render on the project's test Mac. A Kokoro reading took about 1.6 seconds.
+- Speed: after the first reading, a Piper voice rendered 17 to 44 seconds of audio in 0.2 to 0.6 seconds. A Kokoro voice rendered 32 seconds of audio in about 1.6 seconds. These runs used a Mac with an M2 Ultra chip.
 - Accent: choose a voice labeled `en-US` for an American accent and `en-GB` for a British accent.
 - Variety: choose a rotation mode to hear a different voice for each reading. See [Practice with voice rotation](/manual/tutorials/voice-rotation/).
 
