@@ -118,3 +118,24 @@ def test_the_path_gate_reads_the_pyz_inside_the_executables_pkg(root, tmp_path, 
         assert "Contents/MacOS/Cloudy Reader!PYZ:_sysconfigdata__darwin_darwin: 1 hit" in out
     else:
         assert result.returncode == 0, out
+
+
+@pytest.mark.parametrize("planted", [True, False])
+def test_the_path_gate_reads_a_compressed_entry_of_the_executables_pkg(root, tmp_path, planted):
+    writers = pytest.importorskip("PyInstaller.archive.writers")  # the CI venv has no PyInstaller
+    hook = tmp_path / "pyi_rth_paths.py"  # a run-time hook sits in the PKG itself, not in the PYZ
+    where = "/home/testowner/remi" if planted else "/opt/remi"
+    hook.write_text(f"ROOT = {where!r}\n")
+    bundle = app(root)
+    exe = bundle / "Contents" / "MacOS" / "Cloudy Reader"
+    writers.CArchiveWriter(str(exe), [("pyi_rth_paths", str(hook), True, "s")], "Python")
+    assert where.encode() not in exe.read_bytes()  # compressed: only a decompressing scan sees it
+
+    result = gate(root, bundle)
+
+    out = result.stdout + result.stderr
+    if planted:
+        assert result.returncode == 1
+        assert "Contents/MacOS/Cloudy Reader!PKG:pyi_rth_paths: 1 hit" in out
+    else:
+        assert result.returncode == 0, out
