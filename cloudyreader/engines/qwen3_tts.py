@@ -77,7 +77,7 @@ MIN_CHUNK_CHARS = 24  # a shorter fragment joins its neighbor inside the segment
 TOKENS_PER_S = 12.5  # codec frames per second of audio
 TOKEN_CAP = (64, 2048)
 # Bump when chunking, caps, seeds, speakable, the short-unit ladder or text prep change.
-_RENDER_REVISION = 1
+_RENDER_REVISION = 2
 _ENDINGS = ".!?"
 _CLOSERS = "\"')]”’"
 WINDOW_FAILED = f"{WAITING} (the decoder window check failed)"

@@ -292,6 +292,7 @@ _FRAME_MS = 10
 _GAP_MS = 100  # a pause between two spoken copies; a stop inside a word is shorter
 _QUIET = 0.1  # a gap frame sits at least 20 dB under the speech level
 _FADE_MS = 5
+_LEAD_MS, _TAIL_MS = 50, 80  # kept around the speech: a soft onset, a fading word end
 _SHOWN = 32  # characters of a unit quoted in an error
 
 
@@ -329,6 +330,31 @@ def crop_first_repeat(samples: np.ndarray, rate: int, copies: int = 3) -> np.nda
     return first
 
 
+def _speech_cut(audio: np.ndarray, rate: int) -> np.ndarray:
+    """The take cut to its speech (frames above _QUIET of the speech level) plus _LEAD_MS before
+    and _TAIL_MS after, faded where cut: the model's own silence goes (Qwen3 Ryan pads ~1 s)."""
+    sound = np.nan_to_num(audio)
+    frame = max(1, rate * _FRAME_MS // 1000)
+    count = len(sound) // frame
+    if count == 0:
+        return sound
+    frames = sound[: count * frame].reshape(count, frame).astype(np.float64)
+    rms = np.sqrt(np.mean(np.square(frames), axis=1))
+    loud = np.flatnonzero(rms > _QUIET * float(np.percentile(rms, 90)))
+    if loud.size == 0:
+        return sound[:0]
+    last = len(sound) if loud[-1] == count - 1 else (loud[-1] + 1) * frame
+    start = max(0, loud[0] * frame - rate * _LEAD_MS // 1000)
+    end = min(len(sound), last + rate * _TAIL_MS // 1000)
+    cut = sound[start:end].copy()
+    fade = min(len(cut), rate * _FADE_MS // 1000)
+    if start > 0:
+        cut[:fade] *= np.linspace(0.0, 1.0, fade, dtype=np.float32)
+    if end < len(sound):
+        cut[len(cut) - fade :] *= np.linspace(1.0, 0.0, fade, dtype=np.float32)
+    return cut
+
+
 def _attempt(
     backend: TextBackend,
     text: str,
@@ -339,8 +365,8 @@ def _attempt(
     title: str,
     errors: list[Exception],
 ) -> tuple[np.ndarray, int] | None:
-    """One render: (samples, rate), or None when it raised, gave under 0.1 s, or ran away.
-    EngineUnavailable passes through: another seed cannot help. The text is never logged."""
+    """One render cut to its speech: (samples, rate), or None when it raised, or the cut is under
+    0.1 s or ran away. EngineUnavailable passes through. The text is never logged."""
     try:
         samples, rate = backend.render(text, voice_id, seed=seed, budget_s=max(2.0, 2 * est))
     except EngineUnavailable:
@@ -350,9 +376,13 @@ def _attempt(
         errors.append(exc)
         return None
     audio = np.asarray(samples, dtype=np.float32).reshape(-1)
+    if rate > 0:
+        audio = _speech_cut(audio, rate)  # judged and returned alike
     seconds = len(audio) / rate if rate > 0 else 0.0
     if seconds < 0.1 or seconds >= RUNAWAY * est:
-        log.info("%s: a render attempt gave %.2f s for a %.2f s estimate", title, seconds, est)
+        log.info(
+            "%s: a render attempt gave %.2f s of speech for a %.2f s estimate", title, seconds, est
+        )
         return None
     return audio, rate
 

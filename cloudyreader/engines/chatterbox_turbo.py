@@ -68,7 +68,7 @@ MAX_CHUNK_CHARS = 280  # about 20 s: Turbo drifts past 25 to 30 s of audio
 TOKENS_PER_S = 25  # speech tokens per second of audio; render_text's budget is already 2 x est
 TOKEN_CAP = (100, 800)
 # In the cache key: bump it when chunking, caps, seeds, speakable, the ladder or text prep change.
-_RENDER_REVISION = 1
+_RENDER_REVISION = 2
 _BRACKETS = re.compile(r"[\[\]]")
 BRACKET_WARNING = f"{TITLE}: square brackets were dropped (the model reads them as sound cues)"
 

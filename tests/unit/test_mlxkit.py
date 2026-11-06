@@ -344,6 +344,28 @@ def test_render_text_flags_runaway_at_1_9_times_the_estimate() -> None:
     assert len(backend.calls) == 3
 
 
+def padded(lead_s: float, speech_s: float, tail_s: float) -> np.ndarray:
+    """Tone between digital silences, as a model pads its own audio."""
+    hush = [np.zeros(round(s * SAMPLE_RATE), dtype=np.float32) for s in (lead_s, tail_s)]
+    return np.concatenate([hush[0], tone(speech_s), hush[1]])
+
+
+def test_render_text_cuts_each_take_to_its_speech_and_judges_the_cut() -> None:
+    # Regression: Qwen3-TTS Ryan pads about 0.45 s before and 0.5 s after the speech. A clean
+    # 'Life Science.' (1.12 s said, 2.09 s in all) went over the 1.9 s cut and the unit failed.
+    backend = ScriptedBackend(padded(0.45, 1.12, 0.52))
+    samples, _ = render_text(backend, KEY, VOICE, "Life Science.", title=TITLE)
+    lead, speech, tail = (round(s * SAMPLE_RATE) for s in (0.05, 1.12, 0.08))
+    assert len(backend.calls) == 1
+    assert len(samples) == lead + speech + tail  # cut to the speech: scripted pauses stay exact
+    assert np.all(samples[lead : lead + speech] == TONE) and samples[0] == samples[-1] == 0.0
+    # Speech past the cut still runs away, padded or not, and a render with no speech fails.
+    silent = np.zeros(SAMPLE_RATE, dtype=np.float32)
+    backend = ScriptedBackend(padded(0.45, 1.9, 0.5), silent, repeats())
+    samples, _ = render_text(backend, KEY, VOICE, "Life Science.", title=TITLE)
+    assert len(samples) == round(0.5 * SAMPLE_RATE) and len(backend.calls) == 3
+
+
 def test_render_text_memoizes_units_of_three_seconds_or_less(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
