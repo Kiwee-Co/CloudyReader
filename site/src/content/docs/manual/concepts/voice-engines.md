@@ -1,58 +1,52 @@
 ---
 title: 'Voices and voice engines'
-description: 'What the Piper and Kokoro voice engines are, what grades and quality labels mean, and how to choose a voice for practice.'
+description: 'What the voice engines in Cloudy Reader are, what grades and quality labels mean, and how to choose a voice for practice.'
 sidebar:
   order: 2
 ---
 
-A voice engine is the speech software that makes a set of voices. Cloudy Reader has two engines, Piper and Kokoro, and together they provide 33 voices.
+A voice engine is the speech software that makes a set of voices, such as Piper or Kokoro. [Voices and rotation modes](/manual/reference/voices/) lists every engine and every voice.
 
 ## What a voice engine is
 
 Each voice in the **Voice** menu belongs to one voice engine. The engine turns the spoken script and its exact pronunciations into audio, and the voice sets how that audio sounds.
 
-The menu groups the voices under the headings **Kokoro** and **Piper**. The headings are labels, not choices, and the menu lists Kokoro first.
+The menu groups the voices under one heading for each engine. The headings are labels, not choices.
 
-## How the two engines differ
+## How the engines differ
 
-Both engines run on your Mac. The table compares what Cloudy Reader ships for each engine.
+The engines run on your Mac. The table compares them.
 
-| Aspect                  | Piper                                                            | Kokoro                                                    |
-| ----------------------- | ---------------------------------------------------------------- | --------------------------------------------------------- |
-| Voices in the app       | 5                                                                | 28                                                        |
-| American English voices | 3                                                                | 20                                                        |
-| British English voices  | 2                                                                | 8                                                         |
-| Name in the menu        | A lowercase file name, such as `lessac`                          | A name with a gender, such as `Heart (female)`            |
-| Quality label           | A tier from the voice's own configuration; all five are `medium` | A letter grade from the model's `VOICES.md`, from A to F+ |
-| Files on disk           | 63.2 MB for each voice                                           | 327.1 MB for the model and 0.52 MB for each voice         |
-| First-launch download   | 10 files, 316.0 MB                                               | 30 files, 341.7 MB                                        |
+| Aspect           | Piper                                     | Kokoro                                            |
+| ---------------- | ----------------------------------------- | ------------------------------------------------- |
+| Name in the menu | A lowercase file name, such as `lessac`   | A name with a gender, such as `Heart (female)`    |
+| Quality label    | A tier from the voice's own configuration | A letter grade from the model's `VOICES.md`       |
+| Files on disk    | 63.2 MB for each voice                    | 327.1 MB for the model and 0.52 MB for each voice |
+| Sample rate (Hz) | 22,050 for the supported voices           | 24,000                                            |
 
-The first Kokoro reading after the app starts also loads the Kokoro model. The status bar shows only "Preparing…" while it loads.
+Together, the voice files take REL-VOICES-SIZE, and the first launch downloads them. The first Kokoro reading after the app starts also loads the Kokoro model. The status bar shows only "Preparing…" while it loads.
+
+In the project's tests on a Mac with an M2 Ultra chip, the app used about 2.3 GB of memory after it loaded the name-detection model. It used about 2.5 GB after a reading with a Piper voice, and about 3.0 GB once a Kokoro voice had also read a question. These are test results, not requirements, and the project states no minimum.
 
 ## What grades and quality labels mean
 
-Each Kokoro voice has a letter grade from A to F+. The grades come from the model's `VOICES.md` file. The app shows each grade in the menu and sorts by it, and it does not test or change a grade.
+Each Kokoro voice has a letter grade, and the menu lists the best grade first. The grades come from the model's `VOICES.md` file. The app shows each grade in the menu, and it does not test or change a grade.
 
-A Piper voice shows the quality tier from its own configuration file: `x_low`, `low`, `medium`, or `high`. All five Piper voices in the app are `medium`.
+A Piper voice shows the quality tier from its own configuration file: `x_low`, `low`, `medium`, or `high`. The supported Piper voices are all `medium`.
 
-Inside an engine, the menu lists the best grade or tier first, then voices with the same grade by name. A voice without a grade comes last. The Kokoro list starts with Heart (A), Bella (A-), Emma (B-), and Nicole (B-).
+Inside an engine, the menu lists the best grade or tier first, then voices with the same grade by name. A voice without a grade comes last.
 
 A grade or tier is a label from the voice's source files. It does not tell you which voice is clearest in your room or for your listeners.
 
 ## Accents and genders
 
-The label of each voice shows its language code: `en-US` for American English and `en-GB` for British English. A Kokoro voice id holds the same facts. The first letter `a` means `en-US` and `b` means `en-GB`, and the second letter `f` or `m` means female or male.
+The pronunciation rules are written for English. The label of each voice shows its language code: `en-US` for American English and `en-GB` for British English.
 
-The genders are labels from the voice data. Kokoro names show the label, as in `Heart (female)`, and the menu shows none for a Piper voice. Rotation uses five Piper labels that nobody has checked by ear.
+A Kokoro id such as `af_heart` holds the same facts. The first letter is `a` for `en-US` and `b` for `en-GB`. The second letter is `f` for female and `m` for male.
 
-| Accent and gender label | Piper voices       | Kokoro voices |
-| ----------------------- | ------------------ | ------------- |
-| US female               | 2: `lessac`, `amy` | 11            |
-| US male                 | 1: `ryan`          | 9             |
-| UK female               | 1: `jenny_dioco`   | 4             |
-| UK male                 | 1: `alan`          | 4             |
+The genders are labels from the voice data. Kokoro names show the label, as in `Heart (female)`, and the menu shows none for a Piper voice. Rotation uses the Piper labels, which nobody has checked by ear.
 
-With all 33 voices installed, **US only (random shuffle)** draws from 23 voices, **Men only** from 15, and **Women only** from 18. See [Rotation modes](/manual/reference/voices/#rotation-modes) for the exact rules.
+[Voices and rotation modes](/manual/reference/voices/) lists the accent and gender label of every voice. See [Rotation modes](/manual/reference/voices/#rotation-modes) for how each mode uses the labels.
 
 ## Why pauses differ between voices
 
@@ -68,13 +62,13 @@ To hear the difference, read the same question with one voice from each engine a
 
 No grade or tier decides which voice is best for you. Try two or three voices with the same question and choose by ear. These facts help you narrow the choice:
 
-- Start voice: the app starts on the first installed voice in the menu until you choose a voice. With all 33 voices installed, that voice is Heart (female).
+- Start voice: the app starts on the first voice in the menu until you choose a voice.
 - Pauses: after the stem and after each choice, a Piper voice pauses closer to the inserted silence than a Kokoro voice does.
-- Speed: on the project's test Mac, a Piper reading took 0.2 to 0.6 seconds to render and a Kokoro reading about 1.6 seconds, after the first reading.
+- Speed: after the first reading, a Piper reading took 0.2 to 0.6 seconds to render on the project's test Mac. A Kokoro reading took about 1.6 seconds.
 - Accent: choose a voice labeled `en-US` for an American accent and `en-GB` for a British accent.
 - Variety: choose a rotation mode to hear a different voice for each reading. See [Practice with voice rotation](/manual/tutorials/voice-rotation/).
 
-[Voices and rotation modes](/manual/reference/voices/) lists all 33 voices with their grades.
+[Voices and rotation modes](/manual/reference/voices/) lists every voice with its grade.
 
 ## Related
 
