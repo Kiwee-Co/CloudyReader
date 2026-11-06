@@ -126,6 +126,12 @@ def rgba(hex_color: str, alpha: float = 1.0) -> QColor:
     return color
 
 
+def text_paint(color: QColor) -> dict[str, object]:
+    """A text color as SVG attributes: opacity, not fill-opacity, which sips ignores on text."""
+    alpha = round(color.alphaF(), 3)
+    return {"fill": color.name(), "opacity": alpha if alpha < 1 else None}
+
+
 def rect_attrs(r: QRectF, radius: float = 0) -> str:
     return attrs(x=r.x(), y=r.y(), width=r.width(), height=r.height(), rx=radius or None)
 
@@ -160,6 +166,9 @@ class Svg:
         self.add(f"<circle{attrs(cx=cx, cy=cy, r=r, **kw)}/>")
 
     def text(self, x: float, y: float, value: str, **kw: object) -> None:
+        # Text takes opacity, not fill-opacity: some renderers, sips among them, ignore the latter.
+        if "fill_opacity" in kw:
+            kw["opacity"] = kw.pop("fill_opacity")
         self.add(f"<text{attrs(x=x, y=y, **kw)}>{escape(value)}</text>")
 
     def clip(self, inner: str) -> str:
@@ -371,6 +380,11 @@ class Env:
             self.voices = with_engine_rows(self.voices)
         self.service_class = doc_service_class()
         self._ids = itertools.count(1)
+        # Every figure shows the busy bar where the app does by default, whatever this Mac's
+        # Reduce Motion setting is.
+        from cloudyreader.gui import main_window
+
+        main_window.reduce_motion = lambda: False
 
     def scheme(self, dark: bool) -> Look:
         wanted = Qt.ColorScheme.Dark if dark else Qt.ColorScheme.Light
@@ -435,11 +449,14 @@ class Env:
         self.pump(lambda: bool(played), "a reading plays")
 
     def hold_reading(self, win: Any, service: Any) -> None:
-        """Start a reading that waits in prepare(), so the busy bar shows; window() releases it."""
+        """Start a reading that waits in prepare(); window() releases it. The busy bar shows,
+        unless a download bar does: the window shows one bar at a time."""
+        busy: list[bool] = []
+        win.busy_changed.connect(busy.append)
         service.gate = threading.Event()
         win.question_edit.setPlainText(sample_question())
         win.speak_action.trigger()
-        self.pump(lambda: not win.busy_bar.isHidden(), "busy bar")
+        self.pump(lambda: True in busy, "a reading in preparation")
 
 
 def real_voices(tmp: Path) -> list[Any]:
@@ -510,7 +527,12 @@ def baseline(top: float, height: float, font: QFont) -> float:
 def font_kw(font: QFont) -> dict[str, object]:
     weight = font.weight()
     weight = weight.value if hasattr(weight, "value") else int(weight)
-    return {"font_size": font.pointSizeF(), "font_weight": weight if weight != 400 else None}
+    tabular = font.featureValue(QFont.Tag("tnum")) == 1  # digits of one width, as the app sets
+    return {
+        "font_size": font.pointSizeF(),
+        "font_weight": weight if weight != 400 else None,
+        "style": "font-variant-numeric:tabular-nums" if tabular else None,
+    }
 
 
 def pts(*xy: float) -> str:
@@ -535,9 +557,12 @@ class Canvas:
                 self.widget(child)
 
     def widget(self, w: QWidget) -> None:
-        from cloudyreader.gui.widgets import DisclosureButton, StatusBar
+        from cloudyreader.gui.widgets import Card, DisclosureButton, StatusBar
 
-        if isinstance(w, QPlainTextEdit):
+        if isinstance(w, Card):
+            self.card(w)
+            self.tree(w)  # its text view, frameless: the card is its surface
+        elif isinstance(w, QPlainTextEdit):
             self.field(w)
         elif isinstance(w, QComboBox):
             self.popup(w)
@@ -639,19 +664,37 @@ class Canvas:
         tx, ty = x + size + tokens.INDICATOR_SPACING, baseline(g.top(), g.height(), d.font())
         self.svg.text(tx, ty, d.text(), **font_kw(d.font()), **paint(self.look.label))
 
+    def card(self, c: Any) -> None:
+        """The question card or the script panel: a rounded fill, outlined when it has one."""
+        from cloudyreader.gui import tokens
+
+        r, radius, border = self.geo(c), float(tokens.CARD_RADIUS), c.border
+        if border is None:
+            self.svg.rect(r, radius, **paint(c.fill))
+            return
+        half = tokens.BORDER_WIDTH / 2  # the stroke sits inside the card's edge, as painted
+        inset = r.adjusted(half, half, -half, -half)
+        stroke = {"stroke_width": tokens.BORDER_WIDTH, **paint(border, "stroke")}
+        self.svg.rect(inset, radius - half, **paint(c.fill), **stroke)
+
     def field(self, e: QPlainTextEdit) -> None:
+        from cloudyreader.gui.widgets import Card
+
         look, svg, g = self.look, self.svg, self.geo(e)
-        frame = g.adjusted(0.5, 0.5, -0.5, -0.5)
-        svg.rect(frame, stroke_width=1, **paint(look.base), **paint(look.field_edge, "stroke"))
-        top_edge = f"M{pts(g.left() + 1, g.top() + 0.5)}H{num(g.right() - 1)}"
-        svg.path(top_edge, stroke_width=1, **paint(look.field_top, "stroke"))
+        if not isinstance(e.parentWidget(), Card):  # a plain field draws its own sunken frame
+            frame = g.adjusted(0.5, 0.5, -0.5, -0.5)
+            svg.rect(frame, stroke_width=1, **paint(look.base), **paint(look.field_edge, "stroke"))
+            top_edge = f"M{pts(g.left() + 1, g.top() + 0.5)}H{num(g.right() - 1)}"
+            svg.path(top_edge, stroke_width=1, **paint(look.field_top, "stroke"))
         view = self.geo(e.viewport())
         clip = svg.clip(f"<rect{rect_attrs(view)}/>")
         doc, lines = e.document(), []
+        # The window gives each view its colors: the text, or the placeholder while it is empty.
+        role = QPalette.ColorRole.PlaceholderText if doc.isEmpty() else QPalette.ColorRole.Text
         if doc.isEmpty():
             r = e.cursorRect(QTextCursor(doc))
             y = view.top() + r.top() + QFontMetricsF(e.font()).ascent()
-            where = attrs(x=view.left() + r.left(), y=y, **paint(look.placeholder))
+            where = attrs(x=view.left() + r.left(), y=y)
             lines.append(f"<text{where}>{escape(e.placeholderText())}</text>")
         block = doc.firstBlock()
         while block.isValid() and not doc.isEmpty():
@@ -668,7 +711,8 @@ class Canvas:
                 where = attrs(x=view.left() + r.left(), y=view.top() + r.top() + line.ascent())
                 lines.append(f"<text{where}>{escape(chunk)}</text>")
             block = block.next()
-        group = attrs(clip_path=f"url(#{clip})", **font_kw(e.font()), **paint(look.label))
+        ink = text_paint(e.palette().color(role))
+        group = attrs(clip_path=f"url(#{clip})", **font_kw(e.font()), **ink)
         svg.add(f"<g{group}>" + "".join(lines) + "</g>")
 
     def label(self, label: QLabel) -> None:
@@ -681,7 +725,14 @@ class Canvas:
                 box.moveCenter(r.center())
                 self.icon_painter(box)
             return
-        if label.text():
+        from cloudyreader.gui.widgets import ElidedLabel
+
+        if isinstance(label, ElidedLabel):  # one line, cut at its end when short of room
+            text = label.fontMetrics().elidedText(
+                label.text(), Qt.TextElideMode.ElideRight, label.contentsRect().width()
+            )
+            self.paragraph(text, label.font(), r, label.alignment(), False)
+        elif label.text():
             self.paragraph(label.text(), label.font(), r, label.alignment(), label.wordWrap())
 
     def paragraph(self, text: str, font: QFont, r: QRectF, align: Any, wrap: bool) -> None:
@@ -786,25 +837,50 @@ def draw_content(
 class MenuItem:
     text: str
     enabled: bool
+    header: QFont | None = None  # a section header's own font; None for a choice
+    ink: QColor | None = None  # a section header's own color
 
 
 def combo_items(combo: QComboBox) -> list[MenuItem]:
-    model = combo.model()
-    enabled = Qt.ItemFlag.ItemIsEnabled
+    """A popup's rows: choices, and section headers in the font and color their rows carry."""
+    model, items = combo.model(), []
+    for i in range(combo.count()):
+        index = model.index(i, combo.modelColumn())
+        flags = model.flags(index)
+        font = index.data(Qt.ItemDataRole.FontRole)
+        brush = index.data(Qt.ItemDataRole.ForegroundRole)
+        header = flags == Qt.ItemFlag.NoItemFlags and isinstance(font, QFont)
+        ink = brush.color() if header and brush is not None else None
+        enabled = bool(flags & Qt.ItemFlag.ItemIsEnabled)
+        items.append(MenuItem(combo.itemText(i), enabled, font if header else None, ink))
+    return items
+
+
+def section_gap(items: Sequence[MenuItem], i: int) -> float:
+    """The space above a section header, as the app's menu leaves it: none atop the menu."""
+    from cloudyreader.gui import tokens
+
+    return tokens.SECTION_HEADER_GAP if items[i].header is not None and i > 0 else 0.0
+
+
+def row_heights(items: Sequence[MenuItem], font: QFont) -> list[float]:
+    """A choice is MENU_ROW high; a section header is as much lower as its font, plus its gap."""
+    body = QFontMetricsF(font).height()
     return [
-        MenuItem(combo.itemText(i), bool(model.flags(model.index(i, 0)) & enabled))
-        for i in range(combo.count())
+        MENU_ROW
+        if item.header is None
+        else MENU_ROW * QFontMetricsF(item.header).height() / body + section_gap(items, i)
+        for i, item in enumerate(items)
     ]
 
 
 def menu_rect(button: QRectF, items: Sequence[MenuItem], current: int, font: QFont) -> QRectF:
     """Where macOS opens a popup button's menu: the current item over the button."""
-    metrics = QFontMetricsF(font)
-    width = max(metrics.horizontalAdvance(item.text) for item in items) + MENU_TEXT + MENU_TAIL
-    width = max(width, button.width() + MENU_TEXT - 9)
-    top = button.top() - MENU_PAD - current * MENU_ROW - (MENU_ROW - button.height()) / 2
-    height = 2 * MENU_PAD + MENU_ROW * len(items)
-    return QRectF(button.left() + 9 - MENU_TEXT, top, width, height)
+    widths = [QFontMetricsF(item.header or font).horizontalAdvance(item.text) for item in items]
+    width = max(max(widths) + MENU_TEXT + MENU_TAIL, button.width() + MENU_TEXT - 9)
+    heights = row_heights(items, font)
+    top = button.top() - MENU_PAD - sum(heights[:current]) - (MENU_ROW - button.height()) / 2
+    return QRectF(button.left() + 9 - MENU_TEXT, top, width, 2 * MENU_PAD + sum(heights))
 
 
 def draw_menu(
@@ -819,7 +895,8 @@ def draw_menu(
     """A popup menu over the content; marks = (checked item, item under the pointer).
 
     A menu taller than the content stops at its edge with a scroll arrow, as macOS does at a
-    screen edge. Returns the indexes of the items in view.
+    screen edge. Section headers are drawn as the app draws them: their own font and color, a
+    gap above, never lit. Returns the indexes of the items in view.
     """
     current, hover = marks
     top, bottom = max(r.top(), bounds.top() + 4), min(r.bottom(), bounds.bottom() - 4)
@@ -830,12 +907,18 @@ def draw_menu(
     svg.rect(body, MENU_RADIUS, stroke_width=0.5, **paint(look.menu), **edge)
     first = body.top() + (MENU_ROW if top > r.top() else MENU_PAD) - 0.01
     last = body.bottom() - (MENU_ROW if bottom < r.bottom() else MENU_PAD) + 0.01
-    shown = []
-    for i, item in enumerate(items):
-        row = QRectF(r.left(), r.top() + MENU_PAD + i * MENU_ROW, r.width(), MENU_ROW)
+    shown, y = [], r.top() + MENU_PAD
+    for i, (item, height) in enumerate(zip(items, row_heights(items, font), strict=True)):
+        row, y = QRectF(r.left(), y, r.width(), height), y + height
         if row.top() < first or row.bottom() > last:
             continue
         shown.append(i)
+        if item.header is not None:
+            text = row.adjusted(0, section_gap(items, i), 0, 0)  # the text sits below its gap
+            ink = item.ink or look.label
+            base = baseline(text.top(), text.height(), item.header)
+            svg.text(row.left() + MENU_TEXT, base, item.text, **font_kw(item.header), **paint(ink))
+            continue
         lit = i == hover and item.enabled
         if lit:
             svg.rect(row.adjusted(5, 0, -5, 0), 5, **paint(look.accent))
@@ -843,15 +926,15 @@ def draw_menu(
         if i == current:
             mark = f"M{pts(row.left() + 7.5, row.center().y())}l3 3l6 -7"
             svg.path(mark, fill="none", stroke_width=1.6, **paint(ink, "stroke"), **ROUND)
-        y = baseline(row.top(), row.height(), font)
-        svg.text(row.left() + MENU_TEXT, y, item.text, **font_kw(font), **paint(ink))
+        base = baseline(row.top(), row.height(), font)
+        svg.text(row.left() + MENU_TEXT, base, item.text, **font_kw(font), **paint(ink))
     cx = body.center().x()
     if top > r.top():
-        y = body.top() + MENU_ROW / 2
-        svg.path(f"M{pts(cx - 5, y + 2.5)}l5 -5l5 5z", **paint(look.label))
+        arrow_y = body.top() + MENU_ROW / 2
+        svg.path(f"M{pts(cx - 5, arrow_y + 2.5)}l5 -5l5 5z", **paint(look.label))
     if bottom < r.bottom():
-        y = body.bottom() - MENU_ROW / 2
-        svg.path(f"M{pts(cx - 5, y - 2.5)}l5 5l5 -5z", **paint(look.label))
+        arrow_y = body.bottom() - MENU_ROW / 2
+        svg.path(f"M{pts(cx - 5, arrow_y - 2.5)}l5 5l5 -5z", **paint(look.label))
     return shown
 
 
@@ -996,7 +1079,7 @@ def fig_menu(env: Env, look: Look, which: str, *, top: bool = False) -> Svg:
         bounds = draw_content(svg, look, win)
         shown = draw_menu(svg, look, menu, items, (current, hover), combo.font(), bounds)
         # A voice row that is dimmed (not installed, or not downloaded yet) must stay in view.
-        dimmed = [i for i in shown if not items[i].enabled and "(" in items[i].text]
+        dimmed = [i for i in shown if not items[i].enabled and items[i].header is None]
         if which == "voices" and not top and not dimmed:
             raise RuntimeError(f"{MISSING} is out of view: pick a voice higher in the menu")
     return svg
@@ -1068,7 +1151,7 @@ def fig_download(env: Env, look: Look) -> Svg:
     svg.width, svg.height = width, y - GAP
     svg.desc = (
         f"The status bar in {appearance(look.dark)} while voices download: Downloading voices 42% "
-        "with its progress bar; then the same with Preparing and the busy bar beside it."
+        "with its progress bar; then the same with Preparing in the message."
     )
     return svg
 
@@ -1210,7 +1293,7 @@ def fig_window_tour(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
         svg = Svg(win.width(), win.height(), "The parts of the Cloudy Reader window", desc)
         draw_content(svg, look, win)
         c = Canvas(svg, look, win, 0, 0)
-        question = c.geo(win.question_edit)
+        question = c.geo(win.question_card)
         voice = c.popup_bezel(win.voice_picker.combo)
         rotation = c.popup_bezel(win.rotation_combo)
         checks = (win.read_answer_check, win.online_lookups_check)
@@ -1254,14 +1337,15 @@ def fig_download_progress(env: Env, look: Look) -> Svg:
 
 
 def fig_status_busy(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
-    """A reading prepared during the download: the four parts of a busy status bar."""
+    """A reading prepared during the download: the three parts of a busy status bar. The window
+    shows one bar at a time, so the busy bar stays hidden beside the download bar."""
     with env.window(**download_knobs(download_event())) as (win, service):
         env.pump(lambda: not win.prefetch_label.isHidden(), "download progress")
         env.hold_reading(win, service)
         desc = (
             f"The status bar in {appearance(look.dark)} while a reading is prepared during the "
-            "voice download: Preparing… on the left, Downloading voices… 42% with its progress "
-            "bar, and the busy bar on the right."
+            "voice download: Preparing… on the left, then Downloading voices… 42% with its "
+            "progress bar on the right."
         )
         svg = fig_strip(look, win, "A busy status bar", desc, band=CALLOUT_BAND)
         bar = win.statusBar()
@@ -1274,7 +1358,6 @@ def fig_status_busy(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
             marker(1, "message", svg, message.left() + 12, y),
             marker(2, "download label", svg, c.geo(win.prefetch_label).center().x(), y),
             marker(3, "download progress bar", svg, c.geo(win.prefetch_bar).center().x(), y),
-            marker(4, "busy bar", svg, c.geo(win.busy_bar).center().x(), y),
         ]
     return svg, markers
 
@@ -1453,7 +1536,7 @@ def fig_script_formula(env: Env, look: Look) -> Svg:
         svg = Svg(win.width(), win.height(), "The spoken script", desc)
         draw_content(svg, look, win)
         c = Canvas(svg, look, win, 0, 0)
-        area = c.geo(win.script_toggle).united(c.geo(win.script_view)).adjusted(-12, -10, 12, 12)
+        area = c.geo(win.script_toggle).united(c.geo(win.script_panel)).adjusted(-12, -10, 12, 12)
         crop(svg, area)
     return svg
 

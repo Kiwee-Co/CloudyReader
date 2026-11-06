@@ -5,7 +5,7 @@ import threading
 import pytest
 from PySide6.QtCore import QCoreApplication, QEvent, QSettings, Qt
 from PySide6.QtGui import QColor, QGuiApplication, QKeySequence, QPalette
-from PySide6.QtWidgets import QApplication, QFormLayout, QLineEdit, QMessageBox
+from PySide6.QtWidgets import QApplication, QFormLayout, QLabel, QLineEdit, QMessageBox
 
 from cloudyreader.gui import tokens
 from cloudyreader.gui.fake_service import FakeReaderService
@@ -397,6 +397,22 @@ def test_a_broken_saved_geometry_keeps_the_default_size(make_window, settings):
     window = make_window()
 
     assert (window.width(), window.height()) == tokens.WINDOW_DEFAULT_SIZE
+
+
+@pytest.mark.parametrize("native", [False, True], ids=["default", "macOS"])
+def test_the_about_description_stays_on_one_line(request, qtbot, make_window, native):
+    if native:
+        request.getfixturevalue("mac_style")
+    window = make_window()
+    window.about_action.trigger()
+    box = window.findChild(QMessageBox)
+    qtbot.waitUntil(box.isVisible)
+    description = "Reads National Science Bowl questions aloud."
+    label = next(w for w in box.findChildren(QLabel) if description in w.text())
+
+    assert label.minimumWidth() == tokens.ABOUT_TEXT_MIN_WIDTH
+    assert label.width() >= label.fontMetrics().horizontalAdvance(description)
+    box.close()
 
 
 def test_about_box_is_a_single_panel_like_the_system_one(window):

@@ -993,6 +993,9 @@ class MainWindow(QMainWindow):
         box.setText(APP_NAME)
         about = f"Version {app_version()}\nReads National Science Bowl questions aloud."
         box.setInformativeText(about)
+        for label in box.findChildren(QLabel):  # wide enough that the description never wraps
+            if label.text() == about:
+                label.setMinimumWidth(tokens.ABOUT_TEXT_MIN_WIDTH)
         icon = self.windowIcon()
         if not icon.isNull():
             box.setIconPixmap(icon.pixmap(tokens.ABOUT_ICON_SIZE, tokens.ABOUT_ICON_SIZE))
