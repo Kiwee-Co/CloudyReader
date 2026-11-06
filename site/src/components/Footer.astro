@@ -1,6 +1,6 @@
 ---
-// Starlight's footer (edit link, previous and next), then the manual's own: the trust and help
-// links, the app version the manual describes, and the independence note.
+// Starlight's footer (edit link, previous and next; none of it prints), then the manual's own:
+// the trust and help links, the app version the manual describes, and the independence note.
 import Default from '@astrojs/starlight/components/Footer.astro';
 
 // Change the version only after the manual is checked against that release.
@@ -13,7 +13,7 @@ const links = [
 ];
 ---
 
-<Default><slot /></Default>
+<div class="print:hidden"><Default><slot /></Default></div>
 <div class="cr-site-footer">
 	<nav aria-label="About and help">
 		<ul>

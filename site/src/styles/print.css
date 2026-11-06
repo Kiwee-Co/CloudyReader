@@ -11,8 +11,8 @@
 	:root,
 	:root[data-theme] {
 		--cr-print-cheatsheet-text: 10pt;
-		--cr-print-cheatsheet-h1: 18pt;
-		--cr-print-cheatsheet-h2: 12.5pt;
+		--cr-print-cheatsheet-h1: 16pt;
+		--cr-print-cheatsheet-h2: 12pt;
 		/* custom.css sets the accent outside Starlight's layers, so it would beat Starlight's
 		   print colors: map print to the light theme's accent. */
 		--sl-color-accent-low: var(--cr-lavender-pale);
@@ -56,40 +56,66 @@
 	}
 
 	/* The footer prints the manual's version and the independence note, not its links. */
+	.cr-site-footer {
+		margin-top: 1.5rem;
+		padding-top: 0.5rem;
+	}
 	.cr-site-footer nav {
 		display: none;
 	}
 
-	/* Cheat sheets: smaller text and tighter spacing, so each prints on one page. */
+	/* Cheat sheets: a smaller header, smaller text, and tighter spacing, so each prints on one
+	   page. */
+	body:has(.cr-cheatsheet) {
+		--sl-nav-height: 2.25rem;
+		--sl-nav-pad-y: 0.25rem;
+	}
+	body:has(.cr-cheatsheet) .content-panel {
+		padding-block: 0.5rem;
+	}
 	body:has(.cr-cheatsheet) h1 {
 		font-size: var(--cr-print-cheatsheet-h1);
 	}
-	.sl-markdown-content .cr-cheatsheet :is(p, li, th, td) {
-		font-size: var(--cr-print-cheatsheet-text);
-		line-height: 1.35;
+	body:has(.cr-cheatsheet) .cr-site-footer {
+		margin-top: 0.75rem;
+		font-size: 8pt;
 	}
-	.sl-markdown-content .cr-cheatsheet h2 {
+	body:has(.cr-cheatsheet) .sl-markdown-content {
+		--sl-content-gap-y: 0.4rem;
+	}
+	body:has(.cr-cheatsheet) .sl-markdown-content :is(p, li, th, td) {
+		font-size: var(--cr-print-cheatsheet-text);
+		line-height: 1.3;
+	}
+	body:has(.cr-cheatsheet) .sl-markdown-content :is(.sl-heading-wrapper, h2) {
 		font-size: var(--cr-print-cheatsheet-h2);
 	}
-	.sl-markdown-content .cr-cheatsheet > * + * {
-		margin-top: 0.5rem;
+	body:has(.cr-cheatsheet)
+		.sl-markdown-content
+		:not(h1, h2, h3, h4, h5, h6, .sl-heading-wrapper)
+		+ .sl-heading-wrapper {
+		margin-top: 0.9rem;
 	}
-	.sl-markdown-content .cr-cheatsheet > .sl-heading-wrapper:not(:first-child) {
-		margin-top: 1rem;
+	body:has(.cr-cheatsheet) .sl-markdown-content :is(th, td) {
+		padding-block: 0.15rem;
 	}
-	.sl-markdown-content .cr-cheatsheet :is(th, td) {
-		padding-block: 0.2rem;
+	/* Starlight breaks table text anywhere in print, which squeezes a column of code to a few
+	   letters. Break only words that do not fit. */
+	body:has(.cr-cheatsheet) .sl-markdown-content :is(th, td, th *, td *) {
+		overflow-wrap: break-word;
 	}
 
-	/* Two columns (P20), with each table whole in one column. */
-	.cr-cheatsheet--2col {
-		column-count: 2;
-		column-gap: 1.5rem;
+	/* Two columns. WebKit, the engine of Safari, ignores CSS columns in print, so the layout is a
+	   grid of the sections that the page wraps in <div>s, two to a row. A page without section
+	   <div>s stays in one column. */
+	.sl-markdown-content .cr-cheatsheet--2col:has(> div:not(.sl-heading-wrapper)) {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.9rem 1.5rem;
+		align-items: start;
 	}
-	.cr-cheatsheet--2col > :first-child {
+	.sl-markdown-content .cr-cheatsheet--2col > div:not(.sl-heading-wrapper) {
 		margin-top: 0;
-	}
-	.cr-cheatsheet--2col p:has(+ table) {
-		break-after: avoid;
+		break-inside: avoid;
 	}
 }
