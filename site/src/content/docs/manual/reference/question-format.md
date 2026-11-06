@@ -53,7 +53,7 @@ The app speaks the parts in the order of this table. It skips a part that the pa
 | Choice text   | The text of the choice.                                                                                                                | 400                                     |
 | Answer line   | `Answer.` and the answer text, only when **Read answer line** is on.                                                                   | 0                                       |
 
-With **Read answer line** on, the pause before `Answer.` is 5000 milliseconds. It replaces the pause after the last part. Between two questions the pause is 1500 milliseconds, and it replaces the last pause of the question before.
+With **Read answer line** on, the pause before `Answer.` is 5 seconds. It replaces the pause after the last part. Between two questions the pause is 1.5 seconds, and it replaces the last pause of the question before.
 
 ### Example with one question
 
@@ -86,7 +86,7 @@ With **Read answer line** off, the app speaks these segments, each followed by i
 | Z.                                                                                 | 300              |
 | Nitrogen                                                                           | 400              |
 
-With **Read answer line** on, the pause after "Nitrogen" is 5000 milliseconds, and the script ends with "Answer. Y. Carbon Dioxide."
+With **Read answer line** on, the pause after "Nitrogen" is 5 seconds, and the script ends with "Answer. Y. Carbon Dioxide."
 
 ### Voice padding
 
@@ -106,7 +106,7 @@ The app speaks the answer line only when **Read answer line** is on. It then spe
 
 ## Several questions in one paste
 
-A paste can hold one question or a whole round. The app reads the questions in the order you pasted them, with 1500 milliseconds between them.
+A paste can hold one question or a whole round. The app reads the questions in the order you pasted them, with 1.5 seconds between them.
 
 The app starts the next question at each header. It also starts one at a numbered line that carries a format label. A numbered line can start the next question after a question that already has its choices or its answer line.
 
@@ -122,13 +122,13 @@ BONUS
 ANSWER: 9
 ```
 
-With **Read answer line** off, the spoken script is the text below. The pause after the toss-up stem is 1500 milliseconds.
+With **Read answer line** off, the spoken script is the text below. The pause after the toss-up stem is 1.5 seconds.
 
 ```text
 Toss-up number two. Physics. Short answer. A cart moves 90 meters in 6 seconds at a constant speed. What is its speed in meters per second? Bonus number two. Physics. Short answer. What is the kinetic energy, in joules, of a 2 kilograms cart that moves at 3 meters per second?
 ```
 
-With **Read answer line** on, the script adds `Answer. 15.` and `Answer. 9.`. Each follows a pause of 5000 milliseconds after its stem, and 1500 milliseconds follows `Answer. 15.`.
+With **Read answer line** on, the script adds `Answer. 15.` and `Answer. 9.`. Each follows a pause of 5 seconds after its stem, and 1.5 seconds follows `Answer. 15.`.
 
 ## Limits
 
