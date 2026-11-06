@@ -241,3 +241,14 @@ def test_actionlint_prints_each_finding_as_an_annotation() -> None:
 def test_no_inline_zizmor_ignore_hides_a_finding() -> None:
     # The gate is the severity threshold; an ignore comment would silence Medium and High too.
     assert "zizmor: ignore" not in CI.read_text(encoding="utf-8")
+
+
+def test_the_summarize_step_also_prints_failure_annotations_to_stdout() -> None:
+    step = next(s for s in steps("test") if s.get("name") == "Summarize the run")
+    run = step["run"]
+    assert step["if"] == "${{ !cancelled() }}"
+    assert run.count("scripts/ci_summary.py") == 2
+    assert run.count('>> "$GITHUB_STEP_SUMMARY"') == 1, "only the Markdown goes to the summary"
+    assert run.count("--annotate") == 1
+    annotate = next(line for line in run.splitlines() if "--annotate" in line)
+    assert ">>" not in annotate and ">" not in annotate.replace("-->", ""), "stdout only"

@@ -241,6 +241,9 @@ jobs:
           REPORT_DIR="$RUNNER_TEMP/reports"
           python3 -I scripts/ci_summary.py --junit "$REPORT_DIR/junit.xml" \
             --coverage "$REPORT_DIR/coverage.xml" >> "$GITHUB_STEP_SUMMARY"
+          # The check-run annotations are served without a login, so a failure names its tests.
+          python3 -I scripts/ci_summary.py --junit "$REPORT_DIR/junit.xml" \
+            --coverage "$REPORT_DIR/coverage.xml" --annotate
 
       - name: Upload the reports
         if: ${{ !cancelled() }}

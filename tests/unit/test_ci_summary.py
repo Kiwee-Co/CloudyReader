@@ -9,6 +9,7 @@ import importlib.util
 import subprocess
 import sys
 from pathlib import Path
+from xml.sax.saxutils import escape, quoteattr
 
 import pytest
 
@@ -220,3 +221,275 @@ def test_reports_with_a_dtd_are_refused(summary, tmp_path: Path) -> None:
     xml = '<?xml version="1.0"?><!DOCTYPE x [<!ENTITY a "b">]><testsuites/>'
     assert summary.read_junit(write(tmp_path, "d.xml", xml)) is None
     assert summary.read_coverage(write(tmp_path, "e.xml", xml)) is None
+
+
+# --- annotations: which tests failed, in a place a reader can fetch without logs ---------------
+
+
+def failing(
+    name: str,
+    *,
+    cls: str = "tests.unit.test_x",
+    kind: str = "failure",
+    message: str = "assert 1 == 2",
+    text: str = "",
+) -> str:
+    return (
+        f'<testcase classname={quoteattr(cls)} name={quoteattr(name)} time="0.01">'
+        f"<{kind} message={quoteattr(message)}>{escape(text)}</{kind}></testcase>"
+    )
+
+
+def report(*cases: str, tests: int | None = None) -> str:
+    count = len(cases) if tests is None else tests
+    return junit(suite(count, failures=len(cases)) + "".join(cases) + "</testsuite>")
+
+
+def annotate(summary, tmp_path: Path, junit_xml: str | None, *, cov=None, floor=None) -> list[str]:
+    for rel in ("tests/unit/test_x.py", "tests/unit/test_c.py", "cloudyreader/mod.py"):
+        (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / rel).write_text("x\n", encoding="utf-8")
+    junit_path = (
+        write(tmp_path, "junit.xml", junit_xml) if junit_xml is not None else tmp_path / "no.xml"
+    )
+    cov_path = write(tmp_path, "coverage.xml", cov) if cov is not None else tmp_path / "no-cov.xml"
+    return summary.annotations(junit_path, cov_path, floor=floor, root=tmp_path)
+
+
+def test_a_failed_test_gets_its_id_the_crash_line_and_the_first_line_of_the_message(
+    summary, tmp_path: Path
+) -> None:
+    body = failing(
+        "test_a",
+        message="assert 1 == 2\n + where 1 = f()",
+        text=(
+            "def test_a():\n>   assert 1 == 2\nE   assert 1 == 2\n\n"
+            "tests/unit/test_x.py:5: AssertionError"
+        ),
+    )
+
+    assert annotate(summary, tmp_path, report(body)) == [
+        "::error title=test failed,file=tests/unit/test_x.py,line=5"
+        "::tests.unit.test_x.test_a: assert 1 == 2"
+    ]
+
+
+def test_an_errored_test_counts_like_a_failed_one(summary, tmp_path: Path) -> None:
+    body = failing("test_s", kind="error", message='failed on setup with "RuntimeError: x"')
+
+    [line] = annotate(summary, tmp_path, report(body))
+
+    assert line.endswith('::tests.unit.test_x.test_s: failed on setup with "RuntimeError: x"')
+
+
+def test_without_a_crash_line_the_test_module_comes_from_the_class_name(
+    summary, tmp_path: Path
+) -> None:
+    body = failing("test_c", cls="tests.unit.test_x.TestThing", message="boom")
+
+    assert annotate(summary, tmp_path, report(body)) == [
+        "::error title=test failed,file=tests/unit/test_x.py"
+        "::tests.unit.test_x.TestThing.test_c: boom"
+    ]
+
+
+def test_a_collection_error_names_its_module_from_the_name(summary, tmp_path: Path) -> None:
+    body = failing("tests.unit.test_c", cls="", kind="error", message="collection failure")
+
+    assert annotate(summary, tmp_path, report(body)) == [
+        "::error title=test failed,file=tests/unit/test_c.py::tests.unit.test_c: collection failure"
+    ]
+
+
+def test_the_last_frame_inside_the_repo_wins_and_outside_frames_are_skipped(
+    summary, tmp_path: Path
+) -> None:
+    text = (
+        "tests/unit/test_x.py:5: in test_a\n"
+        "cloudyreader/mod.py:30: in f\n"
+        ".venv/lib/python3.12/site-packages/lib.py:99: in g\n"
+        "/elsewhere/other.py:7: ValueError\n"
+    )
+
+    [line] = annotate(summary, tmp_path, report(failing("test_a", text=text)))
+
+    assert line.startswith("::error title=test failed,file=cloudyreader/mod.py,line=30::")
+
+
+def test_an_absolute_path_inside_the_repo_is_made_relative(summary, tmp_path: Path) -> None:
+    text = f"{tmp_path}/tests/unit/test_x.py:9: AssertionError"
+
+    [line] = annotate(summary, tmp_path, report(failing("test_a", text=text)))
+
+    assert line.startswith("::error title=test failed,file=tests/unit/test_x.py,line=9::")
+
+
+def test_with_no_known_file_the_annotation_has_no_file_or_line(summary, tmp_path: Path) -> None:
+    body = failing("test_z", cls="unknown.mod", message="boom")
+
+    assert annotate(summary, tmp_path, report(body)) == [
+        "::error title=test failed::unknown.mod.test_z: boom"
+    ]
+
+
+@pytest.mark.parametrize(("count", "extra"), [(10, 0), (11, 1), (25, 15)])
+def test_at_most_ten_errors_then_one_notice_with_the_rest(
+    summary, tmp_path: Path, count: int, extra: int
+) -> None:
+    cases = [failing(f"test_{i}") for i in range(count)]
+
+    lines = annotate(summary, tmp_path, report(*cases))
+
+    assert sum(line.startswith("::error title=test failed") for line in lines) == min(count, 10)
+    notices = [line for line in lines if line.startswith("::notice")]
+    if extra:
+        assert len(notices) == 1
+        assert notices[0].startswith("::notice title=more failed tests::")
+        assert f"{extra} more failed test" in notices[0]
+    else:
+        assert notices == []
+
+
+def test_one_more_failure_is_singular(summary, tmp_path: Path) -> None:
+    lines = annotate(summary, tmp_path, report(*[failing(f"test_{i}") for i in range(11)]))
+
+    assert "1 more failed test;" in lines[-1]
+
+
+def test_escaping_keeps_repo_text_from_forming_a_second_command(summary, tmp_path: Path) -> None:
+    sneaky = failing("test_a\r\n::error::injected", message="100% sure\n::error::second")
+
+    lines = annotate(summary, tmp_path, report(sneaky))
+
+    assert len(lines) == 1
+    assert "\n" not in lines[0] and "\r" not in lines[0]
+    assert "test_a%0D%0A::error::injected: 100%25 sure" in lines[0]
+
+
+def test_property_values_escape_colon_comma_percent_and_line_breaks(summary) -> None:
+    assert summary.escape_property("a:b,c%\r\n") == "a%3Ab%2Cc%25%0D%0A"
+    assert summary.escape_data("a:b,c%\r\n") == "a:b,c%25%0D%0A"
+
+
+def test_a_long_first_line_is_cut_to_300_characters(summary, tmp_path: Path) -> None:
+    [line] = annotate(summary, tmp_path, report(failing("test_a", message="x" * 500)))
+
+    message = line.split("::", 2)[2].split(": ", 1)[1]
+    assert len(message) == 300 and message.endswith("...")
+
+
+@pytest.mark.parametrize("xml", [None, "", report(tests=0)], ids=["missing", "empty", "no tests"])
+def test_a_missing_or_empty_report_is_one_error(summary, tmp_path: Path, xml) -> None:
+    lines = annotate(summary, tmp_path, xml)
+
+    assert len(lines) == 1
+    assert lines[0].startswith("::error title=no test report::")
+
+
+def test_a_clean_report_prints_nothing(summary, tmp_path: Path) -> None:
+    clean = junit(suite(3) + case("a") + "</testsuite>")
+    ok = coverage((100, 90), ("a.py", 100, 90))
+
+    assert annotate(summary, tmp_path, clean, cov=ok, floor=75.0) == []
+
+
+def test_coverage_under_the_floor_is_one_error_and_at_the_floor_is_none(summary, tmp_path) -> None:
+    clean = junit(suite(3) + case("a") + "</testsuite>")
+
+    under = annotate(summary, tmp_path, clean, cov=coverage((100, 70)), floor=75.0)
+    at = annotate(summary, tmp_path, clean, cov=coverage((100, 75)), floor=75.0)
+
+    # GitHub reads %25 as a percent sign, so the message carries it escaped.
+    assert under == [
+        "::error title=coverage::coverage 70.00%25 is below the floor of 75%25 (70 of 100 lines)"
+    ]
+    assert at == []
+
+
+def test_no_floor_or_no_coverage_report_means_no_coverage_annotation(summary, tmp_path) -> None:
+    clean = junit(suite(3) + case("a") + "</testsuite>")
+
+    assert annotate(summary, tmp_path, clean, cov=coverage((100, 10)), floor=None) == []
+    assert annotate(summary, tmp_path, clean, cov=None, floor=75.0) == []
+
+
+def test_the_default_floor_is_the_makefile_value_and_the_environment_overrides_it(
+    summary, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    makefile = tmp_path / "Makefile"
+    makefile.write_text("A ?= 1\nCOV_MIN ?= 80\nB ?= 2\n", encoding="utf-8")
+    monkeypatch.delenv("COV_MIN", raising=False)
+
+    assert summary.default_floor(makefile) == 80.0
+    monkeypatch.setenv("COV_MIN", "90")
+    assert summary.default_floor(makefile) == 90.0
+    monkeypatch.setenv("COV_MIN", "not a number")
+    assert summary.default_floor(makefile) == 80.0
+    monkeypatch.delenv("COV_MIN")
+    assert summary.default_floor(tmp_path / "absent") is None
+    makefile.write_text("nothing here\n", encoding="utf-8")
+    assert summary.default_floor(makefile) is None
+
+
+def test_the_repo_makefile_has_a_floor_the_script_can_read(summary, monkeypatch) -> None:
+    monkeypatch.delenv("COV_MIN", raising=False)
+
+    assert 1 <= summary.default_floor(SCRIPT.parent.parent / "Makefile") <= 100
+
+
+def test_annotate_mode_prints_only_commands_and_exits_zero(
+    summary, tmp_path: Path, capsys, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    annotate(summary, tmp_path, report(failing("test_a")))  # builds the files and junit.xml
+
+    code = summary.main(
+        ["--junit", "junit.xml", "--coverage", "absent.xml", "--annotate", "--floor", "75"]
+    )
+
+    out = capsys.readouterr().out
+    assert code == 0
+    assert out.startswith("::error title=test failed")
+    assert "###" not in out
+
+
+def test_script_prints_annotations_isolated(tmp_path: Path) -> None:
+    (tmp_path / "tests/unit").mkdir(parents=True)
+    (tmp_path / "tests/unit/test_x.py").write_text("x\n", encoding="utf-8")
+    write(
+        tmp_path,
+        "junit.xml",
+        report(failing("test_a", text="tests/unit/test_x.py:3: AssertionError")),
+    )
+
+    run = subprocess.run(
+        [
+            sys.executable,
+            "-I",
+            str(SCRIPT),
+            "--junit",
+            "junit.xml",
+            "--coverage",
+            "c.xml",
+            "--annotate",
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert run.returncode == 0
+    assert "::error title=test failed,file=tests/unit/test_x.py,line=3::" in run.stdout
+
+
+def test_a_command_without_properties_still_escapes_its_message(summary) -> None:
+    assert summary._command("notice", "50%\nnext") == "::notice::50%25%0Anext"
+
+
+def test_a_failure_with_no_message_and_no_text_is_still_named(summary, tmp_path: Path) -> None:
+    body = failing("test_a", message="", text="")
+
+    assert annotate(summary, tmp_path, report(body)) == [
+        "::error title=test failed,file=tests/unit/test_x.py::tests.unit.test_x.test_a"
+    ]
