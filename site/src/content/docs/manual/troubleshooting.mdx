@@ -30,15 +30,16 @@ The app does not open on your Mac.
 
 The check in Terminal does not print the "OK" line.
 
-**Cause.** The file that you checked differs from the file that the project published. The download is damaged, the command ran outside the folder that holds the download, or the hash in the command has a typing error.
+**Cause.** The check fails for one of three reasons. The download is damaged, the command ran outside the folder that holds the download, or the hash in the command has a typing error.
 
 **Fix.**
 
 <Steps>
 
 1. Compare the size of your download with the size that [Download Cloudy Reader](/download/) lists. A different size means that your file is not the published file.
-2. Delete your download and get it again from that page. Run the check from the folder that holds the download.
-3. If the check fails on a second download, do not open the app. Follow [Report a security issue](/manual/get-help/#report-a-security-issue).
+2. Run the check again from the folder that holds the download. Copy the command from that page, because a typing error in the hash fails the check.
+3. If the check still fails, delete your download and get it again from that page. Then run the check again.
+4. If the check fails on a second download, do not open the app. Follow [Report a security issue](/manual/get-help/#report-a-security-issue).
 
 </Steps>
 
@@ -129,7 +130,7 @@ The status bar shows "Downloading voices… 0%" for a while, or the percentage c
 <Steps>
 
 1. Open the **Voice** menu. The download works when the first voice appears in the menu. A rising percentage is not proof, because failed files count as finished.
-2. If the percentage and the progress bar have disappeared and the menu is empty, every file failed. Check the Wi-Fi and any VPN.
+2. If the percentage and the progress bar have disappeared and the menu is empty, the download failed. Check the Wi-Fi and any VPN.
 3. On a school or work network, ask the administrator to allow the download. [What uses the network](/about/privacy/#what-uses-the-network) lists the hosts.
 4. When the connection works, quit the app with Command-Q and open it again. On a slow connection, keep the window open until the first voice appears.
 
@@ -164,7 +165,7 @@ During the first download, the **Voice** menu lists only the first voice to arri
 
 The **Voice** menu has no heading for one voice engine, or the rows of one engine are dimmed and their labels contain "not installed".
 
-**Cause.** The files of that engine are not all on the Mac. The app lists an engine's voices only when the engine's files pass their checks, and it dims a voice whose own file is missing. Three cases apply:
+**Cause.** The files of that engine are not all on the Mac. The app lists an engine's voices only when the engine's files are present and valid. Some engines list all their voices and dim the voices whose own file is missing. Three cases apply:
 
 - The download has not finished. The menu may not list an engine's voices until the whole download ends.
 - The download stopped early. Closing the window, losing the connection, or starting in offline mode stops it.
@@ -253,11 +254,11 @@ The status bar shows an error that names a voice or a voice engine. The message 
 - "Error: Piper voice model not found: _path_"
 - "Error: invalid Piper voice config _path_"
 
-**Cause.** The voice that you chose cannot be used. Its files are missing or damaged, or its voice engine cannot start. The message names the voice by its id, such as `kokoro:af_heart`.
+**Cause.** The voice that you chose cannot be used. Its files may be missing or damaged, its voice engine may not start, or the voice list may be out of date. The message names the voice by its id, such as `kokoro:af_heart`, or names the voice's file.
 
 **Fix.**
 
-- Choose another voice in the **Voice** menu and click **Speak**. [Voices and rotation modes](/manual/reference/voices/) lists the menu name and the id of each voice.
+- Choose another voice in the **Voice** menu and click **Speak**. If the voice list is out of date, quit the app with Command-Q and open it again. [Voices and rotation modes](/manual/reference/voices/) lists the menu name of each voice with its id or its file name.
 - For an error about a voice engine, see [Voices from one engine are missing](#voices-from-one-engine-are-missing).
 - For a Piper voice that the app downloads, quit the app with Command-Q. If the message says "invalid Piper voice config", move the file that it names to the Trash. Open the app again with the Mac online, and the download fetches the missing file.
 - For a Piper voice that you added, copy its files again: [Add a Piper voice](/manual/tasks/voices-and-storage/#add-a-piper-voice).
