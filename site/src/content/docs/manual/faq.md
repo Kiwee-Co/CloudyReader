@@ -1,94 +1,123 @@
 ---
-title: 'FAQ'
-description: 'Short answers to common questions about Cloudy Reader.'
+title: Frequently asked questions
+description: 'Short answers to common questions about Cloudy Reader: Macs, privacy, voices, speed, PDFs, updates, and licenses.'
 sidebar:
-  order: 8
+  label: FAQ
+  order: 2
 ---
+
+Each answer is short and links to the page that covers the topic in full.
 
 ## What does Cloudy Reader do?
 
-It reads US DOE National Science Bowl questions aloud on your Mac. You paste the text, choose a voice, and press **Speak**. The voices run on your Mac. The app also turns formulas, units, and symbols into words, so a voice can say them.
+It reads National Science Bowl questions aloud on your Mac, using voices that run on the Mac. The app says formulas, units, and fractions in words, so a voice can read them. Start with [Get started](/manual/getting-started/).
 
-## Is Cloudy Reader an official National Science Bowl tool?
+## Is it an official National Science Bowl tool?
 
-No. Cloudy Reader is an independent project. It is not affiliated with, endorsed by, or sponsored by the U.S. Department of Energy or the National Science Bowl.
+No. Cloudy Reader is an [independent project](/about/project/). It is not affiliated with, endorsed by, or sponsored by the U.S. Department of Energy or the National Science Bowl.
 
 ## Which Macs run it?
 
-The built app needs a Mac with Apple Silicon. The current build also needs macOS 26.2 or later. See [Get started](/manual/getting-started/).
+Cloudy Reader needs a Mac with Apple silicon and macOS REL-MACOS-FLOOR or later. Intel-based Macs are not supported. See [Check your Mac](/manual/getting-started/#check-your-mac).
 
-From a source checkout, the code falls back to Piper voices alone on a Mac that is not Apple Silicon. The project's CI runs on Apple Silicon only. Playback uses the macOS program `afplay`, so the app does not run on Windows or Linux.
+## Does it cost anything?
+
+<!-- needs-fact: owner confirms that the app is free (plan section 11, Q4). This answer states only what the code and the license show. -->
+
+Cloudy Reader asks for no payment, account, or license key. Its source code is open under the Apache License 2.0. See [Licenses and credits](/about/licenses/).
 
 ## Does it work without a network?
 
-Yes. Reading needs no network. Two features use one: name lookups and the download of missing voices. Offline mode stops both. See [Offline and privacy](/manual/offline-and-privacy/).
+Yes, once the first launch has downloaded the voices. Name lookups and the voice download need a network, and offline mode stops both. See [Work offline](/manual/tasks/work-offline/).
 
 ## Does it send my questions anywhere?
 
-No. A lookup sends one chemical, protein, or gene name at a time. It never sends the text around the name. The app has no telemetry, analytics, crash reporting, or update check.
+The app never sends the text of a question. While **Online lookups** is selected, the default, it sends one detected chemical, protein, or gene name at a time to PubChem or UniProt. It has no telemetry, analytics, crash reporting, or update check; [Privacy](/about/privacy/) lists every network use.
 
 ## Do online lookups change what I hear?
 
-Not in this version. Only the local OPSIN check can change how a chemical name sounds. The app caches the PubChem and UniProt answers and attaches them to the reading. The script builder ignores them. Clear **Online lookups** to avoid the network traffic and a wait of up to 2.5 seconds. See [Pronunciation](/manual/pronunciation/).
+No: only the local OPSIN check can change how a chemical name sounds, and the app ignores the PubChem and UniProt answers. A lookup adds network traffic and up to 2.5 seconds of waiting, so deselect **Online lookups** to avoid both. See [How a question becomes speech](/manual/concepts/how-reading-works/).
 
 ## Which voice should I use?
 
-Try a few. The Kokoro voices carry a letter grade from the model's `VOICES.md`. For example, `af_heart` is A, `af_bella` is A-, and `bf_emma` is B-. Piper voices show a quality tier from the voice file, such as `medium`. Neither label says which voice suits your room or your ears. See [Voices and rotation](/manual/voices/).
+Start with the first voice in the **Voice** menu and try others. Each voice shows a quality label in the menu, and a label does not say which voice suits your room or your ears. See [Voices and voice engines](/manual/concepts/voice-engines/).
 
 ## Can I change the speaking speed?
 
-No. The window has no speed control. Every reading uses a speed of 1.0.
+No: the window has no speed control, and every reading uses the voice's normal speed (1.0). See [Main window](/manual/reference/window/).
 
 ## Can I save the audio as a file?
 
-The app has no export command. It keeps each reading as a WAV file in the `cache/wav` folder of the data folder. The file name is a hash, so look for the newest file by date. The cache has no size limit, so clean it from time to time.
+The app has no export command, but it keeps each reading as a WAV file in the `cache/wav` folder of the data folder. The file name is a hash, so sort the folder by date to find the newest reading. See [Data folder](/manual/reference/files-and-settings/#data-folder) for the path.
 
 ## Can I add my own voices?
 
-You can add Piper voices. Copy the `.onnx` file and the `.onnx.json` file into the `voices` folder, then restart the app. A hand-added voice never rotates. The app offers no Kokoro voices beyond the 28 pinned ones. See [Voices and rotation](/manual/voices/).
+You can add Piper voices: copy a voice's `.onnx` and `.onnx.json` files into the `voices` folder of the data folder, then restart the app. A voice you add this way never rotates. See [Add a Piper voice](/manual/tasks/voices-and-storage/#add-a-piper-voice).
 
-## Does it read languages other than English?
+## Does it read other languages?
 
-No. The voices and the pronunciation rules target English. The app lists a Piper voice in another language if its files are in the `voices` folder. The rules are not made for it.
+No: the pronunciation rules are written for English. A Piper voice in another language appears in the **Voice** menu if its files are in the `voices` folder, but it never rotates. See [Voices and voice engines](/manual/concepts/voice-engines/).
 
-## Why does the answer come after a long pause?
+## Why is there a pause before the answer?
 
-The app inserts a pause of 5 seconds before the answer. Turn off **Read answer line** to skip the answer. See [Use the app](/manual/using-the-app/).
+With **Read answer line** selected, the app waits 5 seconds before it says the answer, which gives you time to answer first. Deselect the checkbox to skip the answer. See [Practice on your own](/manual/tasks/practice-alone/).
 
 ## Can I read a whole round at once?
 
-Yes. Paste the round into the box. The app reads each question in order and leaves 1.5 seconds between questions.
+Yes: paste the whole round into the question box, and the app reads each question in order with 1.5 seconds between questions. It ignores round titles, page footers, and rule lines. See [Paste questions from a PDF or web page](/manual/tasks/paste-questions/).
 
 ## Can I read a PDF directly?
 
-No. Copy the text from the PDF and paste it. The parser repairs hard wraps, page footers, round titles, and other PDF leftovers.
+No: copy the text from the PDF and paste it into the question box. The app repairs hard wraps, page footers, and other PDF leftovers. See [Paste questions from a PDF or web page](/manual/tasks/paste-questions/).
+
+## Can it read images or drawn equations?
+
+No: the question box takes text only, and the app has no image recognition. Copy the text instead, or type a formula in plain characters, such as `H2O` or `x^2`. See [Question format and reading order](/manual/reference/question-format/).
 
 ## How do I fix a word that sounds wrong?
 
-Add a bracket guide after the word, such as `Krebs cycle [KREBZ SY-kul]`. See [Pronunciation](/manual/pronunciation/).
+Add a pronunciation guide in square brackets right after the word, such as `Krebs cycle [KREBZ SY-kul]`. The guide sets how the app says the word. Follow [Fix a mispronounced word](/manual/tutorials/fix-a-word/).
+
+## Why does macOS block the app the first time?
+
+<!-- needs-fact: owner checklist (plan 8.3): the first-open approval flow in System Settings -->
+
+The app is signed ad hoc and is not notarized, so macOS asks you to approve it the first time. You approve it once, in System Settings. See [Open the app the first time](/manual/tasks/first-open/).
+
+## Can I use it on a school-managed Mac?
+
+That depends on your administrator, because the app is signed ad hoc and is not notarized, and a managed Mac can block such an app. [Privacy](/about/privacy/) lists the network hosts that the app contacts, and [Security and code signing](/about/security/) explains the signature.
+
+## How much disk space and memory does it use?
+
+Cloudy Reader needs REL-DISK-TOTAL of free disk space, and the audio cache has no size limit. [Check your Mac](/manual/getting-started/#check-your-mac) lists the requirements, and [Voices and voice engines](/manual/concepts/voice-engines/) covers memory. See [Free disk space](/manual/tasks/voices-and-storage/#free-disk-space) to clear the cache.
+
+## How do I update or uninstall it?
+
+The app has no update check, so look for a later version on the [releases page](https://github.com/Kiwee-Co/CloudyReader/releases), then replace the app in Applications. To uninstall, move the app to the Trash; the voices, caches, and preferences stay until you delete them. See [Install, update, and uninstall](/manual/tasks/install/).
 
 ## Why is there no Help menu?
 
-The menu would hold only **About**. macOS moves **About** into the application menu and hides the empty Help menu.
+<!-- needs-fact: owner checklist (plan 8.3): macOS moves About to the application menu and hides the empty Help menu -->
 
-## How do I stop a voice download?
+The app's Help menu holds only **About Cloudy Reader**, so macOS moves that item into the application menu and hides the empty Help menu. The app has no command that opens this manual. See [Main window](/manual/reference/window/).
 
-Close the window. The download stops at its next data chunk. Offline mode prevents a download from starting.
+## How do I find the version?
 
-## How do I find the app version?
+<!-- needs-fact: owner checklist (plan 8.3): About Cloudy Reader sits in the Cloudy Reader menu on the real app -->
 
-Choose **About Cloudy Reader**, or run the program with `--version`.
+Choose **Cloudy Reader > About Cloudy Reader** to see "Version REL-VERSION". In Terminal, `--version` prints "Cloudy Reader REL-VERSION":
 
-## Is the app signed or notarized?
+```bash
+"/Applications/Cloudy Reader.app/Contents/MacOS/Cloudy Reader" --version
+```
 
-The build signs the app ad hoc. It uses no Apple Developer ID, and Apple has not notarized the app. A downloaded copy needs your approval in System Settings > Privacy & Security. See [Get started](/manual/getting-started/).
+See [Install, update, and uninstall](/manual/tasks/install/).
 
 ## What is the license?
 
-The source of Cloudy Reader is licensed under the Apache License 2.0. The [`LICENSE` file](https://github.com/Kiwee-Co/CloudyReader/blob/main/LICENSE) holds the terms.
+The source code of Cloudy Reader is licensed under the Apache License 2.0. The app also bundles and downloads third-party components, including GPL components, that keep their own licenses. See [Licenses and credits](/about/licenses/).
 
-The built app also bundles third-party components that keep their own licenses. Several are GPL components, such as `piper-tts` and `jdk4py`, plus `phonemizer-fork` in a build with Kokoro. Distributing the app is subject to those licenses. The third-party notices in the [README](https://github.com/Kiwee-Co/CloudyReader#third-party-notices) list each component. This answer is not legal advice.
+## How do I report a problem?
 
-## How do I report a bug or change the code?
-
-Open an issue on the [GitHub repository](https://github.com/Kiwee-Co/CloudyReader). To change code, read [Contribute](/developer/contributing/).
+Open an issue on [GitHub](https://github.com/Kiwee-Co/CloudyReader/issues) and include your version, your macOS version, and the self-test report. [Get help](/manual/get-help/) lists what to collect and how to report a security issue.
