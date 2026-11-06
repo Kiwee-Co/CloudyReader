@@ -26,7 +26,9 @@ The engines run on your Mac. The table compares them.
 
 Together, the voice files take REL-VOICES-SIZE, and the first launch downloads them. The first Kokoro reading after the app starts also loads the Kokoro model. The status bar shows only "Preparing…" while it loads.
 
-In the project's tests on a Mac with an M2 Ultra chip, the app used about 2.3 GB of memory after it loaded the name-detection model. It used about 2.5 GB after a reading with a Piper voice, and about 3.0 GB once a Kokoro voice had also read a question. These are test results, not requirements, and the project states no minimum.
+In the project's tests on a Mac with an M2 Ultra chip, peak memory use was about 2.3 GB with only the name-detection model loaded. It was about 2.5 GB after a reading with a Piper voice, and about 3.0 GB after a reading with a Kokoro voice in the same session.
+
+The tests ran the app's code without the window, and the installed app was not measured. These numbers are test results, not requirements, and the project states no minimum.
 
 ## What grades and quality labels mean
 
