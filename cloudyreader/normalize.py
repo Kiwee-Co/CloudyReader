@@ -288,7 +288,9 @@ class ScriptNormalizer:
         # root of 10/5"; their words come after it has said the signs ("-3/7" is "minus 3/7") and
         # before the formula stage, which would take the 2 of "1/2 × 10^3" for a mantissa.
         text = self._units(spoken_fractions.mark_fractions(text))
-        spoken = _squash(self._formulas(spoken_fractions.say_marked(text)))
+        text = self._formulas(spoken_fractions.say_marked(text))
+        # Ranges come last: by then the formula stage has read "Kw = 10–14" as a power.
+        spoken = _squash(units.speak_ranges(text))
         if shouted:
             spoken = _unshout(spoken)
         spoken = _squash(_BRACKET_RE.sub(" ", spoken))

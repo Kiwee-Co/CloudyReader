@@ -620,6 +620,65 @@ _MATH_GROUP = re.compile(
 )
 # "9am", "10th" and "1960s" are numbers with a suffix: "9am \u2013 5pm" is a range, not a minus.
 _PLAIN_NUMBER = re.compile(rf"{_NUMBER}(?:st|nd|rd|th|am|pm)?|\d{{2,}}s")
+_SCALE_WORD = re.compile(r"\s+(?:thousand|million|billion|trillion)\b", re.IGNORECASE)
+_PERCENT_AFTER = re.compile(r"\s*percent\b")
+# "10^3\u201310^4", "1 times 10^3\u20135 times 10^3": a range of magnitudes, never a subtraction.
+# Two exponent digits at most, so the value stays a float.
+_POWER_OF_TEN = r"(?:\d+(?:\.\d+)?\s*(?:[\u00d7xX*]|times)\s*)?10\^[-\u2212]?\d{1,2}"
+_POWER_RANGE = re.compile(
+    rf"(?<![\w.^])(?P<l>{_POWER_OF_TEN})(?P<gap>\s?)\u2013(?P<tail>\s?)"
+    rf"(?=(?P<r>{_POWER_OF_TEN})(?![\w^.]))"
+)
+_POWER_PARTS = re.compile(
+    r"(?:(?P<mantissa>\d+(?:\.\d+)?)\s*(?:[\u00d7xX*]|times)\s*)?10\^(?P<exp>[-\u2212]?\d+)"
+)
+# Fifteen digits at most, where float() still orders two numbers exactly.
+_RANGE_NUMBER = r"(?:\d{1,3}(?:,\d{3}){1,4}|\d{1,15})(?:\.\d{1,15})?"
+_RANGE = re.compile(
+    rf"(?<![\w.,/^\u2013\u2212-])(?P<l>{_RANGE_NUMBER})(?P<gap> ?)(?P<dash>[\u2013-])(?P<tail> ?)"
+    rf"(?P<r>{_RANGE_NUMBER})(?![\w/^\u2013\u2212-]|[.,]\d)"
+)
+# "Round 3 \u2013 10 points" is a title and its points, not a range of rounds.
+_LABEL_BEFORE = re.compile(
+    r"\b(?:Round|Page|Figure|Chapter|Section|Part|Problem|Question|Table|Step)\s+$"
+)
+
+
+def _power_value(term: str) -> float:
+    parts = _POWER_PARTS.fullmatch(term)
+    assert parts is not None
+    return float(parts["mantissa"] or 1) * 10.0 ** int(parts["exp"].replace("\u2212", "-"))
+
+
+def _range_follows(text: str, end: int, tables: Tables) -> bool:
+    """A range noun, a unit or "percent" after the right number, past a scale word."""
+    scale = _SCALE_WORD.match(text, end)
+    at = scale.end() if scale else end
+    return bool(
+        _RANGE_NOUNS.match(text, at)
+        or tables.matchers.unit_words.match(text, at)
+        or _PERCENT_AFTER.match(text, at)
+    )
+
+
+def speak_ranges(text: str, *, tables: Tables | None = None) -> str:
+    """ "5\u201310 grams" -> "5 to 10 grams". Call it after speak_formulas reads "Kw = 10\u201314".
+
+    A tight en dash between ascending numbers is a range. A spaced one, or an ASCII hyphen, needs
+    a range noun or a unit after it ("15-16 years"), so "pH 5-7" and "83 \u2013 19" keep the dash.
+    """
+    tables = tables or default_tables()
+
+    def repl(m: re.Match[str]) -> str:
+        if float(m["l"].replace(",", "")) >= float(m["r"].replace(",", "")):
+            return m.group()
+        if m["dash"] == "-" or m["gap"] or m["tail"]:
+            label = _LABEL_BEFORE.search(m.string, max(0, m.start() - 20), m.start())
+            if label or not _range_follows(m.string, m.end(), tables):
+                return m.group()
+        return f"{m['l']} to {m['r']}"
+
+    return _RANGE.sub(repl, text)
 
 
 def _is_minus(m: re.Match[str], *, chained: bool, tables: Tables) -> bool:
@@ -646,6 +705,16 @@ def _is_minus(m: re.Match[str], *, chained: bool, tables: Tables) -> bool:
 def _speak_en_dash_minus(text: str, tables: Tables) -> str:
     """One left-to-right pass: a dash that is a minus vouches for the next one in a chain."""
     text = _EN_DASH_AFTER_PAREN.sub(") minus ", text)
+
+    def power_range(m: re.Match[str]) -> str:
+        tight = not m["gap"] and not m["tail"]
+        end = m.end() + len(m["r"])
+        ascending = _power_value(m["l"]) < _power_value(m["r"])
+        if ascending and (tight or _range_follows(m.string, end, tables)):
+            return f"{m['l']} to "
+        return m.group()
+
+    text = _POWER_RANGE.sub(power_range, text)
     pieces: list[str] = []
     position, chained_at = 0, -1
     for m in _EN_DASH_BETWEEN.finditer(text):
