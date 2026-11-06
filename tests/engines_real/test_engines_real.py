@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 
 from cloudyreader.config import load_settings
+from cloudyreader.engines import mlxkit
 from cloudyreader.models import RenderOptions, Segment, SpokenScript
 
 pytestmark = [pytest.mark.model, pytest.mark.slow]
@@ -32,6 +33,8 @@ ENGINES = {
     ),
 }
 TEXTS = ("W.", "Which layer of the Earth lies directly beneath the crust?")
+# One render test per voice, so a voice that fails hides no other voice.
+VOICES = sorted((key, voice) for key, (_, _, voices) in ENGINES.items() for voice in voices)
 
 
 def measure(path: Path) -> tuple[int, int, float, float]:
@@ -63,16 +66,19 @@ def test_an_installed_engine_lists_its_voices(engine):
     assert installed == ENGINES[engine.key][2]
 
 
-def test_each_voice_renders_a_letter_and_a_sentence_as_24k_mono_speech(engine, tmp_path):
-    for voice in engine.voices():
-        for n, text in enumerate(TEXTS):
-            out = tmp_path / f"{voice.key.replace(':', '-')}-{n}.wav"
-            audio = engine.synthesize(SpokenScript((Segment(text),)), voice, RenderOptions(), out)
+@pytest.mark.parametrize(
+    ("engine", "voice_key"), VOICES, ids=[voice for _, voice in VOICES], indirect=["engine"]
+)
+def test_each_voice_renders_a_letter_and_a_sentence_as_24k_mono_speech(engine, voice_key, tmp_path):
+    voice = {v.key: v for v in engine.voices()}[voice_key]
+    for n, text in enumerate(TEXTS):
+        out = tmp_path / f"{voice.key.replace(':', '-')}-{n}.wav"
+        audio = engine.synthesize(SpokenScript((Segment(text),)), voice, RenderOptions(), out)
 
-            rate, channels, seconds, peak = measure(audio.wav_path)
-            # The engines' estimate and runaway rule: about 14 characters a second, at least
-            # 0.6 s; a runaway passes 1.9 x that, and a tiny unit may run to 1.2 s.
-            est = max(0.6, len(text) / 14)
-            assert (rate, channels) == (24_000, 1)
-            assert 0.25 * est <= seconds <= max(1.2, 1.9 * est), (voice.key, text, seconds)
-            assert peak > 0.01, (voice.key, text, peak)
+        rate, channels, seconds, peak = measure(audio.wav_path)
+        # render_text's own rule: the estimate (about 14 characters a second, at least
+        # MIN_EST_S), and a render of RUNAWAY times it or more counts as a runaway.
+        est = mlxkit.est_seconds(text)
+        assert (rate, channels) == (24_000, 1)
+        assert 0.25 * est <= seconds < mlxkit.RUNAWAY * est, (voice.key, text, seconds)
+        assert peak > 0.01, (voice.key, text, peak)
