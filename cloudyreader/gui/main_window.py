@@ -479,7 +479,8 @@ class MainWindow(QMainWindow):
         """Give the custom-painted parts the tokens of the current appearance.
 
         Placeholders get their AA token, the question card its outline, the script panel its fill
-        and secondary text, and the focus ring its inner stroke; every other color stays native.
+        and secondary text, the Voice menu headers theirs, and the focus ring its inner stroke;
+        every other color stays native.
         """
         if scheme is None:
             scheme = QGuiApplication.styleHints().colorScheme()
@@ -502,6 +503,7 @@ class MainWindow(QMainWindow):
             script.setColor(role, secondary)
         self.script_view.setPalette(script)
         self.script_panel.set_colors(QColor(tokens.PANEL_DARK if dark else tokens.PANEL_LIGHT))
+        self.voice_picker.set_dark(dark)
         self._focus_ring.set_dark(dark)
 
     def _restore_settings(self) -> None:

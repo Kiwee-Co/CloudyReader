@@ -42,6 +42,12 @@ STRINGS = [
     ("busy_bar", "accessibleName", "Preparing"),
     ("prefetch_bar", "accessibleName", "Downloading voices"),
 ]
+# The VoiceOver-only text the lead approved (design spec 9), exactly as written there. The fifth,
+# each engine header's "<engine> voices", is pinned in test_voice_menu.py.
+VOICEOVER_ONLY = [
+    ("voice_picker.combo", "accessibleDescription", "Choose the voice that reads the question."),
+    ("voice_picker.speaker_spin", "accessibleDescription", "Choose a speaker of this voice."),
+]
 ROTATION_ITEMS = [
     "No rotation",
     "Round robin",
@@ -61,6 +67,11 @@ def control(window, path: str):
 
 @pytest.mark.parametrize(("path", "getter", "text"), STRINGS, ids=lambda v: str(v)[:40])
 def test_every_quoted_string_is_unchanged(window, path, getter, text):
+    assert getattr(control(window, path), getter)() == text
+
+
+@pytest.mark.parametrize(("path", "getter", "text"), VOICEOVER_ONLY, ids=lambda v: str(v)[:40])
+def test_the_approved_voiceover_text_is_exact(window, path, getter, text):
     assert getattr(control(window, path), getter)() == text
 
 

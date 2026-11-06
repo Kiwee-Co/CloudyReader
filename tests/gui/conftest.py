@@ -77,6 +77,8 @@ def mac_style(qapp):
     if native is None:
         pytest.skip("the macOS style exists only on macOS")
     default = qapp.style().name()
-    QApplication.setStyle(native)
-    yield native
-    QApplication.setStyle(QStyleFactory.create(default))
+    try:
+        QApplication.setStyle(native)
+        yield native
+    finally:  # the next test gets the default style back, even after a failed setup
+        QApplication.setStyle(QStyleFactory.create(default))

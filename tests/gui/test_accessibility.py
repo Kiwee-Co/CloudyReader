@@ -26,8 +26,6 @@ CONTROLS = (
 )
 # Controls with neither a tooltip nor a description yet, and the work item that adds one.
 UNDESCRIBED = {
-    "voice_picker.combo": 7,
-    "voice_picker.speaker_spin": 7,
     "busy_bar": 8,
     "prefetch_bar": 8,
 }
