@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shutil
+import stat
 import sys
 import zipfile
 from pathlib import Path
@@ -72,6 +73,7 @@ def gate(root: Path, bundle: Path, **env: str):
 def test_the_path_gate_passes_a_frozen_app_without_host_paths(root, tmp_path):
     bundle = app(root)
     frozen(bundle, tmp_path, CLEAN, hooks={"pyi_rth_clean": "P = '/opt/remi'\n"})
+    (bundle / "Contents" / "Resources" / "lib-link.py").symlink_to("lib.py")  # relative: clean
 
     result = gate(root, bundle)
 
@@ -191,6 +193,40 @@ def test_the_path_gate_reads_zip_members(root):
 
     assert result.returncode == 1
     assert "Contents/Resources/base_library.zip!site.pyc: 1 hit" in result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("kind", ["file", "folder"])
+def test_the_path_gate_reads_link_text_and_never_follows_it(root, kind):
+    bundle = app(root)
+    if kind == "file":  # rel-sec's M06: a link to a file in the home folder
+        rel, target = "Contents/Resources/voice.onnx", Path("/home/testowner/remi/secret.txt")
+    else:  # M07 as a link to a real folder: os.walk lists it with the folders, never enters it
+        rel, target = "Contents/Resources/models", root / "data" / "models"
+        target.mkdir(parents=True)
+        (target / "x.txt").write_text("/home/testowner/x")
+    (bundle / rel).symlink_to(target)  # the zip and the DMG keep this link text
+
+    result = gate(root, bundle)
+
+    assert result.returncode == 1
+    out = result.stdout + result.stderr
+    assert f"{rel} (link target): 1 hit" in out
+    assert "the app carries this build host's paths" in result.stderr
+    assert "x.txt" not in out  # read as text, never followed
+    assert "testowner" not in out and str(root) not in out  # the file and a count only
+
+
+def test_the_path_gate_reads_a_link_entry_inside_a_zip_as_link_text(root):
+    bundle = app(root)
+    link = zipfile.ZipInfo("lib")
+    link.external_attr = (stat.S_IFLNK | 0o755) << 16  # a zip stores a link's target as its data
+    with zipfile.ZipFile(bundle / "Contents" / "Resources" / "base_library.zip", "w") as archive:
+        archive.writestr(link, "/home/testowner/remi")
+
+    result = gate(root, bundle)
+
+    assert result.returncode == 1
+    assert "Contents/Resources/base_library.zip!lib (link target): 1 hit" in result.stdout
 
 
 @pytest.mark.parametrize("planted", [True, False])

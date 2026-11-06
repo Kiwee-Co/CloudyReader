@@ -567,14 +567,15 @@ write_checksum() {
 }
 
 # Fails closed when app $1 carries a path of this build host (home, user name, build tree, data
-# folder, their volume) in a raw file, zip member, PKG entry or decompressed PYZ module, or when it
-# reads no PYZ module of Contents/MacOS/<APP_NAME>. Prints each file and count, never the match.
+# folder, their volume) in a raw file, link text, zip member, PKG entry or decompressed PYZ module,
+# or reads no PYZ module of Contents/MacOS/<APP_NAME>. Prints each file and count, never the match.
 path_gate() {
   local app=$1 python=${PY:-$ROOT/.venv/bin/python} rc=0
   [[ -x $python ]] || python=$(command -v python3) # any Python reads files; a PKG needs PyInstaller
   "$python" -I - "$app" "$APP_NAME" "$HOME" "${USER:-$(id -un)}" "$ROOT" "$DATA" <<'EOF' || rc=$?
 import os
 import re
+import stat
 import sys
 import tempfile
 import zipfile
@@ -636,22 +637,28 @@ def scan_pkg(path, rel):
 
 
 def scan_app():
-    """Scans every file of the app; returns the PYZ modules read from the executable's PKG."""
+    """Scans the app's files and links; returns the PYZ modules read in the executable's PKG."""
     global current
     read = 0
-    for folder, _, names in os.walk(app):
-        for name in sorted(names):
+    for folder, dirs, names in os.walk(app):
+        # os.walk lists a link to a folder with the folders and never enters it: read its text too.
+        links = [d for d in dirs if os.path.islink(os.path.join(folder, d))]
+        for name in sorted(names + links):
             path = os.path.join(folder, name)
-            if os.path.islink(path):
-                continue
             rel = current = os.path.relpath(path, app)
+            if os.path.islink(path):  # the zip and the DMG store the link text: read, never follow
+                scan(os.fsencode(os.readlink(path)), f"{rel} (link target)")
+                continue
             with open(path, "rb") as fh:
                 data = fh.read()
             scan(data, rel)
             if data[:4] == b"PK\x03\x04":
                 with zipfile.ZipFile(path) as archive:
-                    for member in archive.namelist():
-                        scan(archive.read(member), f"{rel}!{member}")
+                    for info in archive.infolist():
+                        where = f"{rel}!{info.filename}"
+                        if stat.S_ISLNK(info.external_attr >> 16):
+                            where += " (link target)"  # a link entry's data is its target
+                        scan(archive.read(info), where)
             if COOKIE in data:
                 modules = scan_pkg(path, rel)
                 if rel == EXE:
