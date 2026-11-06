@@ -1,0 +1,53 @@
+{
+    "image": "window-tour",
+    "callouts": [
+        {
+            "n": 1,
+            "part": "question box",
+            "x": 97.06,
+            "y": 36.94
+        },
+        {
+            "n": 2,
+            "part": "Voice menu",
+            "x": 56.4,
+            "y": 42.46
+        },
+        {
+            "n": 3,
+            "part": "Rotation menu",
+            "x": 42.87,
+            "y": 48.59
+        },
+        {
+            "n": 4,
+            "part": "options",
+            "x": 32.26,
+            "y": 55.16
+        },
+        {
+            "n": 5,
+            "part": "Paste and Speak Clipboard",
+            "x": 2.94,
+            "y": 61.94
+        },
+        {
+            "n": 6,
+            "part": "Repeat, Stop, and Speak",
+            "x": 97.06,
+            "y": 61.94
+        },
+        {
+            "n": 7,
+            "part": "Spoken script",
+            "x": 20.45,
+            "y": 71.61
+        },
+        {
+            "n": 8,
+            "part": "status bar",
+            "x": 95.29,
+            "y": 97.66
+        }
+    ]
+}

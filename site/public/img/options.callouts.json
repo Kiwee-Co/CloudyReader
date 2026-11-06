@@ -1,0 +1,17 @@
+{
+    "image": "options",
+    "callouts": [
+        {
+            "n": 1,
+            "part": "Read answer line",
+            "x": 87.41,
+            "y": 25.0
+        },
+        {
+            "n": 2,
+            "part": "Online lookups",
+            "x": 82.04,
+            "y": 67.86
+        }
+    ]
+}

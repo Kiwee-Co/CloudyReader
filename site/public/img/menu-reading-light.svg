@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="429.61" height="160" viewBox="0 0 429.61 160" role="img" aria-labelledby="title desc" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif">
+<title id="title">The Reading menu</title>
+<desc id="desc">The menu bar in Light Mode with the Reading menu open: Speak ⌘↩, Speak Clipboard ⇧⌘V, then Repeat ⌘R and Stop ⌘.</desc>
+<defs><filter id="blur1" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9"/></filter></defs>
+<rect x="0" y="0" width="429.61" height="24" fill="#f6f6f6"/>
+<path d="M0 23.75H429.61" stroke-width="0.5" stroke="#838383"/>
+<text x="14" y="16.91" font-size="13" font-weight="700" fill="#000000" fill-opacity="0.85">Cloudy Reader</text>
+<text x="127.59" y="16.91" font-size="13" fill="#000000" fill-opacity="0.85">File</text>
+<text x="168.31" y="16.91" font-size="13" fill="#000000" fill-opacity="0.85">Edit</text>
+<rect x="204.33" y="3" width="62.67" height="18" rx="5" fill="#000000" fill-opacity="0.12"/>
+<text x="211.33" y="16.91" font-size="13" fill="#000000" fill-opacity="0.85">Reading</text>
+<text x="280" y="16.91" font-size="13" fill="#000000" fill-opacity="0.85">Window</text>
+<rect x="201.33" y="33" width="204.28" height="109" rx="8" filter="url(#blur1)" fill="#000000" fill-opacity="0.3"/>
+<rect x="201.33" y="27" width="204.28" height="109" rx="8" stroke-width="0.5" fill="#f6f6f6" stroke="#000000" stroke-opacity="0.14"/>
+<text x="222.33" y="47.91" font-size="13" fill="#000000" fill-opacity="0.85">Speak</text>
+<text x="389.61" y="47.91" text-anchor="end" font-size="13" fill="#000000" fill-opacity="0.5">⌘↩</text>
+<text x="222.33" y="69.91" font-size="13" fill="#000000" fill-opacity="0.85">Speak Clipboard</text>
+<text x="389.61" y="69.91" text-anchor="end" font-size="13" fill="#000000" fill-opacity="0.5">⇧⌘V</text>
+<path d="M211.33 81.5H395.61" stroke-width="1" stroke="#838383"/>
+<text x="222.33" y="102.91" font-size="13" fill="#000000" fill-opacity="0.85">Repeat</text>
+<text x="389.61" y="102.91" text-anchor="end" font-size="13" fill="#000000" fill-opacity="0.5">⌘R</text>
+<text x="222.33" y="124.91" font-size="13" fill="#000000" fill-opacity="0.85">Stop</text>
+<text x="389.61" y="124.91" text-anchor="end" font-size="13" fill="#000000" fill-opacity="0.5">⌘.</text>
+</svg>

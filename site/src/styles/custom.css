@@ -40,44 +40,6 @@
 	white-space: nowrap;
 }
 
-/* Figures: the rendering of the site's current theme; window snapshots get a quiet frame. */
-.cr-figure img {
-	display: block;
-	max-width: 100%;
-	height: auto;
-}
-.cr-figure__img--dark,
-:root[data-theme='dark'] .cr-figure__img--light {
-	display: none;
-}
-:root[data-theme='dark'] .cr-figure__img--dark {
-	display: block;
-}
-.cr-figure--window .cr-figure__frame {
-	border: 1px solid var(--sl-color-gray-5);
-	border-radius: 0.625rem;
-	overflow: hidden;
-	box-shadow: var(--sl-shadow-md);
-}
-.cr-figure__bar {
-	display: flex;
-	gap: 0.4rem;
-	padding: 0.55rem 0.75rem;
-	background: var(--sl-color-gray-6);
-	border-bottom: 1px solid var(--sl-color-gray-5);
-}
-.cr-figure__bar span {
-	width: 0.7rem;
-	height: 0.7rem;
-	border-radius: 50%;
-	background: var(--sl-color-gray-4);
-}
-.cr-figure figcaption {
-	margin-top: 0.5rem;
-	font-size: var(--sl-text-sm);
-	color: var(--sl-color-gray-3);
-}
-
 /* Footer.astro: the trust and help links, the manual's version, and the independence note. */
 .cr-site-footer {
 	margin-top: 2rem;

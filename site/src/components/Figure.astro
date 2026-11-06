@@ -1,20 +1,49 @@
 ---
-// One figure in a light and a dark rendering. custom.css shows the one that matches the site's
+// One figure in a light and a dark rendering. figures.css shows the one that matches the site's
 // theme (Starlight's data-theme), so the theme menu switches it, not only the system setting.
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+interface Callout {
+	n: number;
+	x: number; // percent of the image width
+	y: number; // percent of the image height
+}
 interface Props {
 	src: string; // file name in public/img
 	dark?: string; // the dark rendering's file name, when there is one
 	alt: string;
 	caption?: string;
 	frame?: 'window'; // draw a window frame: the window snapshots show the content only
+	callouts?: string; // a sidecar in public/img: window-tour reads window-tour.callouts.json
+	wide?: boolean; // a wide diagram: it scrolls sideways on a phone instead of shrinking
 }
-const { src, dark, alt, caption, frame } = Astro.props;
+const { src, dark, alt, caption, frame, callouts, wide } = Astro.props;
 // A stable anchor per image, so a page can link to its figure: voices-light.svg is #figure-voices.
 const id = `figure-${src.replace(/\.svg$/, '').replace(/-light$/, '')}`;
+// The build runs in site/, so the sidecar sits in public/img; a missing one fails the build.
+const markers: Callout[] = callouts
+	? JSON.parse(readFileSync(join(process.cwd(), 'public', 'img', `${callouts}.callouts.json`), 'utf8')).callouts
+	: [];
+// A marked image fills its box, so the frame stops at the image's own width (plus a window
+// frame's border): the image is never blown up and a window frame hugs it.
+const shown = markers.length ? readFileSync(join(process.cwd(), 'public', 'img', src), 'utf8') : '';
+const natural = shown.match(/<svg[^>]*\swidth="([\d.]+)"/)?.[1];
+const frameStyle = natural ? `max-inline-size: calc(${natural}px + ${frame === 'window' ? 2 : 0}px)` : undefined;
 ---
 
-<figure {id} class:list={['cr-figure', { 'cr-figure--window': frame === 'window' }]}>
-	<div class="cr-figure__frame">
+<figure
+	{id}
+	class:list={[
+		'cr-figure',
+		{
+			'cr-figure--window': frame === 'window',
+			'cr-figure--callouts': markers.length > 0,
+			'cr-figure--wide': wide,
+		},
+	]}
+>
+	<div class="cr-figure__frame" style={frameStyle}>
 		{frame === 'window' && (
 			<div class="cr-figure__bar" aria-hidden="true">
 				<span />
@@ -22,8 +51,15 @@ const id = `figure-${src.replace(/\.svg$/, '').replace(/-light$/, '')}`;
 				<span />
 			</div>
 		)}
-		<img class:list={['cr-figure__img', { 'cr-figure__img--light': dark }]} src={`/img/${src}`} {alt} loading="lazy" decoding="async" />
-		{dark && <img class="cr-figure__img cr-figure__img--dark" src={`/img/${dark}`} {alt} loading="lazy" decoding="async" />}
+		<div class="cr-figure__canvas">
+			<img class:list={['cr-figure__img', { 'cr-figure__img--light': dark }]} src={`/img/${src}`} {alt} loading="lazy" decoding="async" />
+			{dark && <img class="cr-figure__img cr-figure__img--dark" src={`/img/${dark}`} {alt} loading="lazy" decoding="async" />}
+			{markers.map((m) => (
+				<span class="cr-callout" style={`left: ${m.x}%; top: ${m.y}%`} aria-hidden="true">
+					{m.n}
+				</span>
+			))}
+		</div>
 	</div>
 	{caption && <figcaption>{caption}</figcaption>}
 </figure>

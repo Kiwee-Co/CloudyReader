@@ -1,0 +1,29 @@
+{
+    "image": "status-busy-download",
+    "callouts": [
+        {
+            "n": 1,
+            "part": "message",
+            "x": 4.71,
+            "y": 27.69
+        },
+        {
+            "n": 2,
+            "part": "download label",
+            "x": 53.82,
+            "y": 27.69
+        },
+        {
+            "n": 3,
+            "part": "download progress bar",
+            "x": 72.94,
+            "y": 27.69
+        },
+        {
+            "n": 4,
+            "part": "busy bar",
+            "x": 90.0,
+            "y": 27.69
+        }
+    ]
+}
