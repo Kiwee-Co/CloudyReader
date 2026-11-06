@@ -14,20 +14,20 @@ repos:
         types_or: [python, pyi]
 
       # The hooks below only read: they report a hit and never rewrite a file.
-      # Fixtures, golden data, a font licence and the CNAME files hold odd whitespace on purpose.
+      # Fixtures, golden data and the CNAME file hold odd whitespace on purpose.
       - id: trailing-whitespace
         name: no trailing whitespace
         entry: '[ \t]+$'
         language: pygrep
         types: [text]
-        exclude: ^(tests/fixtures/|tests/golden/|docs/assets/fonts/|docs/CNAME$|site/public/CNAME$)
+        exclude: ^(tests/fixtures/|tests/golden/|site/public/CNAME$)
       - id: end-of-file
         name: file ends with a newline
         entry: '[^\n]\Z'
         language: pygrep
         args: [--multiline]
         types: [text]
-        exclude: ^(tests/fixtures/|tests/golden/|docs/assets/fonts/|docs/CNAME$|site/public/CNAME$)
+        exclude: ^(tests/fixtures/|tests/golden/|site/public/CNAME$)
       - id: merge-conflict
         name: no merge-conflict markers
         entry: '^(<{7}|>{7})( |$)'
@@ -68,25 +68,9 @@ repos:
         exclude: |
           (?x)^(
             README\.md
-            | docs/custom-domain\.md
-            | docs/developer/architecture\.md
-            | docs/developer/building\.md
-            | docs/developer/testing\.md
-            | docs/index\.md
-            | docs/manual/getting-started\.md
-            | docs/manual/offline-and-privacy\.md
-            | docs/manual/pronunciation\.md
-            | docs/manual/settings-and-cli\.md
-            | docs/manual/troubleshooting\.md
-            | docs/manual/using-the-app\.md
-            | docs/manual/voices\.md
           )$
       - id: markdownlint
         name: markdownlint
         entry: markdownlint
         language: system
         types_or: [markdown, mdx]
-        exclude: |
-          (?x)^(
-            docs/index\.md
-          )$

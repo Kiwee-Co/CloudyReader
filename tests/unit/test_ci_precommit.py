@@ -105,10 +105,7 @@ def test_the_config_does_not_trip_its_own_hooks() -> None:
     [
         ("trailing-whitespace", "tests/fixtures/questions/48-x.txt", True),
         ("trailing-whitespace", "tests/golden/corpus/entities.tsv", True),
-        ("trailing-whitespace", "docs/assets/fonts/OFL.txt", True),
         ("trailing-whitespace", "scripts/ci_guards.py", False),
-        ("end-of-file", "docs/CNAME", True),
-        ("end-of-file", "docs/CNAME.md", False),
         ("end-of-file", "site/public/CNAME", True),
         ("end-of-file", "site/public/CNAME.md", False),
         ("trailing-whitespace", "site/public/CNAME", True),
@@ -129,9 +126,6 @@ CLEAN_TODAY = (
     ".markdownlint.json",
     ".pre-commit-config.yaml",
     "CHANGELOG.md",
-    "docs/_config.yml",
-    "docs/developer/contributing.md",
-    "docs/manual/faq.md",
 )
 
 

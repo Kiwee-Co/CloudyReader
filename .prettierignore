@@ -20,13 +20,6 @@ assets.lock.json
 cloudyreader/data/*.json
 tests/golden/*.yaml
 
-# Jekyll templates hold Liquid, which Prettier rewrites and breaks.
-docs/_includes/
-docs/_layouts/
-docs/404.html
-docs/assets/
-docs/_sass/
-
 # npm writes these with its own layout; the 4-space JSON rule of .prettierrc fails them.
 site/package.json
 site/package-lock.json
