@@ -20,6 +20,9 @@ FOCUS_RADIUS_EXTRA = 3
 
 WINDOW_MIN_SIZE = (560, 480)
 WINDOW_DEFAULT_SIZE = (680, 620)
+# The question card shows at least this many lines: three keep the 480 pt minimum window whole
+# with the spoken script open, where four would need 496 pt.
+QUESTION_MIN_LINES = 3
 SCRIPT_MIN_HEIGHT = 96
 VOICE_COMBO_MIN_CHARS = 24
 STATUS_LINE_HEIGHT = 28

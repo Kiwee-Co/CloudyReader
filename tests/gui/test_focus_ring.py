@@ -33,11 +33,11 @@ def focus(qtbot, widget) -> None:
     qtbot.waitUntil(widget.hasFocus)
 
 
-def test_the_question_box_gets_the_ring_outside_its_edge(qtbot, active):
+def test_the_question_card_gets_the_ring_outside_its_edge(qtbot, active):
     focus(qtbot, active.question_edit)
 
     assert ring(active).isVisible()
-    assert ring(active).geometry() == ringed(active, active.question_edit)
+    assert ring(active).geometry() == ringed(active, active.question_card)
 
 
 def test_tab_takes_the_ring_off_for_a_native_control(qtbot, active):
@@ -61,7 +61,7 @@ def test_the_ring_follows_its_surface_when_the_window_resizes(qtbot, active):
     focus(qtbot, active.question_edit)
 
     active.resize(active.width() + 40, active.height() + 30)
-    qtbot.waitUntil(lambda: ring(active).geometry() == ringed(active, active.question_edit))
+    qtbot.waitUntil(lambda: ring(active).geometry() == ringed(active, active.question_card))
 
 
 def test_an_inactive_window_shows_no_ring_like_macos(qtbot, active):

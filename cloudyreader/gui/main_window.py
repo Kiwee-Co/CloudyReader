@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import threading
 from collections.abc import Callable
 from itertools import pairwise
@@ -27,6 +28,7 @@ from PySide6.QtGui import (
     QAction,
     QCloseEvent,
     QColor,
+    QFontMetricsF,
     QGuiApplication,
     QKeySequence,
     QPalette,
@@ -52,7 +54,14 @@ from cloudyreader.engine_catalog import TITLES, is_actionable
 from cloudyreader.gui import tokens
 from cloudyreader.gui.names import APP_NAME, app_version
 from cloudyreader.gui.voice_picker import LOADING, VoicePicker
-from cloudyreader.gui.widgets import DisclosureButton, FocusRing, StatusBar, Tone, text_style
+from cloudyreader.gui.widgets import (
+    Card,
+    DisclosureButton,
+    FocusRing,
+    StatusBar,
+    Tone,
+    text_style,
+)
 from cloudyreader.models import AudioPlayer, ReaderService, Reading, RenderOptions, VoiceInfo
 from cloudyreader.rotation import RotationMode, VoiceRotator
 from cloudyreader.voice_meta import profile_of
@@ -322,8 +331,13 @@ class MainWindow(QMainWindow):
             f"Paste a National Science Bowl question, then press {speak_keys} to hear it."
         )
         self.question_edit.setAccessibleName("Question")
+        self.question_edit.setAccessibleDescription(self.question_edit.placeholderText())
         self.question_edit.setTabChangesFocus(True)  # Tab must leave the box, not type a tab
-        self.question_edit.document().setDocumentMargin(tokens.CARD_PADDING)
+        self.question_edit.setFont(text_style(tokens.TEXT_QUESTION_PT))  # the primary surface
+        # The question is the primary reading surface: a rounded card, outlined to meet 3:1.
+        self.question_card = Card(self.question_edit)
+        lines = tokens.QUESTION_MIN_LINES * QFontMetricsF(self.question_edit.font()).lineSpacing()
+        self.question_card.setMinimumHeight(math.ceil(lines + 2 * tokens.CARD_PADDING))
 
         self.voice_picker = VoicePicker()
         self.voice_picker.voice_changed.connect(self._drop_voice_note)  # the user chose: note done
@@ -392,17 +406,17 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout()
         layout.setContentsMargins(*(tokens.MARGIN,) * 4)
         layout.setSpacing(tokens.SECTION_SPACING)
-        layout.addWidget(self.question_edit, 3)
+        layout.addWidget(self.question_card, 3)
         layout.addLayout(form)
         layout.addLayout(buttons)
         layout.addLayout(script, 2)
         central = QWidget()
         central.setLayout(layout)
         self.setCentralWidget(central)
-        # The two text views get the two-tone ring; native controls keep the system's own ring.
+        # The text views get the two-tone ring; native controls keep the system's own ring.
         self._focus_ring = FocusRing(central)
-        for view in (self.question_edit, self.script_view):
-            self._focus_ring.track(view, view)
+        self._focus_ring.track(self.question_edit, self.question_card, tokens.CARD_RADIUS)
+        self._focus_ring.track(self.script_view, self.script_view)
 
         # Voice downloads report in permanent widgets, so the message slot stays free for
         # "Preparing…" and "Playing…". Added before the busy bar, which stays rightmost.
@@ -456,8 +470,8 @@ class MainWindow(QMainWindow):
     def _apply_appearance(self, scheme: Qt.ColorScheme | None = None) -> None:
         """Give the custom-painted parts the tokens of the current appearance.
 
-        Placeholders get their AA token and the focus ring its inner stroke; every other color
-        stays native.
+        Placeholders get their AA token, the question card its outline, and the focus ring its
+        inner stroke; every other color stays native.
         """
         if scheme is None:
             scheme = QGuiApplication.styleHints().colorScheme()
@@ -472,6 +486,8 @@ class MainWindow(QMainWindow):
         )
         for view in (self.question_edit, self.script_view):
             view.setPalette(palette)
+        border = tokens.CARD_BORDER_DARK if dark else tokens.CARD_BORDER_LIGHT
+        self.question_card.set_colors(None, QColor(border))  # filled with the system's Base
         self._focus_ring.set_dark(dark)
 
     def _restore_settings(self) -> None:

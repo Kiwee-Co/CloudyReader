@@ -8,12 +8,15 @@ from PySide6.QtCore import QEvent, QObject, QPoint, QRect, QRectF, QSize, Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPaintEvent, QPalette, QPen
 from PySide6.QtWidgets import (
     QApplication,
+    QFrame,
+    QPlainTextEdit,
     QStatusBar,
     QStyle,
     QStyleOption,
     QStyleOptionFocusRect,
     QStylePainter,
     QToolButton,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -98,6 +101,58 @@ class DisclosureButton(QToolButton):
             focus = QStyleOptionFocusRect()
             focus.initFrom(self)
             painter.drawPrimitive(QStyle.PrimitiveElement.PE_FrameFocusRect, focus)
+
+
+class Card(QWidget):
+    """A rounded surface around one text view: the question card.
+
+    It paints the fill and, when it has one, the outline. The view inside has no frame and no
+    background of its own, so the fill shows through; its text sits CARD_PADDING from the edge.
+    """
+
+    def __init__(self, view: QPlainTextEdit, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.view = view
+        self._fill: QColor | None = None  # None: the system's text background, QPalette.Base
+        self._border: QColor | None = None
+        view.setFrameShape(QFrame.Shape.NoFrame)
+        view.viewport().setAutoFillBackground(False)
+        # Half the radius keeps the view's square corners, and a scroll bar, inside the rounded
+        # ones and clear of the outline; the document margin adds the rest of the padding.
+        inset = tokens.CARD_RADIUS // 2
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(inset, inset, inset, inset)
+        layout.addWidget(view)
+        view.document().setDocumentMargin(tokens.CARD_PADDING - inset)
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)  # a click on the padding edits too
+        self.setFocusProxy(view)
+
+    @property
+    def fill(self) -> QColor:
+        if self._fill is None:
+            return self.palette().color(QPalette.ColorRole.Base)
+        return QColor(self._fill)
+
+    @property
+    def border(self) -> QColor | None:
+        return None if self._border is None else QColor(self._border)
+
+    def set_colors(self, fill: QColor | None, border: QColor | None = None) -> None:
+        self._fill, self._border = fill, border
+        self.update()
+
+    def paintEvent(self, _event: QPaintEvent) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect, radius = QRectF(self.rect()), float(tokens.CARD_RADIUS)
+        if self._border is None:
+            painter.setPen(Qt.PenStyle.NoPen)
+        else:  # a stroke straddles its path: move it in by half, so all of it shows
+            half = tokens.BORDER_WIDTH / 2
+            rect, radius = rect.adjusted(half, half, -half, -half), radius - half
+            painter.setPen(QPen(self._border, tokens.BORDER_WIDTH))
+        painter.setBrush(self.fill)
+        painter.drawRoundedRect(rect, radius, radius)
 
 
 class FocusRing(QWidget):

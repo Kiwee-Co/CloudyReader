@@ -5,7 +5,7 @@ import threading
 import pytest
 from PySide6.QtCore import QCoreApplication, QEvent, QSettings, Qt
 from PySide6.QtGui import QColor, QGuiApplication, QKeySequence, QPalette
-from PySide6.QtWidgets import QFormLayout, QLineEdit, QMessageBox
+from PySide6.QtWidgets import QApplication, QFormLayout, QLineEdit, QMessageBox
 
 from cloudyreader.gui import tokens
 from cloudyreader.gui.fake_service import FakeReaderService
@@ -209,13 +209,12 @@ def test_popup_keeps_its_natural_width_like_a_native_form(window):
     assert form.fieldGrowthPolicy() == QFormLayout.FieldGrowthPolicy.FieldsStayAtSizeHint
 
 
-def test_text_views_get_a_comfortable_inset(window):
-    for view in (window.question_edit, window.script_view):
-        assert view.document().documentMargin() == tokens.CARD_PADDING
+def test_the_script_view_gets_a_comfortable_inset(window):
+    assert window.script_view.document().documentMargin() == tokens.CARD_PADDING
 
 
 def test_spoken_script_is_secondary_text(window):
-    body = window.question_edit.font().pointSizeF()
+    body = QApplication.font().pointSizeF()
     ratio = tokens.TEXT_CALLOUT_PT / tokens.TEXT_BODY_PT
 
     assert window.script_view.font().pointSizeF() == pytest.approx(body * ratio)
