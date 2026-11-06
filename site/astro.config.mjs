@@ -61,6 +61,9 @@ export default defineConfig({
 					items: [{ autogenerate: { directory: 'developer' } }],
 				},
 			],
+			// Search ranks term frequency higher than Starlight's default (0.1), so a page that
+			// keeps naming a message, such as "No voice is installed.", outranks one that names it once.
+			pagefind: { ranking: { termFrequency: 0.5 } },
 			customCss: styles(
 				'./src/styles/custom.css',
 				'./src/styles/figures.css',
