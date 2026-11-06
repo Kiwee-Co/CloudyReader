@@ -15,6 +15,7 @@ from cloudyreader.gui.app import dev_icon_path, run
 from cloudyreader.gui.fake_service import FakePlayer, FakeReaderService
 from cloudyreader.gui.names import APP_NAME, ORG_NAME
 from cloudyreader.models import Audio
+from cloudyreader.start_question import CHECKOUT_FIXTURES, sample_questions
 
 
 @pytest.fixture(autouse=True)
@@ -271,3 +272,56 @@ def test_run_ignores_an_unreadable_icon(qapp, tmp_path, monkeypatch):
     run_once(qapp)
 
     assert qapp.windowIcon().isNull()
+
+
+# --- start question --------------------------------------------------------------------------
+
+SAMPLE = "BONUS\n1) MATH Short Answer What is 2 + 2?\nANSWER: 4"
+
+
+def box_at_start(qapp, **kwargs) -> str:
+    """The question box of the window run() shows, once it is up."""
+    seen = {}
+
+    def probe():
+        window = next(w for w in QApplication.topLevelWidgets() if w.isVisible())
+        seen["text"] = window.question_edit.toPlainText()
+        qapp.quit()
+
+    QTimer.singleShot(50, probe)
+    run(FakeReaderService(), FakePlayer(), **kwargs)
+    return seen["text"]
+
+
+def test_run_shows_the_start_question_it_is_given(qapp):
+    assert box_at_start(qapp, start_question=lambda: SAMPLE) == SAMPLE
+    assert box_at_start(qapp, start_question=lambda: None) == ""
+
+
+def test_run_shows_a_random_test_fixture_question_by_default(qapp):
+    assert box_at_start(qapp) in sample_questions(CHECKOUT_FIXTURES)
+
+
+def test_run_shows_none_when_the_fixtures_are_missing(qapp, tmp_path, monkeypatch):
+    monkeypatch.setattr("cloudyreader.start_question.CHECKOUT_FIXTURES", tmp_path / "missing")
+
+    assert box_at_start(qapp) == ""
+
+
+def test_a_frozen_dev_build_shows_a_bundled_question_and_a_release_none(
+    qapp, tmp_path, monkeypatch
+):
+    contents = tmp_path / "Cloudy Reader.app" / "Contents"
+    (contents / "MacOS").mkdir(parents=True)
+    (contents / "MacOS" / "Cloudy Reader").write_text("")
+    (contents / "Resources").mkdir()
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "executable", str(contents / "MacOS" / "Cloudy Reader"))
+
+    assert box_at_start(qapp) == ""  # a release bundles no fixtures: the box stays empty
+
+    questions = contents / "Resources" / "start_questions" / "questions"
+    questions.mkdir(parents=True)
+    (questions / "01.txt").write_text(f"{SAMPLE}\n", encoding="utf-8")
+
+    assert box_at_start(qapp) == SAMPLE

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import plistlib
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from PySide6.QtGui import QIcon
@@ -15,6 +15,7 @@ from cloudyreader.frozen import bundle_resources_dir
 from cloudyreader.gui.main_window import MainWindow
 from cloudyreader.gui.names import APP_NAME, ORG_NAME
 from cloudyreader.models import AudioPlayer, ReaderService
+from cloudyreader.start_question import pick_start_question
 
 log = logging.getLogger(__name__)
 
@@ -66,8 +67,17 @@ def bundle_icon_path(resources: Path | None = None) -> Path | None:
         return None
 
 
-def run(service: ReaderService, player: AudioPlayer, argv: Sequence[str] = ()) -> int:
-    """Show the window and block until it closes. Returns the process exit code."""
+def run(
+    service: ReaderService,
+    player: AudioPlayer,
+    argv: Sequence[str] = (),
+    *,
+    start_question: Callable[[], str | None] = pick_start_question,
+) -> int:
+    """Show the window and block until it closes. Returns the process exit code.
+
+    `start_question` gives the text for the empty question box, or None for none.
+    """
     # No setStyle and no style sheet: the platform default is the native macOS look.
     app = QApplication.instance()
     if app is None:
@@ -80,6 +90,11 @@ def run(service: ReaderService, player: AudioPlayer, argv: Sequence[str] = ()) -
         # On macOS this is also the Dock icon. An unreadable file yields a null icon: no change.
         app.setWindowIcon(QIcon(str(icon_path)))
     window = MainWindow(service, player)
+    # Only the app shows a start question: a test fixture from a checkout or a dev build. A
+    # release carries no fixtures, so its box starts empty.
+    question = start_question()
+    if question is not None:
+        window.show_start_question(question)
     bundle_icon = bundle_icon_path()
     if bundle_icon is not None:
         # Only for the About box: the Dock shows the bundle icon already, and a macOS title bar

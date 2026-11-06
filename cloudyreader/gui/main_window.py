@@ -552,6 +552,17 @@ class MainWindow(QMainWindow):
         self._rotator.set_mode(mode)
         self._settings.setValue("voice_rotation", str(mode))
 
+    def show_start_question(self, text: str) -> bool:
+        """Put a sample question in the box when it is empty; False when it holds text already.
+
+        Selected, so typing or pasting replaces it. Nothing saves it: nothing saves the box.
+        """
+        if not text.strip() or not self.question_edit.document().isEmpty():
+            return False  # typed or restored text always wins
+        self.question_edit.setPlainText(text)  # also clears Undo: the sample is the first state
+        self.question_edit.selectAll()
+        return True
+
     def _load_voices(self) -> None:
         # Listing voices can take a second (a model file is hashed): never on the UI thread.
         self.voice_picker.set_loading()

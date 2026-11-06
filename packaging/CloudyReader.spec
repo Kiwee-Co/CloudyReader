@@ -1,6 +1,7 @@
 # PyInstaller spec for "Cloudy Reader.app" (one-folder BUNDLE, arm64, ad-hoc signed later).
 # scripts/build_app.sh drives it through env vars: CR_ENTRY (script), CR_APP_NAME, CR_ICON
-# (an .icns path or empty for PyInstaller's default), CR_KOKORO (1 = bundle mlx-audio), CR_ENGINES.
+# (an .icns path or empty for PyInstaller's default), CR_KOKORO (1 = bundle mlx-audio), CR_ENGINES,
+# CR_START_QUESTIONS (1 = bundle the test-fixture questions: a dev build, never a release).
 import os
 import runpy
 import tomllib
@@ -15,6 +16,7 @@ ICON = os.environ.get("CR_ICON") or None
 KOKORO = os.environ.get("CR_KOKORO") == "1"
 # Chatterbox Turbo and Qwen3-TTS ride the kokoro extra, so CR_ENGINES=1 counts only with Kokoro.
 ENGINES = KOKORO and os.environ.get("CR_ENGINES") == "1"
+START_QUESTIONS = os.environ.get("CR_START_QUESTIONS") == "1"
 VERSION = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
 COPYRIGHT = "Copyright © 2026 the Cloudy Reader authors."
 MIN_MACOS_FLOOR = "11.0"  # PyInstaller's arm64 bootloader; a collected binary may need newer
@@ -95,6 +97,15 @@ if ENGINES:
         "tqdm", "numpy", "pyyaml", "filelock",
     ):
         datas += copy_metadata(dist)
+if START_QUESTIONS:
+    # The app shows one of these in its empty question box at start; cloudyreader/start_question.py
+    # reads them from Contents/Resources/start_questions, laid out as tests/fixtures is.
+    fixtures = ROOT / "tests" / "fixtures"
+    datas += [
+        (str(path), "start_questions/questions")
+        for path in sorted((fixtures / "questions").glob("*.txt"))
+    ]
+    datas.append((str(fixtures / "tossup_earth_science.txt"), "start_questions"))
 a = Analysis(  # noqa: F821
     [ENTRY],
     pathex=[str(ROOT)],

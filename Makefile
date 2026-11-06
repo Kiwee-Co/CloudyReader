@@ -32,6 +32,8 @@ KOKORO ?= auto
 ENGINES ?= auto
 ## voices and Kokoro model inside `make app`: 1 (self-contained) or 0 (downloaded at first launch)
 BUNDLE_VOICES ?= 1
+## test-fixture questions inside `make app`, one shown at start: 1 or 0 (`make release` forces 0)
+START_QUESTIONS ?= 1
 ## output dir for `make app`
 OUT ?= dist
 ## engine for `make pin-engine`: chatterbox_turbo or qwen3_tts
@@ -217,16 +219,18 @@ ci: guards ## Commit gate: guards, check, then test, then precommit
 guards: ## Policy guards: vendor domain, public lock hosts, disk paths, workflow triggers
 	python3 -I -X pycache_prefix=$(CURDIR)/.cache/pycache scripts/ci_guards.py
 
-app: $(STAMPS)/deps $(STAMPS)/models $(STAMPS)/packaging ## Build dist/Cloudy Reader.app (ad-hoc signed); ICON=<name> KOKORO=auto|0|1 BUNDLE_VOICES=1|0 ENGINES=auto|0|1
+app: $(STAMPS)/deps $(STAMPS)/models $(STAMPS)/packaging ## Build dist/Cloudy Reader.app (ad-hoc signed); ICON=<name> KOKORO=auto|0|1 BUNDLE_VOICES=1|0 ENGINES=auto|0|1 START_QUESTIONS=1|0
 	@case "$(KOKORO)" in auto|0|1) ;; *) echo "KOKORO must be auto, 0 or 1 (got '$(KOKORO)')" >&2; exit 1 ;; esac
 	@case "$(BUNDLE_VOICES)" in 0|1) ;; *) echo "BUNDLE_VOICES must be 0 or 1 (got '$(BUNDLE_VOICES)')" >&2; exit 1 ;; esac
 	@case "$(ENGINES)" in auto|0|1) ;; *) echo "ENGINES must be auto, 0 or 1 (got '$(ENGINES)')" >&2; exit 1 ;; esac
-	@if [ -f scripts/build_app.sh ]; then APP_NAME="$(APP_NAME)" ICON="$(ICON)" KOKORO="$(KOKORO)" BUNDLE_VOICES="$(BUNDLE_VOICES)" ENGINES="$(ENGINES)" OUT="$(OUT)" bash scripts/build_app.sh; else echo "pending: scripts/build_app.sh (pkg agent) not written yet; it builds \"$(OUT)/$(APP_NAME).app\""; fi
+	@case "$(START_QUESTIONS)" in 0|1) ;; *) echo "START_QUESTIONS must be 0 or 1 (got '$(START_QUESTIONS)')" >&2; exit 1 ;; esac
+	@if [ -f scripts/build_app.sh ]; then APP_NAME="$(APP_NAME)" ICON="$(ICON)" KOKORO="$(KOKORO)" BUNDLE_VOICES="$(BUNDLE_VOICES)" ENGINES="$(ENGINES)" START_QUESTIONS="$(START_QUESTIONS)" OUT="$(OUT)" bash scripts/build_app.sh; else echo "pending: scripts/build_app.sh (pkg agent) not written yet; it builds \"$(OUT)/$(APP_NAME).app\""; fi
 
 # ENGINES=auto: the engines ship when assets.lock.json pins their weights and their probe passes.
+# START_QUESTIONS=0: a release never carries the test fixtures, whatever the command line says.
 release: ## Lean app (voices download at first launch) as a checked zip and DMG, each with its SHA-256, in dist/; VERSION=x.y.z; never uploads
 	APP_NAME="$(APP_NAME)" OUT="$(OUT)" bash scripts/build_app.sh release-preflight "$(VERSION)"
-	$(MAKE) --no-print-directory app BUNDLE_VOICES=0 OFFLINE=1 ICON=cloud-atom KOKORO=1 ENGINES=auto
+	$(MAKE) --no-print-directory app BUNDLE_VOICES=0 OFFLINE=1 ICON=cloud-atom KOKORO=1 ENGINES=auto START_QUESTIONS=0
 	APP_NAME="$(APP_NAME)" OUT="$(OUT)" bash scripts/build_app.sh release "$(VERSION)"
 
 # After models, so two uv processes never write .venv at once under make -j.

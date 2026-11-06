@@ -15,12 +15,14 @@
 #
 # BUNDLE_VOICES=0 builds the lean bundle of a release: no voice and no Kokoro model inside (the app
 # downloads them at first launch), only assets.lock.json; an audit then proves it.
+# START_QUESTIONS=1 copies the test-fixture questions into the bundle, so a dev app shows one at
+# start (make app passes 1); 0, the default here and what make release passes, copies none.
 # `build_app.sh release VERSION` (make release) zips the dist bundle, makes its DMG, checks both.
 # `build_app.sh figures VERSION FILE` writes the sizes and SHA-256s a publish step reads.
 #
-# Env inputs: APP_NAME, ICON, KOKORO=auto|0|1, ENGINES=auto|0|1, BUNDLE_VOICES=1|0, OUT,
-# CLOUDYREADER_DATA_DIR (asset source, default .data), ENTRY=auto|app|probe, SELFTEST_TIMEOUT
-# and PROBE_TIMEOUT (s).
+# Env inputs: APP_NAME, ICON, KOKORO=auto|0|1, ENGINES=auto|0|1, BUNDLE_VOICES=1|0,
+# START_QUESTIONS=0|1, OUT, CLOUDYREADER_DATA_DIR (asset source, default .data),
+# ENTRY=auto|app|probe, SELFTEST_TIMEOUT and PROBE_TIMEOUT (s).
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
@@ -29,6 +31,7 @@ ICON=${ICON:-}
 KOKORO=${KOKORO:-auto}
 ENGINES=${ENGINES:-auto}
 BUNDLE_VOICES=${BUNDLE_VOICES:-1}
+START_QUESTIONS=${START_QUESTIONS:-0}
 OUT=${OUT:-dist}
 DATA=${CLOUDYREADER_DATA_DIR:-$ROOT/.data}
 ENTRY=${ENTRY:-auto}
@@ -149,6 +152,7 @@ resolve_inputs() {
   resolve_kokoro
   resolve_engines
   resolve_bundle_voices
+  resolve_start_questions
   resolve_out
   STAGE_APP=$ROOT/build/dist/$APP_NAME.app
 }
@@ -165,6 +169,13 @@ resolve_bundle_voices() {
   case $BUNDLE_VOICES in
     0 | 1) ;;
     *) die "BUNDLE_VOICES must be 0 or 1, got '$BUNDLE_VOICES'" ;;
+  esac
+}
+
+resolve_start_questions() {
+  case $START_QUESTIONS in
+    0 | 1) ;;
+    *) die "START_QUESTIONS must be 0 or 1, got '$START_QUESTIONS'" ;;
   esac
 }
 
@@ -274,7 +285,7 @@ build_bundle() {
     TRANSFORMERS_VERBOSITY=error TRANSFORMERS_NO_ADVISORY_WARNINGS=1 \
     PYINSTALLER_CONFIG_DIR=$ROOT/build/pyinstaller-config \
     CR_ENTRY=$ENTRY_SCRIPT CR_APP_NAME=$APP_NAME CR_ICON=$ICON_PATH CR_KOKORO=$KOKORO \
-    CR_ENGINES=${BUILD_ENGINES:-0} \
+    CR_ENGINES=${BUILD_ENGINES:-0} CR_START_QUESTIONS=$START_QUESTIONS \
     "${PYI[@]}" --noconfirm --log-level WARN --distpath "$ROOT/build/dist" \
     --workpath "$ROOT/build/work" "$SPEC" >"$log" 2>&1 || rc=$?
   show_pyinstaller_log "$log"
@@ -383,6 +394,18 @@ audit_voices() {
     die "voice binaries in the bundle (BUNDLE_VOICES=0 must ship none): $(printf '%s ' "${found[@]}")"
   fi
   say "voice audit: no voice binary in the bundle"
+}
+
+# Fails when the bundle $1 carries the test-fixture questions of a START_QUESTIONS=1 dev build.
+audit_start_questions() {
+  local app=$1 rel found=()
+  for rel in Contents/Resources/start_questions Contents/Frameworks/start_questions; do
+    if [[ -e $app/$rel || -L $app/$rel ]]; then found+=("$rel"); fi
+  done
+  if ((${#found[@]})); then
+    die "test-fixture questions in the bundle (a release ships none): $(printf '%s ' "${found[@]}")"
+  fi
+  say "start-question audit: no test-fixture question in the bundle"
 }
 
 # Stops the build when the Info.plist is invalid or does not name the chosen icon.
@@ -505,6 +528,7 @@ summary() {
   say "voices and Kokoro model: $([[ $BUNDLE_VOICES == 1 ]] && echo "bundled" || echo "not bundled, downloaded at first launch")"
   say "kokoro: $([[ $KOKORO == 1 ]] && echo "included" || echo "not included")"
   say "engines: $([[ ${BUILD_ENGINES:-0} == 1 ]] && echo "included (the probe passed)" || echo "not included")"
+  say "start questions: $([[ $START_QUESTIONS == 1 ]] && echo "bundled (a dev build)" || echo "not bundled")"
   say "self-test wall time: first ${SELFTEST_SECONDS[1]}s, second ${SELFTEST_SECONDS[2]}s"
   say "largest components (MB):"
   du -sk -- "$FINAL_APP"/Contents/Frameworks/* "$FINAL_APP"/Contents/Resources/* |
@@ -713,8 +737,8 @@ release_preflight() {
 
 # make release VERSION: zips the lean dist bundle with its SHA-256 (moving older ones aside), then
 # checks the zip itself: unzipped, it must pass codesign, carry VERSION in its Info.plist and its
-# --version, pass the voice audit and the seeded self-test. Then the DMG of that very copy, checked
-# by check_dmg. Never uploads anything.
+# --version, pass the voice and start-question audits and the seeded self-test. Then the DMG of
+# that very copy, checked by check_dmg. Never uploads anything.
 release_main() {
   local version=${1:-} name zip dmg check app plist shown size data printed
   [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "VERSION must look like 1.2.3, got '$version'"
@@ -758,6 +782,7 @@ release_main() {
       "its bundled metadata is stale; run the sync step first, then make release again"
   say "release: the extracted copy's --version prints $printed"
   audit_voices "$app"
+  audit_start_questions "$app"
   run_self_test release "$app" "$data"
   ((SELFTEST_RC == 0)) || die "the extracted copy's self-test exited $SELFTEST_RC (log: build/selftest-release.log)"
   say "release: the extracted copy passes codesign, the voice audit and the self-test"
