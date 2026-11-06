@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import re
 import unicodedata
+from bisect import bisect_right
 from collections.abc import Collection, Mapping
 from dataclasses import dataclass, field
 from functools import cache
@@ -734,8 +735,9 @@ def _speak_en_dash_minus(text: str, tables: Tables) -> str:
 
 # "x<3": "<" and ">" were said only standing alone, and the voices drop them raw (espeak says
 # "x three"). Between operands they are spaced out; "<=" and ">=" become one sign.
+# At most four spaces each side: an unbounded run is rescanned from every position (quadratic).
 _COMPARISON = re.compile(
-    r"(?P<before>\s*)(?P<op><=|>=|<|>)(?P<after>\s*)(?=[\w(\[.]|[-\u2212\u2013]\.?\d)"
+    r"(?P<before>\s{0,4})(?P<op><=|>=|<|>)(?P<after>\s{0,4})(?=[\w(\[.]|[-\u2212\u2013]\.?\d)"
 )
 _COMPARISON_SIGNS = {"<=": "\u2264", ">=": "\u2265", "<": "<", ">": ">"}
 _PREFIX_WORDS = {
@@ -751,10 +753,12 @@ _TAG = re.compile(r"</?[A-Za-z][A-Za-z0-9]*>")
 
 def _space_comparisons(text: str) -> str:
     tags = [m.span() for m in _TAG.finditer(text)]
+    starts = [start for start, _ in tags]
 
     def repl(m: re.Match[str]) -> str:
         op, at = m["op"], m.start("op")
-        if any(start <= at < end for start, end in tags):
+        i = bisect_right(starts, at) - 1  # tags never overlap: only the last one before can hold it
+        if i >= 0 and at < tags[i][1]:
             return m.group()
         # The head of an arrow ("->", "-->", "=>", "<=>") is no comparison, even before a number.
         if (op[0] == ">" and text[at - 1 : at] in ("-", "=")) or text.startswith("<=>", at):

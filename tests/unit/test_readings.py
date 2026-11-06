@@ -1,10 +1,13 @@
 """Readings a science moderator gives that the stages alone missed, through the real normalizer."""
 
+import time
+
 import pytest
 
 from cloudyreader.models import Question, RenderOptions, Respelling
 from cloudyreader.normalize import ScriptNormalizer
 from cloudyreader.parser import parse
+from cloudyreader.units import speak_units
 
 EN_DASH = "–"
 
@@ -147,6 +150,14 @@ def test_a_comparison_is_spoken(raw, words):
 )
 def test_arrows_and_markup_keep_their_reading(raw, today):
     assert spoken(raw) == today
+
+
+def test_a_long_whitespace_run_and_many_tags_stay_linear():
+    # Regression: an unbounded space run before a sign was rescanned from every position.
+    started = time.perf_counter()
+    assert speak_units("x" + " " * 40_000 + "y").startswith("x ")
+    assert speak_units("x<1 <b> " * 4_000).count("is less than") == 4_000
+    assert time.perf_counter() - started < 1.5
 
 
 def test_angle_brackets_inside_a_say_as_guide_stay_intact():
