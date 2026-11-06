@@ -20,6 +20,16 @@
 		--sl-color-accent-low: var(--cr-lavender-pale);
 		--sl-color-accent: var(--cr-violet);
 		--sl-color-accent-high: var(--cr-blue-deep);
+		/* Starlight pads the end of main by 3vh, which on paper can push the end to a blank page. */
+		--sl-main-pad: 0;
+	}
+
+	/* Starlight makes the page at least one screen tall; on paper that can add an empty page. */
+	.page {
+		min-height: 0;
+	}
+	.content-panel:last-child {
+		padding-bottom: 0;
 	}
 
 	/* Keep tables, table rows, steps, and asides whole on a page. A table taller than a page
@@ -65,14 +75,23 @@
 		display: none;
 	}
 	body:has(.cr-cheatsheet) .content-panel {
-		padding-block: 0.25rem;
+		padding-block: 0.25rem 0;
 	}
 	body:has(.cr-cheatsheet) h1 {
 		font-size: var(--cr-print-cheatsheet-h1);
 	}
 	body:has(.cr-cheatsheet) .cr-site-footer {
-		margin-top: 0.75rem;
-		font-size: 8pt;
+		margin-top: 0.5rem;
+		padding-top: 0.25rem;
+		font-size: 7.5pt;
+		line-height: 1.3;
+	}
+	/* The version line and the independence note run on as one paragraph. */
+	body:has(.cr-cheatsheet) .cr-site-footer p {
+		display: inline;
+	}
+	body:has(.cr-cheatsheet) .cr-site-footer p + p::before {
+		content: ' ';
 	}
 	body:has(.cr-cheatsheet) .sl-markdown-content {
 		--sl-content-gap-y: 0.4rem;
