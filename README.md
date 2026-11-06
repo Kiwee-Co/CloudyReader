@@ -4,9 +4,9 @@ Cloudy Reader reads US DOE National Science Bowl questions aloud on your Mac. It
 
 ## Download
 
-- Get the disk image from the [v0.0.2 release page](https://github.com/Kiwee-Co/CloudyReader/releases/tag/v0.0.2).
-- The file is `Cloudy-Reader-0.0.2-macos-arm64.dmg`. It needs an Apple Silicon Mac with macOS 26.2 or later.
-- Open the disk image and drag Cloudy Reader onto the Applications link. The zip, `Cloudy-Reader-0.0.2-macos-arm64.zip`, holds the same app.
+- Get the disk image from the [v0.0.3 release page](https://github.com/Kiwee-Co/CloudyReader/releases/tag/v0.0.3).
+- The file is `Cloudy-Reader-0.0.3-macos-arm64.dmg`. It needs an Apple Silicon Mac with macOS 26.2 or later.
+- Open the disk image and drag Cloudy Reader onto the Applications link. The zip, `Cloudy-Reader-0.0.3-macos-arm64.zip`, holds the same app.
 - Neither file holds voices or engines. The app downloads them at the first launch, so keep the Mac online.
 - The app is ad-hoc signed and not notarized. The first launch needs a one-time approval in **System Settings > Privacy & Security**.
 - Check the SHA-256 on the release page before you open the app.
