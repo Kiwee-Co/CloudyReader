@@ -8,37 +8,34 @@ sidebar:
 
 import { LinkButton, Steps } from '@astrojs/starlight/components';
 
-Cloudy Reader REL-VERSION is a zip file for a Mac with Apple silicon. This page has the file details, the requirements, its SHA-256, and the install steps.
+Cloudy Reader 0.0.1 is a zip file for a Mac with Apple silicon. This page has the file details, the requirements, its SHA-256, and the install steps.
 
-## Download version REL-VERSION
+## Download version 0.0.1
 
-- Version: REL-VERSION
-- Release date: REL-DATE
-- File name: `Cloudy-Reader-REL-VERSION-macos-arm64.zip`
-- Download size: REL-ZIP-SIZE
-- Size on disk after unzipping: REL-APP-SIZE
+- Version: 0.0.1
+- Release date: November 5, 2026
+- File name: `Cloudy-Reader-0.0.1-macos-arm64.zip`
+- Download size: 459 MB
+- Size on disk after unzipping: 1.06 GB
 
 The zip holds the app and no voices. At the first launch, the app downloads its voices, so keep the Mac online. Make sure your Mac meets the requirements below before you download.
 
-<LinkButton
-  href={`https://github.com/Kiwee-Co/CloudyReader/releases/tag/vREL-VERSION`}
-  icon="external"
->
-  Open the version REL-VERSION release on GitHub
+<LinkButton href={`https://github.com/Kiwee-Co/CloudyReader/releases/tag/v0.0.1`} icon="external">
+  Open the version 0.0.1 release on GitHub
 </LinkButton>
 
-On the release page, click `Cloudy-Reader-REL-VERSION-macos-arm64.zip` under **Assets**. The **Source code** archives hold the code and not the app.
+On the release page, click `Cloudy-Reader-0.0.1-macos-arm64.zip` under **Assets**. The **Source code** archives hold the code and not the app.
 
 ## Check your Mac
 
-Cloudy Reader needs a Mac with Apple silicon and macOS REL-MACOS-FLOOR or later. [Check your Mac](/manual/getting-started/#check-your-mac) shows how to read your chip and macOS version, and lists the disk space and network needs. If a requirement fails, see [Your Mac is not supported](/manual/troubleshooting/#your-mac-is-not-supported).
+Cloudy Reader needs a Mac with Apple silicon and macOS 26.2 or later. [Check your Mac](/manual/getting-started/#check-your-mac) shows how to read your chip and macOS version, and lists the disk space and network needs. If a requirement fails, see [Your Mac is not supported](/manual/troubleshooting/#your-mac-is-not-supported).
 
 ## Check the download
 
-The SHA-256 is a fingerprint of the file. If your copy has the same SHA-256, it is the same file as the published one. The value for `Cloudy-Reader-REL-VERSION-macos-arm64.zip` is:
+The SHA-256 is a fingerprint of the file. If your copy has the same SHA-256, it is the same file as the published one. The value for `Cloudy-Reader-0.0.1-macos-arm64.zip` is:
 
 ```text
-REL-ZIP-SHA256
+cf363ff419296e00b1d4406a7d846329f4712e0ac86bd9c022e8c1c70fd8ce6d
 ```
 
 To check your copy:
@@ -55,7 +52,7 @@ To check your copy:
 3. Run the check:
 
    ```bash
-   echo "REL-ZIP-SHA256  Cloudy-Reader-REL-VERSION-macos-arm64.zip" | shasum -a 256 -c
+   echo "cf363ff419296e00b1d4406a7d846329f4712e0ac86bd9c022e8c1c70fd8ce6d  Cloudy-Reader-0.0.1-macos-arm64.zip" | shasum -a 256 -c
    ```
 
 </Steps>
@@ -63,7 +60,7 @@ To check your copy:
 The output must read:
 
 ```text
-Cloudy-Reader-REL-VERSION-macos-arm64.zip: OK
+Cloudy-Reader-0.0.1-macos-arm64.zip: OK
 ```
 
 Any other output means the download is damaged or is not this release. Delete the zip and download it again. See [The checksum does not match](/manual/troubleshooting/#the-checksum-does-not-match). If the mismatch repeats, follow [Report a security issue](/manual/get-help/#report-a-security-issue).

@@ -271,11 +271,11 @@ ICON=cloud-wave make app
 
 `make release` builds the zip that a GitHub release carries. The zip holds a lean app: no voice files and no engine models. The app downloads them at first launch. `make release` never uploads anything.
 
-Set the version in every place that [Change the version](/developer/contributing/#change-the-version) lists. Then run the sync step, so that `.venv` knows the version, and build. This example builds version REL-VERSION:
+Set the version in every place that [Change the version](/developer/contributing/#change-the-version) lists. Then run the sync step, so that `.venv` knows the version, and build. This example builds version 0.0.1:
 
 ```bash
 make .cache/stamps/packaging kokoro
-make release VERSION=REL-VERSION
+make release VERSION=0.0.1
 ```
 
 The sync step needs the network and the public package index. `VERSION` defaults to `version` in `pyproject.toml`.

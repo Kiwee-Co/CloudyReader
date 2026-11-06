@@ -95,7 +95,7 @@ If the removed voice was your selected voice, the app selects the first installe
 Copy the voices to skip the download on the other Mac. Copy from a Mac where the voices work, because the app does not detect a damaged Piper file that has the right size.
 
 1. On the Mac that has the voices, quit Cloudy Reader and open the data folder.
-2. Copy the `voices` and `models` folders to a USB drive. Together they take about REL-DOWNLOAD-SIZE.
+2. Copy the `voices` and `models` folders to a USB drive. Together they take about 0.66 GB.
 3. On the other Mac, install Cloudy Reader but do not open it. See [Install, update, and uninstall](/manual/tasks/install/).
 4. In Finder, choose **Go > Go to Folder**, type `~/Library/Application Support`, and press Return.
 5. Open the `cloudyreader` folder. If it does not exist, choose **File > New Folder** and name the folder `cloudyreader`.
@@ -108,10 +108,10 @@ If the voices of one engine are missing from the menu after the copy, see [Troub
 
 The audio cache in the data folder keeps one WAV file for each distinct reading. It grows without limit, and the app never cleans it. The table lists the largest folders and what happens when you delete each one.
 
-| Folder or file        | Size                    | After you delete it                             |
-| --------------------- | ----------------------- | ----------------------------------------------- |
-| `cache/wav`           | Grows without limit     | Each question renders again at its next reading |
-| `voices` and `models` | About REL-DOWNLOAD-SIZE | The app downloads them again at the next start  |
+| Folder or file        | Size                | After you delete it                             |
+| --------------------- | ------------------- | ----------------------------------------------- |
+| `cache/wav`           | Grows without limit | Each question renders again at its next reading |
+| `voices` and `models` | About 0.66 GB       | The app downloads them again at the next start  |
 
 [Files, settings, and limits](/manual/reference/files-and-settings/#data-folder) lists the size of every file. The file you downloaded to install Cloudy Reader is outside the data folder. Delete it when you no longer need it, and keep it if you plan to install the app on another Mac.
 

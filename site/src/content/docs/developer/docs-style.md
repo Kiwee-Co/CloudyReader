@@ -84,7 +84,7 @@ Use the canonical term. Do not use the banned variants in prose. A banned varian
 - **Cloudy Reader**, **the app**: The product. Write "the app" after the first mention on a page. Do not use `CloudyReader` (except the repository name), `cloudyreader` (except identifiers), `the program`, or `the tool`.
 - **Mac with Apple silicon**: A Mac with an Apple chip. Do not use `Apple Silicon`, `M1 Mac`, or `ARM Mac`.
 - **Intel-based Mac**: A Mac with an Intel processor. `Intel Mac` is acceptable in tables only.
-- **macOS**: The operating system. Write it by number, as in "macOS REL-MACOS-FLOOR or later". Do not use `Mac OS`, `OS X`, `OSX`, or `MacOS`.
+- **macOS**: The operating system. Write it by number, as in "macOS 26.2 or later". Do not use `Mac OS`, `OS X`, `OSX`, or `MacOS`.
 - **System Settings**: The macOS settings app. Do not use `System Preferences`.
 - **Terminal**: The macOS app. Write "in Terminal". Do not use `the terminal`, `command prompt`, or `shell` on user pages.
 - **National Science Bowl**: Spell it out on first use on every page. Do not use `NSB` or `Science Bowl`.
@@ -117,7 +117,7 @@ Click a button. Choose a menu item or a pop-up menu value. Select or deselect a 
 - Spell out the numbers zero to nine in prose. Use numerals for 10 and above, for measurements, versions, keys, and table cells, and when a sentence mixes counts: "3 toss-ups and 12 bonuses".
 - Put a space between a number and its unit symbol. Write sizes in decimal units, as Finder shows them: "12.5 MB", "1.4 GB". Spell out time in prose: "5 seconds", "300 milliseconds". Tables may use "s" and "ms".
 - Say "about" for approximate values: "about 40 MB". Do not round a value differently on different pages. Take each value from the code or from the release build.
-- Write a version as "version 1.2.3". Write the tag `v1.2.3` only in code or URLs. Write macOS by number only, never by its marketing name, as in "macOS REL-MACOS-FLOOR or later".
+- Write a version as "version 1.2.3". Write the tag `v1.2.3` only in code or URLs. Write macOS by number only, never by its marketing name, as in "macOS 26.2 or later".
 - Write dates as "March 3, 2027" in prose. Use ISO dates only in the changelog.
 
 ### Asides

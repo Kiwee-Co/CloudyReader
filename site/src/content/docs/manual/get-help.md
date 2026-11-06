@@ -20,7 +20,7 @@ Many problems have a known fix.
 
 A report with these details lets the project reproduce your problem.
 
-1. The app version. Choose **About Cloudy Reader** in the **Cloudy Reader** menu or the **Help** menu. The box shows the version, such as "Version REL-VERSION".
+1. The app version. Choose **About Cloudy Reader** in the **Cloudy Reader** menu or the **Help** menu. The box shows the version, such as "Version 0.0.1".
 2. The macOS version and the chip. Choose **Apple menu > About This Mac**.
 3. The self-test report. See [Run the self-test](#run-the-self-test).
 4. The lines the app prints in Terminal. See [Read the lines the app prints](#read-the-lines-the-app-prints).

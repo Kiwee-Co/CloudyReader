@@ -24,7 +24,7 @@ The engines run on your Mac. The table compares them.
 | Files on disk    | 63.2 MB for each voice                    | 327.1 MB for the model and 0.52 MB for each voice |
 | Sample rate (Hz) | 22,050 for the supported voices           | 24,000                                            |
 
-Together, the voice files take REL-VOICES-SIZE, and the first launch downloads them. The first Kokoro reading after the app starts also loads the Kokoro model. The status bar shows only "Preparing…" while it loads.
+Together, the voice files take 0.66 GB, and the first launch downloads them. The first Kokoro reading after the app starts also loads the Kokoro model. The status bar shows only "Preparing…" while it loads.
 
 Measurements on a Mac with an M2 Ultra chip and 192 GB of memory found these peak memory values:
 

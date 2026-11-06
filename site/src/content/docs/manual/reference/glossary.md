@@ -233,7 +233,7 @@ A Mac with an Apple chip, M1 or later. Cloudy Reader runs only on these Macs.
 
 ### macOS
 
-The Mac operating system. Cloudy Reader needs a Mac with Apple silicon and macOS REL-MACOS-FLOOR or later. See [Check your Mac](/manual/getting-started/#check-your-mac).
+The Mac operating system. Cloudy Reader needs a Mac with Apple silicon and macOS 26.2 or later. See [Check your Mac](/manual/getting-started/#check-your-mac).
 
 ### Notarized
 

@@ -9,9 +9,9 @@ Use this page to put Cloudy Reader on one or several Macs, to install a new vers
 
 ## Install the app
 
-Cloudy Reader comes as one zip file. It holds the app and no voices. The unzipped app takes REL-APP-SIZE on disk. The app downloads its voices at the first launch.
+Cloudy Reader comes as one zip file. It holds the app and no voices. The unzipped app takes 1.06 GB on disk. The app downloads its voices at the first launch.
 
-Cloudy Reader needs a Mac with Apple silicon and macOS REL-MACOS-FLOOR or later. See [Check your Mac](/manual/getting-started/#check-your-mac) for the disk space and the network connection that the first launch needs.
+Cloudy Reader needs a Mac with Apple silicon and macOS 26.2 or later. See [Check your Mac](/manual/getting-started/#check-your-mac) for the disk space and the network connection that the first launch needs.
 
 1. Download the zip and check its SHA-256. See [Download Cloudy Reader](/download/).
 2. Double-click the zip in Finder to unzip it. The file `Cloudy Reader.app` appears.
@@ -53,9 +53,9 @@ To confirm the version, see [Check the installed version](#check-the-installed-v
 
 ## Check the installed version
 
-Choose **About Cloudy Reader** in the **Cloudy Reader** menu or the **Help** menu. The box shows the version, such as "Version REL-VERSION". Click **OK** to close the box.
+Choose **About Cloudy Reader** in the **Cloudy Reader** menu or the **Help** menu. The box shows the version, such as "Version 0.0.1". Click **OK** to close the box.
 
-In Terminal, run this command to print the app name and the version, such as `Cloudy Reader REL-VERSION`:
+In Terminal, run this command to print the app name and the version, such as `Cloudy Reader 0.0.1`:
 
 ```bash
 "/Applications/Cloudy Reader.app/Contents/MacOS/Cloudy Reader" --version
@@ -65,7 +65,7 @@ In Terminal, run this command to print the app name and the version, such as `Cl
 
 Cloudy Reader writes its own files in three places, and it removes its temporary files after use. Remove the three places to take the app off the Mac:
 
-- The app: `/Applications/Cloudy Reader.app`, which takes REL-APP-SIZE on disk.
+- The app: `/Applications/Cloudy Reader.app`, which takes 1.06 GB on disk.
 - The data folder: `~/Library/Application Support/cloudyreader`, which holds the voices and the caches, including the audio of each reading.
 - The preferences file: `~/Library/Preferences/com.cloudyreader.Cloudy Reader.plist`, which holds your saved choices.
 

@@ -18,7 +18,7 @@ No. Cloudy Reader is an [independent project](/about/project/). It is not affili
 
 ## Which Macs run it?
 
-Cloudy Reader needs a Mac with Apple silicon and macOS REL-MACOS-FLOOR or later. Intel-based Macs are not supported. See [Check your Mac](/manual/getting-started/#check-your-mac).
+Cloudy Reader needs a Mac with Apple silicon and macOS 26.2 or later. Intel-based Macs are not supported. See [Check your Mac](/manual/getting-started/#check-your-mac).
 
 ## Does it cost anything?
 
@@ -86,7 +86,7 @@ That depends on your administrator. The app is signed ad hoc and is not notarize
 
 ## How much disk space and memory does it use?
 
-Cloudy Reader needs REL-DISK-TOTAL of free disk space, and the audio cache has no size limit. [Check your Mac](/manual/getting-started/#check-your-mac) lists the requirements, and [Voices and voice engines](/manual/concepts/voice-engines/) covers memory. See [Free disk space](/manual/tasks/voices-and-storage/#free-disk-space) to clear the cache.
+Cloudy Reader needs 1.8 GB of free disk space, and the audio cache has no size limit. [Check your Mac](/manual/getting-started/#check-your-mac) lists the requirements, and [Voices and voice engines](/manual/concepts/voice-engines/) covers memory. See [Free disk space](/manual/tasks/voices-and-storage/#free-disk-space) to clear the cache.
 
 ## How do I update or uninstall it?
 
@@ -94,7 +94,7 @@ The app has no update check, so look for a later version on the [releases page](
 
 ## How do I find the version?
 
-Choose **About Cloudy Reader** in the **Cloudy Reader** menu or the **Help** menu to see "Version REL-VERSION". In Terminal, `--version` prints "Cloudy Reader REL-VERSION":
+Choose **About Cloudy Reader** in the **Cloudy Reader** menu or the **Help** menu to see "Version 0.0.1". In Terminal, `--version` prints "Cloudy Reader 0.0.1":
 
 ```bash
 "/Applications/Cloudy Reader.app/Contents/MacOS/Cloudy Reader" --version
