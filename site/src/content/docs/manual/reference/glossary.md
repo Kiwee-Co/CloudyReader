@@ -103,15 +103,15 @@ A status message that starts with "Warning:" or "_n_ warnings:". The reading goe
 
 ### Grade
 
-The letter that the Kokoro model gives a voice, from A at the top to F+ at the bottom. A Piper voice carries a quality label instead, `medium` for the five supported voices. The **Voice** menu shows either one after the language. See [Voices and voice engines](/manual/concepts/voice-engines/).
+The mark that the **Voice** menu shows after the language of a voice. A Kokoro voice has a letter grade from the model, from A at the top to F+ at the bottom. A Piper voice has a quality label, such as `medium`. See [Voices and voice engines](/manual/concepts/voice-engines/).
 
 ### Kokoro
 
-A voice engine that makes 28 of the 33 supported voices. It needs a Mac with Apple silicon.
+A voice engine whose voices show a letter grade in the **Voice** menu. It needs a Mac with Apple silicon.
 
 ### Piper
 
-A voice engine that makes 5 of the 33 supported voices.
+A voice engine whose voices have lower-case names in the **Voice** menu, such as `lessac`.
 
 ### Rotation
 
@@ -123,11 +123,11 @@ One of the six settings of the **Rotation** menu: **No rotation**, **Round robin
 
 ### Speaker
 
-The number in the **Speaker** box of a voice that has several speakers. The 33 supported voices have one speaker each, so the box stays hidden.
+The number in the **Speaker** box. The box appears only for a voice that has several speakers.
 
 ### Supported voices
 
-The 33 voices that the app downloads and checks: 5 Piper voices and 28 Kokoro voices.
+The voices that the app downloads and checks. See [Voices and rotation modes](/manual/reference/voices/).
 
 ### Voice
 
@@ -135,7 +135,7 @@ One entry that you can choose in the **Voice** menu, such as "Heart (female)".
 
 ### Voice engine
 
-The speech software that makes a set of voices: Piper or Kokoro. See [Voices and voice engines](/manual/concepts/voice-engines/).
+The speech software that makes a set of voices, such as Piper or Kokoro. See [Voices and voice engines](/manual/concepts/voice-engines/).
 
 ## Pronunciation
 
@@ -233,7 +233,7 @@ A Mac with an Apple chip, M1 or later. Cloudy Reader runs only on these Macs.
 
 ### macOS
 
-The Mac operating system. Cloudy Reader needs macOS 26.2 or later.
+The Mac operating system. Cloudy Reader needs a Mac with Apple silicon and macOS REL-MACOS-FLOOR or later. See [Check your Mac](/manual/getting-started/#check-your-mac).
 
 ### Notarized
 

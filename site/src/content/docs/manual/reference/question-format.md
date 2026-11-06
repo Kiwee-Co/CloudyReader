@@ -90,15 +90,7 @@ With **Read answer line** on, the pause after "Nitrogen" is 5000 milliseconds, a
 
 ### Voice padding
 
-A voice can add its own silence around a line. The app trims that silence beside a choice letter, so the pause after a letter is about 0.3 to 0.4 seconds with every voice. The other pauses keep the voice's own silence. With a Kokoro voice, each of them runs about 0.8 seconds longer than the inserted silence.
-
-The table shows the silent gap between spoken sounds, measured on one sample question. Piper output varies from run to run.
-
-| Pause         | Inserted (s) | Piper voice (s) | Kokoro voice (s) |
-| ------------- | ------------ | --------------- | ---------------- |
-| Stem          | 0.7          | 0.91 to 1.02    | 1.49             |
-| Choice letter | 0.3          | 0.30            | 0.30             |
-| Choice text   | 0.4          | 0.47 to 0.67    | 1.16 to 1.19     |
+Some voices add their own silence around each line. The app trims that silence beside a choice letter, so the pause after a letter is about 0.3 to 0.4 seconds. The other pauses keep the voice's own silence. See [Voices and voice engines](/manual/concepts/voice-engines/) for how voices differ.
 
 ## The answer line
 

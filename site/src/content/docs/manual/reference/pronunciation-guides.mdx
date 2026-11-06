@@ -1,0 +1,135 @@
+---
+title: Pronunciation guides
+description: The syntax of pronunciation guides in brackets, with phonetic respelling, say-as, and spell guides, stress rules, and the warnings they can cause.
+sidebar:
+  order: 6
+---
+
+import Figure from '../../../../components/Figure.astro';
+
+This page lists the forms a pronunciation guide takes, the rules for each kind, and the warnings a guide can cause.
+
+## Where a guide goes
+
+A guide follows the word or expression that it describes. The app takes the guide out of the text and uses it.
+
+| Kind                | What it holds                                                       | Example                      | What the app does                                                    |
+| ------------------- | ------------------------------------------------------------------- | ---------------------------- | -------------------------------------------------------------------- |
+| Phonetic respelling | Syllables joined by hyphens, with the stressed syllable in capitals | `Krebs cycle [KREBZ SY-kul]` | Keeps the printed words and speaks them with the sounds of the guide |
+| Say-as guide        | Words that the voice says in place of a printed expression          | `x2 [x squared]`             | Speaks the guide's words instead of the expression                   |
+| Spell guide         | Letters or digits joined by dots or hyphens                         | `FAD [F.A.D.]`               | Speaks the letters one at a time                                     |
+
+A phonetic respelling covers every occurrence of its word in the question. A say-as guide covers only the occurrence that it follows.
+
+## Phonetic respelling
+
+Write the sounds of the word with plain English spellings, one syllable at a time.
+
+| Rule      | What to write                                                                                                                                                                                                                                                                          |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Syllables | Join the syllables of a word with hyphens: `SY-kul`.                                                                                                                                                                                                                                   |
+| Words     | Separate the words of a name with a space: `KREBZ SY-kul`.                                                                                                                                                                                                                             |
+| Stress    | Write the stressed syllable in capitals. The first capitalized syllable of a word gets the main stress, and each later one gets a lighter stress.                                                                                                                                      |
+| One word  | A bracket with one lower-case word of three or more letters is a phonetic respelling: `[jool]`. Its one syllable is stressed. The words `sic`, `note`, `see`, `ibid`, `emphasis`, `added`, and `edited` are not guides.                                                                |
+| Variants  | Give a second variant after `or`. The app speaks the first: `[pi-KAHN or PEE-kan]` speaks `pi-KAHN`.                                                                                                                                                                                   |
+| Spellings | The app knows 93 spellings and matches the longest first, such as `ay`, `ee`, `eye`, `oh`, `oo`, `uh`, `ih`, `eh`, `ah`, `aw`, `ow`, `oy`, `er`, `ur`, `ar`, `or`, `air`, `eer`, `zh`, `th`, `dh`, `ng`, `ch`, `sh`, `kw`, `ks`, and `yoo`. A plain `y` stands for the vowel in "eye". |
+
+The printed word stays in the **Spoken script** view. The voice receives its sounds separately, as an exact pronunciation in [IPA](/manual/reference/glossary/#ipa).
+
+| You paste                    | Spoken script | Sounds (IPA)     |
+| ---------------------------- | ------------- | ---------------- |
+| `Krebs cycle [KREBZ SY-kul]` | Krebs cycle   | `ˈkɹɛbz ˈsaɪkəl` |
+| `Pharynx [FAR-ingks]`        | Pharynx       | `ˈfæɹɪŋks`       |
+| `Esophagus [i-SOF-uh-guhs]`  | Esophagus     | `ɪˈsɑfəɡəs`      |
+| `Trachea [TRAY-kee-uh]`      | Trachea       | `ˈtɹeɪkiə`       |
+| `pecan [pi-KAHN or PEE-kan]` | pecan         | `pɪˈkɑn`         |
+| `jewel [jool]`               | jewel         | `ˈdʒul`          |
+| `olivine [OL-uh-veen]`       | olivine       | `ˈɑləvin`        |
+
+The app refuses a guide that it cannot place whole. It speaks the word plain, shows a warning, and never guesses.
+
+| Case                                    | Example                | Result                                                                                                                                                                       |
+| --------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| More than one syllable, all in capitals | `olivine [OL-UH-VEEN]` | No syllable stands out for stress. The status bar shows the warning "No pronunciation for respelling [OL-UH-VEEN]: 'olivine' is spoken plain." Write `[OL-uh-veen]` instead. |
+| A spelling the app does not know        | `xqzite [XQZ-ite]`     | One unknown spelling fails the whole guide. The status bar shows the warning "No pronunciation for respelling [XQZ-ite]: 'xqzite' is spoken plain."                          |
+
+The first row raises this warning in the status bar.
+
+<Figure
+  src="status-guide-warning-light.svg"
+  dark="status-guide-warning-dark.svg"
+  alt="The status bar with a warning icon and the message Warning: No pronunciation for respelling [OL-UH-VEEN]: 'olivine' is spoken plain."
+  caption="The warning for a respelling with every syllable in capitals."
+/>
+
+## Say-as guides
+
+A say-as guide replaces a printed expression with the words that you write.
+
+| You paste                                        | Spoken script                       |
+| ------------------------------------------------ | ----------------------------------- |
+| `x2 [x squared] plus 4 2/7 [4 and two-sevenths]` | x squared plus 4 and two-sevenths   |
+| `What is 6 × 7 (read as: six times seven)?`      | What is six times seven?            |
+| `The constant π [pi] is irrational.`             | The constant pi is irrational.      |
+| `The copper(I) [copper-one] ion forms.`          | The copper-one ion forms.           |
+| `2 H2 + O2 → [yields] 2 H2O`                     | 2 H two plus O two yields 2 H two O |
+
+A bracket counts as a say-as guide when it follows a printed expression and holds `squared`, `cubed`, `prime`, `degrees`, `percent`, a number phrase such as `one-seventh`, or several words. A one-letter symbol such as `π`, an element with its oxidation state such as `copper(I)`, and an arrow before `[yields]` work the same way.
+
+A guide for a whole expression replaces everything in it. Without the two guides in the first row, the same text reads "x squared plus four and two sevenths". A fraction inside the guide's own words is read as a fraction.
+
+## Spell guides
+
+A spell guide gives letters or digits joined by dots or hyphens. The letters must match the word that the guide follows. The app says each one, and a digit becomes a number word.
+
+| You paste          | Spoken script |
+| ------------------ | ------------- |
+| `H2S [H-2-S]`      | H two S       |
+| `the ETC [E.T.C.]` | the E T C     |
+
+A spell guide forces the letters. Without a guide, a Piper voice says `ETC` as "et cetera", and a Kokoro voice says `SEM` and `CAM` as the words "sem" and "cam". The app already spells `FAD`, so `FAD [F.A.D.]` changes nothing.
+
+## Other accepted forms
+
+The app accepts the forms in this table. It closes an unclosed `[` or `(read as:` at the end of the text.
+
+| Form                  | Notes                                     |
+| --------------------- | ----------------------------------------- |
+| `[guide]`             | The standard form, after the word.        |
+| `(read as: guide)`    | Also `(read as guide)`.                   |
+| `(pronounced: guide)` | Also `(pronunciation: guide)`.            |
+| `(read "guide")`      | The guide sits between quotation marks.   |
+| `Read as: guide`      | At the end of the text, with no brackets. |
+
+## Notes the app ignores
+
+Some brackets hold a note, not a guide. The app handles them as follows.
+
+| Text                                                                                   | What the app does                                                 |
+| -------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| A bracket with spaces that starts with `NOTE` or holds `MUST`, `ACCEPT`, or `STUDENTS` | Drops it.                                                         |
+| `Name the planet [NOTE: ACCEPT EITHER].`                                               | Reads `Name the planet.`                                          |
+| `[1]`                                                                                  | Drops a bare footnote mark.                                       |
+| `[sic]`                                                                                | Keeps the word and removes the brackets, so the voice says "sic". |
+
+## Warnings
+
+A guide that the app cannot use raises a warning, and the reading goes on. The status bar shows each warning after "Warning:", or after "_n_ warnings:" when a reading raises several. A warning stays in the status bar after the sound ends. Hover over the status bar to read a long warning in full.
+
+Most engine messages mention an [override](/manual/reference/glossary/#override), an exact pronunciation for one word that a guide, the lexicon, or a systematic chemical name can set.
+
+| Warning text                                                                                                 | What it means                                                                                                      |
+| ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Guide [_guide_] dropped: '_word_' is not in the text.                                                        | The word that the guide describes is not in the text.                                                              |
+| Guide for '_word_' dropped: it holds no words.                                                               | A say-as or spell guide holds only punctuation.                                                                    |
+| No pronunciation for respelling [_guide_]: '_word_' is spoken plain.                                         | The app cannot place the whole respelling. Every syllable is in capitals, or a spelling is unknown.                |
+| piper: dropped IPA symbol '_c_' (U+_XXXX_) from the override for '_word_': not in the phoneme map of _voice_ | The Piper voice has no sound for one symbol. The app keeps the rest.                                               |
+| piper: override for '_word_' has no usable IPA symbols; spoken plain                                         | The Piper voice has no sound for any symbol, so it says the word plain.                                            |
+| piper: override surface '_word_' not found in the segment text                                               | The word is not in the text that the voice speaks. The possessive `Avogadro's` of a word in the lexicon causes it. |
+| Kokoro: override surface '_w_' has a bracket; spoken plain                                                   | The word holds a bracket character, so the voice says it plain.                                                    |
+| Kokoro: dropped _chars_ from IPA '_ipa_' for '_w_'                                                           | The Kokoro voice has no sound for some characters of the pronunciation.                                            |
+| Kokoro: no usable phonemes for '_w_'; spoken plain                                                           | The Kokoro voice has no sound for any part of the pronunciation.                                                   |
+| Kokoro: override surface '_w_' not found in segment text                                                     | The word is not in the text that the voice speaks.                                                                 |
+| Kokoro: could not pronounce '_w_'; it was skipped                                                            | The Kokoro voice could not turn the word into sounds, so it says nothing for the word.                             |
+
+To fix a warning, correct the guide and read the question again. If a voice has no sound for a symbol, spell the sound another way or remove the guide. For a guided lesson, see [Fix a mispronounced word](/manual/tutorials/fix-a-word/). For every other message, see [Status messages](/manual/reference/status-messages/). For what the app says without a guide, see [Pronunciation examples](/manual/reference/pronunciation-examples/).

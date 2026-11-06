@@ -1,0 +1,63 @@
+---
+title: Command line
+description: Cloudy Reader's command-line options, the self-test report and exit codes, and its environment variables, on one printable page.
+sidebar:
+  order: 8
+---
+
+This page lists the options, self-test report, exit codes, and variables of Cloudy Reader.
+
+<div class="cr-cheatsheet">
+
+## Options
+
+Quit the app, then run it by its path or through `open`. The app passes any other argument to Qt.
+
+```bash
+"/Applications/Cloudy Reader.app/Contents/MacOS/Cloudy Reader" --version
+open -a "Cloudy Reader" --args --offline
+```
+
+| Option         | Effect                                                                   |
+| -------------- | ------------------------------------------------------------------------ |
+| `--offline`    | No name lookups and no voice download. Same as `CLOUDYREADER_OFFLINE=1`. |
+| `--self-test`  | Reads a sample question with the first Piper voice. No window, no sound. |
+| `--version`    | Prints `Cloudy Reader` and the version, then exits.                      |
+| `-h`, `--help` | Prints the usage text, then exits.                                       |
+
+## Self-test report
+
+Run `--self-test` by the path above. It needs one installed Piper voice and runs offline.
+
+{/* needs-fact: the python and packages lines of the release app's --self-test report (app-wrap build). */}
+
+| Line                 | Content                                                                           |
+| -------------------- | --------------------------------------------------------------------------------- |
+| First line           | `Cloudy Reader <version> self-test`                                               |
+| `python`, `packages` | The Python version and six package versions, or `n/a`.                            |
+| `voices`             | The voices listed and the voice used, or `no Piper voice`.                        |
+| `entities`           | `ner` when the name-detection model works, otherwise `regex-only`.                |
+| `audio`              | The length and peak of the audio. The test needs 3 seconds and a peak above 0.01. |
+| `wall`               | The total time.                                                                   |
+| Last line            | `PASS`, or a `FAIL:` line on standard error.                                      |
+
+## Exit codes
+
+Read the exit code with `echo $?`.
+
+| Code | Meaning                                                                                            |
+| ---- | -------------------------------------------------------------------------------------------------- |
+| 0    | The self-test passed, `--version` printed, or the window closed.                                   |
+| 1    | The self-test failed or raised an error. See [Collect details](/manual/get-help/#collect-details). |
+| 2    | No Piper voice is installed.                                                                       |
+
+## Environment variables
+
+A variable reaches the app only when you start the executable from Terminal by its path.
+
+| Variable                | Effect                                                                                                                                              |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CLOUDYREADER_DATA_DIR` | The data folder. The default is `~/Library/Application Support/cloudyreader`. See [Data folder](/manual/reference/files-and-settings/#data-folder). |
+| `CLOUDYREADER_OFFLINE`  | Offline mode. The values `1`, `true`, `yes`, and `on` turn it on, in any letter case.                                                               |
+
+</div>
