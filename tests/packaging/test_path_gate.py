@@ -16,6 +16,11 @@ SCRIPT = ROOT / "scripts" / "build_app.sh"
 HOST = {"HOME": "/home/testowner", "USER": "testowner"}  # a build host the planted paths name
 # A data folder on an external volume, spelled in parts: the repo bans literal disk paths.
 VOLUME_DATA = "/".join(["", "Volumes", "TestDisk", "remi", ".data"])
+COOKIE = b"MEI\x0c\x0b\x0a\x0b\x0e"  # PyInstaller's CArchive cookie
+# A clean PYZ: one module and a namespace package, which holds no data by design.
+CLEAN = {"_sysconfigdata__darwin_darwin": "build_time_vars = {'prefix': '/install'}\n", "ns": None}
+UNCOVERED = "read no PYZ module in the PKG of Contents/MacOS/Cloudy Reader"
+NOT_PROVEN = "the path gate cannot prove the app clean"
 
 
 @pytest.fixture
@@ -36,15 +41,107 @@ def app(root: Path) -> Path:
     return contents.parent
 
 
+def frozen(bundle: Path, src: Path, modules: dict | None, hooks: dict | None = None) -> Path:
+    """Makes the app's executable a PyInstaller one: a PKG holding a PYZ of modules (name to
+    source, None for a namespace package; no PYZ when modules is None) and compressed hooks."""
+    writers = pytest.importorskip("PyInstaller.archive.writers")  # the CI venv has no PyInstaller
+    entries = []
+    if modules is not None:
+        listed, code = [], {}
+        for name, text in modules.items():
+            if text is None:
+                listed.append((name, "-", "PYMODULE"))
+                continue
+            (src / f"{name}.py").write_text(text)
+            listed.append((name, str(src / f"{name}.py"), "PYMODULE"))
+            code[name] = compile(text, f"{name}.py", "exec")
+        writers.ZlibArchiveWriter(str(src / "PYZ.pyz"), listed, code)
+        entries.append(("PYZ.pyz", str(src / "PYZ.pyz"), False, "z"))
+    for name, text in (hooks or {}).items():
+        (src / f"{name}.py").write_text(text)
+        entries.append((name, str(src / f"{name}.py"), True, "s"))
+    exe = bundle / "Contents" / "MacOS" / "Cloudy Reader"
+    writers.CArchiveWriter(str(exe), entries, "Python")
+    return exe
+
+
 def gate(root: Path, bundle: Path, **env: str):
-    return bash_fn(root, 'path_gate "$1"', str(bundle), PY=sys.executable, **(HOST | env))
+    return bash_fn(root, 'path_gate "$1"', str(bundle), **({"PY": sys.executable} | HOST | env))
 
 
-def test_the_path_gate_passes_an_app_without_host_paths(root):
-    result = gate(root, app(root))
+def test_the_path_gate_passes_a_frozen_app_without_host_paths(root, tmp_path):
+    bundle = app(root)
+    frozen(bundle, tmp_path, CLEAN, hooks={"pyi_rth_clean": "P = '/opt/remi'\n"})
 
-    assert result.returncode == 0, result.stderr
-    assert "build_app: path gate: no build host path in the app" in result.stdout
+    result = gate(root, bundle)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "path gate: no build host path in the app (1 PYZ module(s) read)" in result.stdout
+
+
+def test_the_path_gate_fails_an_app_whose_executable_has_no_pkg(root):
+    result = gate(root, app(root))  # a shell script: no PKG, so no PYZ module was read
+
+    assert result.returncode == 1
+    assert UNCOVERED in result.stdout
+    assert NOT_PROVEN in result.stderr
+
+
+@pytest.mark.parametrize("archive", ["unknown-cookie", "no-pyz", "empty-pyz"])
+def test_the_path_gate_fails_when_the_pkg_gives_no_pyz_module(root, tmp_path, archive):
+    bundle = app(root)
+    leaky = {"_sysconfigdata__darwin_darwin": "build_time_vars = {'prefix': '/home/testowner'}\n"}
+    modules = {"unknown-cookie": leaky, "no-pyz": None, "empty-pyz": {}}[archive]
+    exe = frozen(bundle, tmp_path, modules, hooks={"pyi_rth_clean": "P = '/opt/remi'\n"})
+    if archive == "unknown-cookie":  # rel-sec's M13: one changed cookie byte hid a leaky PYZ
+        exe.write_bytes(exe.read_bytes().replace(COOKIE, b"MEX" + COOKIE[3:]))
+
+    result = gate(root, bundle)
+
+    assert result.returncode == 1
+    assert UNCOVERED in result.stdout
+    assert NOT_PROVEN in result.stderr
+
+
+# The build venv's Python with one PyInstaller reader's extract() returning None, not bytes.
+NO_BYTES_PYTHON = r"""#!/bin/bash
+shift 2  # -I -: the gate's script comes on stdin
+exec "$REAL_PY" -I -c '
+import os, sys
+from PyInstaller.archive import readers
+from PyInstaller.loader import pyimod01_archive
+kinds = {"pkg": readers.CArchiveReader, "pyz": pyimod01_archive.ZlibArchiveReader}
+kinds[os.environ["BREAK"]].extract = lambda self, name, raw=False: None
+exec(compile(sys.stdin.read(), "path_gate", "exec"))
+' "$@"
+"""
+
+
+@pytest.mark.parametrize("reader", ["pkg", "pyz"])
+def test_the_path_gate_fails_on_an_entry_that_yields_no_bytes(root, tmp_path, reader):
+    bundle = app(root)
+    frozen(bundle, tmp_path, CLEAN)
+    python = tmp_path / "python"
+    python.write_text(NO_BYTES_PYTHON)
+    python.chmod(0o755)
+
+    result = gate(root, bundle, PY=str(python), REAL_PY=sys.executable, BREAK=reader)
+
+    assert result.returncode == 1
+    assert "cannot scan Contents/MacOS/Cloudy Reader (TypeError)" in result.stdout
+    assert NOT_PROVEN in result.stderr
+
+
+def test_the_path_gate_fails_closed_on_a_pkg_it_cannot_parse(root):
+    bundle = app(root)
+    exe = bundle / "Contents" / "MacOS" / "Cloudy Reader"
+    exe.write_bytes(b"#!/bin/sh\n" + COOKIE + b"\x00" * 8)  # the cookie, then no archive
+
+    result = gate(root, bundle)
+
+    assert result.returncode == 1
+    assert "cannot scan Contents/MacOS/Cloudy Reader (" in result.stdout
+    assert NOT_PROVEN in result.stderr
 
 
 @pytest.mark.parametrize(
@@ -122,13 +219,9 @@ def test_the_path_gate_reads_the_pyz_inside_the_executables_pkg(root, tmp_path, 
 
 @pytest.mark.parametrize("planted", [True, False])
 def test_the_path_gate_reads_a_compressed_entry_of_the_executables_pkg(root, tmp_path, planted):
-    writers = pytest.importorskip("PyInstaller.archive.writers")  # the CI venv has no PyInstaller
-    hook = tmp_path / "pyi_rth_paths.py"  # a run-time hook sits in the PKG itself, not in the PYZ
     where = "/home/testowner/remi" if planted else "/opt/remi"
-    hook.write_text(f"ROOT = {where!r}\n")
-    bundle = app(root)
-    exe = bundle / "Contents" / "MacOS" / "Cloudy Reader"
-    writers.CArchiveWriter(str(exe), [("pyi_rth_paths", str(hook), True, "s")], "Python")
+    bundle = app(root)  # a run-time hook sits in the PKG itself, not in the PYZ
+    exe = frozen(bundle, tmp_path, CLEAN, hooks={"pyi_rth_paths": f"ROOT = {where!r}\n"})
     assert where.encode() not in exe.read_bytes()  # compressed: only a decompressing scan sees it
 
     result = gate(root, bundle)

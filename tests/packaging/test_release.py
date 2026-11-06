@@ -253,6 +253,9 @@ def stub_codesign(root: Path) -> tuple[str, Path]:
 
 # Stand-ins for the DMG steps where a test is about the zip: a real image takes about 10 s.
 NO_DMG = 'make_dmg() { echo image >"$2"; }; check_dmg() { :; }; '
+# A stand-in for the path gate where a test is about something else: the fake app's executable is
+# a script with no PKG, which the real gate refuses (tests/packaging/test_path_gate.py).
+NO_GATE = "path_gate() { :; }; "
 
 
 def test_release_zips_checksums_and_verifies_the_extracted_copy(root):
@@ -260,7 +263,9 @@ def test_release_zips_checksums_and_verifies_the_extracted_copy(root):
     fake_app(root)
     path, args = stub_codesign(root)
 
-    result = bash_fn(root, f'APP_NAME="Cloudy Reader"; {NO_DMG}release_main 0.0.1', PATH=path)
+    result = bash_fn(
+        root, f'APP_NAME="Cloudy Reader"; {NO_GATE}{NO_DMG}release_main 0.0.1', PATH=path
+    )
 
     assert result.returncode == 0, result.stderr
     names = zipfile.ZipFile(root / "dist" / ZIP).namelist()
@@ -287,7 +292,10 @@ def test_release_needs_the_extracted_copy_to_print_its_version(root):
     path, _ = stub_codesign(root)
 
     result = bash_fn(
-        root, 'APP_NAME="Cloudy Reader"; release_main 0.0.1', PATH=path, FAKE_VERSION="0.1.0"
+        root,
+        f'APP_NAME="Cloudy Reader"; {NO_GATE}release_main 0.0.1',
+        PATH=path,
+        FAKE_VERSION="0.1.0",
     )
 
     assert result.returncode == 1
@@ -390,7 +398,7 @@ def test_release_refuses_a_version_the_app_does_not_carry(root, version, message
     fake_app(root)
     path, _ = stub_codesign(root)
 
-    result = bash_fn(root, f'APP_NAME="Cloudy Reader"; release_main {version}', PATH=path)
+    result = bash_fn(root, f'APP_NAME="Cloudy Reader"; {NO_GATE}release_main {version}', PATH=path)
 
     assert result.returncode == 1
     assert message in result.stderr
@@ -418,6 +426,18 @@ def test_release_stops_before_the_zip_when_the_app_carries_a_host_path(root):
     assert not (root / "dist" / ZIP).exists()  # stopped before the zip, so nothing ships
 
 
+def test_release_stops_before_the_zip_when_the_gate_reads_no_pyz(root):
+    host_assets(root)
+    fake_app(root)  # its executable is a script: no PKG, so no PYZ module the gate could read
+    path, _ = stub_codesign(root)
+
+    result = bash_fn(root, f'APP_NAME="Cloudy Reader"; {NO_DMG}release_main 0.0.1', PATH=path)
+
+    assert result.returncode == 1
+    assert "the path gate cannot prove the app clean" in result.stderr
+    assert not (root / "dist" / ZIP).exists()
+
+
 def test_release_keeps_a_previous_artifact_by_moving_it_aside(root):
     host_assets(root)
     fake_app(root)
@@ -425,7 +445,9 @@ def test_release_keeps_a_previous_artifact_by_moving_it_aside(root):
     (root / "dist" / ZIP).write_bytes(b"older build")
     (root / "dist" / DMG).write_bytes(b"older image")
 
-    result = bash_fn(root, f'APP_NAME="Cloudy Reader"; {NO_DMG}release_main 0.0.1', PATH=path)
+    result = bash_fn(
+        root, f'APP_NAME="Cloudy Reader"; {NO_GATE}{NO_DMG}release_main 0.0.1', PATH=path
+    )
 
     assert result.returncode == 0, result.stderr
     kept = list((root / "build").glob(f"trash.*/{ZIP}"))
@@ -471,7 +493,7 @@ def test_release_writes_a_dmg_of_the_zips_app_and_checks_it(root, real_dmg_host)
     fake_app(root)
     path, args = stub_codesign(root)
 
-    result = bash_fn(root, 'APP_NAME="Cloudy Reader"; release_main 0.0.1', PATH=path)
+    result = bash_fn(root, f'APP_NAME="Cloudy Reader"; {NO_GATE}release_main 0.0.1', PATH=path)
 
     assert result.returncode == 0, result.stderr
     digest = hashlib.sha256((root / "dist" / DMG).read_bytes()).hexdigest()

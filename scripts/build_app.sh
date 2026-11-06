@@ -566,13 +566,13 @@ write_checksum() {
   (cd -- "$(dirname -- "$file")" && shasum -a 256 "$(basename -- "$file")") >"$file.sha256"
 }
 
-# Fails closed when app $1 carries a path of this build host (its home folder, user name, this
-# build tree, the data folder, and the volume either sits on) in a raw file, a zip member, or the
-# executable's PKG and its decompressed PYZ. Prints each file with its count, never the match.
+# Fails closed when app $1 carries a path of this build host (home, user name, build tree, data
+# folder, their volume) in a raw file, zip member, PKG entry or decompressed PYZ module, or when it
+# reads no PYZ module of Contents/MacOS/<APP_NAME>. Prints each file and count, never the match.
 path_gate() {
-  local app=$1 python=${PY:-$ROOT/.venv/bin/python}
+  local app=$1 python=${PY:-$ROOT/.venv/bin/python} rc=0
   [[ -x $python ]] || python=$(command -v python3) # any Python reads files; a PKG needs PyInstaller
-  "$python" -I - "$app" "$HOME" "${USER:-$(id -un)}" "$ROOT" "$DATA" <<'EOF' ||
+  "$python" -I - "$app" "$APP_NAME" "$HOME" "${USER:-$(id -un)}" "$ROOT" "$DATA" <<'EOF' || rc=$?
 import os
 import re
 import sys
@@ -580,9 +580,9 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-app, home, user = sys.argv[1], sys.argv[2].rstrip("/"), sys.argv[3]
+app, exe_name, home, user = sys.argv[1], sys.argv[2], sys.argv[3].rstrip("/"), sys.argv[4]
 needles = set()
-for place in (sys.argv[4], sys.argv[5]):  # the build tree and the data folder, links resolved
+for place in (sys.argv[5], sys.argv[6]):  # the build tree and the data folder, links resolved
     resolved = Path(place).resolve()
     needles |= {str(resolved), str(resolved).removeprefix("/private")}  # /tmp is /private/tmp
     if len(resolved.parts) > 2 and resolved.parts[1] == "Volumes":
@@ -594,7 +594,9 @@ if len(user) >= 4:  # a shorter user name would match by chance
 longest_first = sorted(needles, key=len, reverse=True)
 pattern = re.compile(b"|".join(re.escape(n.encode()) for n in longest_first), re.IGNORECASE)
 COOKIE = b"MEI\x0c\x0b\x0a\x0b\x0e"  # PyInstaller's CArchive cookie
+EXE = os.path.join("Contents", "MacOS", exe_name)  # its PKG holds the PYZ the gate must read
 found = 0
+current = "the app"
 
 
 def scan(data, where):
@@ -606,44 +608,77 @@ def scan(data, where):
 
 
 def scan_pkg(path, rel):
+    """Scans each PKG entry and each module of every PYZ in it; returns the modules read."""
     from PyInstaller.archive.readers import CArchiveReader, ZlibArchiveReader
+    from PyInstaller.loader.pyimod01_archive import PYZ_ITEM_NSPKG
 
     pkg = CArchiveReader(path)
-    for name in pkg.toc:
+    modules = 0
+    for name, (*_, typecode) in pkg.toc.items():
         data = pkg.extract(name)
         if not isinstance(data, (bytes, bytearray)):
-            continue
+            raise TypeError(f"PKG entry {name} gave no bytes")  # unread is not clean
         scan(bytes(data), f"{rel}!PKG:{name}")
-        if bytes(data[:4]) == b"PYZ\0":
+        if typecode == "z" or bytes(data[:4]) == b"PYZ\0":
             with tempfile.NamedTemporaryFile(suffix=".pyz") as pyz_file:
                 pyz_file.write(data)
                 pyz_file.flush()
                 pyz = ZlibArchiveReader(pyz_file.name)
-                for module in pyz.toc:
+                for module, (kind, *_) in pyz.toc.items():
                     raw = pyz.extract(module, raw=True)
-                    if isinstance(raw, (bytes, bytearray)):
-                        scan(bytes(raw), f"{rel}!PYZ:{module}")
+                    if raw is None and kind == PYZ_ITEM_NSPKG:
+                        continue  # a namespace package holds no data by design
+                    if not isinstance(raw, (bytes, bytearray)):
+                        raise TypeError(f"PYZ entry {module} gave no bytes")
+                    scan(bytes(raw), f"{rel}!PYZ:{module}")
+                    modules += 1
+    return modules
 
 
-for folder, _, names in os.walk(app):
-    for name in sorted(names):
-        path = os.path.join(folder, name)
-        if os.path.islink(path):
-            continue
-        rel = os.path.relpath(path, app)
-        with open(path, "rb") as fh:
-            data = fh.read()
-        scan(data, rel)
-        if data[:4] == b"PK\x03\x04":
-            with zipfile.ZipFile(path) as archive:
-                for member in archive.namelist():
-                    scan(archive.read(member), f"{rel}!{member}")
-        if COOKIE in data:
-            scan_pkg(path, rel)
-print("build_app: path gate: " + (f"{found} hit(s)" if found else "no build host path in the app"))
-sys.exit(1 if found else 0)
+def scan_app():
+    """Scans every file of the app; returns the PYZ modules read from the executable's PKG."""
+    global current
+    read = 0
+    for folder, _, names in os.walk(app):
+        for name in sorted(names):
+            path = os.path.join(folder, name)
+            if os.path.islink(path):
+                continue
+            rel = current = os.path.relpath(path, app)
+            with open(path, "rb") as fh:
+                data = fh.read()
+            scan(data, rel)
+            if data[:4] == b"PK\x03\x04":
+                with zipfile.ZipFile(path) as archive:
+                    for member in archive.namelist():
+                        scan(archive.read(member), f"{rel}!{member}")
+            if COOKIE in data:
+                modules = scan_pkg(path, rel)
+                if rel == EXE:
+                    read = modules
+    return read
+
+
+try:
+    read = scan_app()
+except (Exception, SystemExit) as exc:  # an archive the gate cannot read proves nothing
+    print(f"build_app: path gate: cannot scan {current} ({type(exc).__name__}):",
+          "the scan does not cover the app")
+    sys.exit(2)
+if not read:
+    print(f"build_app: path gate: read no PYZ module in the PKG of {EXE}:",
+          "the scan does not cover the app")
+if found:
+    print(f"build_app: path gate: {found} hit(s)")
+elif read:
+    print(f"build_app: path gate: no build host path in the app ({read} PYZ module(s) read)")
+sys.exit(1 if found else 0 if read else 2)
 EOF
-    die "the app carries this build host's paths (above): it must not ship"
+  case $rc in
+    0) ;;
+    1) die "the app carries this build host's paths (above): it must not ship" ;;
+    *) die "the path gate cannot prove the app clean (above): it must not ship" ;;
+  esac
 }
 
 # Fails when a zip holds macOS clutter: __MACOSX, .DS_Store or AppleDouble ._ files.

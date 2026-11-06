@@ -15,7 +15,7 @@ from tests.packaging.test_build_app import bash_fn
 from tests.packaging.test_build_engines import spec
 from tests.packaging.test_build_warnings import FAKE_PYINSTALLER
 from tests.packaging.test_engines_ship import recipe
-from tests.packaging.test_release import NO_DMG, fake_app, host_assets, stub_codesign
+from tests.packaging.test_release import NO_DMG, NO_GATE, fake_app, host_assets, stub_codesign
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "build_app.sh"
@@ -193,7 +193,9 @@ def test_release_refuses_a_dev_build_that_bundles_the_fixtures(root):
     (app / "Contents" / "Resources" / BUNDLED_DIR / "questions" / "01.txt").write_text("x")
     path, _ = stub_codesign(root)
 
-    result = bash_fn(root, f'APP_NAME="Cloudy Reader"; {NO_DMG}release_main 0.0.1', PATH=path)
+    result = bash_fn(
+        root, f'APP_NAME="Cloudy Reader"; {NO_GATE}{NO_DMG}release_main 0.0.1', PATH=path
+    )
 
     assert result.returncode == 1
     assert "test-fixture questions in the bundle (a release ships none)" in result.stderr
