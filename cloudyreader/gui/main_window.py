@@ -52,6 +52,7 @@ from PySide6.QtWidgets import (
 
 from cloudyreader.engine_catalog import TITLES, is_actionable
 from cloudyreader.gui import tokens
+from cloudyreader.gui.motion import reduce_motion
 from cloudyreader.gui.names import APP_NAME, app_version
 from cloudyreader.gui.voice_picker import LOADING, VoicePicker
 from cloudyreader.gui.widgets import (
@@ -213,6 +214,7 @@ class MainWindow(QMainWindow):
         self._voice_note: str | None = None  # why the saved voice is not the selected one
         self._refreshing = False
         self._refresh_again = False
+        self._reduce_motion = reduce_motion()  # read again whenever the app becomes active
 
         # One worker at a time: the service is not promised to be thread-safe. The pool is created
         # before the signals, so it is destroyed first and waits for a running job to finish.
@@ -250,6 +252,8 @@ class MainWindow(QMainWindow):
             # afplay outlives the app: quit() or Cmd+Q must silence it even if no close event runs.
             app.aboutToQuit.connect(self._silence)
             app.aboutToQuit.connect(self._prefetch_cancel.set)  # the download thread is a daemon
+        if isinstance(app, QGuiApplication):
+            app.applicationStateChanged.connect(self._on_app_state)
 
     @property
     def loading_voices(self) -> bool:
@@ -741,10 +745,16 @@ class MainWindow(QMainWindow):
         self.busy_changed.emit(busy)
 
     def _update_busy_bar(self) -> None:
-        # One bar at a time: beside a download bar, two bars read as one control or compete.
-        # "Preparing…" in the message still carries the state.
+        # The indeterminate bar is the window's only motion. One bar at a time: beside a download
+        # bar two read as one or compete. With either rule, "Preparing…" still carries the state.
         busy = self._busy or self._loading_voices
-        self.busy_bar.setVisible(busy and self.prefetch_bar.isHidden())
+        still = self.prefetch_bar.isHidden() and not self._reduce_motion
+        self.busy_bar.setVisible(busy and still)
+
+    def _on_app_state(self, state: Qt.ApplicationState) -> None:
+        if state == Qt.ApplicationState.ApplicationActive:  # the setting may have changed
+            self._reduce_motion = reduce_motion()
+            self._update_busy_bar()
 
     def _notify(
         self,

@@ -19,6 +19,12 @@ def _isolated_default_settings(tmp_path_factory):
     QSettings.setPath(QSettings.Format.IniFormat, QSettings.Scope.UserScope, path)
 
 
+@pytest.fixture(autouse=True)
+def _motion_as_usual(monkeypatch):
+    """Reduce Motion off, whatever this Mac says, so the busy bar shows where tests expect it."""
+    monkeypatch.setattr("cloudyreader.gui.main_window.reduce_motion", lambda: False)
+
+
 @pytest.fixture
 def settings(tmp_path):
     return QSettings(str(tmp_path / "gui.ini"), QSettings.Format.IniFormat)
