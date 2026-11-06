@@ -42,6 +42,7 @@ from cloudyreader.engines.mlxkit import (
     offline_guard,
     quiet,
     render_text,
+    say_letter,
     silence,
     speakable,
     write_pcm16,
@@ -68,7 +69,7 @@ MAX_CHUNK_CHARS = 280  # about 20 s: Turbo drifts past 25 to 30 s of audio
 TOKENS_PER_S = 25  # speech tokens per second of audio; render_text's budget is already 2 x est
 TOKEN_CAP = (100, 800)
 # In the cache key: bump it when chunking, caps, seeds, speakable, the ladder or text prep change.
-_RENDER_REVISION = 2
+_RENDER_REVISION = 3
 _BRACKETS = re.compile(r"[\[\]]")
 BRACKET_WARNING = f"{TITLE}: square brackets were dropped (the model reads them as sound cues)"
 
@@ -320,7 +321,7 @@ class ChatterboxTurboEngine:
             missing += [surface for surface in spoken.missing if surface not in missing]
             brackets = brackets or bool(_BRACKETS.search(spoken.text))
             # Turbo's tokenizer turns [laugh], [sigh] and 17 more into sound cues.
-            texts.append(" ".join(_BRACKETS.sub(" ", spoken.text).split()))
+            texts.append(say_letter(" ".join(_BRACKETS.sub(" ", spoken.text).split())))
         warnings = [_hard_word_warning(hard)] if hard else []
         warnings += [f"{TITLE}: override for {s!r} not found in the segment text" for s in missing]
         if brackets:

@@ -40,14 +40,16 @@ from cloudyreader.engines.mlxkit import (
     offline_guard,
     quiet,
     render_text,
+    say_letter,
     seed_for,
     silence,
     speakable,
     write_pcm16,
 )
-from cloudyreader.models import Override, Segment
-from cloudyreader.normalize import CHOICE_PAUSE_MS, LETTER_PAUSE_MS
-from tests.unit.pause_probe import mc_script, read_samples, silent_runs
+from cloudyreader.models import Override, RenderOptions, Segment
+from cloudyreader.normalize import CHOICE_PAUSE_MS, LETTER_PAUSE_MS, ScriptNormalizer
+from cloudyreader.parser import parse
+from tests.unit.pause_probe import FIXTURES, mc_script, read_samples, silent_runs
 
 ROOT = Path(__file__).resolve().parents[2]
 HEAVY = ("mlx", "mlx_audio", "transformers", "huggingface_hub", "torch", "tokenizers")
@@ -486,6 +488,27 @@ def test_speakable_without_overrides_or_with_an_empty_respelling() -> None:
     assert speakable(seg) == mlxkit.Speakable("Pharynx.", ("Pharynx",), ())
     with pytest.raises(ValueError, match="style"):
         speakable(seg, style="dash")  # type: ignore[arg-type]
+
+
+# --- say_letter --------------------------------------------------------------------------------
+
+
+def test_say_letter_spells_w_x_and_y_and_leaves_everything_else() -> None:
+    assert [say_letter(f"{c}.") for c in "WXYZ"] == ["double you.", "ecks.", "Why.", "Z."]
+    others = ("A.", "V.", "w.", "x.", "y.", "W", "Y!", "WY.", "double you.", "", "X. Pharynx.")
+    others += ("Answer. W. Pharynx.", "Q minus W.", "W. H. Bragg shared the prize.")
+    assert [say_letter(text) for text in others] == list(others)
+
+
+def test_every_fixture_choice_letter_is_a_unit_say_letter_knows() -> None:
+    # say_letter matches whole segments: the normalizer must keep writing letters as "W.".
+    normalizer = ScriptNormalizer()
+    for paste in sorted(FIXTURES.glob("*.txt")):
+        questions = parse(paste.read_bytes().decode("utf-8"))
+        script = normalizer.to_script(questions, {}, RenderOptions(read_answer=True))
+        letters = [seg for seg in script.segments if seg.text in ("W.", "X.", "Y.", "Z.")]
+        assert len(letters) == sum(len(q.choices) for q in questions), paste.name
+        assert {seg.pause_after_ms for seg in letters} <= {LETTER_PAUSE_MS, CHOICE_PAUSE_MS}
 
 
 # --- ModelFiles --------------------------------------------------------------------------------

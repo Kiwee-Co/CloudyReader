@@ -42,6 +42,7 @@ from cloudyreader.engines.qwen3_tts import (
     token_cap,
 )
 from cloudyreader.models import Override, RenderOptions, Segment, SpokenScript, VoiceInfo
+from cloudyreader.normalize import LETTER_PAUSE_MS
 
 ROOT = Path(__file__).resolve().parents[2]
 RATE = 24_000
@@ -439,17 +440,39 @@ def test_no_backend_call_ever_holds_the_text_of_two_segments(
     )
     pcm = speak(engine, tmp_path / "out.wav", *segments)
 
-    said = ["Which gas is most abundant?", "W.", "Nitrogen.", "X.", "Oxygen."]
+    said = ["Which gas is most abundant?", "double you.", "Nitrogen.", "ecks.", "Oxygen."]
     assert backend.texts == said  # one call per segment, each ending on terminal punctuation
     assert runs(pcm) == [
         (PCM_LEVEL, fake_len(said[0])),
         (0, samples(0.7)),
-        (PCM_LEVEL, fake_len("W.")),
+        (PCM_LEVEL, fake_len(said[1])),
         (0, samples(0.3)),
         (PCM_LEVEL, fake_len(said[2])),
         (0, samples(0.4)),
-        (PCM_LEVEL, fake_len("X.") + fake_len("Oxygen.")),
+        (PCM_LEVEL, fake_len(said[3]) + fake_len(said[4])),
     ]
+
+
+@pytest.mark.parametrize("voice", [0, 1], ids=["ryan", "aiden"])
+def test_each_choice_letter_reaches_the_model_as_words_for_its_name(
+    voice: int, engine: Qwen3TtsEngine, backend: FakeBackend, tmp_path: Path
+) -> None:
+    letters = [Segment(f"{c}.", LETTER_PAUSE_MS) for c in "WXYZ"]
+    pcm = speak(engine, tmp_path / "out.wav", *letters, voice=voice)
+
+    # Said alone, "W." came out as "way", "Y." as "you" or "yeah" and "X." often as "hex".
+    assert backend.texts == ["double you.", "ecks.", "Why.", "Z."]
+    pause = (0, samples(LETTER_PAUSE_MS / 1000))
+    assert runs(pcm) == [(PCM_LEVEL, samples(MIN_TAKE_S)), pause] * 4  # pauses unchanged
+
+
+def test_only_a_lone_choice_letter_is_respelled(
+    engine: Qwen3TtsEngine, backend: FakeBackend, tmp_path: Path
+) -> None:
+    others = ["A.", "V.", "x.", "Answer. W. Pharynx.", "Both W and Y", "W. H. Bragg shared it."]
+    speak(engine, tmp_path / "out.wav", *(Segment(text, 300) for text in others))
+
+    assert backend.texts == [*others[:4], "Both W and Y.", others[5]]
 
 
 def test_a_segment_split_into_many_chunks_keeps_its_full_trailing_pause(
@@ -486,12 +509,12 @@ def test_a_short_unit_falls_back_to_repeat_and_crop(
 ) -> None:
     burst, gap = np.full(samples(0.3), LEVEL), np.zeros(samples(0.25))
     repeated = np.concatenate([burst, gap, burst, gap, burst]).astype(np.float32)
-    backend.plan["W."] = [60.0, RuntimeError("short input")]  # both lone takes fail
-    backend.plan["W. W. W."] = [repeated]
+    backend.plan["Z."] = [60.0, RuntimeError("short input")]  # both lone takes fail
+    backend.plan["Z. Z. Z."] = [repeated]
 
-    pcm = speak(engine, tmp_path / "out.wav", Segment("W.", 300), Segment("Nitrogen."))
+    pcm = speak(engine, tmp_path / "out.wav", Segment("Z.", 300), Segment("Nitrogen."))
 
-    assert backend.texts[:3] == ["W.", "W.", "W. W. W."]
+    assert backend.texts[:3] == ["Z.", "Z.", "Z. Z. Z."]
     first, *rest = runs(pcm)
     assert first[0] != 0 and samples(0.2) < first[1] + 1 < samples(0.55)  # one copy, cropped
     assert len(pcm) < samples(0.55 + 0.3) + fake_len("Nitrogen.") + samples(0.3)
@@ -512,10 +535,10 @@ def test_short_units_are_memoized_and_close_drops_the_memo(
     speak(engine, tmp_path / "a.wav", Segment("W.", 300), Segment("X.", 300), Segment("W."))
     speak(engine, tmp_path / "b.wav", Segment("W."), voice=1)
 
-    assert backend.texts == ["W.", "X.", "W."]  # once per voice
+    assert backend.texts == ["double you.", "ecks.", "double you."]  # once per voice
     engine.close()
     speak(engine, tmp_path / "c.wav", Segment("W."))
-    assert backend.texts.count("W.") == 3  # close() dropped the memo with the model
+    assert backend.texts.count("double you.") == 3  # close() dropped the memo with the model
 
 
 def test_special_tokens_in_text_are_neutralized(
@@ -879,6 +902,33 @@ def test_generate_custom_voice_gets_explicit_sampling_and_no_instruct(
             "stream": False,
         }
     ]  # never instruct, ref_audio or ref_text
+
+
+class ToneModel(FakeModel):
+    """A FakeModel whose every generation is 0.4 s of tone: long enough to pass render_text."""
+
+    def generate_custom_voice(self, **kwargs: Any):
+        self.calls.append(kwargs)
+        yield FakeResult(np.full(samples(0.4), 0.5, dtype=np.float32))
+
+
+@pytest.mark.parametrize(("voice", "speaker"), [(0, "Ryan"), (1, "Aiden")])
+def test_the_model_gets_each_choice_letter_as_its_name_in_english(
+    voice: int, speaker: str, settings: Settings, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake = FakeMlx(monkeypatch, ToneModel())
+    backend = MlxQwenBackend(
+        settings.models_dir / "qwen3_tts", slot=ModelSlot(), decoder=lambda: PATCH
+    )
+    engine = Qwen3TtsEngine(
+        settings, backend, pinned=install(settings), assess=lambda: READY, decoder=lambda: PATCH
+    )
+    script = SpokenScript(tuple(Segment(f"{c}.", LETTER_PAUSE_MS) for c in "WXYZ"))
+
+    engine.synthesize(script, engine.voices()[voice], RenderOptions(), tmp_path / "out.wav")
+
+    said = [(call["text"], call["speaker"], call["language"]) for call in fake.model.calls]
+    assert said == [(text, speaker, "english") for text in ("double you.", "ecks.", "Why.", "Z.")]
 
 
 def test_backend_applies_the_patch_before_load_model(

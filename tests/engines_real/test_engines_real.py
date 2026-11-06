@@ -1,4 +1,5 @@
-"""Real engine weights: each installed engine voice renders a lone letter and a sentence.
+"""Real engine weights: each installed engine voice renders a lone letter and a sentence, then
+each choice letter followed by its exact pause.
 
 Run by hand: `pytest -m model tests/engines_real`. Skips when the engine module, Apple Silicon
 support, or the downloaded weights are missing.
@@ -16,6 +17,7 @@ import pytest
 from cloudyreader.config import load_settings
 from cloudyreader.engines import mlxkit
 from cloudyreader.models import RenderOptions, Segment, SpokenScript
+from cloudyreader.normalize import LETTER_PAUSE_MS
 
 pytestmark = [pytest.mark.model, pytest.mark.slow]
 
@@ -82,3 +84,25 @@ def test_each_voice_renders_a_letter_and_a_sentence_as_24k_mono_speech(engine, v
         assert (rate, channels) == (24_000, 1)
         assert 0.25 * est <= seconds < mlxkit.RUNAWAY * est, (voice.key, text, seconds)
         assert peak > 0.01, (voice.key, text, peak)
+
+
+@pytest.mark.parametrize(
+    ("engine", "voice_key"), VOICES, ids=[voice for _, voice in VOICES], indirect=["engine"]
+)
+def test_each_voice_says_each_choice_letter_alone_then_its_exact_pause(engine, voice_key, tmp_path):
+    voice = {v.key: v for v in engine.voices()}[voice_key]
+    pause = 24_000 * LETTER_PAUSE_MS // 1000
+    est = mlxkit.MIN_EST_S  # a letter is one short unit, whatever words it is said in
+    for letter in ("W.", "X.", "Y.", "Z."):  # as the normalizer writes a choice letter
+        out = tmp_path / f"{voice.key.replace(':', '-')}-{letter[0]}.wav"
+        script = SpokenScript((Segment(letter, LETTER_PAUSE_MS),))
+        audio = engine.synthesize(script, voice, RenderOptions(), out)
+
+        rate, channels, seconds, peak = measure(audio.wav_path)
+        with wave.open(str(audio.wav_path), "rb") as wav:
+            tail = array("h", wav.readframes(wav.getnframes()))[-pause:]
+        speech = seconds - LETTER_PAUSE_MS / 1000
+        assert (rate, channels) == (24_000, 1)
+        assert 0.25 * est <= speech < mlxkit.RUNAWAY * est, (voice.key, letter, speech)
+        assert peak > 0.01, (voice.key, letter, peak)
+        assert len(tail) == pause and not any(tail), (voice.key, letter)  # exact silence

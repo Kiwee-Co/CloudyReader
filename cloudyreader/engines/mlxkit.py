@@ -506,6 +506,17 @@ def speakable(
     )
 
 
+# Said alone, a choice letter is read as a word: "W." as "way", "Y." as "you" or "yeah". These
+# spellings said the letter's name most often in ASR-checked takes; no spelling beat "Z." itself.
+_LETTER_WORDS = {"W.": "double you.", "X.": "ecks.", "Y.": "Why."}
+
+
+def say_letter(text: str) -> str:
+    """A choice-letter segment ("W.", as the normalizer writes it) in words a plain-text model
+    says as the letter's name. Any other text comes back unchanged."""
+    return _LETTER_WORDS.get(text, text)
+
+
 # --- packages ----------------------------------------------------------------------------------
 
 

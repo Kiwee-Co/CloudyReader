@@ -38,6 +38,7 @@ from cloudyreader.engines.chatterbox_turbo import (
 )
 from cloudyreader.engines.mlxkit import EngineError, EngineUnavailable, ModelSlot
 from cloudyreader.models import Override, RenderOptions, Segment, SpokenScript, VoiceInfo
+from cloudyreader.normalize import LETTER_PAUSE_MS
 from tests.unit.pause_probe import mc_script
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -78,7 +79,7 @@ def fake_len(text: str) -> int:
 
 
 def three_copies() -> np.ndarray:
-    """What a model says for "W. W. W.": three 0.3 s copies with 0.2 s of quiet between."""
+    """What a model says for "Z. Z. Z.": three 0.3 s copies with 0.2 s of quiet between."""
     tone = np.full(samples(0.3), LEVEL, dtype=np.float32)
     gap = np.zeros(samples(0.2), dtype=np.float32)
     return np.concatenate([tone, gap, tone, gap, tone])
@@ -423,7 +424,20 @@ def test_no_backend_call_ever_holds_the_text_of_two_segments(
     assert backend.texts
     for text in backend.texts:
         assert any(text in segment for segment in spoken), text
-    assert {"W.", "X.", "Y.", "Z."} <= set(backend.texts)  # each letter said on its own
+    # Each letter said on its own, by name.
+    assert {"double you.", "ecks.", "Why.", "Z."} <= set(backend.texts)
+
+
+def test_each_choice_letter_reaches_the_model_as_words_for_its_name(
+    engine: ChatterboxTurboEngine, backend: FakeBackend, tmp_path: Path
+) -> None:
+    letters = [Segment(f"{c}.", LETTER_PAUSE_MS) for c in "WXYZ"]
+    pcm = speak(engine, tmp_path / "out.wav", *letters, Segment("Answer. W. Pharynx."))
+
+    # Said alone, "W." trailed off into other words and "Y." came out as "yeah" (ASR-checked).
+    assert backend.texts == ["double you.", "ecks.", "Why.", "Z.", "Answer. W. Pharynx."]
+    pause = (0, samples(LETTER_PAUSE_MS / 1000))
+    assert runs(pcm)[:8] == [(PCM_LEVEL, samples(0.3)), pause] * 4  # pauses unchanged
 
 
 def test_a_segment_split_into_many_chunks_keeps_its_full_trailing_pause(
@@ -432,31 +446,31 @@ def test_a_segment_split_into_many_chunks_keeps_its_full_trailing_pause(
     stem = " ".join(
         f"Clause {n} of a very long stem names enzymes, membranes and gradients." for n in range(9)
     )
-    pcm = speak(engine, tmp_path / "out.wav", Segment(stem, 700), Segment("W.", 300))
+    pcm = speak(engine, tmp_path / "out.wav", Segment(stem, 700), Segment("Z.", 300))
 
     chunks = backend.texts[:-1]
-    assert len(chunks) >= 3 and backend.texts[-1] == "W."
+    assert len(chunks) >= 3 and backend.texts[-1] == "Z."
     expected: list[tuple[int, int]] = []
     for index, chunk in enumerate(chunks):
         if index:
             expected.append((0, samples(0.12)))  # INTER_CHUNK_MS, only between its own chunks
         expected.append((PCM_LEVEL, fake_len(chunk)))
-    expected += [(0, samples(0.7)), (PCM_LEVEL, fake_len("W.")), (0, samples(0.3))]
+    expected += [(0, samples(0.7)), (PCM_LEVEL, fake_len("Z.")), (0, samples(0.3))]
     assert runs(pcm) == expected  # the whole 700 ms after the last chunk, then the letter
 
 
 def test_a_short_unit_falls_back_to_repeat_and_crop(
     engine: ChatterboxTurboEngine, backend: FakeBackend, tmp_path: Path
 ) -> None:
-    backend.plan["W."] = [RuntimeError("too short"), 5.0]  # a crash, then a runaway take
-    backend.plan["W. W. W."] = [three_copies()]
-    pcm = speak(engine, tmp_path / "out.wav", Segment("W.", 300), Segment("Nitrogen"))
+    backend.plan["Z."] = [RuntimeError("too short"), 5.0]  # a crash, then a runaway take
+    backend.plan["Z. Z. Z."] = [three_copies()]
+    pcm = speak(engine, tmp_path / "out.wav", Segment("Z.", 300), Segment("Nitrogen"))
 
-    seeds = [mlxkit.seed_for(VOICE_KEY, "W.", attempt) for attempt in range(3)]
+    seeds = [mlxkit.seed_for(VOICE_KEY, "Z.", attempt) for attempt in range(3)]
     assert [(text, seed) for text, _, seed, _ in backend.calls[:3]] == [
-        ("W.", seeds[0]),
-        ("W.", seeds[1]),
-        ("W. W. W.", seeds[2]),
+        ("Z.", seeds[0]),
+        ("Z.", seeds[1]),
+        ("Z. Z. Z.", seeds[2]),
     ]
     # The first copy, cut in the middle of the first quiet gap; then the letter's own pause.
     assert runs(pcm) == [
@@ -497,10 +511,10 @@ def test_a_chunk_that_keeps_running_away_raises(
 def test_a_load_failure_is_not_retried(
     engine: ChatterboxTurboEngine, backend: FakeBackend, tmp_path: Path
 ) -> None:
-    backend.plan["W."] = [EngineUnavailable("Chatterbox Turbo could not load its tokenizer")]
+    backend.plan["Z."] = [EngineUnavailable("Chatterbox Turbo could not load its tokenizer")]
     with pytest.raises(EngineUnavailable, match="tokenizer"):
-        speak(engine, tmp_path / "out.wav", Segment("W."))
-    assert backend.texts == ["W."]
+        speak(engine, tmp_path / "out.wav", Segment("Z."))
+    assert backend.texts == ["Z."]
 
 
 def test_short_units_are_memoized_until_close(
@@ -513,11 +527,11 @@ def test_short_units_are_memoized_until_close(
     first = speak(engine, tmp_path / "a.wav", *segments)
     second = speak(engine, tmp_path / "b.wav", *segments)
 
-    assert backend.texts == ["W.", "X.", long, long]
+    assert backend.texts == ["double you.", "ecks.", long, long]
     assert np.array_equal(first, second)
     engine.close()
     speak(engine, tmp_path / "c.wav", Segment("W."))
-    assert backend.texts.count("W.") == 2  # close() drops the memo with the model
+    assert backend.texts.count("double you.") == 2  # close() drops the memo with the model
 
 
 def test_long_text_is_chunked_in_order(

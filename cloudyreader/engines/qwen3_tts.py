@@ -40,6 +40,7 @@ from cloudyreader.engines.mlxkit import (
     mlx_support,
     offline_guard,
     quiet,
+    say_letter,
     silence,
     speakable,
     write_pcm16,
@@ -77,7 +78,7 @@ MIN_CHUNK_CHARS = 24  # a shorter fragment joins its neighbor inside the segment
 TOKENS_PER_S = 12.5  # codec frames per second of audio
 TOKEN_CAP = (64, 2048)
 # Bump when chunking, caps, seeds, speakable, the short-unit ladder or text prep change.
-_RENDER_REVISION = 2
+_RENDER_REVISION = 3
 _ENDINGS = ".!?"
 _CLOSERS = "\"')]”’"
 WINDOW_FAILED = f"{WAITING} (the decoder window check failed)"
@@ -382,7 +383,7 @@ class Qwen3TtsEngine:
             spoken = speakable(segment, style=RESPELLING_STYLE)
             hard += [w for w in spoken.unspoken if w not in hard]
             lost += [w for w in spoken.missing if w not in lost]
-            texts.append(" ".join(neutralize(spoken.text).split()))
+            texts.append(say_letter(" ".join(neutralize(spoken.text).split())))
         warnings = [_hard_word_warning(hard)] if hard else []
         warnings += [f"{TITLE}: override for {w!r} not found in the segment text" for w in lost]
         return texts, warnings

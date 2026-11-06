@@ -91,8 +91,8 @@ def test_every_letter_stem_and_choice_ends_in_exact_silence(
         assert after[i + 1] >= n(CHOICE_PAUSE_MS), f"after choice {segments[i + 1].text!r}"
     for i in (i - 1 for i in letters if segments[i].text == "W."):
         assert after[i] >= n(STEM_PAUSE_MS), f"after stem {segments[i].text!r}"
-    # Every call holds one segment's text at most: each letter is said on its own.
-    assert {"W.", "X.", "Y.", "Z."} <= set(engine.backend.texts)
+    # Every call holds one segment's text at most: each letter is said on its own, by name.
+    assert {"double you.", "ecks.", "Why.", "Z."} <= set(engine.backend.texts)
 
 
 def test_a_chunked_stem_keeps_its_whole_pause_and_only_short_gaps_inside(
