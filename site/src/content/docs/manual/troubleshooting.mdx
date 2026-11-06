@@ -47,7 +47,7 @@ The check in Terminal does not print the "OK" line.
 
 macOS blocks the first launch and says that it cannot verify the app. The wording differs between macOS versions.
 
-**Cause.** Cloudy Reader is signed ad hoc and is not notarized. macOS marks a downloaded copy as quarantined. Gatekeeper, the macOS check for downloaded apps, then asks you to approve the first launch. The message is expected for this app.
+**Cause.** Cloudy Reader is signed ad hoc and is not notarized. macOS marks a downloaded copy as quarantined, and Gatekeeper, the macOS check for downloaded apps, then asks you to approve the first launch. The message is expected for this app.
 
 **Fix.** Approve the app once in **System Settings > Privacy & Security**. [Approve the app](/manual/tasks/first-open/#approve-the-app) lists the steps.
 
@@ -65,7 +65,7 @@ Approve only a copy that comes from the release page and passes the checksum che
 
 <Steps>
 
-1. Open Cloudy Reader again from the Applications folder, then close the warning dialog.
+1. Open Cloudy Reader again from the **Applications** folder, then close the warning dialog.
 2. Open **System Settings > Privacy & Security** at once, and scroll to **Security**.
 3. Click **Open Anyway**.
 4. If the button is still missing on a school or work Mac, ask the administrator to approve the app. Do not work around the policy.
@@ -112,7 +112,7 @@ The status bar shows "No voice is installed." The **Voice** menu is dimmed and r
 
 1. Look at the right end of the status bar. If "Downloading voices… _N_%" shows, keep the window open until a voice appears in the **Voice** menu. Closing the window stops the download.
 2. If the percentage and the progress bar disappear and the menu stays empty, the download failed. If no percentage ever shows, offline mode may have skipped it. In both cases, check the internet connection and the free disk space.
-3. Quit the app with Command-Q and open it from the Applications folder. The download starts at each launch, and this start is not in offline mode.
+3. Quit the app with Command-Q and open it from the **Applications** folder. The download starts at each launch, and this start is not in offline mode.
 4. If the download fails again, see [The voice download does not progress](#the-voice-download-does-not-progress).
 
 </Steps>
@@ -123,7 +123,14 @@ The status bar shows "No voice is installed." The **Voice** menu is dimmed and r
 
 The status bar shows "Downloading voices… 0%" for a while, or the percentage climbs and no voice appears in the **Voice** menu.
 
-**Cause.** The Mac does not receive the voice files. The app tries each file 3 times, with waits of 2 and then 4 seconds between the tries. Each failed file takes about 6 seconds, so a run in which every file fails takes minutes. The percentage counts a file as finished when its tries end, even when every try failed. With no connection, it stays at 0 while the first small files fail, and then it climbs in steps. When the run ends, the percentage and the progress bar disappear, and no voice has arrived. A connection that hangs takes longer, because each try can wait up to 10 seconds to connect.
+**Cause.** The Mac does not receive the voice files. The app tries each file 3 times, with waits of 2 and then 4 seconds between the tries. The percentage counts a file as finished when its tries end, even when every try failed.
+
+With no connection, the status bar behaves like this:
+
+- The percentage stays at 0 while the first small files fail, and then it climbs in steps.
+- Each failed file takes about 6 seconds, so a run in which every file fails takes minutes.
+- When the run ends, the percentage and the progress bar disappear, and no voice has arrived.
+- A connection that hangs takes longer, because each try can wait up to 10 seconds to connect.
 
 **Fix.**
 
@@ -267,7 +274,7 @@ The status bar shows an error that names a voice or a voice engine. The message 
 
 The status bar shows "Preparing…" for several seconds before the first reading plays.
 
-**Cause.** The app starts loading its name-detection model when it opens, and the first reading waits for it. On a Mac with an M2 Ultra chip, the wait was about 6 seconds, and a slower Mac waits longer. The first reading with some voices also waits while their voice engine loads. [Voices and voice engines](/manual/concepts/voice-engines/) says which voices.
+**Cause.** The app starts loading its name-detection model when it opens, and the first reading waits for it. On a Mac with an M2 Ultra chip, the wait was about 6 seconds, and a slower Mac waits longer. The first reading with some voices also waits while their voice engine loads; [Voices and voice engines](/manual/concepts/voice-engines/) says which voices.
 
 **Fix.** Wait for "Playing _n_ s." The delay happens once each time the app starts. To get it out of the way, read one short question after you open the app. To hear the last reading again at once, click **Repeat**. Reading the same question again with the same voice also starts at once, because the app keeps the audio in its audio cache.
 
@@ -275,7 +282,7 @@ The status bar shows "Preparing…" for several seconds before the first reading
 
 A reading starts up to 2.5 seconds late, and the status bar shows only "Preparing…".
 
-**Cause.** **Online lookups** is selected by default. With it selected, the app asks PubChem or UniProt about the chemical, protein, and gene names that it detects. A reading waits up to 2.5 seconds for the answers. The answers do not change the sound, and the window shows no message about lookups.
+**Cause.** **Online lookups** is selected by default, so the app asks PubChem or UniProt about the chemical, protein, and gene names that it detects. A reading waits up to 2.5 seconds for the answers. The answers do not change the sound, and the window shows no message about lookups.
 
 **Fix.** Deselect **Online lookups**. The app saves the choice, and the reading sounds the same. [Work offline](/manual/tasks/work-offline/) turns off all network use. [What uses the network](/about/privacy/#what-uses-the-network) lists what the app sends.
 
@@ -309,7 +316,7 @@ A word sounds wrong, with or without a warning in the status bar.
 
 The status bar shows "Warning: piper: override surface '_word_' not found in the segment text".
 
-**Cause.** An override is the exact pronunciation that the built-in lexicon, a pronunciation guide, or a systematic chemical name sets for one word. The surface is that word. A Piper voice cannot apply an override when an apostrophe and a letter follow the word, as in `Avogadro's`. The app drops the override and speaks the word plain.
+**Cause.** An override is the exact pronunciation that the built-in lexicon, a pronunciation guide, or a systematic chemical name sets for one word, called its surface. A Piper voice cannot apply an override when an apostrophe and a letter follow the word, as in `Avogadro's`. The app drops the override and speaks the word plain.
 
 **Fix.** The reading goes on, so no action is required. To hear the pronunciation, write the word without the apostrophe and the letter, such as "Avogadro number". [Pronunciation guides](/manual/reference/pronunciation-guides/) lists the other warnings, including the ones that start with the name of a voice engine.
 
