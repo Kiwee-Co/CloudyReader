@@ -303,8 +303,8 @@ class StatusBar(QStatusBar):
         return self._tone
 
     def add_cluster(self, cluster: QWidget) -> None:
-        """Add a permanent widget that gives up width before the message does: whatever it
-        holds, the message keeps MESSAGE_MIN_SHARE of the line."""
+        """Add a permanent widget that yields width to the message: the message gets what it
+        needs, up to MESSAGE_MIN_SHARE of the line, and the cluster the rest."""
         self._cluster = cluster
         self.addPermanentWidget(cluster)
         self._cap_cluster()
@@ -313,19 +313,31 @@ class StatusBar(QStatusBar):
         super().resizeEvent(event)
         self._cap_cluster()
 
+    def _message_width(self) -> int:
+        """The width the message needs whole: its icon, then its text; 0 with no message."""
+        if not self.currentMessage():
+            return 0
+        icon = (
+            tokens.STATUS_ICON_SIZE + tokens.INDICATOR_SPACING if self._tone in _TONE_ICONS else 0
+        )
+        return icon + self.fontMetrics().horizontalAdvance(self.currentMessage())
+
     def _cap_cluster(self) -> None:
         if self._cluster is not None:
-            room = self.contentsRect().width() * (1 - tokens.MESSAGE_MIN_SHARE)
-            self._cluster.setMaximumWidth(max(0, int(room) - tokens.GROUP_SPACING))
+            area = self.contentsRect().width()
+            keep = min(self._message_width(), area * tokens.MESSAGE_MIN_SHARE)
+            self._cluster.setMaximumWidth(max(0, int(area - keep) - tokens.GROUP_SPACING))
 
     def show_message(self, text: str, tone: Tone = Tone.INFO) -> None:
         self._tone = tone
         self.showMessage(text)
+        self._cap_cluster()  # a tone icon needs room too
         self.update()  # showMessage() repaints only when the text itself changes
 
     def _on_message_changed(self, text: str) -> None:
         if not text:
             self._tone = Tone.INFO
+        self._cap_cluster()
 
     def message_layout(self) -> tuple[QRect, QRect, str]:
         """The icon rect (null for INFO), the text rect, and the message elided to fit it."""

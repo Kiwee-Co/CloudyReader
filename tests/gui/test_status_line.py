@@ -14,6 +14,7 @@ from cloudyreader.prefetch import PrefetchProgress, PrefetchResult
 
 MB = 10**6
 ENGINE_LABEL = "Downloading Chatterbox Turbo… 42% (176 of 420 MB)"
+HINT = "loading Chatterbox Turbo (first use only)"  # makes "Preparing…" longer than half a line
 TNUM = QFont.Tag("tnum")
 ELIDE_RIGHT = Qt.TextElideMode.ElideRight
 
@@ -31,8 +32,8 @@ def engine_report() -> PrefetchProgress:
     )
 
 
-def hold_reading_during_download(qtbot, make_window, request):
-    """A reading held in preparation while an engine downloads: the fullest status line."""
+def engine_download(qtbot, make_window, request, *, hint: str | None = None):
+    """A window downloading an engine; with hint, a reading is held in preparation too."""
     gate, prepare = threading.Event(), threading.Event()
     request.addfinalizer(gate.set)
     request.addfinalizer(prepare.set)
@@ -41,9 +42,16 @@ def hold_reading_during_download(qtbot, make_window, request):
         prefetch_events=[engine_report()],
         prefetch_result=PrefetchResult("nothing"),
         gate=prepare,
+        load_hint=hint,
     )
     window = make_window(service=service)
     qtbot.waitUntil(window.prefetch_label.isVisible, timeout=5000)
+    return window
+
+
+def hold_reading_during_download(qtbot, make_window, request, hint=HINT):
+    """A reading held in preparation, its long first-use message beside an engine download."""
+    window = engine_download(qtbot, make_window, request, hint=hint)
     window.question_edit.setPlainText("What is H2O?")
     window.speak_button.click()
     qtbot.waitUntil(lambda: window._busy, timeout=2000)  # private on purpose: no public flag
@@ -63,6 +71,12 @@ def message_share(window) -> float:
     return (text.right() + 1 - area.left()) / area.width()
 
 
+def message_needs(window) -> float:
+    """The share of the line the message needs whole."""
+    bar = window.statusBar()
+    return bar.fontMetrics().horizontalAdvance(bar.currentMessage()) / bar.contentsRect().width()
+
+
 def resize(qtbot, window, width: int) -> None:
     window.resize(width, window.height())
     qtbot.waitUntil(lambda: window.width() == width)
@@ -76,16 +90,34 @@ def test_the_status_line_is_at_least_the_token_height(window):
     assert bar.height() >= tokens.STATUS_LINE_HEIGHT
 
 
-@pytest.mark.parametrize("width", [tokens.WINDOW_MIN_SIZE[0], tokens.WINDOW_DEFAULT_SIZE[0]])
-def test_the_message_keeps_half_the_line_beside_the_longest_label(
-    qtbot, busy_during_download, width
+def test_at_560_a_long_message_keeps_half_the_line_and_the_label_elides(
+    qtbot, busy_during_download
 ):
     window = busy_during_download
-    resize(qtbot, window, width)
+    resize(qtbot, window, tokens.WINDOW_MIN_SIZE[0])
 
-    assert window.prefetch_label.text() == ENGINE_LABEL
-    assert window.statusBar().currentMessage() == "Preparing…"
+    assert window.statusBar().currentMessage() == f"Preparing… {HINT}"
+    assert message_needs(window) > tokens.MESSAGE_MIN_SHARE
     assert message_share(window) >= tokens.MESSAGE_MIN_SHARE
+    assert window.prefetch_label.is_elided()
+
+
+def test_a_short_message_shows_whole_and_leaves_the_label_its_room(qtbot, make_window, request):
+    window = hold_reading_during_download(qtbot, make_window, request, hint=None)
+    resize(qtbot, window, tokens.WINDOW_DEFAULT_SIZE[0])
+
+    assert window.statusBar().currentMessage() == "Preparing…"
+    assert message_share(window) >= message_needs(window)  # the message shows whole
+    assert not window.prefetch_label.is_elided()
+
+
+def test_an_idle_line_never_cuts_the_download_label(qtbot, make_window, request):
+    window = engine_download(qtbot, make_window, request)
+    resize(qtbot, window, tokens.WINDOW_DEFAULT_SIZE[0])
+
+    assert window.statusBar().currentMessage() == ""
+    assert window.prefetch_label.text() == ENGINE_LABEL
+    assert not window.prefetch_label.is_elided()
 
 
 @pytest.fixture
