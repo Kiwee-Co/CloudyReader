@@ -2,6 +2,37 @@
 
 All notable changes to Cloudy Reader are recorded in this file, which follows Keep a Changelog and Semantic Versioning.
 
+<!-- markdownlint-disable MD024 -->
+
+## [0.0.2] - 2026-11-05
+
+### Added
+
+- Two voice engines: Chatterbox Turbo adds one built-in voice, and Qwen3-TTS adds Aiden and Ryan. Both run on your Mac, and neither clones a voice.
+- A disk image installer beside the zip. Each installer has a `.sha256` file with its checksum.
+- The first launch also downloads the two engines, after the Piper and Kokoro voices. Each engine file has a commit-pinned address and a SHA-256 value.
+- A free-disk-space check before each engine. A skipped engine shows `<engine> not downloaded: <reason>` in the status bar.
+- The app checks the SHA-256 again before the first load of an engine file. It refuses pickle files, and an engine loads only files on your Mac.
+- Voice menu order: Kokoro, Chatterbox Turbo, Qwen3-TTS, then Piper. The two new engines have no grade, so their voices sort by name.
+- A voice that cannot run yet shows dimmed, with its reason in the row, such as `not downloaded yet` or `offline: not downloaded`.
+- The first reading with an engine shows `Preparing… loading Chatterbox Turbo (first use only)`.
+- A saved voice that is not ready at start gives way to another voice, and a note in the status bar says so.
+- Rotation: Chatterbox Turbo has no gender label and never rotates. US only adds Aiden, and Men only adds Aiden and Ryan.
+- A new window look: the question sits in a rounded card, and the spoken script sits in its own panel. Only one progress bar shows at a time.
+- VoiceOver announces warnings and `Voices downloaded.` as well as errors.
+- The busy bar hides during a download and when Reduce Motion is on. The window repaints live when the system light or dark mode or the accent color changes.
+- The manual at <https://cloudyreader.com> is rebuilt on Astro Starlight.
+
+### Fixed
+
+- A tight en dash between two ascending numbers reads as "to": `5–10 grams` is "5 to 10 grams". A hyphen or a spaced dash reads as "to" only before a unit, a percent sign, or a noun such as `pages`.
+- `x<3` reads as "x is less than 3", and `x>=3` reads as "x is greater than or equal to 3".
+- Function names read as words, never spelled: `sin θ` is "sine theta", and `40sin(30°)` is "40 sine(30 degrees)". The word table also covers `cos`, `tan`, `ln`, and more.
+- `log3 10` reads as "log base 3 of 10". A number glued to `log` with no argument stays whole, so `log100 = 2` is "log 100 equals 2".
+- A unit after "a" or "an" is singular: `a 2 kg cart` is "a 2 kilogram cart".
+- A say-as guide after an expression that starts with a function name covers the whole expression.
+- A fresh clone builds the app: the build folder exists before the first PyInstaller log.
+
 ## [0.0.1] - 2026-11-05
 
 ### Added
@@ -26,4 +57,5 @@ All notable changes to Cloudy Reader are recorded in this file, which follows Ke
 - Offline mode: `--offline` or `CLOUDYREADER_OFFLINE=1` stops the lookups and the voice download.
 - The manual at <https://cloudyreader.com>.
 
+[0.0.2]: https://github.com/Kiwee-Co/CloudyReader/releases/tag/v0.0.2
 [0.0.1]: https://github.com/Kiwee-Co/CloudyReader/releases/tag/v0.0.1
