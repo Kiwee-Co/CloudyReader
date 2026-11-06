@@ -227,6 +227,7 @@ def test_the_pre_commit_job_skips_exactly_the_hooks_the_format_job_runs() -> Non
 def test_zizmor_runs_offline_with_annotations_so_findings_are_readable() -> None:
     step = next(s for s in steps("lint") if s.get("name") == "zizmor")
     assert "--offline" in step["run"] and "--format github" in step["run"]
+    assert "--min-severity medium" in step["run"]
     assert '"zizmor==$ZIZMOR"' in step["run"]
 
 
@@ -237,11 +238,6 @@ def test_actionlint_prints_each_finding_as_an_annotation() -> None:
     assert 'actionlint -format "$format"' in step["run"]
 
 
-def test_zizmor_has_one_scoped_ignore_and_it_says_why() -> None:
-    lines = CI.read_text(encoding="utf-8").splitlines()
-    ignores = [i for i, line in enumerate(lines) if "zizmor: ignore" in line]
-    assert len(ignores) == 1, "every new suppression needs its own review"
-    at = ignores[0]
-    assert lines[at].strip() == "run: | # zizmor: ignore[adhoc-packages]"
-    assert lines[at - 1].strip() == "- name: Install Prettier and markdownlint"
-    assert "lockfile" in lines[at - 2] + lines[at - 3]
+def test_no_inline_zizmor_ignore_hides_a_finding() -> None:
+    # The gate is the severity threshold; an ignore comment would silence Medium and High too.
+    assert "zizmor: ignore" not in CI.read_text(encoding="utf-8")
