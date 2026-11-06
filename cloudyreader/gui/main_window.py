@@ -48,6 +48,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from cloudyreader.engine_catalog import TITLES, is_actionable
 from cloudyreader.gui import tokens
 from cloudyreader.gui.names import APP_NAME, app_version
 from cloudyreader.gui.voice_picker import LOADING, VoicePicker
@@ -66,6 +67,7 @@ _NATIVE = QKeySequence.SequenceFormat.NativeText
 _NO_VOICE = "No voice is installed."
 _PARTIAL = "Some voices could not be downloaded. They are tried again at the next start."
 _MB = 1_000_000  # decimal megabytes, as Finder counts them
+_DOWNLOADING = "Downloading voices"  # the bar's name for a report that names no group
 
 
 class ClipboardSource(Protocol):
@@ -111,6 +113,19 @@ def _warning_text(warnings: tuple[str, ...]) -> str:
     if len(flat) == 1:
         return f"Warning: {flat[0]}"
     return f"{len(flat)} warnings: {'; '.join(flat)}"
+
+
+def _percent(done: int, total: int) -> int:
+    return min(100, max(0, done) * 100 // total) if total > 0 else 0
+
+
+def _skip_line(entry: str) -> tuple[str, bool]:
+    """A skipped download as the status bar says it, and whether the user can act on it."""
+    group, _, reason = entry.partition(": ")
+    title = TITLES.get(group)
+    if title is None:
+        return entry, False  # not an engine's reason, such as "conflict: <path>"
+    return f"{title} not downloaded: {reason}", is_actionable(reason)
 
 
 def _voice_label(voice: VoiceInfo) -> str:
@@ -181,6 +196,8 @@ class MainWindow(QMainWindow):
         self._prefetch_cancel = threading.Event()
         self._prefetch_thread: threading.Thread | None = None
         self._prefetch_files_done = 0
+        self._prefetch_group = ""  # the lock group of the latest download report
+        self._voice_note: str | None = None  # why the saved voice is not the selected one
         self._refreshing = False
         self._refresh_again = False
 
@@ -309,6 +326,7 @@ class MainWindow(QMainWindow):
         self.question_edit.document().setDocumentMargin(tokens.TEXT_INSET)
 
         self.voice_picker = VoicePicker()
+        self.voice_picker.voice_changed.connect(self._drop_voice_note)  # the user chose: note done
         self.rotation_combo = QComboBox()
         self.rotation_combo.setAccessibleName("Voice rotation")
         self.rotation_combo.setToolTip("How Speak picks the next voice.")
@@ -387,10 +405,10 @@ class MainWindow(QMainWindow):
         self.prefetch_label = QLabel()
         self.prefetch_label.setFont(text_style(tokens.TEXT_CALLOUT_PT))  # as the status message
         self.prefetch_bar = QProgressBar()
-        self.prefetch_bar.setRange(0, 100)  # percent of all bytes to download
+        self.prefetch_bar.setRange(0, 100)  # percent of the group, else of the whole run
         self.prefetch_bar.setTextVisible(False)
         self.prefetch_bar.setFixedWidth(tokens.BUSY_BAR_WIDTH)
-        self.prefetch_bar.setAccessibleName("Downloading voices")
+        self.prefetch_bar.setAccessibleName(_DOWNLOADING)
         # Keeps the two bars apart, so they never read as one; shown only while both are.
         self._bar_gap = QWidget()
         self._bar_gap.setFixedWidth(tokens.CONTROL_SPACING)
@@ -485,10 +503,29 @@ class MainWindow(QMainWindow):
         saved = self._settings.value("voice", "", type=str)
         self.voice_picker.set_voices(voices, preferred=saved)
         self._end_loading()
-        if self.voice_picker.voice_key() is None:
+        key = self.voice_picker.voice_key()
+        if key is None:
             self._notify(_NO_VOICE, tone=Tone.WARNING)
+        else:
+            self._note_fallback(saved, key)
         self.voices_settled.emit()
         self._start_prefetch()
+
+    def _note_fallback(self, saved: str, key: str) -> None:
+        """Say once, at load, why the saved voice is not the selected one, when its row says."""
+        voices = {voice.key: voice for voice in self._voices}
+        wanted = voices.get(saved)
+        if wanted is None or wanted.installed or not wanted.reason:
+            return  # nothing saved, the saved voice is selected, or no reason: quiet, as before
+        using = voices[key].name
+        self._voice_note = f"{wanted.name} is not ready: {wanted.reason}. Using {using}."
+        self._notify(self._voice_note)
+
+    def _drop_voice_note(self, _key: str = "") -> None:
+        """The note is stale once the saved voice lands or the user picks a voice."""
+        if self._status.currentMessage() == self._voice_note:
+            self._clear_status()
+        self._voice_note = None
 
     def _on_voices_failed(self, exc: BaseException) -> None:
         if self._closing:
@@ -525,20 +562,37 @@ class MainWindow(QMainWindow):
     def _on_prefetch_progress(self, progress: PrefetchProgress) -> None:
         if self._closing:
             return
-        total = max(progress.total_bytes, 0)
-        percent = min(100, max(0, progress.done_bytes) * 100 // total) if total else 0
-        self.prefetch_label.setText(f"Downloading voices… {percent}%")
-        self.prefetch_label.setToolTip(
-            f"{progress.file}: {progress.done_bytes / _MB:.1f} of {total / _MB:.1f} MB"
-        )
-        self.prefetch_bar.setValue(percent)
+        run = _percent(progress.done_bytes, progress.total_bytes)
+        if progress.group:  # the group's own share; the whole run goes in the tooltip
+            title = TITLES.get(progress.group, progress.group)
+            done, total = progress.group_done_bytes, progress.group_total_bytes
+            percent = _percent(done, total)
+            self.prefetch_label.setText(
+                f"Downloading {title}… {percent}% ({done / _MB:,.0f} of {total / _MB:,.0f} MB)"
+            )
+            self.prefetch_label.setToolTip(f"{progress.file} (all downloads: {run}%)")
+            self.prefetch_bar.setValue(percent)
+            self.prefetch_bar.setAccessibleName(f"Downloading {title}")
+        else:
+            total = max(progress.total_bytes, 0)
+            self.prefetch_label.setText(f"Downloading voices… {run}%")
+            self.prefetch_label.setToolTip(
+                f"{progress.file}: {progress.done_bytes / _MB:.1f} of {total / _MB:.1f} MB"
+            )
+            self.prefetch_bar.setValue(run)
+            self.prefetch_bar.setAccessibleName(_DOWNLOADING)
         for widget in self._prefetch_widgets:
             widget.show()
         self._sync_bar_gap()
-        if progress.files_done > self._prefetch_files_done:
+        # A new group means the last one ended: its voices are listed while the next downloads.
+        previous, self._prefetch_group = self._prefetch_group, progress.group
+        ended = previous != "" and progress.group not in ("", previous)
+        landed = progress.files_done > self._prefetch_files_done
+        if landed:
             self._prefetch_files_done = progress.files_done
-            if self.voice_picker.voice_key() is None:  # a fresh checkout: speak once one lands
-                self._refresh_voices()
+        # A fresh checkout speaks as soon as its first file lands.
+        if ended or (landed and self.voice_picker.voice_key() is None):
+            self._refresh_voices()
 
     def _on_prefetch_done(self, result: object) -> None:
         if self._closing:
@@ -547,19 +601,27 @@ class MainWindow(QMainWindow):
             widget.hide()
         self._sync_bar_gap()
         outcome = getattr(result, "outcome", None)
+        skips = [_skip_line(entry) for entry in getattr(result, "skipped", ())]
+        actionable = [line for line, can_act in skips if can_act]
         if isinstance(result, Exception) or outcome == "partial":
             failed = ", ".join(getattr(result, "failed", ()))
-            self._notify_if_idle(_PARTIAL, tone=Tone.WARNING, detail=failed)
+            tip = f"{_PARTIAL} ({failed})" if failed else None
+            self._notify_if_idle(_PARTIAL, tone=Tone.WARNING, tooltip=tip)
+        elif actionable:  # disk or write; gate, offline, and build reasons stay in the picker
+            every = "\n".join(line for line, _ in skips)
+            self._notify_if_idle(actionable[0], tone=Tone.WARNING, tooltip=every)
         elif outcome == "complete":
             self._notify_if_idle("Voices downloaded.")
         if getattr(result, "files", 0) > 0:
             self._refresh_voices()
         self.prefetch_finished.emit(result)
 
-    def _notify_if_idle(self, text: str, *, tone: Tone = Tone.INFO, detail: str = "") -> None:
+    def _notify_if_idle(
+        self, text: str, *, tone: Tone = Tone.INFO, tooltip: str | None = None
+    ) -> None:
         """Show a download outcome only in an empty message slot: never over the user's own."""
         if not self._status.currentMessage():
-            self._notify(text, tooltip=f"{text} ({detail})" if detail else None, tone=tone)
+            self._notify(text, tooltip=tooltip, tone=tone)
 
     def _refresh_voices(self) -> None:
         """Re-list after downloads. One re-list in flight; requests meanwhile become one more."""
@@ -582,6 +644,8 @@ class MainWindow(QMainWindow):
             self.voice_picker.speaker_spin.setValue(speaker)  # the rebuild reset it to 0
         if self.voice_picker.voice_key() is not None and self._status.currentMessage() == _NO_VOICE:
             self._clear_status()
+        if self.voice_picker.voice_key() == saved:  # the saved voice has landed
+            self._drop_voice_note()
         self._refresh_controls()
         self.voices_refreshed.emit()
         self._end_refresh()
@@ -749,6 +813,8 @@ class MainWindow(QMainWindow):
             label = self._rotator.mode.label
             self._fallback = f"No installed voice matches “{label}”; using the selected voice."
             preparing, tone = self._fallback, Tone.WARNING
+        if tone is Tone.INFO and (hint := self._load_hint(voice_key)):
+            preparing = f"{preparing} {hint}"  # a model loads first: say why this one is slow
         opts = RenderOptions(
             read_answer=self.read_answer_check.isChecked(),
             online_lookups=self.online_lookups_check.isChecked(),
@@ -763,6 +829,17 @@ class MainWindow(QMainWindow):
                 self._signals.failed,
             )
         )
+
+    def _load_hint(self, voice_key: str) -> str | None:
+        """The service's note for a slow first reading with this voice, if it has one."""
+        hook = getattr(self._service, "load_hint", None)
+        if not callable(hook):
+            return None
+        try:
+            return hook(voice_key)
+        except Exception:  # a hint is a courtesy: it must never stop the reading
+            log.warning("load hint failed", exc_info=True)
+            return None
 
     def _on_prepared(self, reading: Reading) -> None:
         if self._closing:

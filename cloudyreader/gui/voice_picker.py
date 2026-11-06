@@ -8,11 +8,12 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSpinBox, QWidget
 
+from cloudyreader.engine_catalog import TITLES
 from cloudyreader.gui import tokens
 from cloudyreader.models import VoiceInfo
 
 _KEY_ROLE = Qt.ItemDataRole.UserRole
-_ENGINE_TITLES = {"piper": "Piper", "kokoro": "Kokoro"}
+_ENGINE_TITLES = {**TITLES, "piper": "Piper"}  # TITLES names Piper's lock group, "voices"
 _NO_VOICE = "No voice installed"
 LOADING = "Loading voices…"
 _UNAVAILABLE = "Voices unavailable"
@@ -21,7 +22,8 @@ _UNAVAILABLE = "Voices unavailable"
 def _label(voice: VoiceInfo) -> str:
     details = [voice.language, voice.quality]
     if not voice.installed:
-        details.append("not installed")  # text, not only a dimmed row: never color alone
+        # Text, not only a dimmed row: never color alone. The reason says why, when it is known.
+        details.append(voice.reason or "not installed")
     return f"{voice.name} ({', '.join(d for d in details if d)})"
 
 
@@ -89,6 +91,7 @@ class VoicePicker(QWidget):
             for voice in members:
                 item = QStandardItem(_label(voice))
                 item.setData(voice.key, _KEY_ROLE)
+                item.setToolTip(voice.reason)  # the whole reason, should the popup cut the row
                 item.setEnabled(voice.installed)
                 if voice.installed:
                     self._rows[voice.key] = self._model.rowCount()

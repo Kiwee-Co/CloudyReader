@@ -21,6 +21,22 @@ FAKE_VOICES: tuple[VoiceInfo, ...] = (
     VoiceInfo("kokoro:af_heart", "kokoro", "Heart", "en-US", "high", 1, True),
     VoiceInfo("kokoro:am_michael", "kokoro", "Michael", "en-US", "high", 1, False),
 )
+# The engine rows a Mac with Apple Silicon lists: one dimmed row that says why, two ready voices.
+ENGINE_FAKE_VOICES: tuple[VoiceInfo, ...] = (
+    *FAKE_VOICES,
+    VoiceInfo(
+        "chatterbox_turbo:builtin",
+        "chatterbox_turbo",
+        "Chatterbox Turbo (built-in)",
+        "en",
+        "4-bit",
+        1,
+        False,
+        reason="not downloaded yet",
+    ),
+    VoiceInfo("qwen3_tts:ryan", "qwen3_tts", "Ryan (male)", "en", "8-bit", 1, True),
+    VoiceInfo("qwen3_tts:aiden", "qwen3_tts", "Aiden (male)", "en-US", "8-bit", 1, True),
+)
 
 _FAKE_WAV = Path(tempfile.gettempdir()) / "cloudyreader-fake.wav"  # never opened
 _GATE_TIMEOUT_S = 10.0  # a forgotten gate must fail a test, not hang it
@@ -56,6 +72,7 @@ class FakeReaderService:
         prefetch_delay_s: float = 0.0,
         prefetch_error: Exception | None = None,
         prefetch_installs: Sequence[str] = (),
+        load_hint: str | None = None,
     ) -> None:
         self.voice_list = list(voices)
         self.delay_s = delay_s
@@ -73,6 +90,9 @@ class FakeReaderService:
         self.prefetch_delay_s = prefetch_delay_s
         self.prefetch_error = prefetch_error
         self.prefetch_installs = tuple(prefetch_installs)  # keys installed as the run starts
+        self.load_hint_text = load_hint  # said until prepare() succeeds once with that voice
+        self.load_hint_calls: list[tuple[str, threading.Thread]] = []
+        self._prepared: set[str] = set()
         self.calls: list[PrepareCall] = []
         self.voices_threads: list[threading.Thread] = []
         self.prefetch_threads: list[threading.Thread] = []
@@ -93,10 +113,20 @@ class FakeReaderService:
         time.sleep(self.delay_s)
         if self.error is not None:
             raise self.error
+        self._prepared.add(voice_key)  # its model is resident now
         lines = [line.strip() for line in raw.splitlines() if line.strip()]
         script = SpokenScript(tuple(Segment(text=line) for line in lines))
         audio = Audio(_FAKE_WAV, 22_050, self.duration_s, cache_hit=False)
         return Reading((), script, (), {}, audio, warnings=self.warnings)
+
+    @property
+    def load_hint(self) -> Callable[[str], str | None] | None:
+        """The first-use hint hook, or None (the default) like a service that has none."""
+        return None if self.load_hint_text is None else self._load_hint
+
+    def _load_hint(self, voice_key: str) -> str | None:
+        self.load_hint_calls.append((voice_key, threading.current_thread()))
+        return None if voice_key in self._prepared else self.load_hint_text
 
     @property
     def prefetch_voices(self) -> Callable[..., PrefetchResult] | None:
