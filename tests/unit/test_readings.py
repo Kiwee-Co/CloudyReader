@@ -4,6 +4,7 @@ import pytest
 
 from cloudyreader.models import Question, RenderOptions, Respelling
 from cloudyreader.normalize import ScriptNormalizer
+from cloudyreader.parser import parse
 
 EN_DASH = "–"
 
@@ -219,3 +220,30 @@ def test_a_function_name_is_read_as_a_word(raw, words):
 )
 def test_the_same_letters_outside_a_function_stay(raw, today):
     assert spoken(raw) == today
+
+
+# Real round (Sample-Set-8 Round-10-A, U+F071 is the PDF's theta): each guide stands for the whole
+# printed expression, so the voice says the guide words alone, not "sin theta 1 equals sin" first.
+ROUND_10A_TOSS_UP_1 = (
+    "TOSS-UP\n\n1) MATH Multiple Choice If \uf0711 [theta sub 1] and \uf0712 [theta sub 2] are "
+    "complementary angles\nthen which of the following is always correct?\n\n"
+    "W) tan\uf0711 = - tan\uf0712 [tangent of theta sub 1 equals negative tangent of theta sub 2]\n"
+    "X) sin\uf0711 = sin \uf0712 [sine of theta sub 1 equals sine of theta sub 2]\n"
+    "Y) sin\uf0711 = cos \uf0712 [sine of theta sub 1 equals cosine of theta sub 2]\n"
+    "Z) cos\uf0711 = cos \uf0712 [cosine of theta sub 1 equals cosine of theta sub 2]\n\n"
+    "ANSWER: Y) sin\uf0711 = cos \uf0712\n"
+)
+
+
+def test_a_say_as_guide_after_a_function_name_reads_alone():
+    norm = ScriptNormalizer(NoHardWords())  # type: ignore[arg-type]
+    texts = [
+        s.text for s in norm.to_script(parse(ROUND_10A_TOSS_UP_1), {}, RenderOptions()).segments
+    ]
+    choices = [texts[i + 1] for i, t in enumerate(texts) if t in ("W.", "X.", "Y.", "Z.")]
+    assert choices == [
+        "tangent of theta sub 1 equals negative tangent of theta sub 2",
+        "sine of theta sub 1 equals sine of theta sub 2",
+        "sine of theta sub 1 equals cosine of theta sub 2",
+        "cosine of theta sub 1 equals cosine of theta sub 2",
+    ]

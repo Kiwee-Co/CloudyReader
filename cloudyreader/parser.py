@@ -136,6 +136,11 @@ _CHOICE_MARKER_RE = re.compile(r"[WXYZ]\)")
 _ARROWS = frozenset("→⟶⇒⟹↔⇌")
 _MATH_CHARS = frozenset("+−–-×÷*/^=<>≤≥≠≈±≧≦|│⏐()[]{}√π∅∞→⟶⇒·•%!°∘\u2010\u2011\u2012")
 _OPERATOR_CHARS = frozenset("+−×÷*/^=<>≤≥≠≈±≧≦√")
+# Function names belong to a printed expression: "sinθ1 = sin θ2" is one surface for its guide.
+# Copied from formulas._FUNCTIONS, not imported: the parser must not depend on the speech stages.
+_FUNCTION_NAMES = frozenset(
+    "sin cos tan sec csc cot sinh cosh tanh arcsin arccos arctan log ln exp det lim max min".split()
+)
 # Words that mark a bracket as spoken maths; two of them and no printed expression: say them.
 _SPOKEN_MATH = frozenset(
     "over squared cubed plus minus times equals fraction numerator denominator absolute root power "
@@ -605,6 +610,8 @@ def _math_token(token: str, following: str | None) -> bool:
     letters = [c for c in core if c.isalpha()]
     if not letters:
         return _is_operator(core)
+    if core.lower() in _FUNCTION_NAMES:
+        return True
     if any(c.isalpha() and not c.isascii() for c in core) and len(core) > 1:
         return True  # `cscθ`: Greek letters beside Latin ones only occur in formulas
     runs = re.findall(rf"{_LETTER}+", core)
