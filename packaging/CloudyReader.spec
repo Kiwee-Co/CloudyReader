@@ -108,6 +108,8 @@ a = Analysis(  # noqa: F821
     module_collection_mode={"mlx_audio": "pyz+py"} if KOKORO else {},
     noarchive=False,
 )
+# pip's install-source record names the build tree or download folder as a file:// URL: never ship.
+a.datas = [entry for entry in a.datas if not entry[0].endswith(".dist-info/direct_url.json")]
 # The oldest macOS that loads every collected binary: wheel tags can understate it.
 MIN_MACOS = min_macos((src for _, src, _ in a.binaries + a.datas), floor=MIN_MACOS_FLOOR)
 pyz = PYZ(a.pure)  # noqa: F821

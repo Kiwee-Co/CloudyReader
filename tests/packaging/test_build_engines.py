@@ -265,8 +265,12 @@ def test_engine_growth_sums_only_the_engines_own_folders(root):
 # --- packaging/CloudyReader.spec ------------------------------------------------------------------
 
 
-def spec(monkeypatch: pytest.MonkeyPatch, **env: str) -> dict[str, Any]:
-    """Run the spec on stand-ins for PyInstaller; what each hook helper and Analysis received."""
+def spec(
+    monkeypatch: pytest.MonkeyPatch, datas: tuple[tuple[str, str, str], ...] = (), **env: str
+) -> dict[str, Any]:
+    """Run the spec on stand-ins for PyInstaller; what each hook helper and Analysis received.
+
+    Analysis returns `datas` as its data files; seen["toc"] is what the spec left of them."""
     seen: dict[str, Any] = {"collect_all": [], "collect_submodules": [], "copy_metadata": []}
 
     def collect_all(package: str, **kw: Any) -> tuple[list, list, list]:
@@ -293,7 +297,8 @@ def spec(monkeypatch: pytest.MonkeyPatch, **env: str) -> dict[str, Any]:
         monkeypatch.delenv(key, raising=False)
     for key, value in env.items():
         monkeypatch.setenv(key, value)
-    toc = types.SimpleNamespace(pure=[], scripts=[], binaries=[], datas=[])
+    toc = types.SimpleNamespace(pure=[], scripts=[], binaries=[], datas=list(datas))
+    seen["toc"] = toc
 
     def recorder(kind: str) -> Any:
         def call(*args: Any, **kwargs: Any) -> Any:
@@ -333,3 +338,17 @@ def test_spec_keeps_the_dmg_tools_out_of_the_app(monkeypatch, env):
     seen = spec(monkeypatch, **env)
 
     assert {"dmgbuild", "ds_store", "mac_alias"} <= set(seen["Analysis"]["excludes"])
+
+
+def test_spec_ships_no_direct_url_json_that_names_a_build_path(monkeypatch):
+    kept = ("cloudyreader-0.0.2.dist-info/METADATA", "/src/METADATA", "DATA")
+    seen = spec(
+        monkeypatch,
+        datas=(
+            ("cloudyreader-0.0.2.dist-info/direct_url.json", "/private/tmp/tree/x.json", "DATA"),
+            ("en_ner_craft_md-0.5.4.dist-info/direct_url.json", "/data/y.json", "DATA"),
+            kept,
+        ),
+    )
+
+    assert seen["toc"].datas == [kept]  # pip's install-source record, with its file:// URL, is gone
