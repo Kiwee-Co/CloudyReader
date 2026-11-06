@@ -49,12 +49,12 @@ def test_tab_takes_the_ring_off_for_a_native_control(qtbot, active):
     assert ring(active).isHidden()
 
 
-def test_the_script_view_gets_the_ring_once_shown(qtbot, active):
+def test_the_script_panel_gets_the_ring_once_shown(qtbot, active):
     active.script_toggle.click()
     focus(qtbot, active.script_view)
 
     assert ring(active).isVisible()
-    assert ring(active).geometry() == ringed(active, active.script_view)
+    assert ring(active).geometry() == ringed(active, active.script_panel)
 
 
 def test_the_ring_follows_its_surface_when_the_window_resizes(qtbot, active):

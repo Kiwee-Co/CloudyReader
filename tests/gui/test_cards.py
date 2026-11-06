@@ -1,4 +1,4 @@
-"""The question card: the primary reading surface, a rounded card with larger text."""
+"""The question card and the spoken-script panel: a primary surface and a recessed one."""
 
 import pytest
 from PySide6.QtCore import QPoint, Qt
@@ -102,3 +102,58 @@ def test_the_card_paints_a_rounded_outline_around_its_fill(window):
     assert image.pixelColor(tokens.BORDER_WIDTH, middle) == card.fill
     assert image.pixelColor(image.width() // 2, image.height() - 2) == card.fill
     assert image.pixelColor(0, 0) != card.border  # the corner is rounded off
+
+
+# --- the spoken-script panel -----------------------------------------------------------------
+
+
+def secondary_palette(view) -> tuple[str, str]:
+    palette = view.palette()
+    return (
+        palette.color(QPalette.ColorRole.Text).name(),
+        palette.color(QPalette.ColorRole.PlaceholderText).name(),
+    )
+
+
+def test_the_script_sits_frameless_in_a_panel_without_an_outline(window):
+    panel, view = window.script_panel, window.script_view
+
+    assert view.parentWidget() is panel
+    assert view.frameShape() == QFrame.Shape.NoFrame
+    assert not view.viewport().autoFillBackground()
+    assert panel.border is None
+    assert panel.minimumHeight() == tokens.SCRIPT_MIN_HEIGHT
+
+
+@pytest.mark.parametrize(("scheme", "look"), LOOKS)
+def test_the_panel_fill_and_secondary_text_come_from_the_tokens_at_aa(window, scheme, look):
+    QGuiApplication.styleHints().colorSchemeChanged.emit(scheme)
+    fill = window.script_panel.fill.name()
+    secondary = QColor(getattr(tokens, f"TEXT_SECONDARY_{look}")).name()
+
+    assert fill == QColor(getattr(tokens, f"PANEL_{look}")).name()
+    assert secondary_palette(window.script_view) == (secondary, secondary)  # the hint as well
+    assert contrast(secondary, fill) >= 4.5
+
+
+def test_the_panel_shows_and_hides_with_the_script(qtbot, window):
+    panel = window.script_panel
+    assert panel.isHidden()
+
+    window.script_toggle.click()
+    assert panel.isVisible()
+    assert window.script_view.isVisible()
+
+    window.script_toggle.click()
+    assert panel.isHidden()
+
+
+def test_the_panel_paints_its_fill_and_no_outline(window):
+    window.script_toggle.click()
+    panel = window.script_panel
+    image = panel.grab().toImage()
+    middle = image.height() // 2
+
+    assert image.pixelColor(0, middle) == panel.fill
+    assert image.pixelColor(image.width() // 2, middle) == panel.fill
+    assert image.pixelColor(0, 0) != panel.fill  # the corner is rounded off

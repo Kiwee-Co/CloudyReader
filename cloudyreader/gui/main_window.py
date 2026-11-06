@@ -371,10 +371,12 @@ class MainWindow(QMainWindow):
         self.script_view.setReadOnly(True)
         self.script_view.setAccessibleName("Spoken script")
         self.script_view.setPlaceholderText("The words that are spoken appear here.")
+        self.script_view.setAccessibleDescription(self.script_view.placeholderText())
         self.script_view.setFont(text_style(tokens.TEXT_CALLOUT_PT))  # secondary to the question
-        self.script_view.document().setDocumentMargin(tokens.CARD_PADDING)
-        self.script_view.setMinimumHeight(tokens.SCRIPT_MIN_HEIGHT)
         self.script_view.hide()
+        # Secondary by three things together: a recessed fill, smaller type, a quieter color.
+        self.script_panel = Card(self.script_view)
+        self.script_panel.setMinimumHeight(tokens.SCRIPT_MIN_HEIGHT)
 
         # HIG (Layout): a form with right-aligned labels; popups keep their natural width.
         form = QFormLayout()
@@ -398,10 +400,10 @@ class MainWindow(QMainWindow):
         buttons.addWidget(self.repeat_button)
         buttons.addWidget(self.stop_button)
         buttons.addWidget(self.speak_button)
-        script = QVBoxLayout()  # a hidden view adds no spacing, so collapsed leaves no gap
+        script = QVBoxLayout()  # a hidden panel adds no spacing, so collapsed leaves no gap
         script.setSpacing(tokens.CONTROL_SPACING)
         script.addWidget(self.script_toggle, 0, Qt.AlignmentFlag.AlignLeft)
-        script.addWidget(self.script_view)
+        script.addWidget(self.script_panel)
 
         layout = QVBoxLayout()
         layout.setContentsMargins(*(tokens.MARGIN,) * 4)
@@ -416,7 +418,7 @@ class MainWindow(QMainWindow):
         # The text views get the two-tone ring; native controls keep the system's own ring.
         self._focus_ring = FocusRing(central)
         self._focus_ring.track(self.question_edit, self.question_card, tokens.CARD_RADIUS)
-        self._focus_ring.track(self.script_view, self.script_view)
+        self._focus_ring.track(self.script_view, self.script_panel, tokens.CARD_RADIUS)
 
         # Voice downloads report in permanent widgets, so the message slot stays free for
         # "Preparing…" and "Playing…". Added before the busy bar, which stays rightmost.
@@ -470,8 +472,8 @@ class MainWindow(QMainWindow):
     def _apply_appearance(self, scheme: Qt.ColorScheme | None = None) -> None:
         """Give the custom-painted parts the tokens of the current appearance.
 
-        Placeholders get their AA token, the question card its outline, and the focus ring its
-        inner stroke; every other color stays native.
+        Placeholders get their AA token, the question card its outline, the script panel its fill
+        and secondary text, and the focus ring its inner stroke; every other color stays native.
         """
         if scheme is None:
             scheme = QGuiApplication.styleHints().colorScheme()
@@ -479,15 +481,21 @@ class MainWindow(QMainWindow):
             base = self.question_edit.palette().color(QPalette.ColorRole.Base)
             scheme = Qt.ColorScheme.Dark if base.lightness() < 128 else Qt.ColorScheme.Light
         dark = scheme == Qt.ColorScheme.Dark
-        palette = QPalette()  # sets no role yet, so every other role keeps following the system
-        palette.setColor(
+        question = QPalette()  # sets no role yet, so every other role keeps following the system
+        question.setColor(
             QPalette.ColorRole.PlaceholderText,
             QColor(tokens.PLACEHOLDER_DARK if dark else tokens.PLACEHOLDER_LIGHT),
         )
-        for view in (self.question_edit, self.script_view):
-            view.setPalette(palette)
+        self.question_edit.setPalette(question)
         border = tokens.CARD_BORDER_DARK if dark else tokens.CARD_BORDER_LIGHT
         self.question_card.set_colors(None, QColor(border))  # filled with the system's Base
+        # On the panel fill the placeholder tokens fall under 4.5:1, so the hint is secondary too.
+        secondary = QColor(tokens.TEXT_SECONDARY_DARK if dark else tokens.TEXT_SECONDARY_LIGHT)
+        script = QPalette()
+        for role in (QPalette.ColorRole.Text, QPalette.ColorRole.PlaceholderText):
+            script.setColor(role, secondary)
+        self.script_view.setPalette(script)
+        self.script_panel.set_colors(QColor(tokens.PANEL_DARK if dark else tokens.PANEL_LIGHT))
         self._focus_ring.set_dark(dark)
 
     def _restore_settings(self) -> None:

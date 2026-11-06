@@ -25,6 +25,7 @@ from cloudyreader.gui import tokens
 _LEFT_CENTER = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
 _FOLLOW = {QEvent.Type.FocusIn, QEvent.Type.FocusOut, QEvent.Type.Move, QEvent.Type.Resize}
 _FOLLOW |= {QEvent.Type.Show, QEvent.Type.Hide}
+_SHOWN = {QEvent.Type.ShowToParent, QEvent.Type.HideToParent}  # a child shown or hidden itself
 
 
 def text_style(points: int) -> QFont:
@@ -104,10 +105,11 @@ class DisclosureButton(QToolButton):
 
 
 class Card(QWidget):
-    """A rounded surface around one text view: the question card.
+    """A rounded surface around one text view: the question card or the spoken-script panel.
 
     It paints the fill and, when it has one, the outline. The view inside has no frame and no
     background of its own, so the fill shows through; its text sits CARD_PADDING from the edge.
+    The card shows and hides with its view, so callers keep toggling the view alone.
     """
 
     def __init__(self, view: QPlainTextEdit, parent: QWidget | None = None) -> None:
@@ -126,6 +128,9 @@ class Card(QWidget):
         view.document().setDocumentMargin(tokens.CARD_PADDING - inset)
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)  # a click on the padding edits too
         self.setFocusProxy(view)
+        if view.isHidden():
+            self.hide()
+        view.installEventFilter(self)
 
     @property
     def fill(self) -> QColor:
@@ -140,6 +145,11 @@ class Card(QWidget):
     def set_colors(self, fill: QColor | None, border: QColor | None = None) -> None:
         self._fill, self._border = fill, border
         self.update()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if watched is self.view and event.type() in _SHOWN:
+            self.setVisible(event.type() == QEvent.Type.ShowToParent)
+        return False
 
     def paintEvent(self, _event: QPaintEvent) -> None:
         painter = QPainter(self)

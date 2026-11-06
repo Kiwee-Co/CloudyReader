@@ -209,8 +209,10 @@ def test_popup_keeps_its_natural_width_like_a_native_form(window):
     assert form.fieldGrowthPolicy() == QFormLayout.FieldGrowthPolicy.FieldsStayAtSizeHint
 
 
-def test_the_script_view_gets_a_comfortable_inset(window):
-    assert window.script_view.document().documentMargin() == tokens.CARD_PADDING
+def test_the_script_text_sits_card_padding_from_the_panel_edge(window):
+    inset = window.script_panel.layout().contentsMargins().left()
+
+    assert inset + window.script_view.document().documentMargin() == tokens.CARD_PADDING
 
 
 def test_spoken_script_is_secondary_text(window):
@@ -287,7 +289,8 @@ def test_busy_state_keeps_the_window_margin(qtbot, window, service):
 
 def test_placeholders_use_the_aa_token_for_the_light_appearance(window):
     assert placeholder(window.question_edit) == QColor(tokens.PLACEHOLDER_LIGHT).name()
-    assert placeholder(window.script_view) == QColor(tokens.PLACEHOLDER_LIGHT).name()
+    # On the script panel's fill the placeholder tokens miss 4.5:1; the secondary token meets it.
+    assert placeholder(window.script_view) == QColor(tokens.TEXT_SECONDARY_LIGHT).name()
 
 
 def test_placeholders_follow_a_switch_to_dark_and_back(window):
@@ -295,7 +298,7 @@ def test_placeholders_follow_a_switch_to_dark_and_back(window):
 
     hints.colorSchemeChanged.emit(Qt.ColorScheme.Dark)
     assert placeholder(window.question_edit) == QColor(tokens.PLACEHOLDER_DARK).name()
-    assert placeholder(window.script_view) == QColor(tokens.PLACEHOLDER_DARK).name()
+    assert placeholder(window.script_view) == QColor(tokens.TEXT_SECONDARY_DARK).name()
 
     hints.colorSchemeChanged.emit(Qt.ColorScheme.Light)
     assert placeholder(window.question_edit) == QColor(tokens.PLACEHOLDER_LIGHT).name()
