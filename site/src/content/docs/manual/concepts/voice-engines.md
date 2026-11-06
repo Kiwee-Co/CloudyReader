@@ -70,7 +70,7 @@ No grade or tier decides which voice is best for you. Try two or three voices wi
 
 - Start voice: the app starts on the first voice in the menu until you choose a voice.
 - Pauses: after the stem and after each choice, a Piper voice pauses closer to the inserted silence than a Kokoro voice does.
-- Speed: after the first reading, a Piper voice rendered 17 to 44 seconds of audio in 0.2 to 0.6 seconds. A Kokoro voice rendered 32 seconds of audio in about 1.6 seconds. These runs used a Mac with an M2 Ultra chip.
+- Speed: after the first reading, a Piper voice rendered 17 to 44 seconds of audio in 0.2 to 0.6 seconds. A Kokoro voice rendered 32 seconds of audio in about 1.6 seconds. These single runs used the app's code on a Mac with an M2 Ultra chip, so treat the times as approximate.
 - Accent: choose a voice labeled `en-US` for an American accent and `en-GB` for a British accent.
 - Variety: choose a rotation mode to hear a different voice for each reading. See [Practice with voice rotation](/manual/tutorials/voice-rotation/).
 

@@ -99,7 +99,7 @@ See [Pronunciation guides](/manual/reference/pronunciation-guides/) for the synt
 
 The app saves the audio of every reading in the [audio cache](/manual/reference/glossary/#audio-cache). Each file has a key that covers the spoken script, its pauses and pronunciations, the voice, and the version of the voice engine. When the key matches a saved file, the app plays that file and skips speech synthesis.
 
-On a Mac with an M2 Ultra chip, finding a saved reading took 0.01 seconds. Rendering a reading that was not saved takes longer, and the time depends on the voice engine: see [Voices and voice engines](/manual/concepts/voice-engines/) for measured times. **Repeat** always plays the saved file of the last reading.
+On a Mac with an M2 Ultra chip, finding a saved reading took about 0.01 seconds. Rendering a reading that was not saved takes longer, and the time depends on the voice engine: see [Voices and voice engines](/manual/concepts/voice-engines/) for measured times. **Repeat** always plays the saved file of the last reading.
 
 A different voice, a different guide, or a different script gives a different key, so the app renders the reading again. Turning on **Read answer line** adds the answer to the script, so it also gives a different key. The audio cache has no size limit and no cleanup: see [Files, settings, and limits](/manual/reference/files-and-settings/#data-folder).
 
