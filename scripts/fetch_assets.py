@@ -14,7 +14,8 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCK = ROOT / "assets.lock.json"
@@ -22,9 +23,17 @@ DATA = ROOT / ".data"
 MANIFEST = DATA / "downloads.tsv"
 CHUNK = 1 << 20
 ATTEMPTS = 3
-GROUPS = ("models", "voices", "kokoro")
-# Pickle-capable formats can run code when loaded; the lock must never list them.
+GROUPS = ("models", "voices", "kokoro", "chatterbox_turbo", "qwen3_tts")
+ENGINE_GROUPS = ("chatterbox_turbo", "qwen3_tts")
+DEST_ROOTS = ("voices", "models")
+# Pickle-capable formats can run code when loaded; the lock must never list them. Every group
+# but "models" holds plain data only; engine groups a narrower set.
 PICKLE_SUFFIXES = (".pt", ".pth", ".pkl", ".pickle", ".ckpt", ".bin")
+DATA_SUFFIXES = (".onnx", ".json", ".safetensors", ".txt")
+ENGINE_SUFFIXES = (".safetensors", ".json", ".txt")
+SAFE_PART = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+SHA256 = re.compile(r"[0-9a-f]{64}")
+COMMIT = re.compile(r"/resolve/[0-9a-f]{40}/")
 
 
 class FetchError(Exception):
@@ -38,23 +47,55 @@ class HttpsOnlyRedirects(urllib.request.HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
-def validate(asset: dict) -> None:
-    dest = Path(asset["dest"])
-    safe = (
-        asset["url"].startswith("https://")
-        and asset["group"] in GROUPS
-        and re.fullmatch(r"[0-9a-f]{64}", asset["sha256"])
-        and isinstance(asset["size"], int)
-        and asset["size"] > 0
-        and "/" not in asset["name"]
-        and asset["name"] not in ("", ".", "..")
-        and not asset["name"].lower().endswith(PICKLE_SUFFIXES)
-        and not dest.is_absolute()
-        and dest.parts[:1] == (".data",)
-        and ".." not in dest.parts
+def safe_entry(asset: object) -> bool:
+    """The rules of cloudyreader.prefetch._safe_entry, kept identical by a parity test: this
+    script stays stdlib-only and runs without the project installed."""
+    if not isinstance(asset, dict):
+        return False
+    name, group, url, sha256, dest = (
+        asset.get(k) for k in ("name", "group", "url", "sha256", "dest")
     )
-    if not safe:
-        raise FetchError(f"invalid entry in {LOCK.name}: {asset.get('name')!r}")
+    size = asset.get("size")
+    if not all(isinstance(value, str) for value in (name, group, url, sha256, dest)):
+        return False
+    parts = PurePosixPath(dest).parts
+    suffixes = ENGINE_SUFFIXES if group in ENGINE_GROUPS else DATA_SUFFIXES
+    return (
+        https_url(url)
+        and group in GROUPS
+        and SHA256.fullmatch(sha256) is not None
+        and type(size) is int
+        and size > 0
+        and SAFE_PART.fullmatch(name) is not None
+        and not name.lower().endswith(PICKLE_SUFFIXES)
+        and (group == "models" or name.lower().endswith(suffixes))
+        and len(parts) >= 2
+        and parts[0] == ".data"
+        and parts[1] in DEST_ROOTS
+        and all(SAFE_PART.fullmatch(part) for part in parts[1:])
+        and (group not in ENGINE_GROUPS or engine_place(group, parts, url))
+    )
+
+
+def https_url(url: str) -> bool:
+    try:
+        split = urlsplit(url)
+    except ValueError:
+        return False
+    no_userinfo = split.username is None and split.password is None
+    return url.startswith("https://") and bool(split.hostname) and no_userinfo
+
+
+def engine_place(group: str, parts: tuple[str, ...], url: str) -> bool:
+    """.data/models/<group> or ONE sub-folder below it, from a URL pinned to a commit."""
+    in_place = parts[1:3] == ("models", group) and len(parts) <= 4
+    return in_place and COMMIT.search(urlsplit(url).path) is not None
+
+
+def validate(asset: object) -> None:
+    if not safe_entry(asset):
+        name = asset.get("name") if isinstance(asset, dict) else None
+        raise FetchError(f"invalid entry in {LOCK.name}: {name!r}")
 
 
 def voice_id(asset: dict) -> str:

@@ -304,7 +304,9 @@ def test_the_real_lock_loads_and_matches_the_kokoro_trust_anchors(tmp_path: Path
     settings = make_settings(tmp_path)
     lock = ROOT / "assets.lock.json"
 
-    plan = VoicePrefetch(settings, lock_path=lock, kokoro_ready=lambda: True).plan()
+    plan = VoicePrefetch(settings, lock_path=lock, kokoro_ready=lambda: True).plan(
+        groups=prefetch.VOICE_GROUPS
+    )
 
     assert Counter(a.group for a in plan.assets) == {"voices": 10, "kokoro": 30}
     kokoro = {a.name: a.sha256 for a in plan.assets if a.group == "kokoro"}
@@ -1004,3 +1006,35 @@ def test_a_symlinked_stage_dir_is_never_swept(rig: Rig, tmp_path: Path) -> None:
     rig.prefetch().run()
 
     assert stale.exists()
+
+
+# --- engine groups in the real lock (appended for the engines build) ------------------------------
+
+
+def test_real_lock_engine_entries_validate_when_present(tmp_path: Path) -> None:
+    import re
+
+    from cloudyreader.engine_catalog import SPECS
+
+    settings = make_settings(tmp_path)
+    fetch = VoicePrefetch(
+        settings,
+        lock_path=ROOT / "assets.lock.json",
+        ready={group: (lambda: None) for group in prefetch.ENGINE_GROUPS},
+        free_bytes=lambda path: 1 << 50,
+    )
+
+    plan = fetch.plan(groups=prefetch.ENGINE_GROUPS)  # load_assets has checked every entry
+
+    if not plan.assets:
+        pytest.skip("assets.lock.json pins no engine file yet")
+    for group in {a.group for a in plan.assets}:
+        mine = [a for a in plan.assets if a.group == group]
+        rels = {a.path.relative_to(settings.models_dir / group).as_posix(): a for a in mine}
+        assert set(SPECS[group].expect) <= set(rels)  # every expected file is pinned
+        for rel, item in rels.items():
+            assert re.search(r"/resolve/[0-9a-f]{40}/", item.url)
+            size, sha = SPECS[group].expect.get(rel, (item.size, None))
+            assert item.size == size and (sha is None or item.sha256 == sha)
+        kinds = [a.name.endswith(".json") for a in mine]
+        assert kinds == sorted(kinds, reverse=True)  # small configs first, weights last

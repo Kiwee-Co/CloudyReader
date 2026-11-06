@@ -157,3 +157,107 @@ def test_paths_report_lists_only_verified_files(fa, capsys):
     out, err = capsys.readouterr()
     assert out.strip() == str(fa.DATA / "voices" / "v.onnx")
     assert "missing: .data/voices/w.onnx" in err
+
+
+# --- engine groups (appended for the engines build) -----------------------------------------------
+
+
+def engine_asset(rel="config.json", group="qwen3_tts", **overrides):
+    sub, _, name = rel.rpartition("/")
+    entry = asset(
+        name=name,
+        group=group,
+        url=f"https://example.org/{group}/resolve/{'0' * 40}/{rel}",
+        dest=f".data/models/{group}" + (f"/{sub}" if sub else ""),
+    )
+    return entry | overrides
+
+
+# The cases of test_load_rejects_unsafe_lock_entries, repeated for the parity check.
+UNSAFE = [
+    {"dest": "../outside"},
+    {"dest": "/tmp/abs"},
+    {"dest": "models"},
+    {"url": "http://example.org/v.onnx"},
+    {"sha256": "abc"},
+    {"name": "../v.onnx"},
+    {"size": 0},
+    {"group": "plugins"},
+    {"name": "af_heart.pt"},
+    {"name": "model.PTH"},
+]
+ENGINE_UNSAFE = [
+    {"dest": ".data/models/kokoro"},
+    {"dest": ".data/models/qwen3_tts/speech_tokenizer/extra"},
+    {"dest": ".data/models"},
+    {"dest": ".data/models/qwen3_tts/.."},
+    {"dest": "/data/models/qwen3_tts"},
+    {"url": "https://example.org/qwen3_tts/resolve/main/config.json"},
+    {"url": "https://example.org/qwen3_tts/config.json"},
+    {"url": f"https://example.org/x?ref=/resolve/{'0' * 40}/config.json"},
+    {"name": "model.py"},
+    {"name": "weights.npy"},
+    {"name": "chat_template.jinja"},
+    {"name": "conds.pt"},
+    {"name": "model.onnx"},
+]
+
+
+def test_engine_entries_fetch_into_their_models_folder(fa, monkeypatch):
+    serve(fa, monkeypatch, PAYLOAD)
+    write_lock(fa, asset(), engine_asset("speech_tokenizer/model.safetensors"))
+
+    assert fa.fetch(fa.load(["qwen3_tts"], []), offline=False) == 0
+
+    target = fa.DATA / "models" / "qwen3_tts" / "speech_tokenizer" / "model.safetensors"
+    assert target.read_bytes() == PAYLOAD
+    assert not (fa.DATA / "voices" / "v.onnx").exists()
+
+
+@pytest.mark.parametrize("overrides", ENGINE_UNSAFE)
+def test_load_rejects_unsafe_engine_entries(fa, overrides):
+    write_lock(fa, asset(), engine_asset() | overrides)
+
+    with pytest.raises(fa.FetchError, match="invalid entry"):
+        fa.load([], [])
+
+
+def test_fetch_assets_validator_parity(fa):
+    from cloudyreader import engine_catalog, prefetch
+
+    shared = ("GROUPS", "ENGINE_GROUPS", "PICKLE_SUFFIXES", "DATA_SUFFIXES", "DEST_ROOTS")
+    assert {n: getattr(fa, n) for n in shared} == {n: getattr(prefetch, n) for n in shared}
+    assert fa.ENGINE_SUFFIXES == engine_catalog.ENGINE_SUFFIXES
+    good = [
+        asset(),
+        asset(name="notes.txt"),
+        asset(name="af_heart.safetensors", group="kokoro", dest=".data/models/kokoro/voices"),
+        asset(name="ner-0.5.4.tar.gz", group="models", dest=".data/models/ner"),
+        engine_asset(),
+        engine_asset("merges.txt"),
+        engine_asset("speech_tokenizer/config.json"),
+        engine_asset("tokenizer/vocab.json"),
+        engine_asset("conds.safetensors", "chatterbox_turbo"),
+    ]
+    bad = [
+        *(asset(**overrides) for overrides in UNSAFE),
+        *(engine_asset() | overrides for overrides in ENGINE_UNSAFE),
+        "not a dict",
+        {},
+        asset(size=True),
+        asset(size="12"),
+        asset(name=7),
+        asset(name=".bashrc"),
+        asset(name="run.sh"),
+        asset(dest=".data/cache"),
+        asset(dest=".data"),
+        asset(url="https://user:pw@example.org/v.onnx"),
+        asset(url="https://"),
+        asset(url="https://[broken/v.onnx"),
+    ]
+    for entry in good:
+        assert (fa.safe_entry(entry), prefetch._safe_entry(entry)) == (True, True), entry
+    for entry in bad:
+        assert (fa.safe_entry(entry), prefetch._safe_entry(entry)) == (False, False), entry
+    with pytest.raises(fa.FetchError, match="invalid entry"):
+        fa.validate("not a dict")
