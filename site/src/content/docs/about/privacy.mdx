@@ -109,10 +109,10 @@ Choose the way that matches what you need to stop:
 - Deselect **Online lookups** to stop name lookups. The app saves this choice until you select the checkbox again.
 - Start the app with `--offline` to stop name lookups and the voice download. Offline mode lasts until you quit the app, and the next start is online again.
 
-Quit the app, then run this command in Terminal:
+Quit the app, then run this command in Terminal. Keep Terminal open while the app runs:
 
 ```bash
-open -a "Cloudy Reader" --args --offline
+"/Applications/Cloudy Reader.app/Contents/MacOS/Cloudy Reader" --offline
 ```
 
 In offline mode the app sends no request and creates no download folder, and the window shows no message about it. Download the voices before you go offline: see [Work offline](/manual/tasks/work-offline/).

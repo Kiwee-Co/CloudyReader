@@ -94,10 +94,10 @@ Reading works with no network once the voices are on the Mac. Prepare each Mac b
 
 [Let the voices download](/manual/getting-started/#let-the-voices-download) gives the size of the first download, and [Manage voices and storage](/manual/tasks/voices-and-storage/) shows how to check that it finished.
 
-A name lookup that cannot reach a network fails without a message, and the reading goes on. On a network that blocks the lookup hosts or answers slowly, a reading can wait up to 2.5 seconds. To remove the network wait, deselect **Online lookups**, or start in [offline mode](/manual/reference/glossary/#offline-mode). Quit the app first, then run this command in Terminal:
+A name lookup that cannot reach a network fails without a message, and the reading goes on. On a network that blocks the lookup hosts or answers slowly, a reading can wait up to 2.5 seconds. To remove the network wait, deselect **Online lookups**, or start in [offline mode](/manual/reference/glossary/#offline-mode). Quit the app first, then run this command in Terminal. Keep Terminal open while the app runs:
 
 ```bash
-open -a "Cloudy Reader" --args --offline
+"/Applications/Cloudy Reader.app/Contents/MacOS/Cloudy Reader" --offline
 ```
 
 Offline mode lasts until you quit the app. For the full steps, see [Start in offline mode](/manual/tasks/work-offline/#start-in-offline-mode).

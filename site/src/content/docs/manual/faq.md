@@ -78,8 +78,6 @@ Add a pronunciation guide in square brackets right after the word, such as `Kreb
 
 ## Why does macOS block the app the first time?
 
-<!-- needs-fact: owner checklist (plan 8.3): the first-open approval flow in System Settings -->
-
 The app is signed ad hoc and is not notarized, so macOS asks you to approve it the first time. You approve it once, in System Settings. See [Open the app the first time](/manual/tasks/first-open/).
 
 ## Can I use it on a school-managed Mac?
@@ -94,17 +92,9 @@ Cloudy Reader needs REL-DISK-TOTAL of free disk space, and the audio cache has n
 
 The app has no update check, so look for a later version on the [releases page](https://github.com/Kiwee-Co/CloudyReader/releases), then replace the app in **Applications**. To uninstall, move the app to the Trash; the voices, caches, and preferences stay until you delete them. See [Install, update, and uninstall](/manual/tasks/install/).
 
-## Why is there no Help menu?
-
-<!-- needs-fact: owner checklist (plan 8.3): macOS moves About to the application menu and hides the empty Help menu -->
-
-The app's Help menu holds only **About Cloudy Reader**, so macOS moves that item into the application menu and hides the empty Help menu. The app has no command that opens this manual. See [Main window](/manual/reference/window/).
-
 ## How do I find the version?
 
-<!-- needs-fact: owner checklist (plan 8.3): About Cloudy Reader sits in the Cloudy Reader menu on the real app -->
-
-Choose **Cloudy Reader > About Cloudy Reader** to see "Version REL-VERSION". In Terminal, `--version` prints "Cloudy Reader REL-VERSION":
+Choose **About Cloudy Reader** in the **Cloudy Reader** menu or the **Help** menu to see "Version REL-VERSION". In Terminal, `--version` prints "Cloudy Reader REL-VERSION":
 
 ```bash
 "/Applications/Cloudy Reader.app/Contents/MacOS/Cloudy Reader" --version

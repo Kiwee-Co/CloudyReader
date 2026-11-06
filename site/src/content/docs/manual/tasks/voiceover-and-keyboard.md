@@ -30,7 +30,6 @@ Press Tab to move focus forward and Shift-Tab to move back. Tab leaves the quest
 Details about these controls:
 
 - The **Speaker** box appears only for a voice with more than one speaker.
-- In the **Voice** and **Rotation** menus, Down and Up change the choice without opening the list. Space opens the list, and Escape closes it. <!-- needs-fact: owner checklist: pop-up and checkbox keys on the real macOS style -->
 - Space selects or deselects a focused checkbox, and it opens or closes the **Spoken script** view when its button has focus.
 - The **Spoken script** button has the description "Show or hide the text that is spoken" and draws the macOS focus ring when it has focus.
 - The **Spoken script** view is closed at every start. It is read-only and holds the words of the last reading.
@@ -78,8 +77,7 @@ The status bar shows "Preparing…", then "Playing _n_ s." [Keyboard shortcuts](
 
 ## Work around the known limits
 
-- The app announces errors only. Read the status bar after each reading to find warnings and information messages. <!-- needs-fact: owner checklist: VoiceOver reads the status bar element -->
-- Whether Tab reaches the buttons and checkboxes depends on the macOS keyboard navigation setting. If Tab skips them, turn on keyboard navigation in System Settings. <!-- needs-fact: owner checklist: Tab reach with keyboard navigation off and on; the System Settings path -->
+- The app announces errors only. Warnings and information messages show only in the status bar.
 - The app has no speed control and no volume control. It plays at the macOS output volume.
 
 ## Related

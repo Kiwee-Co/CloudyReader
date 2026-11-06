@@ -141,8 +141,6 @@ A download result shows only when the message area is empty. For every message, 
 
 The app defines five menus: File, Edit, Reading, Window, and Help. It has no View menu and no Voice menu, and no command opens this manual. The keys of each command are in [Keyboard shortcuts](/manual/reference/keyboard-shortcuts/). The figure shows the Reading menu.
 
-{/* needs-fact: owner checklist (plan 8.3): where macOS puts About Cloudy Reader and Quit Cloudy Reader (the application menu), and whether macOS hides the empty Help menu. Facts section 3 marks this U; the table gives the menus as the app defines them. */}
-
 <Figure
   src="menu-reading-light.svg"
   dark="menu-reading-dark.svg"
@@ -150,7 +148,7 @@ The app defines five menus: File, Edit, Reading, Window, and Help. It has no Vie
   caption="The Reading menu lists the four reading commands and their keys."
 />
 
-The table lists every command with its menu and when it is available.
+The table lists every command, the menu where the app defines it, and when it is available.
 
 | Command                 | Menu    | What it does                                                                                   | Available when                                      |
 | ----------------------- | ------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------- |
@@ -174,17 +172,14 @@ The Edit commands act on the question box, the **Spoken script** view, or the **
 
 ## What the app remembers
 
-The app has no settings window. It saves five choices and restores them at the next start.
+The app has no settings window. It saves four choices and restores them at the next start.
 
-{/* needs-fact: owner checklist (plan 8.3): move the window, quit, and reopen. Facts section 3 marks the window geometry write at quit U. */}
-
-| Saved choice             | Saved when              | At the next start                                                                     |
-| ------------------------ | ----------------------- | ------------------------------------------------------------------------------------- |
-| Voice                    | You choose a voice.     | The saved voice, if it is installed. Otherwise the first installed voice in the menu. |
-| Rotation mode            | You choose a mode.      | The saved mode.                                                                       |
-| **Read answer line**     | You select or clear it. | The saved state.                                                                      |
-| **Online lookups**       | You select or clear it. | The saved state.                                                                      |
-| Window size and position | You close the window.   | The saved size and position.                                                          |
+| Saved choice         | Saved when              | At the next start                                                                     |
+| -------------------- | ----------------------- | ------------------------------------------------------------------------------------- |
+| Voice                | You choose a voice.     | The saved voice, if it is installed. Otherwise the first installed voice in the menu. |
+| Rotation mode        | You choose a mode.      | The saved mode.                                                                       |
+| **Read answer line** | You select or clear it. | The saved state.                                                                      |
+| **Online lookups**   | You select or clear it. | The saved state.                                                                      |
 
 The app does not save the **Speaker** number, the rotation deck and the last voice used, or whether the **Spoken script** view is open. The key names are in [Files, settings, and limits](/manual/reference/files-and-settings/#preferences). To clear the saved choices, see [Reset the app](/manual/tasks/voices-and-storage/#reset-the-app).
 

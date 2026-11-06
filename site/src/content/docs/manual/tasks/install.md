@@ -53,7 +53,7 @@ To confirm the version, see [Check the installed version](#check-the-installed-v
 
 ## Check the installed version
 
-Choose **Cloudy Reader > About Cloudy Reader**. The box shows the version, such as "Version REL-VERSION". Click **OK** to close the box.
+Choose **About Cloudy Reader** in the **Cloudy Reader** menu or the **Help** menu. The box shows the version, such as "Version REL-VERSION". Click **OK** to close the box.
 
 In Terminal, run this command to print the app name and the version, such as `Cloudy Reader REL-VERSION`:
 
