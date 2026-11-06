@@ -68,8 +68,6 @@ The app keeps no log file. It prints warnings to standard error, which Terminal 
 An issue is public. Anyone can read it, so leave out names, school details, and question text that you do not want to share.
 :::
 
-To ask a question, open an issue in the same way and say in the title that it is a question. <!-- needs-fact: owner confirms questions go to GitHub issues -->
-
 ## Report a security issue
 
 A security issue is a flaw that lets someone read or change your files, run code, or send data from your Mac without your action. Report it in private. Do not open a public issue.
@@ -82,4 +80,4 @@ The approval prompt that macOS shows at the first launch is not a flaw. The app 
 
 ## Allow time for a reply
 
-The project does not promise a response time. <!-- needs-fact: owner confirms response expectations --> Add details to your existing issue instead of opening another one.
+The project does not promise a response time. Add details to your existing issue instead of opening another one.

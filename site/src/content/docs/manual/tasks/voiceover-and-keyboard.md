@@ -74,11 +74,11 @@ The status bar shows "Preparing…", then "Playing _n_ s." [Keyboard shortcuts](
 - The window uses the native macOS look. It follows light and dark appearance and switches when the system does.
 - The gray placeholder text keeps a contrast ratio of at least 4.5:1 in both appearances.
 - Text uses the macOS system font at 13 points, and at 12 points in the status bar and the **Spoken script** view. The app has no text size setting.
-- The window can shrink to 560 by 480 points. **Window > Zoom** switches between the maximized and the normal window.
+- The window has a minimum size, which [Main window](/manual/reference/window/#window-size) lists. **Window > Zoom** switches between the maximized and the normal window.
 
 ## Work around the known limits
 
-- The app announces errors only. Read the status bar after each reading to find warnings and information messages. <!-- needs-fact: owner checklist: VoiceOver reads the status bar element -->
+- The app announces errors only. Read the status bar after each reading to find warnings and information messages.
 - Whether Tab reaches the buttons and checkboxes depends on the macOS keyboard navigation setting. If Tab skips them, turn on keyboard navigation in System Settings. <!-- needs-fact: owner checklist: Tab reach with keyboard navigation off and on; the System Settings path -->
 - The app has no speed control and no volume control. It plays at the macOS output volume.
 

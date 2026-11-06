@@ -109,6 +109,8 @@ The status bar sits at the bottom of the window. The figure numbers its parts wh
 3. Download progress bar: the same progress, as a bar.
 4. Busy bar: the app is working.
 
+The table gives the place and the content of each part.
+
 | Part                  | Where                   | What it shows                                                                                                                                                                                                                        |
 | --------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Message               | Left                    | One message at a time. A warning or an error has an icon before the text. The app cuts long text with an ellipsis, and the tooltip holds the full text.                                                                              |
@@ -139,14 +141,14 @@ A download result shows only when the message area is empty. For every message, 
 
 The app defines five menus: File, Edit, Reading, Window, and Help. It has no View menu and no Voice menu, and no command opens this manual. The keys of each command are in [Keyboard shortcuts](/manual/reference/keyboard-shortcuts/). The figure shows the Reading menu.
 
-{/* needs-fact: owner checklist (plan 8.3): where macOS puts About Cloudy Reader and Quit Cloudy Reader (the application menu), and whether macOS hides the empty Help menu. Facts section 3 marks this U; the table gives the menus as the app defines them. */}
-
 <Figure
   src="menu-reading-light.svg"
   dark="menu-reading-dark.svg"
   alt="The menu bar with the Reading menu open: Speak, Speak Clipboard, Repeat, and Stop, each with its keyboard shortcut."
   caption="The Reading menu lists the four reading commands and their keys."
 />
+
+The table lists every command with its menu and when it is available.
 
 | Command                 | Menu    | What it does                                                                                   | Available when                                      |
 | ----------------------- | ------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------- |
@@ -207,9 +209,7 @@ The About box shows the app icon, the name, the version, and a one-line descript
 
 The window has a default size and a minimum size.
 
-{/* needs-fact: the unit points. Facts section 3 marks it U; Qt documents the window sizes as points on macOS. */}
-
-| Size    | Width by height (points) |
-| ------- | ------------------------ |
-| Default | 680 by 620               |
-| Minimum | 560 by 480               |
+| Size    | Width by height |
+| ------- | --------------- |
+| Default | 680 by 620      |
+| Minimum | 560 by 480      |

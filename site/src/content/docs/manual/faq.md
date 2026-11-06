@@ -22,8 +22,6 @@ Cloudy Reader needs a Mac with Apple silicon and macOS REL-MACOS-FLOOR or later.
 
 ## Does it cost anything?
 
-<!-- needs-fact: owner confirms that the app is free (plan section 11, Q4). This answer states only what the code and the license show. -->
-
 Cloudy Reader asks for no payment, account, or license key. Its source code is open under the Apache License 2.0. See [Licenses and credits](/about/licenses/).
 
 ## Does it work without a network?
@@ -94,7 +92,7 @@ Cloudy Reader needs REL-DISK-TOTAL of free disk space, and the audio cache has n
 
 ## How do I update or uninstall it?
 
-The app has no update check, so look for a later version on the [releases page](https://github.com/Kiwee-Co/CloudyReader/releases), then replace the app in Applications. To uninstall, move the app to the Trash; the voices, caches, and preferences stay until you delete them. See [Install, update, and uninstall](/manual/tasks/install/).
+The app has no update check, so look for a later version on the [releases page](https://github.com/Kiwee-Co/CloudyReader/releases), then replace the app in **Applications**. To uninstall, move the app to the Trash; the voices, caches, and preferences stay until you delete them. See [Install, update, and uninstall](/manual/tasks/install/).
 
 ## Why is there no Help menu?
 
