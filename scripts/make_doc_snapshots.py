@@ -78,6 +78,9 @@ CALLOUT_BAND = 36.0  # empty band above a status strip where its numbered marker
 LESSAC = "piper:en_US-lessac-medium"
 HEART = "kokoro:af_heart"  # the top voice: where the Voice menu opens on a fresh install
 MISSING = "kokoro:am_adam"  # the one voice shown as not installed: the last Kokoro row, in view
+SQ1_LESSAC_S = 19.3  # how long SQ1 plays with lessac, answer line off, in a measured run
+SQ1_HEART_S = 24.9  # the same with Heart
+PLAYING = f"Playing {SQ1_LESSAC_S:.1f} s."  # the status while a window figure reads SQ1
 ROUND = {"stroke_linecap": "round", "stroke_linejoin": "round"}
 # SQ1 of the manual plan, written for the manual: every window figure shows this paste.
 MANUAL_QUESTION = (
@@ -1023,14 +1026,14 @@ def appearance(dark: bool) -> str:
 
 
 def fig_window(env: Env, look: Look) -> Svg:
-    with env.window() as (win, _service):
+    with env.window(duration_s=SQ1_LESSAC_S) as (win, _service):
         env.speak(win, sample_question())
         win.script_toggle.setChecked(True)
-        env.pump(lambda: win.statusBar().currentMessage() == "Playing 2.0 s.", "playing status")
+        env.pump(lambda: win.statusBar().currentMessage() == PLAYING, "playing status")
         desc = (
             f"The main window in {appearance(look.dark)}: a pasted toss-up question, the voice "
             "lessac, the Rotation row set to No rotation, the spoken script shown, and the status "
-            "Playing 2.0 s."
+            f"{PLAYING}"
         )
         svg = Svg(win.width(), win.height(), "Cloudy Reader main window", desc)
         draw_content(svg, look, win)
@@ -1165,7 +1168,8 @@ def fig_states(env: Env, look: Look) -> Svg:
     with env.window() as (win, _service):
         y = status_strip(svg, look, win, y, "Ready")
         width = win.width()
-    with env.window(rotation=str(rotation.RotationMode.ROUND_ROBIN)) as (win, service):
+    round_robin = str(rotation.RotationMode.ROUND_ROBIN)
+    with env.window(rotation=round_robin, duration_s=SQ1_HEART_S) as (win, service):
         env.hold_reading(win, service)
         y = status_strip(svg, look, win, y, "Preparing, with voice rotation on")
         service.gate.set()
@@ -1281,10 +1285,10 @@ def fig_window_tour(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
     """The main window during a reading, with markers for its eight parts."""
     from cloudyreader.gui import tokens
 
-    with env.window() as (win, _service):
+    with env.window(duration_s=SQ1_LESSAC_S) as (win, _service):
         env.speak(win, sample_question())
         win.script_toggle.setChecked(True)
-        env.pump(lambda: win.statusBar().currentMessage() == "Playing 2.0 s.", "playing status")
+        env.pump(lambda: win.statusBar().currentMessage() == PLAYING, "playing status")
         desc = (
             f"The main window in {appearance(look.dark)} during a reading: the question box, the "
             "Voice and Rotation menus, the two options, the Paste and Speak Clipboard buttons, "
@@ -1525,10 +1529,10 @@ def fig_rotation_fallback(env: Env, look: Look) -> Svg:
 
 def fig_script_formula(env: Env, look: Look) -> Svg:
     """The Spoken script view after SQ1: NaHCO3 reads N A H C O three."""
-    with env.window() as (win, _service):
+    with env.window(duration_s=SQ1_LESSAC_S) as (win, _service):
         env.speak(win, sample_question())
         win.script_toggle.setChecked(True)
-        env.pump(lambda: win.statusBar().currentMessage() == "Playing 2.0 s.", "playing status")
+        env.pump(lambda: win.statusBar().currentMessage() == PLAYING, "playing status")
         desc = (
             f"The Spoken script in {appearance(look.dark)} after a reading: the question as the "
             "voice says it, with NaHCO3 written as N A H C O three."
