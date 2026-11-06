@@ -19,7 +19,7 @@ A guide follows the word or expression that it describes. The app takes the guid
 | Say-as guide        | Words that the voice says in place of a printed expression          | `x2 [x squared]`             | Speaks the guide's words instead of the expression                   |
 | Spell guide         | Letters or digits joined by dots or hyphens                         | `FAD [F.A.D.]`               | Speaks the letters one at a time                                     |
 
-A phonetic respelling covers every occurrence of its word in the question. A say-as guide covers only the occurrence that it follows.
+A phonetic respelling covers every occurrence of its word in the same part of the question: the stem, one choice, or the answer line. A say-as guide covers only the occurrence that it follows.
 
 ## Phonetic respelling
 
@@ -116,20 +116,20 @@ Some brackets hold a note, not a guide. The app handles them as follows.
 
 A guide that the app cannot use raises a warning, and the reading goes on. The status bar shows each warning after "Warning:", or after "_n_ warnings:" when a reading raises several. A warning stays in the status bar after the sound ends. Hover over the status bar to read a long warning in full.
 
-Most engine messages mention an [override](/manual/reference/glossary/#override), an exact pronunciation for one word that a guide, the lexicon, or a systematic chemical name can set.
+Most engine messages mention an [override](/manual/reference/glossary/#override), an exact pronunciation for a word or phrase that a guide, the lexicon, or a systematic chemical name can set.
 
-| Warning text                                                                                                 | What it means                                                                                                      |
-| ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| Guide [_guide_] dropped: '_word_' is not in the text.                                                        | The word that the guide describes is not in the text.                                                              |
-| Guide for '_word_' dropped: it holds no words.                                                               | A say-as or spell guide holds only punctuation.                                                                    |
-| No pronunciation for respelling [_guide_]: '_word_' is spoken plain.                                         | The app cannot place the whole respelling. Every syllable is in capitals, or a spelling is unknown.                |
-| piper: dropped IPA symbol '_c_' (U+_XXXX_) from the override for '_word_': not in the phoneme map of _voice_ | The Piper voice has no sound for one symbol. The app keeps the rest.                                               |
-| piper: override for '_word_' has no usable IPA symbols; spoken plain                                         | The Piper voice has no sound for any symbol, so it says the word plain.                                            |
-| piper: override surface '_word_' not found in the segment text                                               | The word is not in the text that the voice speaks. The possessive `Avogadro's` of a word in the lexicon causes it. |
-| Kokoro: override surface '_w_' has a bracket; spoken plain                                                   | The word holds a bracket character, so the voice says it plain.                                                    |
-| Kokoro: dropped _chars_ from IPA '_ipa_' for '_w_'                                                           | The Kokoro voice has no sound for some characters of the pronunciation.                                            |
-| Kokoro: no usable phonemes for '_w_'; spoken plain                                                           | The Kokoro voice has no sound for any part of the pronunciation.                                                   |
-| Kokoro: override surface '_w_' not found in segment text                                                     | The word is not in the text that the voice speaks.                                                                 |
-| Kokoro: could not pronounce '_w_'; it was skipped                                                            | The Kokoro voice could not turn the word into sounds, so it says nothing for the word.                             |
+| Warning text                                                                                                 | What it means                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Guide [_guide_] dropped: '_word_' is not in the text.                                                        | The word that the guide describes is not in the text.                                                                  |
+| Guide for '_word_' dropped: it holds no words.                                                               | A say-as or spell guide holds only punctuation.                                                                        |
+| No pronunciation for respelling [_guide_]: '_word_' is spoken plain.                                         | The app cannot place the whole respelling, for example because every syllable is in capitals or a spelling is unknown. |
+| piper: dropped IPA symbol '_c_' (U+_XXXX_) from the override for '_word_': not in the phoneme map of _voice_ | The Piper voice has no sound for one symbol. The app keeps the rest.                                                   |
+| piper: override for '_word_' has no usable IPA symbols; spoken plain                                         | The Piper voice has no sound for any symbol, so it says the word plain.                                                |
+| piper: override surface '_word_' not found in the segment text                                               | The word is not in the text that the voice speaks. One cause is the possessive `Avogadro's` of a word in the lexicon.  |
+| Kokoro: override surface '_w_' has a bracket; spoken plain                                                   | The word holds a bracket character, so the voice says it plain.                                                        |
+| Kokoro: dropped _chars_ from IPA '_ipa_' for '_w_'                                                           | The Kokoro voice has no sound for some characters of the pronunciation.                                                |
+| Kokoro: no usable phonemes for '_w_'; spoken plain                                                           | The Kokoro voice has no sound for any part of the pronunciation.                                                       |
+| Kokoro: override surface '_w_' not found in segment text                                                     | The word is not in the text that the voice speaks.                                                                     |
+| Kokoro: could not pronounce '_w_'; it was skipped                                                            | The Kokoro voice could not turn the word into sounds, so it says nothing for the word.                                 |
 
 To fix a warning, correct the guide and read the question again. If a voice has no sound for a symbol, spell the sound another way or remove the guide. For a guided lesson, see [Fix a mispronounced word](/manual/tutorials/fix-a-word/). For every other message, see [Status messages](/manual/reference/status-messages/). For what the app says without a guide, see [Pronunciation examples](/manual/reference/pronunciation-examples/).

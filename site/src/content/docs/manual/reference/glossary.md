@@ -161,15 +161,15 @@ The local parse of a systematic chemical name. It uses no network, so it works o
 
 ### Override
 
-An exact pronunciation for one word, written in IPA. A pronunciation guide, the lexicon, or a systematic chemical name can set it.
+An exact pronunciation for a word or phrase, written in IPA. A pronunciation guide, the lexicon, or a systematic chemical name can set it.
 
 ### Phonetic respelling
 
-A pronunciation guide that spells the sounds of a word, such as `[KREBZ SY-kul]`.
+A pronunciation guide that spells the sounds of a word or phrase, such as `[KREBZ SY-kul]`.
 
 ### Pronunciation guide
 
-Text in square brackets after a word that sets how the app says it. The three kinds are the phonetic respelling, the say-as guide, and the spell guide. See [Pronunciation guides](/manual/reference/pronunciation-guides/).
+Text in square brackets after a word or phrase that sets how the app says it. The three kinds are the phonetic respelling, the say-as guide, and the spell guide. See [Pronunciation guides](/manual/reference/pronunciation-guides/).
 
 ### Say-as guide
 
