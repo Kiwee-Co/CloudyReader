@@ -298,10 +298,15 @@ def test_release_needs_the_extracted_copy_to_print_its_version(root):
 
 
 def fake_venv(root: Path) -> None:
-    """A build venv whose python prints FAKE_META as cloudyreader's version; fails without it."""
+    """A build venv whose python prints FAKE_META as cloudyreader's version (fails without it)
+    and FAKE_PREFIX as its sys.base_prefix."""
     python = root / ".venv" / "bin" / "python"
     python.parent.mkdir(parents=True)
-    python.write_text('#!/bin/bash\n[[ -n ${FAKE_META:-} ]] || exit 1\necho "$FAKE_META"\n')
+    python.write_text(
+        "#!/bin/bash\n"
+        '[[ "$*" == *base_prefix* ]] && { echo "${FAKE_PREFIX:-/opt/python}"; exit 0; }\n'
+        '[[ -n ${FAKE_META:-} ]] || exit 1\necho "$FAKE_META"\n'
+    )
     python.chmod(0o755)
 
 
@@ -324,6 +329,27 @@ def test_release_preflight_needs_the_build_venv_metadata_at_version(root, meta, 
     else:
         assert result.returncode == 1
         assert problem in result.stderr and "run the sync step first" in result.stderr
+
+
+@pytest.mark.parametrize(
+    ("prefix", "refused"),
+    [
+        ("/home/testowner/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none", True),
+        ("/tmp/cloudyreader-uv-python/cpython-3.12.12-macos-aarch64-none", False),
+    ],
+)
+def test_release_preflight_refuses_a_build_python_under_the_home_folder(root, prefix, refused):
+    fake_venv(root)
+    host = {"HOME": "/home/testowner", "FAKE_META": "0.0.1", "FAKE_PREFIX": prefix}
+
+    result = bash_fn(root, "release_preflight 0.0.1", **host)
+
+    if refused:
+        assert result.returncode == 1
+        assert "the build venv's Python lives under your home folder" in result.stderr
+        assert "UV_PYTHON_INSTALL_DIR" in result.stderr
+    else:
+        assert result.returncode == 0, result.stderr
 
 
 def test_the_script_runs_the_preflight_as_its_own_step(root):
@@ -368,6 +394,28 @@ def test_release_refuses_a_version_the_app_does_not_carry(root, version, message
 
     assert result.returncode == 1
     assert message in result.stderr
+
+
+def test_release_stops_before_the_zip_when_the_app_carries_a_host_path(root):
+    host_assets(root)
+    app = fake_app(root)
+    record = app / "Contents" / "Resources" / "x-1.0.dist-info" / "direct_url.json"
+    record.parent.mkdir(parents=True)
+    record.write_text('{"url": "file:///home/testowner/remi/.data/x.tar.gz"}')
+    path, _ = stub_codesign(root)
+
+    result = bash_fn(
+        root,
+        f'APP_NAME="Cloudy Reader"; {NO_DMG}release_main 0.0.1',
+        PATH=path,
+        HOME="/home/testowner",
+        USER="testowner",
+    )
+
+    assert result.returncode == 1
+    assert "Contents/Resources/x-1.0.dist-info/direct_url.json: 1 hit" in result.stdout
+    assert "the app carries this build host's paths" in result.stderr
+    assert not (root / "dist" / ZIP).exists()  # stopped before the zip, so nothing ships
 
 
 def test_release_keeps_a_previous_artifact_by_moving_it_aside(root):

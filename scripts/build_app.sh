@@ -566,6 +566,86 @@ write_checksum() {
   (cd -- "$(dirname -- "$file")" && shasum -a 256 "$(basename -- "$file")") >"$file.sha256"
 }
 
+# Fails closed when app $1 carries a path of this build host (its home folder, user name, this
+# build tree, the data folder, and the volume either sits on) in a raw file, a zip member, or the
+# executable's PKG and its decompressed PYZ. Prints each file with its count, never the match.
+path_gate() {
+  local app=$1 python=${PY:-$ROOT/.venv/bin/python}
+  [[ -x $python ]] || python=$(command -v python3) # any Python reads files; a PKG needs PyInstaller
+  "$python" -I - "$app" "$HOME" "${USER:-$(id -un)}" "$ROOT" "$DATA" <<'EOF' ||
+import os
+import re
+import sys
+import tempfile
+import zipfile
+from pathlib import Path
+
+app, home, user = sys.argv[1], sys.argv[2].rstrip("/"), sys.argv[3]
+needles = set()
+for place in (sys.argv[4], sys.argv[5]):  # the build tree and the data folder, links resolved
+    resolved = Path(place).resolve()
+    needles |= {str(resolved), str(resolved).removeprefix("/private")}  # /tmp is /private/tmp
+    if len(resolved.parts) > 2 and resolved.parts[1] == "Volumes":
+        needles.add(str(Path(*resolved.parts[:3])))  # the whole external volume
+if home.count("/") >= 2:  # a real home folder; never "/" or ""
+    needles.add(home)
+if len(user) >= 4:  # a shorter user name would match by chance
+    needles.add(user)
+longest_first = sorted(needles, key=len, reverse=True)
+pattern = re.compile(b"|".join(re.escape(n.encode()) for n in longest_first), re.IGNORECASE)
+COOKIE = b"MEI\x0c\x0b\x0a\x0b\x0e"  # PyInstaller's CArchive cookie
+found = 0
+
+
+def scan(data, where):
+    global found
+    hits = len(pattern.findall(data))
+    if hits:
+        print(f"build_app: path gate: {where}: {hits} hit(s)", flush=True)
+        found += hits
+
+
+def scan_pkg(path, rel):
+    from PyInstaller.archive.readers import CArchiveReader, ZlibArchiveReader
+
+    pkg = CArchiveReader(path)
+    for name in pkg.toc:
+        data = pkg.extract(name)
+        if not isinstance(data, (bytes, bytearray)):
+            continue
+        scan(bytes(data), f"{rel}!PKG:{name}")
+        if bytes(data[:4]) == b"PYZ\0":
+            with tempfile.NamedTemporaryFile(suffix=".pyz") as pyz_file:
+                pyz_file.write(data)
+                pyz_file.flush()
+                pyz = ZlibArchiveReader(pyz_file.name)
+                for module in pyz.toc:
+                    raw = pyz.extract(module, raw=True)
+                    if isinstance(raw, (bytes, bytearray)):
+                        scan(bytes(raw), f"{rel}!PYZ:{module}")
+
+
+for folder, _, names in os.walk(app):
+    for name in sorted(names):
+        path = os.path.join(folder, name)
+        if os.path.islink(path):
+            continue
+        rel = os.path.relpath(path, app)
+        with open(path, "rb") as fh:
+            data = fh.read()
+        scan(data, rel)
+        if data[:4] == b"PK\x03\x04":
+            with zipfile.ZipFile(path) as archive:
+                for member in archive.namelist():
+                    scan(archive.read(member), f"{rel}!{member}")
+        if COOKIE in data:
+            scan_pkg(path, rel)
+print("build_app: path gate: " + (f"{found} hit(s)" if found else "no build host path in the app"))
+sys.exit(1 if found else 0)
+EOF
+    die "the app carries this build host's paths (above): it must not ship"
+}
+
 # Fails when a zip holds macOS clutter: __MACOSX, .DS_Store or AppleDouble ._ files.
 check_zip_clean() {
   local clutter
@@ -728,6 +808,16 @@ release_preflight() {
     have=none
   [[ $have == "$version" ]] || die "the build venv's cloudyreader metadata says $have, not $version:" \
     "run the sync step first (online, public PyPI: make .cache/stamps/packaging kokoro)"
+  # The Python's install path ships inside the app (PyInstaller bundles its sysconfig data).
+  local prefix
+  prefix=$("$PY" -I -c 'import sys; print(sys.base_prefix)' 2>/dev/null) || prefix=
+  case ${prefix:-$HOME}/ in
+    "${HOME%/}"/*)
+      die "the build venv's Python lives under your home folder, and its path would ship" \
+        "inside the app: build in a venv made from a Python outside \$HOME" \
+        "(UV_PYTHON_INSTALL_DIR=/tmp/cloudyreader-uv-python uv python install 3.12.12)"
+      ;;
+  esac
   local tool
   for tool in "$HDIUTIL" "$DISKUTIL"; do
     command -v "$tool" >/dev/null || die "$tool not found: the release DMG needs it"
@@ -753,6 +843,7 @@ release_main() {
   move_aside "$zip.sha256"
   move_aside "$dmg"
   move_aside "$dmg.sha256"
+  path_gate "$FINAL_APP"
   # --norsrc --noextattr: without them ditto adds an AppleDouble ._ file per extended attribute.
   ditto -c -k --keepParent --norsrc --noextattr "$FINAL_APP" "$zip"
   check_zip_clean "$zip"
