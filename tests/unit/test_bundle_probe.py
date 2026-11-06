@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.machinery
+import json
 import os
 import subprocess
 import sys
@@ -151,3 +152,98 @@ def test_importing_the_probe_loads_no_heavy_module():
     )
 
     assert done.stdout.strip() == "[]"
+
+
+# --- CLOUDYREADER_PROBE=plan: the first-launch download, as the built app counts it -------------
+
+
+def planned(monkeypatch, capsys, assets: int, skipped: tuple[str, ...]):
+    """plan_main over a stand-in plan of `assets` bytes and `skipped` reasons."""
+    from cloudyreader import prefetch
+
+    files = (
+        prefetch.Asset(f"f{n}", "voices", "", "0" * 64, 1, Path(f"f{n}")) for n in range(assets)
+    )
+    plan = prefetch.PrefetchPlan(tuple(files), skipped=skipped)
+    monkeypatch.setattr(prefetch.VoicePrefetch, "plan", lambda self: plan)
+    rc = bundle_probe.plan_main()
+    out, err = capsys.readouterr()
+    return rc, out.splitlines(), err.splitlines()
+
+
+def test_plan_probe_prints_the_bytes_a_first_launch_downloads(monkeypatch, capsys, tmp_path):
+    monkeypatch.setenv("CLOUDYREADER_DATA_DIR", str(tmp_path))
+
+    assert planned(monkeypatch, capsys, 3, ()) == (0, ["3"], [])
+
+
+def test_plan_probe_leaves_out_a_group_this_build_lacks(monkeypatch, capsys, tmp_path):
+    monkeypatch.setenv("CLOUDYREADER_DATA_DIR", str(tmp_path))
+    lacks = ("chatterbox_turbo: not in this build", "qwen3_tts: not in this build")
+
+    rc, out, err = planned(monkeypatch, capsys, 2, lacks)
+
+    assert (rc, out) == (0, ["2"])  # a lean app never offers them, so it never downloads them
+    assert err == [f"plan: leaves out {reason}" for reason in lacks]
+
+
+def test_plan_probe_fails_when_this_mac_skips_a_group_the_app_holds(monkeypatch, capsys, tmp_path):
+    monkeypatch.setenv("CLOUDYREADER_DATA_DIR", str(tmp_path))
+    skipped = ("chatterbox_turbo: not in this build", "kokoro: not enough disk space")
+
+    rc, out, err = planned(monkeypatch, capsys, 2, skipped)
+
+    assert (rc, out) == (3, [])  # the figure would undercount a first launch elsewhere
+    assert err == [
+        "plan: leaves out chatterbox_turbo: not in this build",
+        f"plan: skips {skipped[1]}",
+    ]
+
+
+def test_plan_probe_reads_the_real_lock_with_an_empty_data_folder(monkeypatch, capsys, tmp_path):
+    from cloudyreader import prefetch
+
+    root = Path(__file__).resolve().parents[2]
+    real = json.loads((root / "assets.lock.json").read_text())
+    voices = [asset for asset in real["assets"] if asset["group"] == "voices"]  # never gated
+    lock = tmp_path / "assets.lock.json"
+    lock.write_text(json.dumps(real | {"assets": voices}, indent=2))
+    monkeypatch.setattr(prefetch, "find_lock", lambda **kwargs: lock)
+    monkeypatch.setenv("CLOUDYREADER_DATA_DIR", str(tmp_path / "data"))
+
+    assert bundle_probe.plan_main() == 0
+    assert capsys.readouterr().out == f"{sum(asset['size'] for asset in voices)}\n"
+    assert not (tmp_path / "data").exists()  # the plan writes nothing
+
+
+def test_plan_probe_fails_closed_on_any_plan_error(monkeypatch, capsys, tmp_path):
+    from cloudyreader import prefetch
+
+    def broken(self):
+        raise OSError("lock unreadable")
+
+    monkeypatch.setattr(prefetch.VoicePrefetch, "plan", broken)
+    monkeypatch.setenv("CLOUDYREADER_DATA_DIR", str(tmp_path))
+
+    assert bundle_probe.plan_main() == 2
+    out, err = capsys.readouterr()
+    assert out == ""  # no number at all, so the figures step writes no file
+    assert err == "plan: failed: OSError: lock unreadable\n"
+
+
+def test_plan_probe_never_opens_a_connection(monkeypatch, capsys, tmp_path):
+    import httpx
+
+    from cloudyreader import prefetch
+
+    def no_network(*args, **kwargs):
+        raise AssertionError("the plan probe must stay offline")
+
+    monkeypatch.setattr(httpx.Client, "send", no_network)
+    monkeypatch.setattr(prefetch, "open_https", no_network)
+    root = Path(__file__).resolve().parents[2]
+    monkeypatch.setattr(prefetch, "find_lock", lambda **kwargs: root / "assets.lock.json")
+    monkeypatch.setenv("CLOUDYREADER_DATA_DIR", str(tmp_path / "data"))
+
+    assert bundle_probe.plan_main() in (0, 3)  # 3 where this test venv lacks the kokoro extra
+    assert not (tmp_path / "data").exists()  # and writes nothing

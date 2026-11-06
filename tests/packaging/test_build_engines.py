@@ -65,7 +65,14 @@ def load_launcher() -> types.ModuleType:
 
 @pytest.mark.parametrize(
     ("value", "runs"),
-    [(None, "app"), ("", "app"), ("1", "app"), ("Engines", "app"), ("engines", "probe")],
+    [
+        (None, "app"),
+        ("", "app"),
+        ("1", "app"),
+        ("Engines", "app"),
+        ("engines", "probe"),
+        ("plan", "plan"),
+    ],
 )
 def test_launcher_runs_the_probe_only_when_asked(monkeypatch, value, runs):
     for name, result in (
@@ -74,6 +81,7 @@ def test_launcher_runs_the_probe_only_when_asked(monkeypatch, value, runs):
     ):
         module = types.ModuleType(name)
         module.main = lambda result=result: result  # type: ignore[attr-defined]
+        module.plan_main = lambda: "plan"  # type: ignore[attr-defined]
         monkeypatch.setitem(sys.modules, name, module)
     if value is None:
         monkeypatch.delenv("CLOUDYREADER_PROBE", raising=False)

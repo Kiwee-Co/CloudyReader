@@ -12,9 +12,12 @@ PROBE_ENV = "CLOUDYREADER_PROBE"
 
 
 def run() -> int:
-    """The engine import probe when the build asks for it (PROBE_ENV=engines), else the app."""
-    if os.environ.get(PROBE_ENV) == "engines":
+    """A build probe when build_app.sh asks for one (PROBE_ENV=engines or plan), else the app."""
+    probe = os.environ.get(PROBE_ENV)
+    if probe == "engines":
         from cloudyreader.engines.bundle_probe import main
+    elif probe == "plan":
+        from cloudyreader.engines.bundle_probe import plan_main as main
     else:
         from cloudyreader.__main__ import main
     return main()

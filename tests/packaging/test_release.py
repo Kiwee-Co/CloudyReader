@@ -9,7 +9,6 @@ import plistlib
 import re
 import shutil
 import subprocess
-import sys
 import tomllib
 import zipfile
 from pathlib import Path
@@ -685,69 +684,67 @@ def test_release_preflight_needs_the_dmg_tools(root):
 # --- the figures a publish step reads ------------------------------------------------------------
 
 
-def release_files(root: Path, lock: bytes = b"{}") -> None:
-    """A dist app of 3 + 4 bytes and its lock; the zip and the DMG beside it, each with its hash."""
-    contents = root / "dist" / "Cloudy Reader.app" / "Contents"
-    (contents / "Resources" / "assets").mkdir(parents=True)
-    (contents / "a").write_bytes(b"abc")
-    (contents / "b").write_bytes(b"defg")
-    (contents / "link").symlink_to("a")  # a link counts nothing
-    (contents / "Resources" / "assets" / "assets.lock.json").write_bytes(lock)
-    for name, data in ((ZIP, b"zip bytes"), (DMG, b"dmg image bytes")):
-        (root / "dist" / name).write_bytes(data)
-        digest = hashlib.sha256(data).hexdigest()
-        (root / "dist" / f"{name}.sha256").write_text(f"{digest}  {name}\n")
-
-
-FAKE_PLAN_PY = r"""#!/bin/bash
-# The build venv's Python in the figures step: logs its arguments and data folder, prints FAKE_PLAN.
-# With FAKE_SKIP it answers as the plan does when this Mac skips a group: the reason, exit 3.
-cat >/dev/null
-printf '%s\n' "$@" "$CLOUDYREADER_DATA_DIR" >"$FAKE_ARGS"
+PLANNING_APP = r"""#!/bin/bash
+# A built app in the plan probe: logs its probe env, then prints FAKE_PLAN, or a skip and exit 3.
+printf '%s\n' "$CLOUDYREADER_PROBE" "$CLOUDYREADER_DATA_DIR" "$CLOUDYREADER_OFFLINE" >"$FAKE_ARGS"
 if [[ -n ${FAKE_SKIP:-} ]]; then
-  echo "build_app: the first-launch plan skips $FAKE_SKIP" >&2
+  echo "plan: skips $FAKE_SKIP" >&2
   exit 3
+fi
+if [[ -n ${FAKE_FAIL:-} ]]; then
+  echo "plan: failed: $FAKE_FAIL" >&2
+  exit 2
 fi
 echo "${FAKE_PLAN-3046503217}"
 """
 
 
+def release_files(root: Path) -> int:
+    """A dist app that answers the plan probe, the zip and the DMG beside it, each with its hash.
+
+    Returns the app's regular-file bytes: the APP_BYTES the figures step must write."""
+    contents = root / "dist" / "Cloudy Reader.app" / "Contents"
+    (contents / "MacOS").mkdir(parents=True)
+    (contents / "MacOS" / "Cloudy Reader").write_text(PLANNING_APP)
+    (contents / "MacOS" / "Cloudy Reader").chmod(0o755)
+    (contents / "a").write_bytes(b"abc")
+    (contents / "link").symlink_to("a")  # a link counts nothing
+    for name, data in ((ZIP, b"zip bytes"), (DMG, b"dmg image bytes")):
+        (root / "dist" / name).write_bytes(data)
+        digest = hashlib.sha256(data).hexdigest()
+        (root / "dist" / f"{name}.sha256").write_text(f"{digest}  {name}\n")
+    return 3 + len(PLANNING_APP.encode())
+
+
 def figures(root: Path, out: Path, **env: str) -> subprocess.CompletedProcess[str]:
-    inherited = {k: v for k, v in os.environ.items() if k not in ("OUT", "APP_NAME", "PY")}
+    inherited = {k: v for k, v in os.environ.items() if k not in ("OUT", "APP_NAME")}
+    args = {"FAKE_ARGS": str(root / "plan.args")}
     return subprocess.run(
         ["/bin/bash", str(root / "scripts" / "build_app.sh"), "figures", "0.0.1", str(out)],
         capture_output=True,
         text=True,
         check=False,
-        env=inherited | env,
+        env=inherited | args | env,
     )
 
 
-def fake_plan(root: Path, plan: str = "3046503217") -> dict[str, str]:
-    python = root / "fake-plan-python"
-    python.write_text(FAKE_PLAN_PY)
-    python.chmod(0o755)
-    return {"PY": str(python), "FAKE_PLAN": plan, "FAKE_ARGS": str(root / "plan.args")}
-
-
 def test_figures_writes_six_plain_lines_once_every_file_matches(root):
-    release_files(root)
+    app_bytes = release_files(root)
     out = root / "figures.txt"
 
-    result = figures(root, out, **fake_plan(root))
+    result = figures(root, out)
 
     assert result.returncode == 0, result.stderr
     assert out.read_text().splitlines() == [
-        "APP_BYTES=9",
+        f"APP_BYTES={app_bytes}",
         "ZIP_BYTES=9",
         f"SHA256={hashlib.sha256(b'zip bytes').hexdigest()}",
         "DMG_BYTES=15",
         f"DMG_SHA256={hashlib.sha256(b'dmg image bytes').hexdigest()}",
         "DOWNLOAD_BYTES=3046503217",
     ]
-    isolated, script, repo, lock, data = (root / "plan.args").read_text().splitlines()
-    assert (isolated, script, repo) == ("-I", "-", str(root))
-    assert lock == str(root / "dist/Cloudy Reader.app/Contents/Resources/assets/assets.lock.json")
+    probe, data, offline = (root / "plan.args").read_text().splitlines()
+    assert (probe, offline) == ("plan", "1")  # the app's own plan, with no network
     assert re.fullmatch(rf"{re.escape(str(root))}/build/figures-data\.\w+", data)
     assert not any(Path(data).iterdir())  # an empty data folder: a first launch
 
@@ -757,37 +754,36 @@ def test_figures_writes_nothing_when_the_first_launch_plan_downloads_nothing(roo
     release_files(root)
     out = root / "figures.txt"
 
-    result = figures(root, out, **fake_plan(root, plan))
+    result = figures(root, out, FAKE_PLAN=plan)
 
     assert result.returncode == 1
     assert "the first-launch plan downloads nothing" in result.stderr
     assert not out.exists()
 
 
-def test_figures_stop_when_this_mac_skips_a_group_a_first_launch_downloads(root):
+def test_figures_stop_when_this_mac_skips_a_group_the_app_holds(root):
     release_files(root)
     out = root / "figures.txt"
-    skipped = "kokoro: Kokoro needs an Apple Silicon Mac with mlx-audio"
+    skipped = "kokoro: not enough disk space: needs 1.5 GB, 0.9 GB free"
 
-    result = figures(root, out, **fake_plan(root), FAKE_SKIP=skipped)
+    result = figures(root, out, FAKE_SKIP=skipped)
 
     assert result.returncode == 1
-    assert f"the first-launch plan skips {skipped}" in result.stderr
+    assert f"plan: skips {skipped}" in result.stderr
     assert "so DOWNLOAD_BYTES would undercount" in result.stderr
     assert not out.exists()
 
 
-def test_figures_counts_the_apps_own_plan_for_an_empty_data_folder(root):
-    real = json.loads((ROOT / "assets.lock.json").read_text())
-    voices = [asset for asset in real["assets"] if asset["group"] == "voices"]  # never gated
-    release_files(root, json.dumps(real | {"assets": voices}, indent=2).encode())
-    (root / "cloudyreader").symlink_to(ROOT / "cloudyreader")  # the code being released
+def test_figures_stop_with_the_reason_when_the_plan_probe_fails(root):
+    release_files(root)
     out = root / "figures.txt"
 
-    result = figures(root, out, PY=sys.executable)
+    result = figures(root, out, FAKE_FAIL="OSError: lock unreadable")
 
-    assert result.returncode == 0, result.stderr
-    assert out.read_text().splitlines()[-1] == f"DOWNLOAD_BYTES={sum(a['size'] for a in voices)}"
+    assert result.returncode == 1
+    assert "plan: failed: OSError: lock unreadable" in result.stderr
+    assert "the app's plan probe exited 2" in result.stderr
+    assert not out.exists()
 
 
 def test_figures_writes_nothing_when_a_file_disagrees_with_its_checksum(root):
@@ -795,7 +791,7 @@ def test_figures_writes_nothing_when_a_file_disagrees_with_its_checksum(root):
     (root / "dist" / DMG).write_bytes(b"changed")
     out = root / "figures.txt"
 
-    result = figures(root, out, **fake_plan(root))
+    result = figures(root, out)
 
     assert result.returncode == 1
     assert f"{DMG} does not match its .sha256" in result.stderr

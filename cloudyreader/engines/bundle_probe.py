@@ -2,7 +2,7 @@
 
 Asks each engine's supported() first, then imports what the two engines need and finds the Qwen
 gate's decoder file. Loads no weights, makes no network call, opens no data folder.
-One `ok` or `FAIL <name>: <error>` line each; 0 if all pass.
+One `ok` or `FAIL <name>: <error>` line each; 0 if all pass. plan_main is the `plan` probe.
 """
 
 from __future__ import annotations
@@ -10,6 +10,7 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import os
+import sys
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -86,6 +87,34 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             print(f"ok {GATE_CHECK}", flush=True)
     return 1 if failed else 0
+
+
+def plan_main() -> int:
+    """`CLOUDYREADER_PROBE=plan`: the bytes this app downloads at first launch, for build_app.sh.
+
+    VoicePrefetch.plan() on the bundled lock and CLOUDYREADER_DATA_DIR, as this build decides it:
+    reads the lock and stats files, writes nothing, opens no connection. A group the build lacks
+    ("not in this build") is left out, since the app never offers it. Any other skip undercounts
+    a first launch elsewhere: exit 3. Any error fails closed: exit 2 and no number.
+    """
+    try:
+        from cloudyreader.config import load_settings
+        from cloudyreader.engine_catalog import NOT_IN_BUILD
+        from cloudyreader.prefetch import VoicePrefetch
+
+        plan = VoicePrefetch(load_settings()).plan()
+    except Exception as exc:  # whatever breaks the plan, the figure must not be guessed
+        print(f"plan: failed: {type(exc).__name__}: {exc}", file=sys.stderr, flush=True)
+        return 2
+    undercount = False
+    for reason in plan.skipped:
+        lacks = reason.endswith(f": {NOT_IN_BUILD}")
+        print(f"plan: {'leaves out' if lacks else 'skips'} {reason}", file=sys.stderr, flush=True)
+        undercount = undercount or not lacks
+    if undercount:
+        return 3
+    print(plan.total_bytes, flush=True)
+    return 0
 
 
 if __name__ == "__main__":  # pragma: no cover - the frozen app reaches it through the launcher

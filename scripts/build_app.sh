@@ -772,35 +772,25 @@ release_main() {
   say "release: $dmg ($size MB), SHA-256 in $(basename -- "$dmg").sha256; nothing was uploaded"
 }
 
-# Bytes the app downloads at first launch: its own VoicePrefetch.plan() for lock $1 and an empty
-# data folder, run by the build venv's Python on this repo's code. Exits 3, with the reasons on
-# stderr, when this Mac skips a group (an extra or the room missing) that a first launch fetches.
+# Bytes this release downloads at first launch: the dist app's own plan probe on its bundled lock
+# and an empty data folder, offline. A group the build lacks is left out (the app never offers
+# it); when this Mac skips a group the app holds (no room), the figure would undercount: stop.
 download_bytes() {
   local data
   data=$(fresh_dir figures-data)
-  PY=${PY:-$ROOT/.venv/bin/python}
-  CLOUDYREADER_DATA_DIR=$data "$PY" -I - "$ROOT" "$1" <<'EOF'
-import sys
-from pathlib import Path
-
-sys.path.insert(0, sys.argv[1])
-from cloudyreader.config import load_settings
-from cloudyreader.prefetch import VoicePrefetch
-
-plan = VoicePrefetch(load_settings(), lock_path=Path(sys.argv[2])).plan()
-for reason in plan.skipped:
-    print(f"build_app: the first-launch plan skips {reason}", file=sys.stderr)
-if plan.skipped:
-    sys.exit(3)
-print(plan.total_bytes)
-EOF
+  CLOUDYREADER_PROBE=plan run_bundle figures-plan "$FINAL_APP" "$data"
+  grep '^plan: ' "$ROOT/build/figures-plan.log" >&2 || true
+  ((BUNDLE_RC != 3)) || die "this Mac's plan skips a group the app holds (above), so" \
+    "DOWNLOAD_BYTES would undercount: build on a Mac with room for every group"
+  ((BUNDLE_RC == 0)) || die "the app's plan probe exited $BUNDLE_RC (log: build/figures-plan.log)"
+  tail -n 1 "$ROOT/build/figures-plan.log"
 }
 
 # The figures a publish step reads for version $1, written to $2 only once the zip and the DMG
 # each match their .sha256: six KEY=value lines. APP_BYTES sums the dist app's regular files;
-# DOWNLOAD_BYTES is the first-launch download that the app's own lock gives.
+# DOWNLOAD_BYTES is the dist app's own first-launch plan (download_bytes).
 release_figures() {
-  local version=${1:-} out=${2:-} file sha bytes app_bytes download rc figures=()
+  local version=${1:-} out=${2:-} file sha bytes app_bytes download figures=()
   [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "VERSION must look like 1.2.3, got '$version'"
   [[ -n $out ]] || die "usage: build_app.sh figures VERSION FILE"
   resolve_out
@@ -815,14 +805,7 @@ release_figures() {
   done
   app_bytes=$(find "$FINAL_APP" -type f -exec stat -f %z {} + |
     awk '{ s += $1 } END { printf "%.0f", s }')
-  download=$(download_bytes "$FINAL_APP/Contents/Resources/assets/assets.lock.json") || {
-    rc=$?
-    ((rc != 3)) ||
-      die "this Mac's plan skips a group (above), so DOWNLOAD_BYTES would undercount:" \
-        "build on a Mac with every extra and room for every group"
-    download=
-  }
-  download=$(tail -n 1 <<<"$download")
+  download=$(download_bytes) || exit 1
   [[ $download =~ ^[1-9][0-9]*$ ]] ||
     die "the first-launch plan downloads nothing ('$download'): check the app's assets.lock.json"
   printf 'APP_BYTES=%s\nZIP_BYTES=%s\nSHA256=%s\nDMG_BYTES=%s\nDMG_SHA256=%s\nDOWNLOAD_BYTES=%s\n' \
