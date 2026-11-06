@@ -189,3 +189,10 @@ def test_tool_written_and_fixture_data_stay_out_of_prettier() -> None:
     for pattern in patterns:
         assert pattern in ignored, f".prettierignore lacks {pattern}"
         assert any(fnmatch.fnmatch(path, pattern) for path in files), f"{pattern} names no file"
+
+
+def test_the_site_package_files_are_kept_out_of_prettier() -> None:
+    # The files arrive with the site, so this checks the entries, not that the files exist yet.
+    ignored = (ROOT / ".prettierignore").read_text(encoding="utf-8").splitlines()
+    for pattern in ("site/package.json", "site/package-lock.json"):
+        assert pattern in ignored, f".prettierignore lacks {pattern}"
