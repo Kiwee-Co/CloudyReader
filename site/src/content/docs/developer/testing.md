@@ -1,11 +1,11 @@
 ---
 title: Test and CI
-description: 'The Cloudy Reader test gates, markers, and coverage floor, the CI jobs behind the required check, and the live smoke checks.'
+description: 'The Cloudy Reader test gates, markers, and coverage floor, the CI jobs and their gate, and the live smoke checks.'
 sidebar:
   order: 3
 ---
 
-The commit gate is `make ci`. It runs the repository guards, the lint check, the tests with a coverage floor, and the pre-commit hooks. On GitHub, the required status check `ci` passes only when seven jobs pass.
+The commit gate is `make ci`. It runs the repository guards, the lint check, the tests with a coverage floor, and the pre-commit hooks. On GitHub, the `ci` workflow ends with a gate job that passes only when the seven jobs pass.
 
 ## Run the gates
 
@@ -140,7 +140,7 @@ The `prettier` and `markdownlint` hooks check files against `.prettierrc` and `.
 
 ## CI workflow
 
-The file `.github/workflows/ci.yml` defines the workflow `ci`. It has seven jobs. An eighth job, also named `ci`, is the gate. Branch protection requires only the gate job. The gate runs even when another job failed or was skipped, and it passes only when all seven jobs succeeded.
+The file `.github/workflows/ci.yml` defines the workflow `ci`. It has seven jobs. An eighth job, also named `ci`, is the gate. The gate runs even when another job failed or was skipped, and it passes only when all seven jobs succeeded.
 
 | Item               | Value                                                                                                                     |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
@@ -161,8 +161,6 @@ The file `.github/workflows/ci.yml` defines the workflow `ci`. It has seven jobs
 - **`test`** runs `make test` offline with `QT_QPA_PLATFORM=offscreen`. Then it writes the reports.
 - **`docs`** checks the documentation site with `scripts/check_site.py`.
 - **`lock`** runs `uv lock --check`. It fails when `uv.lock` does not match `pyproject.toml`.
-
-<!-- needs-fact: the commands of the merged docs job are open (facts section 19); keep this bullet generic until they are fixed -->
 
 The CI run installs no models and no voices. Tests marked `model` or `voice` never run there.
 

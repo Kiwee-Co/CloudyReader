@@ -1,6 +1,6 @@
 ---
 title: Contribute
-description: 'How to send a change to Cloudy Reader: the branch flow, commit style, required checks, and how to edit this documentation site.'
+description: 'How to send a change to Cloudy Reader: the branch flow, commit style, CI checks, and how to edit this documentation site.'
 sidebar:
   order: 4
 ---
@@ -8,7 +8,7 @@ sidebar:
 import { Steps } from '@astrojs/starlight/components';
 import Figure from '../../../components/Figure.astro';
 
-Changes reach `main` through pull requests only. The `main` branch is protected. A pull request must pass the required status check `ci` before it can merge.
+Send each change to `main` as a pull request. The `ci` workflow runs on every pull request to `main`, and its gate job passes only when the seven jobs pass.
 
 ## Send a change
 
@@ -27,7 +27,7 @@ Changes reach `main` through pull requests only. The `main` branch is protected.
 
 5. Push the branch and open a pull request against `main`.
 6. Wait for the check `ci`. Fix the failures and push again. A later push cancels the older run.
-7. A maintainer merges with a rebase merge. Each of your commits lands on `main` as it is, so write each message for the history.
+7. A maintainer merges the pull request. Write each commit message so that it reads well on its own in the history of `main`.
 
 </Steps>
 
@@ -175,7 +175,7 @@ This figure uses `frame="window"`:
   src="window-light.svg"
   dark="window-dark.svg"
   frame="window"
-  alt="The Cloudy Reader window with a pasted toss-up question, the voice lessac, the rotation set to No rotation, the spoken script shown, and the status Playing 2.0 s."
+  alt="The Cloudy Reader window with a pasted toss-up question, the voice lessac, the rotation set to No rotation, the spoken script shown, and the status Playing 19.3 s."
   caption="A window snapshot inside the window frame that the component draws."
 />
 

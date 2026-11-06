@@ -40,8 +40,6 @@ These components carry an LGPL license. The `num2words` link opens the PyPI rele
 | `PySide6-Essentials` and `shiboken6` | 6.12.0  | LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only | The window                       | [Qt for Python repository](https://code.qt.io/cgit/pyside/pyside-setup.git/) |
 | `num2words`                          | 0.5.14  | LGPL                                          | Installed with the Kokoro engine | [num2words 0.5.14 on PyPI](https://pypi.org/project/num2words/0.5.14/)       |
 
-<!-- needs-fact: exact source URLs (tags) at the bundled version for jdk4py 25.0.2.1, PySide6-Essentials and shiboken6 6.12.0, and piper-tts 1.8.0; the facts sheet marks tag URLs as not checked -->
-
 ### Components under other licenses
 
 The table lists the other main components in alphabetical order.
@@ -64,8 +62,6 @@ The table lists the other main components in alphabetical order.
 | `thinc`           | 8.2.5   | MIT                | Part of the spaCy stack                           |
 | `transformers`    | 5.22.1  | Apache License 2.0 | Bundled with the Kokoro engine                    |
 
-<!-- needs-fact: license of OPSIN 2.9.0 (the jar inside py2opsin holds no OPSIN license block) and of the espeak-ng library inside espeakng-loader 0.2.4; both stay off this page until the owner confirms them -->
-
 ## Voices and models
 
 Cloudy Reader does not include voice files. At the first launch the app downloads them from Hugging Face repositories, each pinned to one revision:
@@ -76,8 +72,6 @@ Cloudy Reader does not include voice files. At the first launch the app download
 The voice files and the Kokoro model are third-party works. They are not part of the Cloudy Reader source, and they keep the terms of their publishers. Read the model card of each repository for those terms.
 
 The name-detection model `en_ner_craft_md` 0.5.4 ships inside the app. It is the scispaCy CRAFT model, and its license is CC BY-SA 3.0.
-
-<!-- needs-fact: license on each Piper voice model card and on the Kokoro-82M-bf16 model card; the facts sheet marks both as not checked -->
 
 ## Online services
 

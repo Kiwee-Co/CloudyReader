@@ -96,7 +96,7 @@ Use the canonical term. Do not use the banned variants in prose. A banned varian
 
 ### Verbs for the interface
 
-Click a button. Choose a menu item or a pop-up menu value. Select or deselect a checkbox. Press a key. Type or paste text. Never write `hit`, `tap`, `click on`, `check`, or `uncheck` for these actions.
+Click a button. Choose a menu item or a pop-up menu value. Select or deselect a checkbox. Press a key. Type or paste text. Point to an item to show its tooltip. Never write `hit`, `tap`, `click on`, `check`, `uncheck`, or `hover` for these actions.
 
 ## Formatting
 
@@ -107,7 +107,7 @@ Click a button. Choose a menu item or a pop-up menu value. Select or deselect a 
 - The rotation modes are UI labels: **No rotation**, **Round robin**, **Random shuffle**, **US only (random shuffle)**, **Men only**, **Women only**.
 - Quote a status message exactly in prose, with the app's ellipsis character (…). Write variables in italics, as in "Playing _n_ s." Do not bold or code-format a status message.
 - In text and steps, spell key names and join them with hyphens, as Mac documentation does: Command-Return, Command-Shift-V, Command-R, Command-Period (.), Command-W, Command-Q. Never write `Cmd`, `Cmd+`, or a bare `⌘` in prose.
-- Only the keyboard shortcuts page shows glyphs. It adds a **Tooltip shows** column with the glyphs inside `kbd` elements, because the app prints those glyphs in its tooltips and in the question box placeholder. macOS draws the native menus and may show a different Return glyph, so do not describe the glyphs of the menus. The words column comes first, so screen readers read the words first.
+- Glyphs appear only on the keyboard shortcuts page and inside quoted tooltip or placeholder text. The keyboard shortcuts page adds a **Tooltip shows** column with the glyphs inside `kbd` elements, because the app prints those glyphs in its tooltips and in the question box placeholder. macOS draws the native menus and may show a different Return glyph, so do not describe the glyphs of the menus. The words column comes first, so screen readers read the words first.
 
 ### Code, paths, numbers, units, and dates
 

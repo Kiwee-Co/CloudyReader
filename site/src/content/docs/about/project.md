@@ -23,15 +23,13 @@ Cloudy Reader is an open-source project. Its source code is in the [Kiwee-Co/Clo
 
 See [Licenses and credits](/about/licenses/) for the licenses of the components that the app bundles.
 
-<!-- needs-fact: the maintainer names or organization wording the owner wants on this page (plan Q5); none is stated, and no trademark sentence beyond the independence sentence ships -->
-
 ## Project status
 
-The current version is REL-VERSION, and the first public release was 0.0.1. Cloudy Reader needs a Mac with Apple silicon and macOS REL-MACOS-FLOOR or later. See [Check your Mac](/manual/getting-started/#check-your-mac) for the full requirements and [Release notes](/about/release-notes/) for the known limits.
+This manual describes version REL-VERSION. The first public release was 0.0.1. Cloudy Reader needs a Mac with Apple silicon and macOS REL-MACOS-FLOOR or later. See [Check your Mac](/manual/getting-started/#check-your-mac) for the full requirements and [Release notes](/about/release-notes/) for the known limits.
 
 ## Contribute
 
-Changes to the app and to this manual land as pull requests on GitHub. Read [Contribute](/developer/contributing/) for the branch flow, the commit style, and the required checks. Read [Build from source](/developer/building/) to run the app from a checkout.
+Changes to the app and to this manual land as pull requests on GitHub. Read [Contribute](/developer/contributing/) for the branch flow, the commit style, and the checks that run on each pull request. Read [Build from source](/developer/building/) to run the app from a checkout.
 
 ## Contact
 
