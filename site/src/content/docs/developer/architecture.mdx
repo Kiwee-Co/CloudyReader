@@ -17,7 +17,7 @@ The figure shows the path of one pasted question.
   src="pipeline-light.svg"
   dark="pipeline-dark.svg"
   wide
-  alt="A flow of boxes: question text, parser, name detection, name lookups, normalizer, respelling to IPA, a voice engine, the WAV cache, and the player. Only name lookups and the voice download use the network."
+  alt="A flow of boxes: question text, parser, entity detection, name lookups, normalizer, respelling to IPA, a voice engine, the WAV cache, and the player. Only name lookups and the voice download use the network."
   caption="From pasted text to sound. Boxes with a dashed blue border use the network."
 />
 
@@ -112,7 +112,7 @@ The voice engines differ in these ways:
 
 Each engine writes the pause after a segment as exact silence in the WAV file. That silence does not depend on the voice.
 
-A voice can add its own silence around a line. The Piper and Kokoro engines call `trim_letter_padding` in `engines/padding.py` to cut that silence next to a choice letter.
+A voice can add its own silence around a line. Each voice engine calls `trim_letter_padding` in `engines/padding.py` to cut that silence next to a choice letter.
 
 `TtsService.voices()` sets the order of the **Voice** menu. Engines follow `ENGINE_ORDER` in `voice_meta.py`. Inside an engine, the best grade or tier comes first, then the name.
 
