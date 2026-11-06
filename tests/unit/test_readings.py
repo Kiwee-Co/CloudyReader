@@ -2,7 +2,7 @@
 
 import pytest
 
-from cloudyreader.models import Question, RenderOptions
+from cloudyreader.models import Question, RenderOptions, Respelling
 from cloudyreader.normalize import ScriptNormalizer
 
 EN_DASH = "–"
@@ -20,8 +20,8 @@ class NoHardWords:
         return None
 
 
-def spoken(text: str) -> str:
-    q = Question(None, None, None, None, text, (), None, text)
+def spoken(text: str, respellings: tuple[Respelling, ...] = ()) -> str:
+    q = Question(None, None, None, None, text, (), None, text, respellings)
     norm = ScriptNormalizer(NoHardWords())  # type: ignore[arg-type]
     return norm.to_script([q], {}, RenderOptions()).segments[0].text
 
@@ -89,3 +89,58 @@ def test_a_range_reads_to(raw, words):
 )
 def test_what_is_no_range_keeps_its_reading(raw, today):
     assert spoken(raw) == today
+
+
+# --- comparisons ------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("raw", "words"),
+    [
+        # Tight between two operands: the voices drop a raw "<" or ">", so it must be words.
+        ("x<3", "x is less than 3"),
+        ("x>3", "x is greater than 3"),
+        ("x<=3", "x is less than or equal to 3"),
+        ("x>=3", "x is greater than or equal to 3"),
+        ("3<x<5", "3 is less than x is less than 5"),
+        ("x<-3", "x is less than minus 3"),
+        ("x<=-1", "x is less than or equal to minus 1"),
+        ("(a+b)>c", "(a plus b) is greater than c"),
+        ("x < 3", "x is less than 3"),
+        ("x <3", "x is less than 3"),
+        ("x <= 3", "x is less than or equal to 3"),
+        # With no left operand it is a prefix: "less than", without the "is".
+        ("a yield of <5%", "a yield of less than 5 percent"),
+        (">90% of cells", "greater than 90 percent of cells"),
+        ("(<5)", "(less than 5)"),
+        # The Unicode relations were spoken already and stay so.
+        ("x≤3", "x is less than or equal to 3"),
+        ("x ≠ 3", "x is not equal to 3"),
+        ("x ≈ 3", "x is approximately equal to 3"),
+        ("a ≪ b", "a is much less than b"),
+        ("a ≫ b", "a is much greater than b"),
+        ("y ∝ x", "y is proportional to x"),
+        ("5 ± 2", "5 plus or minus 2"),
+    ],
+)
+def test_a_comparison_is_spoken(raw, words):
+    assert spoken(raw) == words
+
+
+@pytest.mark.parametrize(
+    ("raw", "today"),
+    [
+        # Arrows keep their reading; an HTML tag from a web paste is markup, no comparison.
+        ("A -> B", "A yields B"),
+        ("A <=> B", "A is in equilibrium with B"),
+        ("A <- B", "A left arrow B"),
+        ("H<sub>2</sub>O", "H<sub>2</sub>O"),
+    ],
+)
+def test_arrows_and_markup_keep_their_reading(raw, today):
+    assert spoken(raw) == today
+
+
+def test_angle_brackets_inside_a_say_as_guide_stay_intact():
+    guide = Respelling("ATP", "A <em>T</em> P", "spoken")
+    assert spoken("Name ATP now.", (guide,)) == "Name A <em>T</em> P now."

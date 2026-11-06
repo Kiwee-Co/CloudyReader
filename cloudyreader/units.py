@@ -732,6 +732,44 @@ def _speak_en_dash_minus(text: str, tables: Tables) -> str:
     return _EN_DASH_SIGN.sub(_en_dash_sign, text)
 
 
+# "x<3": "<" and ">" were said only standing alone, and the voices drop them raw (espeak says
+# "x three"). Between operands they are spaced out; "<=" and ">=" become one sign.
+_COMPARISON = re.compile(
+    r"(?P<before>\s*)(?P<op><=|>=|<|>)(?P<after>\s*)(?=[\w(\[.]|[-\u2212\u2013]\.?\d)"
+)
+_COMPARISON_SIGNS = {"<=": "\u2264", ">=": "\u2265", "<": "<", ">": ">"}
+_PREFIX_WORDS = {
+    "<": "less than",
+    ">": "greater than",
+    "<=": "less than or equal to",
+    ">=": "greater than or equal to",
+}
+_LEFT_WORD = re.compile(r"(\w+)$")
+# HTML-like markup from a web paste is no comparison: "H<sub>2</sub>O" keeps its brackets.
+_TAG = re.compile(r"</?[A-Za-z][A-Za-z0-9]*>")
+
+
+def _space_comparisons(text: str) -> str:
+    tags = [m.span() for m in _TAG.finditer(text)]
+
+    def repl(m: re.Match[str]) -> str:
+        op, at = m["op"], m.start("op")
+        if any(start <= at < end for start, end in tags):
+            return m.group()
+        prev = text[m.start() - 1] if m.start() else ""
+        word = _LEFT_WORD.search(text, max(0, m.start() - 30), m.start())
+        # No operand on the left ("of <5%", "(<5)"): a prefix, said without "is".
+        prose = word and word[1].isalpha() and len(word[1]) > 1 and not m["after"]
+        operand = prev.isalnum() or (prev != "" and prev in ")]")
+        if not operand or (prose and m["before"]):
+            if not text[m.end() : m.end() + 1].isdigit():
+                return m.group()
+            return f"{m['before']}{_PREFIX_WORDS[op]} "
+        return f" {_COMPARISON_SIGNS[op]} "
+
+    return _COMPARISON.sub(repl, text)
+
+
 def speak_symbols(
     text: str, *, tables: Tables | None = None, only: Collection[str] | None = None
 ) -> str:
@@ -761,7 +799,7 @@ def speak_symbols(
         right = " " if nxt and not nxt.isspace() and nxt not in _NO_SPACE_AFTER else ""
         return f"{left}{table[key].spoken}{right}"
 
-    text = pattern.sub(repl, text)
+    text = pattern.sub(repl, _space_comparisons(text) if only is None else text)
     if only is None:
         text = _speak_en_dash_minus(text, tables or default_tables())
     return re.sub(r" {2,}", " ", text)
