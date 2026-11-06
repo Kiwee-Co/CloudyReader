@@ -135,6 +135,13 @@ def test_a_comparison_is_spoken(raw, words):
         ("A <=> B", "A is in equilibrium with B"),
         ("A <- B", "A left arrow B"),
         ("H<sub>2</sub>O", "H<sub>2</sub>O"),
+        # An arrow head followed by a number is still an arrow, never "greater than".
+        ("2H2 + O2 -> 2H2O", "two H two plus O two yields two H two O"),
+        ("N2 + 3H2 <=> 2NH3", "N two plus three H two is in equilibrium with two N H three"),
+        ("x -> 3", "x yields 3"),
+        ("A --> 5 B", "A yields 5 B"),
+        ("lim x->0", "limit x->0"),
+        ("x => 3", "x equals > 3"),
     ],
 )
 def test_arrows_and_markup_keep_their_reading(raw, today):

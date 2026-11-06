@@ -756,6 +756,9 @@ def _space_comparisons(text: str) -> str:
         op, at = m["op"], m.start("op")
         if any(start <= at < end for start, end in tags):
             return m.group()
+        # The head of an arrow ("->", "-->", "=>", "<=>") is no comparison, even before a number.
+        if (op[0] == ">" and text[at - 1 : at] in ("-", "=")) or text.startswith("<=>", at):
+            return m.group()
         prev = text[m.start() - 1] if m.start() else ""
         word = _LEFT_WORD.search(text, max(0, m.start() - 30), m.start())
         # No operand on the left ("of <5%", "(<5)"): a prefix, said without "is".
