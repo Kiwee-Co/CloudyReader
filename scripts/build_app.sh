@@ -760,14 +760,30 @@ check_volume() {
   say "release: $name: verified; volume $volume holds the app and an Applications link"
 }
 
+# hdiutil verify on DMG $1. Under load it can fail with EAGAIN ("Resource temporarily unavailable"),
+# locally and on the macos-15 runner: that error alone gets a retry, 3 tries in all.
+verify_dmg() {
+  local dmg=$1 name log=$ROOT/build/dmg-verify.log try=1
+  name=$(basename -- "$dmg")
+  until "$HDIUTIL" verify "$dmg" >"$log" 2>&1; do
+    if ((try == 3)) || ! grep -q 'Resource temporarily unavailable' "$log"; then
+      tail -n 20 "$log" >&2
+      die "$name: hdiutil verify failed (log: build/dmg-verify.log)"
+    fi
+    try=$((try + 1))
+    say "release: $name: hdiutil verify hit EAGAIN (Resource temporarily unavailable);" \
+      "try $try of 3 in 2 s"
+    sleep 2
+  done
+}
+
 # hdiutil verify on DMG $1, then mounts it read-only and unbrowsed at a fresh folder for
 # check_volume; its app must pass codesign, print version $3 (data folder $4), pass the voice
 # audit, and match the zip's copy $2. The volume is ejected however the checks end.
 check_dmg() {
   local dmg=$1 copy=$2 version=$3 data=$4 name mnt out app printed
   name=$(basename -- "$dmg")
-  "$HDIUTIL" verify "$dmg" >"$ROOT/build/dmg-verify.log" 2>&1 ||
-    die "$name: hdiutil verify failed (log: build/dmg-verify.log)"
+  verify_dmg "$dmg"
   mnt=$(fresh_dir dmg-mount)
   trap eject_dmg EXIT
   trap 'exit 130' INT TERM

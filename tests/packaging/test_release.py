@@ -605,6 +605,60 @@ def test_a_failed_dmg_creation_prints_the_tools_own_message(root):
     assert "could not make t.dmg (log: build/dmg-create.log)" in result.stderr
 
 
+# hdiutil verify's EAGAIN, seen now and then locally and on the macos-15 runner, and a real failure.
+VERIFY_SAYS = {
+    "eagain": "hdiutil: verify: unable to recognize t.dmg (Resource temporarily unavailable)",
+    "corrupt": "hdiutil: verify failed - corrupt image",
+}
+
+
+def verify_tools(root: Path, plan: list[str]) -> tuple[dict[str, str], Path]:
+    """Fake DMG tools whose `hdiutil verify` answers one outcome of the plan per try (any other
+    verb fails), and a sleep that only logs."""
+    lines, calls = root / "verify.plan", root / "calls.log"
+    lines.write_text("".join(f"{outcome}\n" for outcome in plan))
+    hdiutil = (
+        "[[ $1 == verify ]] || exit 1\n"
+        f'case $(sed -n "$(grep -c "^hdiutil verify" "{calls}")p" "{lines}") in\n'
+        "  ok) exit 0 ;;\n"
+        f"  eagain) echo '{VERIFY_SAYS['eagain']}' >&2 ;;\n"
+        f"  *) echo '{VERIFY_SAYS['corrupt']}' >&2 ;;\n"
+        "esac\nexit 1\n"
+    )
+    env, calls = fake_dmg_tools(root, "15.7.1", MACOS_15_DISKUTIL, hdiutil)
+    write_tool(root / "fakebin" / "sleep", f'echo "sleep $*" >>"{calls}"\n')
+    return env, calls
+
+
+@pytest.mark.parametrize(
+    ("plan", "tries", "verified"),
+    [
+        (["ok"], 1, True),
+        (["eagain", "ok"], 2, True),
+        (["eagain", "eagain", "ok"], 3, True),
+        (["eagain", "eagain", "eagain", "ok"], 3, False),  # 3 tries at most
+        (["corrupt", "ok"], 1, False),  # a real failure gets no retry
+        (["eagain", "corrupt", "ok"], 2, False),
+    ],
+)
+def test_check_dmg_retries_hdiutil_verify_on_eagain_alone(root, plan, tries, verified):
+    env, calls = verify_tools(root, plan)
+
+    result = bash_fn(root, 'check_dmg "$1" copy 0.0.1 data', str(root / "dist" / "t.dmg"), **env)
+
+    recorded = calls.read_text().splitlines()
+    verbs = [line.split()[1] for line in recorded if line.startswith("hdiutil ")]
+    assert verbs == ["verify"] * tries + (["attach"] if verified else [])  # mounts a verified image
+    assert [line for line in recorded if line.startswith("sleep")] == ["sleep 2"] * (tries - 1)
+    assert result.stdout.count("hdiutil verify hit EAGAIN") == tries - 1
+    assert result.returncode == 1  # the fake hdiutil attaches nothing
+    if verified:
+        assert "t.dmg: cannot attach it" in result.stderr
+    else:
+        assert VERIFY_SAYS[plan[tries - 1]] in result.stderr  # the tail of the verify log
+        assert "t.dmg: hdiutil verify failed (log: build/dmg-verify.log)" in result.stderr
+
+
 FAKE_DISKUTIL = r"""#!/bin/bash
 # `info -plist PATH`: a volume named FAKE_VOLUME on a disk whose bus is FAKE_BUS. Nothing else.
 [[ ${1:-} == info && ${2:-} == -plist ]] || exit 1
