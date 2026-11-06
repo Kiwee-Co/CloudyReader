@@ -16,7 +16,6 @@ AA_UI_PART = 3.0  # WCAG 2.2 1.4.11: control boundaries and focus indicators
 # scheme set to Light, then Dark. The card is QPalette.Base; the window is QPalette.Window.
 WINDOW = {"LIGHT": "#ececec", "DARK": "#323232"}
 CARD = {"LIGHT": "#ffffff", "DARK": "#171717"}
-PENDING = pytest.mark.xfail(raises=AttributeError, strict=True, reason="work item 2 adds it")
 
 
 def luminance(hex_color: str) -> float:
@@ -64,7 +63,7 @@ BRAND_PAIRS = [
     ("DMG_LABEL_BAND", "#ffffff", AA_NORMAL_TEXT),  # and white in Dark Mode
 ]
 SPEC_PAIRS = [
-    pytest.param(front, back, floor, id=f"{front}-on-{back}", marks=PENDING)
+    pytest.param(front, back, floor, id=f"{front}-on-{back}")
     for front, back, floor in [*pairs_per_appearance(), *BRAND_PAIRS]
 ]
 
@@ -104,5 +103,22 @@ def test_spacing_follows_the_hig_layout_rhythm():
     assert tokens.CONTROL_SPACING < tokens.GROUP_SPACING < tokens.SECTION_SPACING
 
 
-def test_type_ramp_is_the_macos_body_and_callout_styles():
-    assert (tokens.TEXT_BODY_PT, tokens.TEXT_CALLOUT_PT) == (13, 12)
+def test_type_ramp_is_the_macos_title3_body_callout_and_section_styles():
+    ramp = (tokens.TEXT_QUESTION_PT, tokens.TEXT_BODY_PT, tokens.TEXT_CALLOUT_PT)
+
+    assert (*ramp, tokens.TEXT_SECTION_PT) == (15, 13, 12, 11)
+
+
+def test_the_focus_ring_stays_concentric_with_its_control():
+    widths = tokens.FOCUS_INNER_WIDTH + tokens.FOCUS_OUTER_WIDTH
+
+    assert widths == tokens.FOCUS_RADIUS_EXTRA
+
+
+def test_the_message_keeps_a_share_of_the_status_line():
+    assert 0 < tokens.MESSAGE_MIN_SHARE < 1
+
+
+@pytest.mark.parametrize("retired", ["TEXT_INSET", "BUSY_BAR_WIDTH"])
+def test_retired_tokens_are_gone(retired):
+    assert not hasattr(tokens, retired)

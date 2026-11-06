@@ -323,7 +323,7 @@ class MainWindow(QMainWindow):
         )
         self.question_edit.setAccessibleName("Question")
         self.question_edit.setTabChangesFocus(True)  # Tab must leave the box, not type a tab
-        self.question_edit.document().setDocumentMargin(tokens.TEXT_INSET)
+        self.question_edit.document().setDocumentMargin(tokens.CARD_PADDING)
 
         self.voice_picker = VoicePicker()
         self.voice_picker.voice_changed.connect(self._drop_voice_note)  # the user chose: note done
@@ -358,7 +358,7 @@ class MainWindow(QMainWindow):
         self.script_view.setAccessibleName("Spoken script")
         self.script_view.setPlaceholderText("The words that are spoken appear here.")
         self.script_view.setFont(text_style(tokens.TEXT_CALLOUT_PT))  # secondary to the question
-        self.script_view.document().setDocumentMargin(tokens.TEXT_INSET)
+        self.script_view.document().setDocumentMargin(tokens.CARD_PADDING)
         self.script_view.setMinimumHeight(tokens.SCRIPT_MIN_HEIGHT)
         self.script_view.hide()
 
@@ -407,7 +407,7 @@ class MainWindow(QMainWindow):
         self.prefetch_bar = QProgressBar()
         self.prefetch_bar.setRange(0, 100)  # percent of the group, else of the whole run
         self.prefetch_bar.setTextVisible(False)
-        self.prefetch_bar.setFixedWidth(tokens.BUSY_BAR_WIDTH)
+        self.prefetch_bar.setFixedWidth(tokens.PROGRESS_BAR_WIDTH)
         self.prefetch_bar.setAccessibleName(_DOWNLOADING)
         # Keeps the two bars apart, so they never read as one; shown only while both are.
         self._bar_gap = QWidget()
@@ -420,7 +420,7 @@ class MainWindow(QMainWindow):
         self.busy_bar = QProgressBar()
         self.busy_bar.setRange(0, 0)  # indeterminate: the service reports no progress
         self.busy_bar.setTextVisible(False)
-        self.busy_bar.setFixedWidth(tokens.BUSY_BAR_WIDTH)
+        self.busy_bar.setFixedWidth(tokens.PROGRESS_BAR_WIDTH)
         self.busy_bar.setAccessibleName("Preparing")
         self._status.addPermanentWidget(self.busy_bar)
         self.busy_bar.hide()

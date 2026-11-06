@@ -211,7 +211,7 @@ def test_popup_keeps_its_natural_width_like_a_native_form(window):
 
 def test_text_views_get_a_comfortable_inset(window):
     for view in (window.question_edit, window.script_view):
-        assert view.document().documentMargin() == tokens.TEXT_INSET
+        assert view.document().documentMargin() == tokens.CARD_PADDING
 
 
 def test_spoken_script_is_secondary_text(window):
