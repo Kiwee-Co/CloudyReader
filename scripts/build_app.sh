@@ -772,10 +772,32 @@ release_main() {
   say "release: $dmg ($size MB), SHA-256 in $(basename -- "$dmg").sha256; nothing was uploaded"
 }
 
+# Bytes the app downloads at first launch: its own VoicePrefetch.plan() for lock $1 and an empty
+# data folder, run by the build venv's Python on this repo's code. Skipped groups go to stderr.
+download_bytes() {
+  local data
+  data=$(fresh_dir figures-data)
+  PY=${PY:-$ROOT/.venv/bin/python}
+  CLOUDYREADER_DATA_DIR=$data "$PY" -I - "$ROOT" "$1" <<'EOF'
+import sys
+from pathlib import Path
+
+sys.path.insert(0, sys.argv[1])
+from cloudyreader.config import load_settings
+from cloudyreader.prefetch import VoicePrefetch
+
+plan = VoicePrefetch(load_settings(), lock_path=Path(sys.argv[2])).plan()
+for reason in plan.skipped:
+    print(f"build_app: the first-launch plan skips {reason}", file=sys.stderr)
+print(plan.total_bytes)
+EOF
+}
+
 # The figures a publish step reads for version $1, written to $2 only once the zip and the DMG
-# each match their .sha256: five KEY=value lines; APP_BYTES sums the dist app's regular files.
+# each match their .sha256: six KEY=value lines. APP_BYTES sums the dist app's regular files;
+# DOWNLOAD_BYTES is the first-launch download that the app's own lock gives.
 release_figures() {
-  local version=${1:-} out=${2:-} file sha bytes app_bytes figures=()
+  local version=${1:-} out=${2:-} file sha bytes app_bytes download figures=()
   [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "VERSION must look like 1.2.3, got '$version'"
   [[ -n $out ]] || die "usage: build_app.sh figures VERSION FILE"
   resolve_out
@@ -790,8 +812,12 @@ release_figures() {
   done
   app_bytes=$(find "$FINAL_APP" -type f -exec stat -f %z {} + |
     awk '{ s += $1 } END { printf "%.0f", s }')
-  printf 'APP_BYTES=%s\nZIP_BYTES=%s\nSHA256=%s\nDMG_BYTES=%s\nDMG_SHA256=%s\n' \
-    "$app_bytes" "${figures[@]}" >"$out"
+  download=$(download_bytes "$FINAL_APP/Contents/Resources/assets/assets.lock.json" | tail -n 1) ||
+    download=
+  [[ $download =~ ^[1-9][0-9]*$ ]] ||
+    die "the first-launch plan downloads nothing ('$download'): check the app's assets.lock.json"
+  printf 'APP_BYTES=%s\nZIP_BYTES=%s\nSHA256=%s\nDMG_BYTES=%s\nDMG_SHA256=%s\nDOWNLOAD_BYTES=%s\n' \
+    "$app_bytes" "${figures[@]}" "$download" >"$out"
   say "release: figures for $version in $out"
 }
 

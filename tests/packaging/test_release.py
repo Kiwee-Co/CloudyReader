@@ -9,6 +9,7 @@ import plistlib
 import re
 import shutil
 import subprocess
+import sys
 import tomllib
 import zipfile
 from pathlib import Path
@@ -684,44 +685,91 @@ def test_release_preflight_needs_the_dmg_tools(root):
 # --- the figures a publish step reads ------------------------------------------------------------
 
 
-def release_files(root: Path) -> None:
-    """A dist app of 3 + 4 bytes, the zip and the DMG beside it, each with its .sha256."""
+def release_files(root: Path, lock: bytes = b"{}") -> None:
+    """A dist app of 3 + 4 bytes and its lock; the zip and the DMG beside it, each with its hash."""
     contents = root / "dist" / "Cloudy Reader.app" / "Contents"
-    contents.mkdir(parents=True)
+    (contents / "Resources" / "assets").mkdir(parents=True)
     (contents / "a").write_bytes(b"abc")
     (contents / "b").write_bytes(b"defg")
     (contents / "link").symlink_to("a")  # a link counts nothing
+    (contents / "Resources" / "assets" / "assets.lock.json").write_bytes(lock)
     for name, data in ((ZIP, b"zip bytes"), (DMG, b"dmg image bytes")):
         (root / "dist" / name).write_bytes(data)
         digest = hashlib.sha256(data).hexdigest()
         (root / "dist" / f"{name}.sha256").write_text(f"{digest}  {name}\n")
 
 
-def figures(root: Path, out: Path) -> subprocess.CompletedProcess[str]:
-    env = {k: v for k, v in os.environ.items() if k not in ("OUT", "APP_NAME")}
+FAKE_PLAN_PY = r"""#!/bin/bash
+# The build venv's Python in the figures step: logs its arguments and data folder, prints FAKE_PLAN.
+cat >/dev/null
+printf '%s\n' "$@" "$CLOUDYREADER_DATA_DIR" >"$FAKE_ARGS"
+echo "${FAKE_PLAN-3046503217}"
+"""
+
+
+def figures(root: Path, out: Path, **env: str) -> subprocess.CompletedProcess[str]:
+    inherited = {k: v for k, v in os.environ.items() if k not in ("OUT", "APP_NAME", "PY")}
     return subprocess.run(
         ["/bin/bash", str(root / "scripts" / "build_app.sh"), "figures", "0.0.1", str(out)],
         capture_output=True,
         text=True,
         check=False,
-        env=env,
+        env=inherited | env,
     )
 
 
-def test_figures_writes_five_plain_lines_once_every_file_matches(root):
+def fake_plan(root: Path, plan: str = "3046503217") -> dict[str, str]:
+    python = root / "fake-plan-python"
+    python.write_text(FAKE_PLAN_PY)
+    python.chmod(0o755)
+    return {"PY": str(python), "FAKE_PLAN": plan, "FAKE_ARGS": str(root / "plan.args")}
+
+
+def test_figures_writes_six_plain_lines_once_every_file_matches(root):
     release_files(root)
     out = root / "figures.txt"
 
-    result = figures(root, out)
+    result = figures(root, out, **fake_plan(root))
 
     assert result.returncode == 0, result.stderr
     assert out.read_text().splitlines() == [
-        "APP_BYTES=7",
+        "APP_BYTES=9",
         "ZIP_BYTES=9",
         f"SHA256={hashlib.sha256(b'zip bytes').hexdigest()}",
         "DMG_BYTES=15",
         f"DMG_SHA256={hashlib.sha256(b'dmg image bytes').hexdigest()}",
+        "DOWNLOAD_BYTES=3046503217",
     ]
+    isolated, script, repo, lock, data = (root / "plan.args").read_text().splitlines()
+    assert (isolated, script, repo) == ("-I", "-", str(root))
+    assert lock == str(root / "dist/Cloudy Reader.app/Contents/Resources/assets/assets.lock.json")
+    assert re.fullmatch(rf"{re.escape(str(root))}/build/figures-data\.\w+", data)
+    assert not any(Path(data).iterdir())  # an empty data folder: a first launch
+
+
+@pytest.mark.parametrize("plan", ["0", "", "Traceback (most recent call last):"])
+def test_figures_writes_nothing_when_the_first_launch_plan_downloads_nothing(root, plan):
+    release_files(root)
+    out = root / "figures.txt"
+
+    result = figures(root, out, **fake_plan(root, plan))
+
+    assert result.returncode == 1
+    assert "the first-launch plan downloads nothing" in result.stderr
+    assert not out.exists()
+
+
+def test_figures_counts_the_apps_own_plan_for_an_empty_data_folder(root):
+    real = json.loads((ROOT / "assets.lock.json").read_text())
+    voices = [asset for asset in real["assets"] if asset["group"] == "voices"]  # never gated
+    release_files(root, json.dumps(real | {"assets": voices}, indent=2).encode())
+    (root / "cloudyreader").symlink_to(ROOT / "cloudyreader")  # the code being released
+    out = root / "figures.txt"
+
+    result = figures(root, out, PY=sys.executable)
+
+    assert result.returncode == 0, result.stderr
+    assert out.read_text().splitlines()[-1] == f"DOWNLOAD_BYTES={sum(a['size'] for a in voices)}"
 
 
 def test_figures_writes_nothing_when_a_file_disagrees_with_its_checksum(root):
@@ -729,7 +777,7 @@ def test_figures_writes_nothing_when_a_file_disagrees_with_its_checksum(root):
     (root / "dist" / DMG).write_bytes(b"changed")
     out = root / "figures.txt"
 
-    result = figures(root, out)
+    result = figures(root, out, **fake_plan(root))
 
     assert result.returncode == 1
     assert f"{DMG} does not match its .sha256" in result.stderr
