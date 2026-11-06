@@ -89,9 +89,11 @@ The window shows nothing about lookups, not even a warning when one fails, and t
 
 A pronunciation guide is text in square brackets after a word, such as `Krebs cycle [KREBZ SY-kul]`. The app takes the guide out of the text and sets the word aside before any other step can change it. The unit, formula, acronym, and lexicon steps skip that word, so a guide wins over the lexicon.
 
-A phonetic respelling covers every occurrence of its word in the same part of the question. A say-as guide covers only the occurrence it follows. A guide for a whole expression wins over the app's own reading of its parts.
+A phonetic respelling covers every occurrence of its word in the same part of the question. A say-as guide replaces one occurrence of its expression in the same part: the first one. Put the guide after the first occurrence.
 
-For example, `4 2/7 [4 and two-sevenths]` is read as "4 and two-sevenths". If the app cannot use a guide, it says the word plain and shows a warning in the status bar. It never guesses at a sound.
+A guide for a whole expression wins over the app's own reading of its parts. For example, `4 2/7 [4 and two-sevenths]` is read as "4 and two-sevenths".
+
+If the app cannot use a guide, it says the word plain and shows a warning in the status bar. It never guesses at a sound.
 
 See [Pronunciation guides](/manual/reference/pronunciation-guides/) for the syntax and every warning.
 
