@@ -9,6 +9,7 @@ import plistlib
 import re
 import shutil
 import subprocess
+import tomllib
 import zipfile
 from pathlib import Path
 
@@ -664,3 +665,23 @@ def test_figures_writes_nothing_when_a_file_disagrees_with_its_checksum(root):
     assert result.returncode == 1
     assert f"{DMG} does not match its .sha256" in result.stderr
     assert not out.exists()
+
+
+DMG_TOOLS = {"dmgbuild": "1.6.7", "ds-store": "1.3.3", "mac-alias": "2.2.3"}
+
+
+def test_the_dmg_tools_are_pinned_build_only_wheels():
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    lock = tomllib.loads((ROOT / "uv.lock").read_text())
+
+    packaging = project["dependency-groups"]["packaging"]
+    assert {f"{name}=={version}" for name, version in DMG_TOOLS.items()} <= set(packaging)
+    assert sorted(project["tool"]["uv"]["no-build-package"]) == sorted(DMG_TOOLS)
+    runtime = " ".join(project["project"]["dependencies"])
+    assert not [name for name in DMG_TOOLS if name in runtime]  # build only, never in the app
+    locked = {p["name"]: p for p in lock["package"] if p["name"] in DMG_TOOLS}
+    assert {name: p["version"] for name, p in locked.items()} == DMG_TOOLS
+    for package in locked.values():  # a hash-pinned wheel from public PyPI for each
+        assert package["source"] == {"registry": "https://pypi.org/simple"}
+        assert package["wheels"]
+        assert all(wheel["hash"].startswith("sha256:") for wheel in package["wheels"])

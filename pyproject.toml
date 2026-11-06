@@ -47,11 +47,20 @@ dev = [
 packaging = [
     "pyinstaller==6.22.3",
     "pyinstaller-hooks-contrib==2026.9",
+    # The DMG window tool and its two libraries: build only, never in the app. Wheels only
+    # (no-build-package below); diff every version bump by hand, none publishes attestations.
+    "dmgbuild==1.6.7",
+    "ds-store==1.3.3",
+    "mac-alias==2.2.3",
 ]
 
 [build-system]
 requires = ["uv_build>=0.9.28,<0.10.0"]
 build-backend = "uv_build"
+
+[tool.uv]
+# sec-push: the DMG tools install from their hash-pinned wheels only; no sdist of theirs builds.
+no-build-package = ["dmgbuild", "ds-store", "mac-alias"]
 
 [tool.uv.build-backend]
 module-root = ""

@@ -45,6 +45,8 @@ EXCLUDES = [
     "tkinter", "_tkinter", "IPython", "matplotlib",
     # Windows only: elsewhere it raises ImportError, which dateutil.tz catches. It loads user32.
     "dateutil.tz.win",
+    # The DMG tools build the release image from the packaging group; they never ship in the app.
+    "dmgbuild", "ds_store", "mac_alias",
 ]
 if not KOKORO:
     EXCLUDES += ["mlx", "mlx_audio", "misaki", "scipy"]

@@ -318,3 +318,10 @@ def test_spec_leaves_the_engines_out_otherwise(monkeypatch, env):
     assert not set(ENGINE_MODULES) & set(seen["Analysis"]["hiddenimports"])
     assert "tokenizers" not in seen["collect_all"]
     assert "safetensors" not in seen["copy_metadata"]
+
+
+@pytest.mark.parametrize("env", [{"CR_KOKORO": "1", "CR_ENGINES": "1"}, {"CR_KOKORO": "1"}, {}])
+def test_spec_keeps_the_dmg_tools_out_of_the_app(monkeypatch, env):
+    seen = spec(monkeypatch, **env)
+
+    assert {"dmgbuild", "ds_store", "mac_alias"} <= set(seen["Analysis"]["excludes"])
