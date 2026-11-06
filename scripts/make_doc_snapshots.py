@@ -1784,7 +1784,7 @@ def fig_pipeline(dark: bool) -> Svg:
     ]
     n = d.box(QRectF(672, 270, 276, 96), "Normalizer", n_lines)
     r = d.box(
-        QRectF(432, 270, 200, 96), "Respelling to IPA", ["NSB brackets to IPA;", "Kokoro: misaki"]
+        QRectF(432, 270, 200, 96), "Respelling to IPA", ["Bracket guides to IPA;", "Kokoro: misaki"]
     )
     v = d.box(
         QRectF(232, 270, 160, 96),
