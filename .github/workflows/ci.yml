@@ -41,7 +41,8 @@ jobs:
         with:
           persist-credentials: false
 
-      # scripts/ci_guards.py: vendor domain, uv.lock hosts, disk paths, workflow triggers.
+      # scripts/ci_guards.py: vendor domain, uv.lock hosts, npm lock hosts, disk paths,
+      # workflow triggers.
       - name: Repo guards
         run: make guards
 

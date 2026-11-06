@@ -1,8 +1,9 @@
 """Repository guards for CI and `make guards`. Standard library plus git; no venv needed.
 
 Guards: vendor-domain (no tracked file names the vendor's own domain), lock-hosts (uv.lock names
-public hosts only), disk-paths (no machine path in a tracked file), workflow-triggers (no
-workflow uses the privileged pull_request_target trigger).
+public hosts only), npm-lock-hosts (site/package-lock.json resolves from registry.npmjs.org only),
+disk-paths (no machine path in a tracked file), workflow-triggers (no workflow uses the
+privileged pull_request_target trigger).
 
 Usage: python3 scripts/ci_guards.py [--root DIR] [GUARD ...]  (default: every guard)
 Exit 0 when all pass, 1 with one "path:line: [guard] problem" line each, 2 on a usage or git error.
@@ -11,13 +12,15 @@ Exit 0 when all pass, 1 with one "path:line: [guard] problem" line each, 2 on a 
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import subprocess
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urlsplit
 
 
 @dataclass(frozen=True)
@@ -39,6 +42,9 @@ _PUBLIC_HOSTS = frozenset(
     {"https://pypi.org", "https://files.pythonhosted.org", "https://github.com"}
 )
 _HOST = re.compile(r'https?://[^/" ]+')
+_NPM_LOCK = "site/package-lock.json"
+_NPM_REGISTRY = "registry.npmjs.org"
+_RELOCK = "relock with NPM_CONFIG_REGISTRY unset"
 _TRIGGER = re.compile(r"\bpull_request" r"_target\b")
 _YAML_COMMENT = re.compile(r"(^|\s)#.*$")
 # The only disk paths a tracked file may hold: two assertions that a path is absent from output.
@@ -114,6 +120,57 @@ def lock_hosts(root: Path) -> list[Problem]:
     ]
 
 
+def _resolved(node: object) -> Iterator[str]:
+    """Every string stored under a `resolved` key, at any depth of a parsed lock file."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key == "resolved" and isinstance(value, str):
+                yield value
+            else:
+                yield from _resolved(value)
+    elif isinstance(node, list):
+        for item in node:
+            yield from _resolved(item)
+
+
+def _npm_reason(url: str) -> str | None:
+    """Why a `resolved` URL is not a plain https URL on the public registry, or None if it is.
+
+    The text names the scheme and host only: never a credential or a path.
+    """
+    try:
+        parts = urlsplit(url)
+        host, port = parts.hostname, parts.port
+    except ValueError:
+        return f"resolves from an unreadable host, not https://{_NPM_REGISTRY}; {_RELOCK}"
+    if parts.scheme == "https" and host == _NPM_REGISTRY and port in (None, 443):
+        if "@" not in parts.netloc:
+            return None
+        return (
+            f"holds credentials in a resolved URL on https://{_NPM_REGISTRY}; relock without them"
+        )
+    scheme = parts.scheme or "(no scheme)"
+    shown = f"{scheme}://{host}" if host else f"{scheme}:"
+    shown = f"{shown}:{port}" if port else shown
+    return f"resolves from {shown}, not https://{_NPM_REGISTRY}; {_RELOCK}"
+
+
+def npm_lock_hosts(root: Path) -> list[Problem]:
+    """npm reaches the public registry only; any other `resolved` URL in the site lock fails."""
+    try:
+        text = (root / _NPM_LOCK).read_text(encoding="utf-8")
+        data = json.loads(text)
+    except (OSError, ValueError):  # a bad JSON or UTF-8 byte is a ValueError
+        return [Problem(_NPM_LOCK, 1, "is missing or not valid JSON")]
+    lines = text.split("\n")
+    first: dict[str, int] = {}
+    for url in _resolved(data):
+        reason = _npm_reason(url)
+        if reason is not None:
+            first.setdefault(reason, next((n for n, ln in enumerate(lines, 1) if url in ln), 1))
+    return [Problem(_NPM_LOCK, number, reason) for reason, number in first.items()]
+
+
 def disk_paths(root: Path) -> list[Problem]:
     message = "names a disk path of one machine; use a relative path or a placeholder"
     return [
@@ -142,6 +199,7 @@ def workflow_triggers(root: Path) -> list[Problem]:
 GUARDS: dict[str, Callable[[Path], list[Problem]]] = {
     "vendor-domain": vendor_domain,
     "lock-hosts": lock_hosts,
+    "npm-lock-hosts": npm_lock_hosts,
     "disk-paths": disk_paths,
     "workflow-triggers": workflow_triggers,
 }

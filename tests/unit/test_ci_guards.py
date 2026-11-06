@@ -6,6 +6,7 @@ Fixture text that would trip a guard is built from pieces, so this file passes t
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 import subprocess
 import sys
@@ -121,6 +122,127 @@ def test_lock_hosts_fails_when_the_lock_is_missing(guards, make_repo) -> None:
     assert found(guards, "lock-hosts", root) == [("uv.lock", 1)]
 
 
+# --- npm-lock-hosts --------------------------------------------------------------------------
+
+NPM_LOCK = "site/package-lock.json"
+REGISTRY_URL = "https://registry.npmjs.org/astro/-/astro-7.4.7.tgz"
+
+
+def npm_lock(*urls: str) -> str:
+    """A package-lock.json with one package per URL, written the way npm writes it."""
+    packages = {"": {"name": "site"}} | {
+        f"node_modules/p{n}": {"version": "1.0.0", "resolved": url} for n, url in enumerate(urls)
+    }
+    return json.dumps({"lockfileVersion": 3, "packages": packages}, indent=2) + "\n"
+
+
+def line_of(text: str, needle: str) -> int:
+    return next(n for n, line in enumerate(text.split("\n"), start=1) if needle in line)
+
+
+def test_npm_lock_hosts_passes_the_public_registry_only(guards, make_repo) -> None:
+    lock = npm_lock(REGISTRY_URL, "https://registry.npmjs.org:443/b/-/b-1.tgz")
+    assert found(guards, "npm-lock-hosts", make_repo({NPM_LOCK: lock})) == []
+
+
+def test_npm_lock_hosts_reports_each_other_host_once_with_its_first_line(guards, make_repo) -> None:
+    lock = npm_lock(
+        REGISTRY_URL,
+        "https://mirror.example/b/-/b-1.tgz",
+        "https://mirror.example/c/-/c-1.tgz",
+        "http://registry.npmjs.org/d/-/d-1.tgz",
+    )
+    root = make_repo({NPM_LOCK: lock})
+    assert found(guards, "npm-lock-hosts", root) == [
+        (NPM_LOCK, line_of(lock, "mirror.example/b")),
+        (NPM_LOCK, line_of(lock, "http://registry")),
+    ]
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://registry.npmjs.org.mirror.example/a.tgz",
+        "https://mirror.example/registry.npmjs.org/a.tgz",
+        "https://registry.npmjs.org@mirror.example/a.tgz",
+        "https://registry.npmjs.org:8443/a.tgz",
+        "git+ssh://git@github.com/org/a.git#abc",
+        "file:../local",
+        "//registry.npmjs.org/a.tgz",
+        "https://[broken/a.tgz",
+    ],
+    ids=[
+        "longer-host",
+        "in-path",
+        "as-user",
+        "other-port",
+        "git",
+        "file",
+        "no-scheme",
+        "unparsable",
+    ],
+)
+def test_npm_lock_hosts_flags_what_only_looks_like_the_registry(
+    guards, make_repo, url: str
+) -> None:
+    root = make_repo({NPM_LOCK: npm_lock(url)})
+    assert found(guards, "npm-lock-hosts", root) == [(NPM_LOCK, line_of(npm_lock(url), url))]
+
+
+def test_npm_lock_hosts_names_the_host_but_never_a_credential(guards, make_repo) -> None:
+    root = make_repo({NPM_LOCK: npm_lock("https://user:secret@mirror.example/a.tgz")})
+    [problem] = guards.GUARDS["npm-lock-hosts"](root)
+    assert "https://mirror.example" in problem.message
+    assert "secret" not in problem.message
+    assert "user" not in problem.message
+
+
+@pytest.mark.parametrize(
+    "userinfo",
+    ["user:pass@", "TOKEN@", ":pass@", "user:@", "@"],
+    ids=["pair", "token", "no-user", "no-pass", "empty"],
+)
+def test_npm_lock_hosts_flags_credentials_on_the_registry_and_never_echoes_them(
+    guards, make_repo, userinfo: str
+) -> None:
+    lock = npm_lock(REGISTRY_URL, f"https://{userinfo}registry.npmjs.org/a/-/a-1.tgz")
+    [problem] = guards.GUARDS["npm-lock-hosts"](make_repo({NPM_LOCK: lock}))
+    assert problem.line == line_of(lock, "a-1.tgz")
+    assert "credentials" in problem.message
+    for secret in ("user", "pass", "TOKEN"):
+        assert secret not in problem.message
+
+
+def test_npm_lock_hosts_reads_the_nested_dependencies_of_an_old_lock(guards, make_repo) -> None:
+    inner = {"resolved": REGISTRY_URL}
+    outer = {"resolved": "https://mirror.example/a.tgz", "dependencies": {"b": inner}}
+    old = json.dumps({"lockfileVersion": 1, "dependencies": {"a": outer}}, indent=2)
+    root = make_repo({NPM_LOCK: old})
+    assert found(guards, "npm-lock-hosts", root) == [(NPM_LOCK, line_of(old, "mirror.example"))]
+
+
+def test_npm_lock_hosts_looks_inside_lists(guards, make_repo) -> None:
+    lock = json.dumps(
+        {"os": ["darwin"], "extra": [{"resolved": "https://mirror.example/a.tgz"}]}, indent=2
+    )
+    root = make_repo({NPM_LOCK: lock})
+    assert found(guards, "npm-lock-hosts", root) == [(NPM_LOCK, line_of(lock, "mirror.example"))]
+
+
+def test_npm_lock_hosts_skips_entries_that_resolve_nothing(guards, make_repo) -> None:
+    packages = {"": {"name": "site"}, "node_modules/x": {"link": True}, "node_modules/y": {}}
+    lock = json.dumps({"lockfileVersion": 3, "packages": packages, "resolved": 5})
+    assert found(guards, "npm-lock-hosts", make_repo({NPM_LOCK: lock})) == []
+
+
+@pytest.mark.parametrize("content", [None, "", "not json", '{"packages": '])
+def test_npm_lock_hosts_fails_when_the_lock_is_missing_or_unreadable(
+    guards, make_repo, content: str | None
+) -> None:
+    files = {"README.md": "x\n"} | ({NPM_LOCK: content} if content is not None else {})
+    assert found(guards, "npm-lock-hosts", make_repo(files)) == [(NPM_LOCK, 1)]
+
+
 # --- disk-paths ------------------------------------------------------------------------------
 
 
@@ -196,7 +318,7 @@ def test_annotation_escapes_what_could_inject_a_workflow_command(guards) -> None
 
 
 def test_main_passes_a_clean_repo_and_runs_every_guard(guards, make_repo, capsys) -> None:
-    root = make_repo({"uv.lock": GOOD_LOCK})
+    root = make_repo({"uv.lock": GOOD_LOCK, NPM_LOCK: npm_lock(REGISTRY_URL)})
     assert guards.main(["--root", str(root)]) == 0
     out = capsys.readouterr().out
     for name in guards.GUARDS:
@@ -204,12 +326,14 @@ def test_main_passes_a_clean_repo_and_runs_every_guard(guards, make_repo, capsys
 
 
 def test_main_fails_with_one_line_per_problem_and_keeps_going(guards, make_repo, capsys) -> None:
-    root = make_repo({"uv.lock": GOOD_LOCK, "a.md": VENDOR, "b.md": f"{VOLUMES}x"})
+    files = {"uv.lock": GOOD_LOCK, NPM_LOCK: npm_lock(REGISTRY_URL), "a.md": VENDOR}
+    root = make_repo(files | {"b.md": f"{VOLUMES}x"})
     assert guards.main(["--root", str(root)]) == 1
     out = capsys.readouterr().out
     assert "a.md:1: [vendor-domain]" in out
     assert "b.md:1: [disk-paths]" in out
     assert "ok    lock-hosts" in out
+    assert "ok    npm-lock-hosts" in out
     assert VENDOR not in out
 
 
