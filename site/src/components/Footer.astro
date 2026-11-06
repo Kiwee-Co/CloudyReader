@@ -1,11 +1,29 @@
 ---
-// Starlight's footer (edit link, previous and next), then the independence note and the licence.
+// Starlight's footer (edit link, previous and next), then the manual's own: the trust and help
+// links, the app version the manual describes, and the independence note.
 import Default from '@astrojs/starlight/components/Footer.astro';
+
+// Change the version only after the manual is checked against that release.
+const version = '0.0.1';
+const links = [
+	{ href: '/about/privacy/', label: 'Privacy' },
+	{ href: '/about/licenses/', label: 'Licenses and credits' },
+	{ href: '/about/project/', label: 'About the project' },
+	{ href: '/manual/get-help/', label: 'Get help' },
+];
 ---
 
 <Default><slot /></Default>
-<p class="cr-site-note">
-	Cloudy Reader is an independent project. It is not affiliated with, endorsed by, or sponsored by
-	the U.S. Department of Energy or the National Science Bowl. The source code is licensed under
-	<a href="https://github.com/Kiwee-Co/CloudyReader/blob/main/LICENSE">Apache-2.0</a>.
-</p>
+<div class="cr-site-footer">
+	<nav aria-label="About and help">
+		<ul>
+			{links.map(({ href, label }) => <li><a {href}>{label}</a></li>)}
+		</ul>
+	</nav>
+	<p>This manual describes Cloudy Reader {version}.</p>
+	<p>
+		Cloudy Reader is an independent project. It is not affiliated with, endorsed by, or sponsored
+		by the U.S. Department of Energy or the National Science Bowl. The source code is licensed
+		under <a href="https://github.com/Kiwee-Co/CloudyReader/blob/main/LICENSE">Apache-2.0</a>.
+	</p>
+</div>

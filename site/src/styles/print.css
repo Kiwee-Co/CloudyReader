@@ -1,0 +1,95 @@
+/* Print. Starlight's own print sheet already hides the navigation, search, and theme menu and
+   switches to light colors. This sheet adds what the manual needs on paper: the light figure
+   whatever the theme, nothing split across pages that should stay whole, the target of each
+   external link, and the cheat sheets (P17, P18, P20, P23) on one page each. */
+
+@page {
+	margin: 12mm 14mm;
+}
+
+@media print {
+	:root,
+	:root[data-theme] {
+		--cr-print-cheatsheet-text: 10pt;
+		--cr-print-cheatsheet-h1: 18pt;
+		--cr-print-cheatsheet-h2: 12.5pt;
+		/* custom.css sets the accent outside Starlight's layers, so it would beat Starlight's
+		   print colors: map print to the light theme's accent. */
+		--sl-color-accent-low: var(--cr-lavender-pale);
+		--sl-color-accent: var(--cr-violet);
+		--sl-color-accent-high: var(--cr-blue-deep);
+	}
+
+	/* The light rendering of every figure. */
+	:root[data-theme] .cr-figure__img--light {
+		display: block;
+	}
+	:root[data-theme] .cr-figure__img--dark {
+		display: none;
+	}
+
+	/* Keep tables, table rows, figures, steps, and asides whole on a page. A table taller than a
+	   page still breaks between rows. */
+	.sl-markdown-content :is(table, tr, figure, .starlight-aside, .sl-steps > li) {
+		break-inside: avoid;
+	}
+	.sl-markdown-content .sl-heading-wrapper {
+		break-after: avoid;
+	}
+
+	/* Starlight draws a table as a scrolling block. On paper it is a real table again, so it
+	   wraps to the page width and repeats its header row on each page. */
+	.sl-markdown-content table:not(:where(.not-content *)) {
+		display: table;
+		width: 100%;
+		overflow: visible;
+	}
+	.sl-markdown-content thead {
+		display: table-header-group;
+	}
+
+	/* The target of an external link, after the link text. */
+	.sl-markdown-content
+		a[href^='http']:not(:where(.not-content *, .sl-link-button, .sl-link-card *))::after {
+		content: ' (' attr(href) ')';
+		overflow-wrap: anywhere;
+	}
+
+	/* The footer prints the manual's version and the independence note, not its links. */
+	.cr-site-footer nav {
+		display: none;
+	}
+
+	/* Cheat sheets: smaller text and tighter spacing, so each prints on one page. */
+	body:has(.cr-cheatsheet) h1 {
+		font-size: var(--cr-print-cheatsheet-h1);
+	}
+	.sl-markdown-content .cr-cheatsheet :is(p, li, th, td) {
+		font-size: var(--cr-print-cheatsheet-text);
+		line-height: 1.35;
+	}
+	.sl-markdown-content .cr-cheatsheet h2 {
+		font-size: var(--cr-print-cheatsheet-h2);
+	}
+	.sl-markdown-content .cr-cheatsheet > * + * {
+		margin-top: 0.5rem;
+	}
+	.sl-markdown-content .cr-cheatsheet > .sl-heading-wrapper:not(:first-child) {
+		margin-top: 1rem;
+	}
+	.sl-markdown-content .cr-cheatsheet :is(th, td) {
+		padding-block: 0.2rem;
+	}
+
+	/* Two columns (P20), with each table whole in one column. */
+	.cr-cheatsheet--2col {
+		column-count: 2;
+		column-gap: 1.5rem;
+	}
+	.cr-cheatsheet--2col > :first-child {
+		margin-top: 0;
+	}
+	.cr-cheatsheet--2col p:has(+ table) {
+		break-after: avoid;
+	}
+}
