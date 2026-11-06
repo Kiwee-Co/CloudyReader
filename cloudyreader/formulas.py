@@ -225,6 +225,10 @@ def _function_pattern() -> re.Pattern[str]:
     )
 
 
+# "log3 10" is a flattened subscript, read the way moderators do: "log base 3 of 10".
+_LOG_BASE = re.compile(r"(?<![A-Za-z])[Ll]og(?P<base>\d{1,3})\s*(?=\(|\d|[A-Za-z](?![\w']))")
+
+
 def _speak_function(m: re.Match[str]) -> str:
     text, start, end = m.string, m.start(), m.end()
     lead = " " if start and text[start - 1].isalnum() else ""  # "40sin" is 40 sine
@@ -446,6 +450,7 @@ def _speak_reaction_symbols(text: str) -> str:
 def speak_formulas(text: str) -> str:
     """Formulas, ions, acronyms, scientific notation, exponents and ratios to words."""
     text = _speak_hydrate_dots(prepare_text(text))
+    text = _LOG_BASE.sub(lambda m: f"log base {m['base']} of ", text)
     text = _function_pattern().sub(_speak_function, text)
     text = re.sub(r"(?<=\])\s*(?=\[[A-Z])", " times ", text)  # [N2][H2] -> [N2] times [H2]
     text = _SPECIES_BRACKET.sub(_unwrap_species, text)

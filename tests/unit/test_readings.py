@@ -186,6 +186,13 @@ def test_angle_brackets_inside_a_say_as_guide_stay_intact():
         ("det A", "determinant A"),
         ("lim x", "limit x"),
         ("max(a, b)", "max(a, b)"),
+        # A base glued to "log" is a flattened subscript: "log3 10" is log base 3 of 10.
+        ("log3 10", "log base 3 of 10"),
+        ("log25 5", "log base 25 of 5"),
+        ("log3 (200)", "log base 3 of (200)"),
+        ("log2(8)", "log base 2 of (8)"),
+        ("log10 x", "log base 10 of x"),
+        ("log 2", "log 2"),
         ("sin1 = cos 2", "sine 1 equals cosine 2"),
         # A digit glued on is the argument, as in the double angle "sin2θ".
         ("sin2θ", "sine 2 theta"),
