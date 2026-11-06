@@ -270,7 +270,8 @@ class ElidedLabel(QLabel):
         rect = self.contentsRect()
         text = self.fontMetrics().elidedText(self.text(), Qt.TextElideMode.ElideRight, rect.width())
         role = QPalette.ColorRole.WindowText
-        self.style().drawItemText(painter, rect, _LEFT_CENTER, self.palette(), True, text, role)
+        align = self.alignment()  # set it right-aligned, and the text stays beside what follows
+        self.style().drawItemText(painter, rect, align, self.palette(), True, text, role)
 
     def event(self, event: QEvent) -> bool:
         if event.type() == QEvent.Type.ToolTip and isinstance(event, QHelpEvent):

@@ -439,6 +439,10 @@ class MainWindow(QMainWindow):
         # before the message does: the label elides first. Added before the busy bar.
         self.prefetch_label = ElidedLabel()
         self.prefetch_label.setFont(tabular(text_style(tokens.TEXT_CALLOUT_PT)))  # as the message
+        # Right-aligned, it reads with its bar, CONTROL_SPACING away, however wide the cluster gets.
+        self.prefetch_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
         self.prefetch_bar = QProgressBar()
         self.prefetch_bar.setRange(0, 100)  # percent of the group, else of the whole run
         self.prefetch_bar.setTextVisible(False)

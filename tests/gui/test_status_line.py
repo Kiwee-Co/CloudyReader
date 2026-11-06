@@ -32,7 +32,7 @@ def engine_report() -> PrefetchProgress:
     )
 
 
-def engine_download(qtbot, make_window, request, *, hint: str | None = None):
+def engine_download(qtbot, make_window, request, *, hint: str | None = None, **knobs):
     """A window downloading an engine; with hint, a reading is held in preparation too."""
     gate, prepare = threading.Event(), threading.Event()
     request.addfinalizer(gate.set)
@@ -43,6 +43,7 @@ def engine_download(qtbot, make_window, request, *, hint: str | None = None):
         prefetch_result=PrefetchResult("nothing"),
         gate=prepare,
         load_hint=hint,
+        **knobs,
     )
     window = make_window(service=service)
     qtbot.waitUntil(window.prefetch_label.isVisible, timeout=5000)
@@ -187,6 +188,45 @@ def test_a_label_with_room_keeps_its_plain_tooltip(qtbot):
 
     assert not label.is_elided()
     assert label.minimumSizeHint().width() == 0  # it never holds the window wider
+
+
+@pytest.mark.parametrize("width", [tokens.WINDOW_DEFAULT_SIZE[0], tokens.WINDOW_MIN_SIZE[0]])
+@pytest.mark.parametrize(
+    ("voices", "message"), [(None, ""), ([], "No voice is installed.")], ids=["idle", "no voice"]
+)
+def test_the_download_label_text_sits_8_pt_left_of_its_bar(
+    qtbot, make_window, request, width, voices, message
+):
+    check_label_beside_bar(qtbot, make_window, request, width, voices, message)
+
+
+@pytest.mark.parametrize("width", [tokens.WINDOW_DEFAULT_SIZE[0], tokens.WINDOW_MIN_SIZE[0]])
+def test_in_the_macos_style_the_label_stays_beside_its_bar_too(
+    mac_style, qtbot, make_window, request, width
+):
+    check_label_beside_bar(qtbot, make_window, request, width, [], "No voice is installed.")
+
+
+def check_label_beside_bar(qtbot, make_window, request, width, voices, message) -> None:
+    knobs = {} if voices is None else {"voices": voices}
+    window = engine_download(qtbot, make_window, request, **knobs)
+    resize(qtbot, window, width)
+    label, bar = window.prefetch_label, window.prefetch_bar
+    shown = label.fontMetrics().elidedText(label.text(), ELIDE_RIGHT, label.contentsRect().width())
+    drawn = label.style().itemTextRect(
+        label.fontMetrics(), label.contentsRect(), label.alignment(), True, shown
+    )
+
+    assert window.statusBar().currentMessage() == message
+    text_right = label.mapTo(bar.parentWidget(), drawn.topRight()).x() + 1  # right() is inclusive
+    assert bar.geometry().left() - text_right == tokens.CONTROL_SPACING
+    image = label.grab().toImage()  # the painted ink ends at the label's right edge too
+    ink = [
+        x
+        for x in range(image.width())
+        if any(image.pixelColor(x, y).lightness() < 128 for y in range(image.height()))
+    ]
+    assert image.width() - 1 - max(ink) <= 2  # a glyph's side bearing at most
 
 
 def test_counting_digits_are_tabular(window):
