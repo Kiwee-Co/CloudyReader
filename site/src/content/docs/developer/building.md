@@ -49,7 +49,7 @@ A target that you name on the command line, such as `make deps`, always runs aga
 - The Java runtime and the jar for OPSIN, the bundled espeak-ng, and `afplay`.
 - The model files, the voice files, and, on Apple silicon, the Kokoro files and package.
 
-Every model and voice download goes through `scripts/fetch_assets.py`, which reads `assets.lock.json`. It saves each file in a fresh temporary folder and checks the size and the SHA-256 value. Only then does it move the file into place.
+Every download that a `make` target starts goes through `scripts/fetch_assets.py`, which reads `assets.lock.json`. It saves each file in a fresh temporary folder and checks the size and the SHA-256 value. Only then does it move the file into place.
 
 ## Make targets
 
@@ -155,7 +155,9 @@ SELFTEST_TIMEOUT=600 make app
 
 ## Work offline
 
-`run`, `test`, `test-fast`, `check`, and `fmt` never use the network. They call `uv run --frozen --offline`.
+`test`, `test-fast`, `check`, and `fmt` never use the network. They call `uv run --frozen --offline`.
+
+`make run` calls the same command, so `uv` stays off the network. The app that it starts can still do name lookups and download missing voices. Turn on the offline mode of the app with the option `--offline` or the variable `CLOUDYREADER_OFFLINE=1`. [Command line](/manual/reference/command-line/) describes both.
 
 For `setup`, `deps`, `models`, `voices`, `kokoro`, and `lock`, add `OFFLINE=1`. Then uv uses only its cache in `.cache/uv`. The fetcher accepts only files that are already in `.data`. Warm the cache once with the network on.
 
@@ -235,7 +237,7 @@ make app
 6. **Voice audit.** With `BUNDLE_VOICES=0`, the build fails when the bundle holds a voice or model file. Piper's own `piper/hebrew/nakdimon.onnx` and `piper/tashkeel/model.onnx` are allowed.
 7. **Ad-hoc signing.** It runs `codesign --force --deep -s -`. This uses no Developer ID and skips notarization.
 8. **Install.** It moves a previous `dist/Cloudy Reader.app` into `build/trash.*`. It deletes nothing. Then it moves the app into `dist/` and runs `codesign --verify --deep --strict`.
-9. **Self-test.** It runs the bundle with `--self-test`, offline and headless, twice on one data folder. With `BUNDLE_VOICES=0`, it links the host's voices and Kokoro model into that folder first. It then runs a third time on an empty folder. That run must exit 2 with `FAIL: no Piper voice installed` and no traceback.
+9. **Self-test.** It runs the bundle with `--self-test`, offline and headless, twice on one data folder. A lean build (`BUNDLE_VOICES=0`) adds two steps. First, it links the host's voices and Kokoro model folder, if the host has one, into that folder. Then it runs a third time on an empty folder. The third run must exit 2 with `FAIL: no Piper voice installed` and no traceback.
 10. **Summary.** It prints the size, the voices, the Kokoro state, and the ten largest components.
 
 Each self-test run has a time limit of `SELFTEST_TIMEOUT` seconds. Logs go to `build/selftest-1.log` and `build/selftest-2.log`. With `BUNDLE_VOICES=0`, the third run logs to `build/selftest-no-voice.log`. `make clean-app` frees `build/` and the app in `dist/`.
