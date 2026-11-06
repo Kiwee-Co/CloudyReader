@@ -52,7 +52,7 @@ from cloudyreader.engine_catalog import TITLES, is_actionable
 from cloudyreader.gui import tokens
 from cloudyreader.gui.names import APP_NAME, app_version
 from cloudyreader.gui.voice_picker import LOADING, VoicePicker
-from cloudyreader.gui.widgets import DisclosureButton, StatusBar, Tone, text_style
+from cloudyreader.gui.widgets import DisclosureButton, FocusRing, StatusBar, Tone, text_style
 from cloudyreader.models import AudioPlayer, ReaderService, Reading, RenderOptions, VoiceInfo
 from cloudyreader.rotation import RotationMode, VoiceRotator
 from cloudyreader.voice_meta import profile_of
@@ -225,9 +225,9 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self._status)
         self._build_actions()
         self._build_ui()
-        self._apply_text_colors()
-        # The system switches light and dark at runtime; the placeholder tokens follow it.
-        QGuiApplication.styleHints().colorSchemeChanged.connect(self._apply_text_colors)
+        self._apply_appearance()
+        # The system switches light and dark at runtime; the custom-painted parts follow it.
+        QGuiApplication.styleHints().colorSchemeChanged.connect(self._apply_appearance)
         self._restore_settings()
         self._load_voices()
         self._refresh_controls()
@@ -399,6 +399,10 @@ class MainWindow(QMainWindow):
         central = QWidget()
         central.setLayout(layout)
         self.setCentralWidget(central)
+        # The two text views get the two-tone ring; native controls keep the system's own ring.
+        self._focus_ring = FocusRing(central)
+        for view in (self.question_edit, self.script_view):
+            self._focus_ring.track(view, view)
 
         # Voice downloads report in permanent widgets, so the message slot stays free for
         # "Preparing…" and "Playing…". Added before the busy bar, which stays rightmost.
@@ -449,8 +453,12 @@ class MainWindow(QMainWindow):
         button.clicked.connect(action.trigger)
         return button
 
-    def _apply_text_colors(self, scheme: Qt.ColorScheme | None = None) -> None:
-        """Give placeholders the AA token of the current appearance; other colors stay native."""
+    def _apply_appearance(self, scheme: Qt.ColorScheme | None = None) -> None:
+        """Give the custom-painted parts the tokens of the current appearance.
+
+        Placeholders get their AA token and the focus ring its inner stroke; every other color
+        stays native.
+        """
         if scheme is None:
             scheme = QGuiApplication.styleHints().colorScheme()
         if scheme == Qt.ColorScheme.Unknown:  # no word from the platform: judge the background
@@ -464,6 +472,7 @@ class MainWindow(QMainWindow):
         )
         for view in (self.question_edit, self.script_view):
             view.setPalette(palette)
+        self._focus_ring.set_dark(dark)
 
     def _restore_settings(self) -> None:
         saved = self._settings

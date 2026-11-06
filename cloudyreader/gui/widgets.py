@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import enum
 
-from PySide6.QtCore import QRect, QSize, Qt
-from PySide6.QtGui import QFont, QPainter, QPaintEvent, QPalette
+from PySide6.QtCore import QEvent, QObject, QPoint, QRect, QRectF, QSize, Qt
+from PySide6.QtGui import QColor, QFont, QPainter, QPaintEvent, QPalette, QPen
 from PySide6.QtWidgets import (
     QApplication,
     QStatusBar,
@@ -20,6 +20,8 @@ from PySide6.QtWidgets import (
 from cloudyreader.gui import tokens
 
 _LEFT_CENTER = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+_FOLLOW = {QEvent.Type.FocusIn, QEvent.Type.FocusOut, QEvent.Type.Move, QEvent.Type.Resize}
+_FOLLOW |= {QEvent.Type.Show, QEvent.Type.Hide}
 
 
 def text_style(points: int) -> QFont:
@@ -96,6 +98,77 @@ class DisclosureButton(QToolButton):
             focus = QStyleOptionFocusRect()
             focus.initFrom(self)
             painter.drawPrimitive(QStyle.PrimitiveElement.PE_FrameFocusRect, focus)
+
+
+class FocusRing(QWidget):
+    """A two-tone focus ring around a custom surface: a contrast stroke, then the accent.
+
+    The system accent alone is 2.52:1 on a dark window, under the 3:1 a focus indicator needs, so
+    the inner stroke carries the contrast. Native controls keep the native ring: this one rings
+    only the surfaces track() names, drawn outside their edge, above their siblings.
+    """
+
+    def __init__(self, parent: QWidget) -> None:
+        super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._frames: dict[QWidget, tuple[QWidget, int]] = {}  # focus widget: frame, radius
+        self._radius = 0
+        self._inner = QColor(tokens.FOCUS_INNER_LIGHT)
+        self.hide()
+
+    @property
+    def inner_color(self) -> QColor:
+        return QColor(self._inner)
+
+    def track(self, focus: QWidget, frame: QWidget, radius: int = 0) -> None:
+        """Ring frame, whose corners have radius, while focus has the keyboard focus."""
+        focus.setAttribute(Qt.WidgetAttribute.WA_MacShowFocusRect, False)  # one ring, not two
+        for watched in (focus, frame):
+            watched.installEventFilter(self)
+        self._frames[focus] = (frame, radius)
+        self._follow()
+
+    def set_dark(self, dark: bool) -> None:
+        self._inner = QColor(tokens.FOCUS_INNER_DARK if dark else tokens.FOCUS_INNER_LIGHT)
+        self.update()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() in _FOLLOW:
+            self._follow()
+        return False
+
+    def _follow(self) -> None:
+        focused = next((f for f in self._frames if f.hasFocus()), None)
+        frame, self._radius = self._frames[focused] if focused is not None else (None, 0)
+        parent = self.parentWidget()
+        if frame is None or parent is None or not frame.isVisible():
+            self.hide()
+            return
+        reach = tokens.FOCUS_RADIUS_EXTRA  # both strokes, outside the frame's edge
+        corner = frame.mapTo(parent, QPoint(0, 0))
+        self.setGeometry(QRect(corner, frame.size()).adjusted(-reach, -reach, reach, reach))
+        self.raise_()
+        self.show()
+        self.update()
+
+    def paintEvent(self, _event: QPaintEvent) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        inner, outer, reach = (
+            tokens.FOCUS_INNER_WIDTH,
+            tokens.FOCUS_OUTER_WIDTH,
+            tokens.FOCUS_RADIUS_EXTRA,
+        )
+        edge = QRectF(self.rect()).adjusted(reach, reach, -reach, -reach)
+        accent = self.palette().color(QPalette.ColorRole.Accent)  # follows the system accent
+        # Each stroke by its center line's distance past the frame's edge; radii grow with it.
+        strokes = ((self._inner, inner, inner / 2), (accent, outer, inner + outer / 2))
+        for color, width, middle in strokes:
+            painter.setPen(QPen(color, width))
+            radius = self._radius + middle
+            painter.drawRoundedRect(edge.adjusted(-middle, -middle, middle, middle), radius, radius)
 
 
 class StatusBar(QStatusBar):
