@@ -131,7 +131,7 @@ The source of Cloudy Reader is licensed under Apache-2.0. The built `.app` also 
 
 Several of them are GPL components. They include `piper-tts` (GPL-3.0-or-later) and the `jdk4py` Java runtime (GPL v2). A build with Kokoro adds `phonemizer-fork` (GPLv3 or later). Distributing the `.app` is subject to those licenses. Read each project's license before you redistribute the `.app`.
 
-The license names below come from the package metadata of the versions that `pyproject.toml` and `uv.lock` pin. This table is not legal advice.
+The license names below come from the package metadata of the versions that `pyproject.toml` and `uv.lock` pin, except the row for the letter recordings, which names the licenses of the models that made them. This table is not legal advice.
 
 | Component | Role in Cloudy Reader | License |
 | --- | --- | --- |
@@ -139,6 +139,7 @@ The license names below come from the package metadata of the versions that `pyp
 | [phonemizer-fork](https://pypi.org/project/phonemizer-fork/) 3.3.2 | Phonemization for Kokoro (Kokoro extra) | GPLv3 or later (package classifier) |
 | [Piper voices](https://huggingface.co/rhasspy/piper-voices) | The 5 pinned voices, downloaded or bundled | Set per voice; read each model card |
 | [Kokoro-82M](https://huggingface.co/mlx-community/Kokoro-82M-bf16) (MLX conversion) | Kokoro model and 28 voices | Set by the model card |
+| The 12 letter recordings (W, X, Y, and Z for Ryan, Aiden, and the Chatterbox Turbo voice; about 0.4 MB) | Said instead of the model for a lone choice letter | Generated with Qwen3-TTS (Apache-2.0) and Chatterbox Turbo (MIT upstream; the pinned MLX card says Apache-2.0). Neither license limits the output audio. |
 | [MLX](https://github.com/ml-explore/mlx) 0.32.4 and [mlx-audio](https://github.com/Blaizzy/mlx-audio) 0.6.3 | Run Kokoro on Apple Silicon | MIT |
 | misaki 0.9.4 | Phoneme markup for Kokoro | Apache License 2.0 |
 | [spaCy](https://spacy.io) 3.7.5 | Runtime for the NER model | MIT |
