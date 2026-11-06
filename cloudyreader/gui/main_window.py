@@ -504,7 +504,8 @@ class MainWindow(QMainWindow):
         if scheme is None:
             scheme = QGuiApplication.styleHints().colorScheme()
         if scheme == Qt.ColorScheme.Unknown:  # no word from the platform: judge the background
-            base = self.question_edit.palette().color(QPalette.ColorRole.Base)
+            # The application's: a child's palette can update after this window hears of it.
+            base = QGuiApplication.palette().color(QPalette.ColorRole.Base)
             scheme = Qt.ColorScheme.Dark if base.lightness() < 128 else Qt.ColorScheme.Light
         dark = scheme == Qt.ColorScheme.Dark
         question = QPalette()  # sets no role yet, so every other role keeps following the system
@@ -1012,6 +1013,13 @@ class MainWindow(QMainWindow):
         if event.type() == QEvent.Type.StatusTip:
             return True
         return super().event(event)
+
+    def changeEvent(self, event: QEvent) -> None:
+        # A palette from the system, with or without a new color scheme (an accent or contrast
+        # change, say): the custom-painted parts follow it as they follow colorSchemeChanged.
+        if event.type() == QEvent.Type.PaletteChange:
+            self._apply_appearance()
+        super().changeEvent(event)
 
     def _silence(self) -> None:
         """Stop playback. Idempotent: it runs when the window closes and again at aboutToQuit."""

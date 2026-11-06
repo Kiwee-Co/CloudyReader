@@ -325,12 +325,12 @@ def test_an_unknown_scheme_picks_the_token_from_the_text_background(qapp, window
 def test_the_placeholder_override_leaves_every_other_color_to_the_system(qapp, window):
     original = qapp.palette()
     tinted = QPalette(original)
-    tinted.setColor(QPalette.ColorRole.Base, QColor("#123456"))
+    tinted.setColor(QPalette.ColorRole.Base, QColor("#fffbe6"))
     try:
         qapp.setPalette(tinted)
         qapp.processEvents()
 
-        assert window.question_edit.palette().color(QPalette.ColorRole.Base).name() == "#123456"
+        assert window.question_edit.palette().color(QPalette.ColorRole.Base).name() == "#fffbe6"
         assert placeholder(window.question_edit) == QColor(tokens.PLACEHOLDER_LIGHT).name()
     finally:
         qapp.setPalette(original)
