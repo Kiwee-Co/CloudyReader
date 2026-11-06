@@ -187,6 +187,51 @@ def _speak_ten_power(m: re.Match[str]) -> str:
     return f"ten {_power('-', m['exp'])}"
 
 
+# Function names are read as words, never spelled: "sin^2θ" is "sine squared theta". Only before
+# an argument ("(", "^", a number, one letter or a Greek letter): "a tan coat" stays prose.
+_FUNCTIONS = {
+    "sin": "sine",
+    "cos": "cosine",
+    "tan": "tangent",
+    "sec": "secant",
+    "csc": "cosecant",
+    "cot": "cotangent",
+    "sinh": "hyperbolic sine",
+    "cosh": "hyperbolic cosine",
+    "tanh": "hyperbolic tangent",
+    "arcsin": "arcsine",
+    "arccos": "arccosine",
+    "arctan": "arctangent",
+    "log": "log",
+    "ln": "natural log",
+    "exp": "exponential",
+    "det": "determinant",
+    "lim": "limit",
+    "max": "max",
+    "min": "min",
+}
+
+
+@cache
+def _function_pattern() -> re.Pattern[str]:
+    greek = {s.spoken for s in default_tables().symbols.values() if s.kind == "greek"}
+    names = "|".join(
+        n for name in sorted(_FUNCTIONS, key=len, reverse=True) for n in (name, name.capitalize())
+    )
+    letters = "|".join(re.escape(g) for g in sorted(greek, key=len, reverse=True))
+    return re.compile(
+        rf"(?<![A-Za-z])(?P<name>{names})"
+        rf"(?=\^|\s*\(|\s?\d|\s+(?:[A-Za-z](?![\w'])|(?:{letters})\b))"
+    )
+
+
+def _speak_function(m: re.Match[str]) -> str:
+    text, start, end = m.string, m.start(), m.end()
+    lead = " " if start and text[start - 1].isalnum() else ""  # "40sin" is 40 sine
+    trail = " " if end < len(text) and text[end].isalnum() else ""  # "sin2θ" is sine 2 theta
+    return f"{lead}{_FUNCTIONS[m['name'].lower()]}{trail}"
+
+
 _EXPONENT = re.compile(
     r"(?P<base>[A-Za-z0-9)]+)\^(?P<sign>[-−]?)(?P<exp>\d+|[A-Za-z](?![A-Za-z0-9]))"
 )
@@ -207,10 +252,11 @@ def _speak_exponent(m: re.Match[str]) -> str:
     base, sign, exp = m["base"], m["sign"], m["exp"]
     if base.isdigit():
         base = cardinal(int(base))
-    elif re.fullmatch(r"[a-z]{2,3}", base) and base not in _NUMBER_WORDS:
+    elif re.fullmatch(r"[a-z]{2,3}", base) and base not in _NUMBER_WORDS | _FUNCTIONS.keys():
         base = " ".join(base)  # "ax" would be read as a word
     power = _power(sign, exp) if exp.isdigit() else f"to the {'minus ' if sign else ''}{exp}"
-    return f"{base} {power}"
+    gap = " " if m.string[m.end() : m.end() + 1].isalpha() else ""  # "x^2y" is x squared y
+    return f"{base} {power}{gap}"
 
 
 # PDF text flattens "x squared" to "x2". A lowercase variable and a digit 2-9 is a power; capitals
@@ -400,6 +446,7 @@ def _speak_reaction_symbols(text: str) -> str:
 def speak_formulas(text: str) -> str:
     """Formulas, ions, acronyms, scientific notation, exponents and ratios to words."""
     text = _speak_hydrate_dots(prepare_text(text))
+    text = _function_pattern().sub(_speak_function, text)
     text = re.sub(r"(?<=\])\s*(?=\[[A-Z])", " times ", text)  # [N2][H2] -> [N2] times [H2]
     text = _SPECIES_BRACKET.sub(_unwrap_species, text)
     text = _SCIENTIFIC.sub(_speak_scientific, text)

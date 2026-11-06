@@ -144,3 +144,64 @@ def test_arrows_and_markup_keep_their_reading(raw, today):
 def test_angle_brackets_inside_a_say_as_guide_stay_intact():
     guide = Respelling("ATP", "A <em>T</em> P", "spoken")
     assert spoken("Name ATP now.", (guide,)) == "Name A <em>T</em> P now."
+
+
+# --- function names ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("raw", "words"),
+    [
+        ("sin^2θ", "sine squared theta"),
+        ("cos^2 x", "cosine squared x"),
+        ("tan^2(x)", "tangent squared(x)"),
+        ("sec^2θ", "secant squared theta"),
+        ("csc^2θ", "cosecant squared theta"),
+        ("cot^2θ", "cotangent squared theta"),
+        ("sinh^2x", "hyperbolic sine squared x"),
+        ("log^2 x", "log squared x"),
+        ("ln^2 x", "natural log squared x"),
+        ("sin θ", "sine theta"),
+        ("sinθ", "sine theta"),
+        ("Sin θ", "sine theta"),
+        ("sin(x)", "sine(x)"),
+        ("sin 30°", "sine 30 degrees"),
+        ("40sin(30°)", "40 sine(30 degrees)"),
+        ("5 tan 41", "5 tangent 41"),
+        ("cscθ", "cosecant theta"),
+        ("cosh x", "hyperbolic cosine x"),
+        ("tanh(x)", "hyperbolic tangent(x)"),
+        ("arcsin x", "arcsine x"),
+        ("arccos(0.5)", "arccosine(0.5)"),
+        ("arctan(1)", "arctangent(1)"),
+        ("ln 2", "natural log 2"),
+        ("exp(x)", "exponential(x)"),
+        ("det A", "determinant A"),
+        ("lim x", "limit x"),
+        ("max(a, b)", "max(a, b)"),
+        ("sin1 = cos 2", "sine 1 equals cosine 2"),
+        # A digit glued on is the argument, as in the double angle "sin2θ".
+        ("sin2θ", "sine 2 theta"),
+        # A letter glued after a power is its own word.
+        ("x^2y", "x squared y"),
+    ],
+)
+def test_a_function_name_is_read_as_a_word(raw, words):
+    assert spoken(raw) == words
+
+
+@pytest.mark.parametrize(
+    ("raw", "today"),
+    [
+        # The same letters as a word, a unit or part of a respelling stay as they are.
+        ("a tan coat", "a tan coat"),
+        ("the sin of pride", "the sin of pride"),
+        ("a log cabin", "a log cabin"),
+        ("sins and costs", "sins and costs"),
+        ("(OX-ee-TOE-sin)", "(OX-ee-TOE-sin)"),
+        ("30 sec", "30 seconds"),
+        ("sinx", "sinx"),
+    ],
+)
+def test_the_same_letters_outside_a_function_stay(raw, today):
+    assert spoken(raw) == today
