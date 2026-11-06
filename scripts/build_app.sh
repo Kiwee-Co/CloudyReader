@@ -15,7 +15,8 @@
 #
 # BUNDLE_VOICES=0 builds the lean bundle of a release: no voice and no Kokoro model inside (the app
 # downloads them at first launch), only assets.lock.json; an audit then proves it.
-# `build_app.sh release VERSION` (make release) zips the dist bundle and checks the zip itself.
+# `build_app.sh release VERSION` (make release) zips the dist bundle, makes its DMG, checks both.
+# `build_app.sh figures VERSION FILE` writes the sizes and SHA-256s a publish step reads.
 #
 # Env inputs: APP_NAME, ICON, KOKORO=auto|0|1, ENGINES=auto|0|1, BUNDLE_VOICES=1|0, OUT,
 # CLOUDYREADER_DATA_DIR (asset source, default .data), ENTRY=auto|app|probe, SELFTEST_TIMEOUT
@@ -34,6 +35,8 @@ ENTRY=${ENTRY:-auto}
 SELFTEST_TIMEOUT=${SELFTEST_TIMEOUT:-300}
 PROBE_TIMEOUT=${PROBE_TIMEOUT:-120}
 UV=${UV:-uv}
+DISKUTIL=${DISKUTIL:-diskutil}
+HDIUTIL=${HDIUTIL:-hdiutil}
 export UV_CACHE_DIR=${UV_CACHE_DIR:-$ROOT/.cache/uv}
 
 say() { printf 'build_app: %s\n' "$*"; }
@@ -530,13 +533,13 @@ main() {
   summary
 }
 
-# The release zip's file name for version $1.
-release_name() { printf '%s-%s-macos-arm64.zip' "${APP_NAME// /-}" "$1"; }
+# A release file's name for version $1: the zip, or with $2=dmg the DMG.
+release_name() { printf '%s-%s-macos-arm64.%s' "${APP_NAME// /-}" "$1" "${2:-zip}"; }
 
-# The zip's SHA-256 beside it, as `<hash>  <file name>`: shasum's own format, the name only.
+# A file's SHA-256 beside it, as `<hash>  <file name>`: shasum's own format, the name only.
 write_checksum() {
-  local zip=$1
-  (cd -- "$(dirname -- "$zip")" && shasum -a 256 "$(basename -- "$zip")") >"$zip.sha256"
+  local file=$1
+  (cd -- "$(dirname -- "$file")" && shasum -a 256 "$(basename -- "$file")") >"$file.sha256"
 }
 
 # Fails when a zip holds macOS clutter: __MACOSX, .DS_Store or AppleDouble ._ files.
@@ -544,6 +547,124 @@ check_zip_clean() {
   local clutter
   clutter=$(zipinfo -1 "$1" | grep -E '(^|/)(__MACOSX|\.DS_Store|\._)' || true)
   [[ -z $clutter ]] || die "$(basename -- "$1") holds macOS clutter: $(head -n 5 <<<"$clutter" | tr '\n' ' ')"
+}
+
+# diskutil image (macOS 26 and later) is the supported tool; older macOS has only hdiutil's verbs.
+# The version decides first: the macOS 15 runner answered `image create from --help` with status 0
+# and then had no such verb, so the probe alone chose a tool that could not make the image.
+has_diskutil_image() {
+  local major
+  major=$(sw_vers -productVersion 2>/dev/null) || major=0
+  major=${major%%.*}
+  [[ $major =~ ^[0-9]+$ ]] && ((major >= 26)) && "$DISKUTIL" image create from --help >/dev/null 2>&1
+}
+
+# A read-only APFS image $2, lzfse-compressed (ULFO), of folder $1, its volume named $3. ULFO beat
+# UDZO, ULMO and HFS+ on the v0.0.1 app: 429 MB, made in 7 s, checked in 2 s when opened.
+create_dmg() {
+  local stage=$1 dmg=$2 volume=$3 log=$ROOT/build/dmg-create.log
+  if has_diskutil_image; then
+    "$DISKUTIL" image create from --format ULFO --volumeName "$volume" "$stage" "$dmg" >"$log" 2>&1
+  else
+    say "release: $(basename -- "$dmg") made with hdiutil (this macOS has no diskutil image)"
+    "$HDIUTIL" create -srcfolder "$stage" -volname "$volume" -fs APFS -format ULFO "$dmg" \
+      >"$log" 2>&1
+  fi || {
+    tail -n 20 "$log" >&2
+    die "could not make $(basename -- "$dmg") (log: build/dmg-create.log)"
+  }
+}
+
+# The release DMG $2 of app $1 for version $3: the app beside an Applications link, and the app's
+# icon as the volume icon (the FinderInfo custom-icon flag; diskutil keeps it, hdiutil drops it).
+make_dmg() {
+  local app=$1 dmg=$2 version=$3 stage icon
+  local custom_icon=0000000000000000040000000000000000000000000000000000000000000000
+  stage=$(fresh_dir dmg-stage)
+  ditto --norsrc --noextattr "$app" "$stage/$APP_NAME.app" # as in the zip: no forks, no xattrs
+  ln -s /Applications "$stage/Applications"
+  icon=$(plutil -extract CFBundleIconFile raw -o - "$app/Contents/Info.plist" 2>/dev/null) || icon=
+  icon=$app/Contents/Resources/${icon%.icns}.icns
+  if [[ -f $icon ]]; then
+    cp -- "$icon" "$stage/.VolumeIcon.icns"
+    xattr -wx com.apple.FinderInfo "$custom_icon" "$stage"
+  fi
+  create_dmg "$stage" "$dmg" "$APP_NAME $version"
+}
+
+# One SHA-256 over a tree's files (content and mode), folders (mode) and links (target): two trees
+# with the same digest hold the same app.
+tree_digest() {
+  (
+    cd -- "$1" && {
+      find . -type f -exec shasum -a 256 {} +
+      find . \( -type f -o -type d \) -exec stat -f '%Lp %N' {} +
+      find . -type l -exec stat -f '%N -> %Y' {} +
+    } | LC_ALL=C sort | shasum -a 256 | cut -d ' ' -f 1
+  )
+}
+
+# Ejects the volume check_dmg attached, if any; the EXIT trap runs it however the checks end.
+eject_dmg() {
+  if [[ -n ${DMG_DEVICE:-} ]]; then
+    "$DISKUTIL" eject "$DMG_DEVICE" >/dev/null 2>&1 ||
+      "$HDIUTIL" detach -force "$DMG_DEVICE" >/dev/null 2>&1 || true
+    DMG_DEVICE=
+  fi
+}
+
+# The mounted volume $1 of DMG $2 for version $3: named "<APP_NAME> <version>", holding only the
+# app, an Applications link to /Applications and the volume icon.
+check_volume() {
+  local mnt=$1 name=$2 version=$3 entry volume
+  while IFS= read -r -d '' entry; do
+    case ${entry##*/} in
+      "$APP_NAME.app" | Applications | .VolumeIcon.icns) ;;
+      *) die "$name: unexpected ${entry##*/} on its volume" ;;
+    esac
+  done < <(find "$mnt" -mindepth 1 -maxdepth 1 -print0)
+  [[ -L $mnt/Applications && $(readlink "$mnt/Applications") == /Applications ]] ||
+    die "$name: no Applications link to /Applications on its volume"
+  volume=$("$DISKUTIL" info -plist "$mnt" | plutil -extract VolumeName raw -o - -) || volume=
+  [[ $volume == "$APP_NAME $version" ]] ||
+    die "$name: its volume is named '$volume', not '$APP_NAME $version'"
+  say "release: $name: verified; volume $volume holds the app and an Applications link"
+}
+
+# hdiutil verify on DMG $1, then mounts it read-only and unbrowsed at a fresh folder for
+# check_volume; its app must pass codesign, print version $3 (data folder $4), pass the voice
+# audit, and match the zip's copy $2. The volume is ejected however the checks end.
+check_dmg() {
+  local dmg=$1 copy=$2 version=$3 data=$4 name mnt out app printed
+  name=$(basename -- "$dmg")
+  "$HDIUTIL" verify "$dmg" >"$ROOT/build/dmg-verify.log" 2>&1 ||
+    die "$name: hdiutil verify failed (log: build/dmg-verify.log)"
+  mnt=$(fresh_dir dmg-mount)
+  trap eject_dmg EXIT
+  trap 'exit 130' INT TERM
+  if has_diskutil_image; then
+    out=$("$DISKUTIL" image attach --readOnly --nobrowse --mountPoint "$mnt" "$dmg" 2>&1)
+  else
+    out=$("$HDIUTIL" attach -readonly -nobrowse -noverify -mountpoint "$mnt" "$dmg" 2>&1)
+  fi || die "$name: cannot attach it: $out"
+  DMG_DEVICE=$(awk '/^\/dev\/disk/ { print $1; exit }' <<<"$out")
+  check_volume "$mnt" "$name" "$version"
+  app=$mnt/$APP_NAME.app
+  if ! codesign --verify --deep --strict "$app" >"$ROOT/build/dmg-codesign.log" 2>&1; then
+    tail -n 20 "$ROOT/build/dmg-codesign.log" >&2
+    die "$name: codesign --verify --deep --strict failed on its app"
+  fi
+  run_bundle dmg-version "$app" "$data" --version
+  printed=$(tail -n 1 "$ROOT/build/dmg-version.log")
+  [[ $BUNDLE_RC == 0 && $printed == "$APP_NAME $version" ]] ||
+    die "$name: its app's --version printed '$printed' (exit $BUNDLE_RC), not '$APP_NAME $version'"
+  audit_voices "$app"
+  [[ $(tree_digest "$app") == "$(tree_digest "$copy")" ]] ||
+    die "$name: its app differs from the zip's copy"
+  eject_dmg
+  trap - EXIT INT TERM
+  say "release: $name: its app passes codesign, --version and the voice audit," \
+    "and matches the zip's copy"
 }
 
 # make release, before it builds: VERSION is well formed, and the build venv's own cloudyreader
@@ -557,14 +678,19 @@ release_preflight() {
     have=none
   [[ $have == "$version" ]] || die "the build venv's cloudyreader metadata says $have, not $version:" \
     "run the sync step first (online, public PyPI: make .cache/stamps/packaging kokoro)"
+  local tool
+  for tool in "$HDIUTIL" "$DISKUTIL"; do
+    command -v "$tool" >/dev/null || die "$tool not found: the release DMG needs it"
+  done
   say "release: the build venv's cloudyreader metadata says $version"
 }
 
 # make release VERSION: zips the lean dist bundle with its SHA-256 (moving older ones aside), then
 # checks the zip itself: unzipped, it must pass codesign, carry VERSION in its Info.plist and its
-# --version, pass the voice audit and the seeded self-test. Never uploads anything.
+# --version, pass the voice audit and the seeded self-test. Then the DMG of that very copy, checked
+# by check_dmg. Never uploads anything.
 release_main() {
-  local version=${1:-} name zip check app plist shown size data printed
+  local version=${1:-} name zip dmg check app plist shown size data printed
   [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "VERSION must look like 1.2.3, got '$version'"
   resolve_out
   [[ -d $FINAL_APP ]] || die "no $FINAL_APP: make release builds it first"
@@ -572,8 +698,11 @@ release_main() {
   KOKORO_DIR=$DATA/models/kokoro
   name=$(release_name "$version")
   zip=$OUT/$name
+  dmg=$OUT/$(release_name "$version" dmg)
   move_aside "$zip"
   move_aside "$zip.sha256"
+  move_aside "$dmg"
+  move_aside "$dmg.sha256"
   # --norsrc --noextattr: without them ditto adds an AppleDouble ._ file per extended attribute.
   ditto -c -k --keepParent --norsrc --noextattr "$FINAL_APP" "$zip"
   check_zip_clean "$zip"
@@ -606,14 +735,45 @@ release_main() {
   run_self_test release "$app" "$data"
   ((SELFTEST_RC == 0)) || die "the extracted copy's self-test exited $SELFTEST_RC (log: build/selftest-release.log)"
   say "release: the extracted copy passes codesign, the voice audit and the self-test"
+  make_dmg "$app" "$dmg" "$version"
+  write_checksum "$dmg"
+  (cd -- "$OUT" && shasum -a 256 -c -s "$(basename -- "$dmg").sha256") ||
+    die "$(basename -- "$dmg") does not match its .sha256"
+  check_dmg "$dmg" "$app" "$version" "$data"
   size=$(awk -v b="$(stat -f %z "$zip")" 'BEGIN { printf "%.1f", b / 1e6 }')
   say "release: $zip ($size MB), SHA-256 in $name.sha256; nothing was uploaded"
+  size=$(awk -v b="$(stat -f %z "$dmg")" 'BEGIN { printf "%.1f", b / 1e6 }')
+  say "release: $dmg ($size MB), SHA-256 in $(basename -- "$dmg").sha256; nothing was uploaded"
+}
+
+# The figures a publish step reads for version $1, written to $2 only once the zip and the DMG
+# each match their .sha256: five KEY=value lines; APP_BYTES sums the dist app's regular files.
+release_figures() {
+  local version=${1:-} out=${2:-} file sha bytes app_bytes figures=()
+  [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "VERSION must look like 1.2.3, got '$version'"
+  [[ -n $out ]] || die "usage: build_app.sh figures VERSION FILE"
+  resolve_out
+  [[ -d $FINAL_APP ]] || die "no $FINAL_APP: run make release first"
+  for file in "$OUT/$(release_name "$version")" "$OUT/$(release_name "$version" dmg)"; do
+    [[ -f $file && -f $file.sha256 ]] || die "no $file or its .sha256: run make release first"
+    sha=$(shasum -a 256 "$file" | cut -d ' ' -f 1)
+    [[ $sha == "$(cut -d ' ' -f 1 "$file.sha256")" ]] ||
+      die "$(basename -- "$file") does not match its .sha256"
+    bytes=$(stat -f %z "$file")
+    figures+=("$bytes" "$sha")
+  done
+  app_bytes=$(find "$FINAL_APP" -type f -exec stat -f %z {} + |
+    awk '{ s += $1 } END { printf "%.0f", s }')
+  printf 'APP_BYTES=%s\nZIP_BYTES=%s\nSHA256=%s\nDMG_BYTES=%s\nDMG_SHA256=%s\n' \
+    "$app_bytes" "${figures[@]}" >"$out"
+  say "release: figures for $version in $out"
 }
 
 if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
   case ${1:-} in
     release-preflight) release_preflight "${2:-}" ;;
     release) release_main "${2:-}" ;;
+    figures) release_figures "${2:-}" "${3:-}" ;;
     *) main "$@" ;;
   esac
 fi

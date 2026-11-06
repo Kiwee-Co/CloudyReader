@@ -225,7 +225,7 @@ app: $(STAMPS)/deps $(STAMPS)/models $(STAMPS)/packaging ## Build dist/Cloudy Re
 
 # ENGINES=0 until assets.lock.json pins engine weights: the commit that adds those pins flips it to
 # auto (or 1), so a release never bundles engines whose weights the app cannot download.
-release: ## Lean app (voices download at first launch) as a checked zip + SHA-256 in dist/; VERSION=x.y.z; never uploads
+release: ## Lean app (voices download at first launch) as a checked zip and DMG, each with its SHA-256, in dist/; VERSION=x.y.z; never uploads
 	APP_NAME="$(APP_NAME)" OUT="$(OUT)" bash scripts/build_app.sh release-preflight "$(VERSION)"
 	$(MAKE) --no-print-directory app BUNDLE_VOICES=0 OFFLINE=1 ICON=cloud-atom KOKORO=1 ENGINES=0
 	APP_NAME="$(APP_NAME)" OUT="$(OUT)" bash scripts/build_app.sh release "$(VERSION)"

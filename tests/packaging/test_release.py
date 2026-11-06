@@ -1,4 +1,4 @@
-"""Packaging (R1): the lean bundle, its voice audit, its self-tests, and the release zip."""
+"""Packaging (R1): the lean bundle, its voice audit, its self-tests, the release zip and DMG."""
 
 from __future__ import annotations
 
@@ -22,6 +22,7 @@ from tests.packaging.test_build_app import bash_fn
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "build_app.sh"
 ZIP = "Cloudy-Reader-0.0.1-macos-arm64.zip"
+DMG = "Cloudy-Reader-0.0.1-macos-arm64.dmg"
 
 
 @pytest.fixture
@@ -249,12 +250,16 @@ def stub_codesign(root: Path) -> tuple[str, Path]:
     return f"{bin_dir}{os.pathsep}{os.environ['PATH']}", args
 
 
+# Stand-ins for the DMG steps where a test is about the zip: a real image takes about 10 s.
+NO_DMG = 'make_dmg() { echo image >"$2"; }; check_dmg() { :; }; '
+
+
 def test_release_zips_checksums_and_verifies_the_extracted_copy(root):
     host_assets(root)
     fake_app(root)
     path, args = stub_codesign(root)
 
-    result = bash_fn(root, 'APP_NAME="Cloudy Reader"; release_main 0.0.1', PATH=path)
+    result = bash_fn(root, f'APP_NAME="Cloudy Reader"; {NO_DMG}release_main 0.0.1', PATH=path)
 
     assert result.returncode == 0, result.stderr
     names = zipfile.ZipFile(root / "dist" / ZIP).namelist()
@@ -369,9 +374,293 @@ def test_release_keeps_a_previous_artifact_by_moving_it_aside(root):
     fake_app(root)
     path, _ = stub_codesign(root)
     (root / "dist" / ZIP).write_bytes(b"older build")
+    (root / "dist" / DMG).write_bytes(b"older image")
 
-    result = bash_fn(root, 'APP_NAME="Cloudy Reader"; release_main 0.0.1', PATH=path)
+    result = bash_fn(root, f'APP_NAME="Cloudy Reader"; {NO_DMG}release_main 0.0.1', PATH=path)
 
     assert result.returncode == 0, result.stderr
     kept = list((root / "build").glob(f"trash.*/{ZIP}"))
     assert [p.read_bytes() for p in kept] == [b"older build"]
+    kept = list((root / "build").glob(f"trash.*/{DMG}"))
+    assert [p.read_bytes() for p in kept] == [b"older image"]
+
+
+# --- the release DMG -----------------------------------------------------------------------------
+
+
+def mounted_under(root: Path) -> list[str]:
+    """Mounts whose mount point lies under root: no test may leave one behind."""
+    table = subprocess.run(["mount"], capture_output=True, text=True, check=True).stdout
+    return [line for line in table.splitlines() if str(root) in line]
+
+
+def test_release_names_the_dmg_beside_the_zip(root):
+    snippet = 'APP_NAME="Cloudy Reader"; release_name 0.0.1 dmg && echo && release_name 0.0.1'
+
+    assert bash_fn(root, snippet).stdout.splitlines() == [DMG, ZIP]
+
+
+@pytest.fixture(scope="session")
+def real_dmg_host(tmp_path_factory):
+    """Skip the real-tool DMG tests where this host cannot make even a tiny image (a CI VM)."""
+    probe = tmp_path_factory.mktemp("dmg-probe").resolve()
+    (probe / "scripts").mkdir()
+    shutil.copy(SCRIPT, probe / "scripts" / "build_app.sh")
+    (probe / "build").mkdir()
+    (probe / "stage").mkdir()
+    (probe / "stage" / "file").write_text("probe")
+
+    result = bash_fn(probe, 'create_dmg "$ROOT/stage" "$ROOT/probe.dmg" probe')
+
+    if result.returncode != 0:
+        pytest.skip("this host cannot make a DMG: " + " ".join(result.stderr.split())[-300:])
+
+
+@pytest.mark.slow
+def test_release_writes_a_dmg_of_the_zips_app_and_checks_it(root, real_dmg_host):
+    host_assets(root)
+    fake_app(root)
+    path, args = stub_codesign(root)
+
+    result = bash_fn(root, 'APP_NAME="Cloudy Reader"; release_main 0.0.1', PATH=path)
+
+    assert result.returncode == 0, result.stderr
+    digest = hashlib.sha256((root / "dist" / DMG).read_bytes()).hexdigest()
+    assert (root / "dist" / f"{DMG}.sha256").read_text() == f"{digest}  {DMG}\n"
+    out = result.stdout
+    volume = "volume Cloudy Reader 0.0.1 holds the app and an Applications link"
+    assert f"release: {DMG}: verified; {volume}" in out
+    assert (
+        f"release: {DMG}: its app passes codesign, --version and the voice audit, "
+        "and matches the zip's copy" in out
+    )
+    assert re.search(rf"release: {re.escape(str(root / 'dist' / DMG))} \([\d.]+ MB\)", out)
+    assert any("/build/dmg-mount." in line for line in args.read_text().splitlines())
+    assert not mounted_under(root)
+
+
+@pytest.mark.slow
+def test_check_dmg_fails_and_still_ejects_the_volume(root, real_dmg_host):
+    fake_app(root)
+    path, _ = stub_codesign(root)
+    snippet = (
+        'APP_NAME="Cloudy Reader"; app="$ROOT/dist/Cloudy Reader.app"; '
+        'make_dmg "$app" "$ROOT/dist/t.dmg" 0.0.1 && '
+        'chmod 600 "$app/Contents/Info.plist" && '  # now the zip's copy differs in one mode
+        'check_dmg "$ROOT/dist/t.dmg" "$app" 0.0.1 "$(fresh_dir data)"'
+    )
+
+    result = bash_fn(root, snippet, PATH=path)
+
+    assert result.returncode == 1
+    assert "t.dmg: its app differs from the zip's copy" in result.stderr
+    assert not mounted_under(root)
+
+
+@pytest.mark.slow
+def test_the_dmg_falls_back_to_hdiutil_where_diskutil_has_no_image_verb(root, real_dmg_host):
+    fake_app(root)
+    path, _ = stub_codesign(root)
+    old = root / "bin" / "old-diskutil"
+    old.write_text('#!/bin/bash\n[[ ${1:-} == image ]] && exit 1\nexec /usr/sbin/diskutil "$@"\n')
+    old.chmod(0o755)
+    snippet = (
+        'APP_NAME="Cloudy Reader"; app="$ROOT/dist/Cloudy Reader.app"; '
+        'make_dmg "$app" "$ROOT/dist/t.dmg" 0.0.1 && '
+        'check_dmg "$ROOT/dist/t.dmg" "$app" 0.0.1 "$(fresh_dir data)"'
+    )
+
+    result = bash_fn(root, snippet, PATH=path, DISKUTIL=str(old))
+
+    assert result.returncode == 0, result.stderr
+    assert "release: t.dmg made with hdiutil (this macOS has no diskutil image)" in result.stdout
+    assert not mounted_under(root)
+
+
+def write_tool(path: Path, body: str) -> None:
+    path.write_text("#!/bin/bash\n" + body)
+    path.chmod(0o755)
+
+
+def fake_dmg_tools(
+    root: Path, macos: str, diskutil: str, hdiutil: str
+) -> tuple[dict[str, str], Path]:
+    """A sw_vers, diskutil and hdiutil that log their calls; the env that puts them first."""
+    bin_dir, calls = root / "fakebin", root / "calls.log"
+    bin_dir.mkdir()
+    note = f'echo "$(basename "$0") $*" >>"{calls}"\n'
+    write_tool(
+        bin_dir / "sw_vers",
+        f"[[ ${{1:-}} == -productVersion ]] && echo {macos} && exit 0\n"
+        'exec /usr/bin/sw_vers "$@"\n',
+    )
+    write_tool(bin_dir / "diskutil", note + diskutil)
+    write_tool(bin_dir / "hdiutil", note + hdiutil)
+    env = {
+        "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
+        "DISKUTIL": str(bin_dir / "diskutil"),
+        "HDIUTIL": str(bin_dir / "hdiutil"),
+    }
+    return env, calls
+
+
+MAKE_T_DMG = (
+    'APP_NAME="Cloudy Reader"; make_dmg "$ROOT/dist/Cloudy Reader.app" "$ROOT/dist/t.dmg" 0.0.1'
+)
+TOUCH_LAST = 'touch "${@: -1}"\n'  # what a tool that made the image leaves: the file named last
+# macOS 15 as the CI runner showed it: `diskutil image ... --help` exits 0, the verb is absent.
+MACOS_15_DISKUTIL = (
+    '[[ " $* " == *" --help "* ]] && exit 0\n'
+    "echo 'diskutil: did not recognize verb \"image\"' >&2\nexit 1\n"
+)
+
+
+def test_the_dmg_uses_hdiutil_before_macos_26_even_when_diskutil_answers_help(root):
+    fake_app(root)
+    env, calls = fake_dmg_tools(root, "15.7.1", MACOS_15_DISKUTIL, TOUCH_LAST)
+
+    result = bash_fn(root, MAKE_T_DMG, **env)
+
+    assert result.returncode == 0, result.stderr
+    assert "release: t.dmg made with hdiutil (this macOS has no diskutil image)" in result.stdout
+    recorded = calls.read_text().splitlines()
+    assert any(" -fs APFS -format ULFO " in line for line in recorded if "hdiutil create" in line)
+    assert not any("image create" in line for line in recorded)
+
+
+def test_the_dmg_uses_diskutil_image_from_macos_26(root):
+    fake_app(root)
+    diskutil = '[[ " $* " == *" --help "* ]] && exit 0\n' + TOUCH_LAST
+    env, calls = fake_dmg_tools(root, "26.1", diskutil, "exit 1\n")
+
+    result = bash_fn(root, MAKE_T_DMG, **env)
+
+    assert result.returncode == 0, result.stderr
+    recorded = calls.read_text().splitlines()
+    assert any(
+        "diskutil image create from --format ULFO --volumeName Cloudy Reader 0.0.1 " in line
+        for line in recorded
+    )
+    assert not any(line.startswith("hdiutil") for line in recorded)
+
+
+def test_a_failed_dmg_creation_prints_the_tools_own_message(root):
+    fake_app(root)
+    hdiutil = "echo 'hdiutil: create failed - Resource busy' >&2\nexit 1\n"
+    env, _ = fake_dmg_tools(root, "15.7.1", MACOS_15_DISKUTIL, hdiutil)
+
+    result = bash_fn(root, MAKE_T_DMG, **env)
+
+    assert result.returncode == 1
+    assert "hdiutil: create failed - Resource busy" in result.stderr
+    assert "could not make t.dmg (log: build/dmg-create.log)" in result.stderr
+
+
+FAKE_DISKUTIL = r"""#!/bin/bash
+# `info -plist PATH` names the volume FAKE_VOLUME; nothing else is expected here.
+[[ ${1:-} == info && ${2:-} == -plist ]] || exit 1
+printf '<?xml version="1.0" encoding="UTF-8"?>\n<plist version="1.0"><dict>'
+printf '<key>VolumeName</key><string>%s</string></dict></plist>\n' "$FAKE_VOLUME"
+"""
+
+
+@pytest.mark.parametrize(
+    ("change", "volume", "message"),
+    [
+        (None, "Cloudy Reader 0.0.1", None),
+        ("README", "Cloudy Reader 0.0.1", "t.dmg: unexpected README on its volume"),
+        ("no-link", "Cloudy Reader 0.0.1", "t.dmg: no Applications link to /Applications"),
+        ("bad-link", "Cloudy Reader 0.0.1", "t.dmg: no Applications link to /Applications"),
+        (None, "Cloudy Reader 9.9.9", "its volume is named 'Cloudy Reader 9.9.9', not 'Cloudy"),
+    ],
+)
+def test_the_dmg_volume_holds_only_the_app_its_link_and_icon(root, change, volume, message):
+    mnt = root / "volume"
+    (mnt / "Cloudy Reader.app" / "Contents").mkdir(parents=True)
+    (mnt / ".VolumeIcon.icns").write_bytes(b"icon")
+    if change == "README":
+        (mnt / "README").write_text("hi")
+    if change != "no-link":
+        (mnt / "Applications").symlink_to("/Applications" if change != "bad-link" else "/tmp")
+    fake = root / "fake-diskutil"
+    fake.write_text(FAKE_DISKUTIL)
+    fake.chmod(0o755)
+
+    result = bash_fn(
+        root,
+        'APP_NAME="Cloudy Reader"; check_volume "$1" t.dmg 0.0.1',
+        str(mnt),
+        DISKUTIL=str(fake),
+        FAKE_VOLUME=volume,
+    )
+
+    if message is None:
+        assert result.returncode == 0, result.stderr
+        assert "release: t.dmg: verified; volume Cloudy Reader 0.0.1 holds the app" in result.stdout
+    else:
+        assert result.returncode == 1
+        assert message in result.stderr
+
+
+def test_release_preflight_needs_the_dmg_tools(root):
+    fake_venv(root)
+
+    result = bash_fn(root, "release_preflight 0.0.1", FAKE_META="0.0.1", HDIUTIL="no-hdiutil")
+
+    assert result.returncode == 1
+    assert "no-hdiutil not found: the release DMG needs it" in result.stderr
+
+
+# --- the figures a publish step reads ------------------------------------------------------------
+
+
+def release_files(root: Path) -> None:
+    """A dist app of 3 + 4 bytes, the zip and the DMG beside it, each with its .sha256."""
+    contents = root / "dist" / "Cloudy Reader.app" / "Contents"
+    contents.mkdir(parents=True)
+    (contents / "a").write_bytes(b"abc")
+    (contents / "b").write_bytes(b"defg")
+    (contents / "link").symlink_to("a")  # a link counts nothing
+    for name, data in ((ZIP, b"zip bytes"), (DMG, b"dmg image bytes")):
+        (root / "dist" / name).write_bytes(data)
+        digest = hashlib.sha256(data).hexdigest()
+        (root / "dist" / f"{name}.sha256").write_text(f"{digest}  {name}\n")
+
+
+def figures(root: Path, out: Path) -> subprocess.CompletedProcess[str]:
+    env = {k: v for k, v in os.environ.items() if k not in ("OUT", "APP_NAME")}
+    return subprocess.run(
+        ["/bin/bash", str(root / "scripts" / "build_app.sh"), "figures", "0.0.1", str(out)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+
+
+def test_figures_writes_five_plain_lines_once_every_file_matches(root):
+    release_files(root)
+    out = root / "figures.txt"
+
+    result = figures(root, out)
+
+    assert result.returncode == 0, result.stderr
+    assert out.read_text().splitlines() == [
+        "APP_BYTES=7",
+        "ZIP_BYTES=9",
+        f"SHA256={hashlib.sha256(b'zip bytes').hexdigest()}",
+        "DMG_BYTES=15",
+        f"DMG_SHA256={hashlib.sha256(b'dmg image bytes').hexdigest()}",
+    ]
+
+
+def test_figures_writes_nothing_when_a_file_disagrees_with_its_checksum(root):
+    release_files(root)
+    (root / "dist" / DMG).write_bytes(b"changed")
+    out = root / "figures.txt"
+
+    result = figures(root, out)
+
+    assert result.returncode == 1
+    assert f"{DMG} does not match its .sha256" in result.stderr
+    assert not out.exists()
