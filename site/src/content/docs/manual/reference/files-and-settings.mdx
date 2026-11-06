@@ -1,0 +1,132 @@
+---
+title: Files, settings, and limits
+description: Where Cloudy Reader keeps voices, caches, and preferences, what each preference key means, and the app's built-in limits.
+sidebar:
+  order: 9
+---
+
+import { FileTree } from '@astrojs/starlight/components';
+
+This page lists where Cloudy Reader stores files, the five preference keys it saves, and the limits built into the app.
+
+## Data folder
+
+The data folder holds the voices and the caches. It is `~/Library/Application Support/cloudyreader` unless you set `CLOUDYREADER_DATA_DIR`, described in [Command line](/manual/reference/command-line/). In Finder, choose **Go > Go to Folder** and paste the path.
+
+### Layout
+
+The tree shows the folders the app creates and the files it puts in them. The `...` lines stand for more files of the same kind.
+
+<FileTree>
+
+- voices/ Piper voices
+  - en_US-lessac-medium.onnx
+  - en_US-lessac-medium.onnx.json
+  - ...
+- models/
+  - kokoro/ Kokoro model and voices
+    - config.json
+    - kokoro-v1_0.safetensors
+    - voices/
+      - af_heart.safetensors
+      - ...
+- cache/
+  - wav/ Audio cache
+    - ...
+  - resolutions.sqlite Lookup cache
+  - resolutions.sqlite-wal
+  - resolutions.sqlite-shm
+- `.prefetch/` Partial downloads
+
+</FileTree>
+
+### Contents
+
+Each location below is relative to the data folder.
+
+| Item             | Location                   | Content                                                                                                                                               |
+| ---------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Piper voices     | `voices/`                  | A `.onnx` file and a `.onnx.json` file for each voice.                                                                                                |
+| Kokoro model     | `models/kokoro/`           | `config.json` and `kokoro-v1_0.safetensors`.                                                                                                          |
+| Kokoro voices    | `models/kokoro/voices/`    | One `.safetensors` file for each voice.                                                                                                               |
+| Audio cache      | `cache/wav/`               | One WAV file for each distinct reading. The file name is a SHA-256 value. The cache has no size limit, and the app never cleans it.                   |
+| Lookup cache     | `cache/resolutions.sqlite` | The results of name lookups, kept for 30 days when a name is found and 1 day when it is not. The app creates it at every start, even in offline mode. |
+| Download staging | `.prefetch/`               | Partial voice downloads with the suffix `.part`.                                                                                                      |
+
+### Sizes
+
+The sizes below are decimal, as Finder shows them.
+
+| Item                                                 | Size (MB) |
+| ---------------------------------------------------- | --------- |
+| One Piper voice                                      | 63.2      |
+| Kokoro model                                         | 327.1     |
+| One Kokoro voice                                     | 0.52      |
+| All 33 voices, 40 files                              | 657.8     |
+| One minute of audio in the audio cache, Piper voice  | About 2.6 |
+| One minute of audio in the audio cache, Kokoro voice | About 2.9 |
+
+To free disk space, see [Free disk space](/manual/tasks/voices-and-storage/#free-disk-space). To start over, see [Reset the app](/manual/tasks/voices-and-storage/#reset-the-app).
+
+### Files outside the data folder
+
+The app itself and its preferences live elsewhere.
+
+| Item            | Location                                                                             | Content                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| App             | The folder where you moved it, usually `/Applications/Cloudy Reader.app`             | The app's code, the name-detection model, and the Java runtime for the OPSIN check.            |
+| Preferences     | `~/Library/Preferences/com.cloudyreader.Cloudy Reader.plist`                         | The five saved keys. See [Preferences](#preferences).                                          |
+| Temporary files | The system temporary folder, in `cloudyreader-opsin-*` and `cloudyreader-selftest-*` | A names file for the OPSIN check and the audio of a self-test. The app removes them after use. |
+| Logs            | None                                                                                 | The app writes no log file.                                                                    |
+
+## Preferences
+
+The app has no settings window. It saves five keys in `~/Library/Preferences/com.cloudyreader.Cloudy Reader.plist`, the preference domain `com.cloudyreader.Cloudy Reader`. The domain differs from the bundle identifier, `com.cloudyreader.CloudyReader`. To list the saved values, run this command in Terminal:
+
+```bash
+defaults read "com.cloudyreader.Cloudy Reader"
+```
+
+The app writes a checkbox, voice, or rotation key when you change it, and `geometry` when the window closes.
+
+| Key              | Type    | Default | What it stores                                                                                           |
+| ---------------- | ------- | ------- | -------------------------------------------------------------------------------------------------------- |
+| `voice`          | Text    | Empty   | The key of the voice you last chose, such as `kokoro:af_heart` or `piper:en_GB-alan-medium`.             |
+| `voice_rotation` | Text    | `none`  | The rotation mode, as an id from the next table. An unknown value reads as `none` and stays in the file. |
+| `read_answer`    | Boolean | `false` | The **Read answer line** checkbox.                                                                       |
+| `online_lookups` | Boolean | `true`  | The **Online lookups** checkbox.                                                                         |
+| `geometry`       | Binary  | None    | The window size and position.                                                                            |
+
+The `voice_rotation` key holds one of these ids.
+
+| Id              | Menu label                   |
+| --------------- | ---------------------------- |
+| `none`          | **No rotation**              |
+| `round_robin`   | **Round robin**              |
+| `shuffle`       | **Random shuffle**           |
+| `us_shuffle`    | **US only (random shuffle)** |
+| `men_shuffle`   | **Men only**                 |
+| `women_shuffle` | **Women only**               |
+
+The app does not save the speaker number, the rotation deck and last voice, or whether **Spoken script** is open. To clear every saved choice, see [Reset the app](/manual/tasks/voices-and-storage/#reset-the-app).
+
+## Built-in limits
+
+These values are fixed. The app reads none of them from the environment or from a file. For what a lookup sends, see [Privacy](/about/privacy/#what-uses-the-network).
+
+| Limit                                      | Value                                                                                     |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| Name lookups for one reading, total time   | 2.5 seconds, shared with the OPSIN check                                                  |
+| One lookup request                         | Up to 4 seconds, within what is left of the 2.5 seconds                                   |
+| Lookup request rate                        | 5 requests per second, with no burst                                                      |
+| Retries after HTTP 429 or 503              | 2, after 0.5 and 1 second, if time is left                                                |
+| Lookups at once                            | Up to 16                                                                                  |
+| Longest name a lookup sends                | 256 characters                                                                            |
+| Lookup cache life                          | 30 days for a found name, 1 day for a name not found                                      |
+| Voice download tries for one file          | 3, with waits of 2 and then 4 seconds                                                     |
+| Voice download timeout                     | 10 seconds to connect, 30 seconds of waiting for data                                     |
+| Redirects in a voice download              | At most 5, each over HTTPS                                                                |
+| Age at which a partial download is removed | 24 hours                                                                                  |
+| Speaking speed                             | 1.0, with no speed control in the window                                                  |
+| Audio cache size                           | No limit                                                                                  |
+| Paste length                               | No limit; name detection uses pattern matching alone for a text over 1,000,000 characters |
