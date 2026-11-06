@@ -277,6 +277,10 @@ def test_run_ignores_an_unreadable_icon(qapp, tmp_path, monkeypatch):
 # --- start question --------------------------------------------------------------------------
 
 SAMPLE = "BONUS\n1) MATH Short Answer What is 2 + 2?\nANSWER: 4"
+# Laid out as fixture 42 is: no-break spaces, which the box gives back as plain spaces.
+NO_BREAK = (
+    "TOSS-UP\n11)\u00a0MATH Short Answer What is the square root of\u00a0144?\nANSWER:\u00a012"
+)
 
 
 def box_at_start(qapp, **kwargs) -> str:
@@ -293,13 +297,31 @@ def box_at_start(qapp, **kwargs) -> str:
     return seen["text"]
 
 
+def as_shown(questions: list[str]) -> set[str]:
+    """The texts as the box gives them back: toPlainText() turns a no-break space into a space."""
+    return {question.replace("\u00a0", " ") for question in questions}
+
+
 def test_run_shows_the_start_question_it_is_given(qapp):
     assert box_at_start(qapp, start_question=lambda: SAMPLE) == SAMPLE
     assert box_at_start(qapp, start_question=lambda: None) == ""
 
 
 def test_run_shows_a_random_test_fixture_question_by_default(qapp):
-    assert box_at_start(qapp) in sample_questions(CHECKOUT_FIXTURES)
+    assert box_at_start(qapp) in as_shown(sample_questions(CHECKOUT_FIXTURES))
+
+
+def test_run_matches_a_question_with_no_break_spaces(qapp, tmp_path, monkeypatch):
+    # The flake: 1 pick in 59 was fixture 42, and its no-break spaces came back as spaces.
+    (tmp_path / "questions").mkdir()
+    (tmp_path / "questions" / "01.txt").write_text(NO_BREAK, encoding="utf-8")
+    monkeypatch.setattr("cloudyreader.start_question.CHECKOUT_FIXTURES", tmp_path)
+    assert sample_questions(tmp_path) == [NO_BREAK]  # the only candidate: the pick is forced
+
+    box = box_at_start(qapp)
+
+    assert box == NO_BREAK.replace("\u00a0", " ")
+    assert box in as_shown(sample_questions(tmp_path))
 
 
 def test_run_shows_none_when_the_fixtures_are_missing(qapp, tmp_path, monkeypatch):
