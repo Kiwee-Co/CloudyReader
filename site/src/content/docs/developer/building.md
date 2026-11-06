@@ -39,7 +39,7 @@ make doctor
 
 1. `deps` runs `uv sync --frozen --inexact`. This builds `.venv` from `uv.lock`.
 2. `models` fetches the scispaCy model `en_ner_craft_md` and installs it into `.venv`. The lock file does not hold it.
-3. `voices` fetches the five Piper voices into `.data/voices`.
+3. `voices` fetches the Piper voices in `VOICES` into `.data/voices`.
 
 A target that you name on the command line, such as `make deps`, always runs again.
 
@@ -135,7 +135,7 @@ Pass a variable on the command line, as in `make voices VOICES="en_US-amy-medium
 | --------------- | ----------------------------- | ------------------------------------------------------------------------------------ |
 | `UV`            | `uv`                          | The uv executable.                                                                   |
 | `COV_MIN`       | `75`                          | The coverage floor for `make test`, in percent.                                      |
-| `VOICES`        | The five pinned Piper ids     | The Piper ids for `make voices` and `make doctor`. Ids come from `assets.lock.json`. |
+| `VOICES`        | The pinned Piper ids          | The Piper ids for `make voices` and `make doctor`. Ids come from `assets.lock.json`. |
 | `OFFLINE`       | `0`                           | `1` makes uv use `--offline` and makes the fetcher refuse downloads.                 |
 | `CONFIRM`       | `no`                          | `yes` lets `clean-all` delete `.venv` and `.cache`.                                  |
 | `ONLINE`        | `0`                           | `1` makes `make doctor` also check that PubChem and UniProt answer.                  |
@@ -143,7 +143,7 @@ Pass a variable on the command line, as in `make voices VOICES="en_US-amy-medium
 | `APP_NAME`      | `Cloudy Reader`               | The bundle name for `make app` and `make release`.                                   |
 | `ICON`          | Empty                         | An icon folder under `assets/icons/`. Empty reads `assets/icons/default.txt`.        |
 | `KOKORO`        | `auto`                        | `auto`, `0`, or `1`. Whether `make app` bundles Kokoro.                              |
-| `BUNDLE_VOICES` | `1`                           | `1` bundles the voices and the Kokoro model. `0` builds a lean app.                  |
+| `BUNDLE_VOICES` | `1`                           | `1` bundles the voices and the engine models. `0` builds a lean app.                 |
 | `OUT`           | `dist`                        | The output folder for `make app` and `make release`.                                 |
 | `VERSION`       | `version` in `pyproject.toml` | The version that `make release` checks and puts in the zip name.                     |
 
@@ -208,13 +208,13 @@ A source run and the release app differ in these ways:
 
 ## Add the Kokoro voice engine
 
-The app always registers the Piper voice engine. It registers Kokoro, a second voice engine, only on Apple silicon.
+The app always registers the Piper voice engine. It registers the Kokoro voice engine only on Apple silicon.
 
 ```bash
 make kokoro
 ```
 
-The target stops with an error on a Mac that is not arm64. It syncs the `kokoro` extra. The extra holds `mlx`, `mlx-audio`, `misaki`, `en-core-web-sm`, `espeakng-loader`, `phonemizer-fork`, and `num2words`. Then the target fetches the Kokoro files from `assets.lock.json`. The files total 341.7 MB.
+The target stops with an error on a Mac that is not arm64. It syncs the `kokoro` extra. The extra holds `mlx`, `mlx-audio`, `misaki`, `en-core-web-sm`, `espeakng-loader`, `phonemizer-fork`, and `num2words`. Then the target fetches the Kokoro files from `assets.lock.json`.
 
 ## Build the app
 
@@ -267,13 +267,13 @@ ICON=cloud-wave make app
 
 ## Build the release zip
 
-`make release` builds the zip that a GitHub release carries. The zip holds a lean app: no voice and no Kokoro model. The app downloads them at first launch. `make release` never uploads anything.
+`make release` builds the zip that a GitHub release carries. The zip holds a lean app: no voice files and no engine models. The app downloads them at first launch. `make release` never uploads anything.
 
-Set the version in every place that [Change the version](/developer/contributing/#change-the-version) lists. Then run the sync step, so that `.venv` knows the version, and build. This example builds version 0.0.1:
+Set the version in every place that [Change the version](/developer/contributing/#change-the-version) lists. Then run the sync step, so that `.venv` knows the version, and build. This example builds version REL-VERSION:
 
 ```bash
 make .cache/stamps/packaging kokoro
-make release VERSION=0.0.1
+make release VERSION=REL-VERSION
 ```
 
 The sync step needs the network and the public package index. `VERSION` defaults to `version` in `pyproject.toml`.
@@ -288,21 +288,16 @@ The last command works in this order:
 
 - It moves an older zip and checksum with the same names into `build/trash.*`.
 - `ditto -c -k --keepParent --norsrc --noextattr` makes the zip. The command fails when the zip holds `__MACOSX`, `.DS_Store`, or `._` files.
-- It writes the SHA-256 beside the zip and checks it with `shasum -a 256 -c`.
+- It writes the SHA-256 beside the zip and checks the zip against it.
 - It extracts the zip and checks the extracted copy. The copy must pass `codesign --verify --deep --strict`, carry `VERSION` in `CFBundleShortVersionString`, print `Cloudy Reader <VERSION>` for `--version`, pass the voice audit, and pass the self-test.
 
 The release step leaves these files in `dist/`:
 
 - `Cloudy-Reader-<VERSION>-macos-arm64.zip`. Spaces in `APP_NAME` become hyphens.
-- `Cloudy-Reader-<VERSION>-macos-arm64.zip.sha256`. It holds the hash, two spaces, and the file name, in `shasum -a 256` format.
+- `Cloudy-Reader-<VERSION>-macos-arm64.zip.sha256`. It holds the hash, two spaces, and the file name.
 - `Cloudy Reader.app`, the lean app.
 
-The `.sha256` file names the zip without a folder. Check a zip in the folder that holds both files:
-
-```bash
-cd dist
-shasum -a 256 -c Cloudy-Reader-0.0.1-macos-arm64.zip.sha256
-```
+The `.sha256` file names the zip without a folder. [Download Cloudy Reader](/download/) shows how to check a download.
 
 The app in the zip is ad-hoc signed and not notarized. See [Security and code signing](/about/security/) for what that means for users.
 
@@ -320,7 +315,7 @@ The script prints `build_app: error:` before each message. The table lists the t
 | `selftest-1 timed out after`                      | Read the log that the message names in `build/`. Raise `SELFTEST_TIMEOUT` on a slow Mac. |
 | `self-test run 1 exited`                          | Read `build/selftest-1.log`. Run 2 uses `build/selftest-2.log`.                          |
 | `voice binaries in the bundle`                    | A lean bundle holds a voice or model file. The message lists the paths.                  |
-| `VERSION must look like`                          | Pass three numbers, such as `VERSION=0.0.1`.                                             |
+| `VERSION must look like`                          | Pass three numbers, such as `VERSION=1.2.3`.                                             |
 | `the build venv's cloudyreader metadata says`     | Run the sync step, then run `make release` again.                                        |
 | `the app says version`                            | `VERSION` and the version in `pyproject.toml` differ. Make them match.                   |
 | `the extracted copy's --version prints`           | The bundled metadata is stale. Run the sync step, then run `make release` again.         |

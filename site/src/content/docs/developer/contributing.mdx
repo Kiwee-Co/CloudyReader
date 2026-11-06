@@ -1,20 +1,21 @@
 ---
-title: 'Contribute'
-description: 'How to send a change, with the branch flow, the commit style, the ci check, and the rebase merge.'
+title: Contribute
+description: 'How to send a change to Cloudy Reader: the branch flow, commit style, required checks, and how to edit this documentation site.'
 sidebar:
-  order: 14
+  order: 4
 ---
 
+import { Steps } from '@astrojs/starlight/components';
 import Figure from '../../../components/Figure.astro';
 
 Changes reach `main` through pull requests only. The `main` branch is protected. A pull request must pass the required status check `ci` before it can merge.
 
-The commands on this page are untested: CI does not run them.
-
 ## Send a change
 
-1. Set up a checkout. See [Build the app](/developer/building/).
-2. Create a branch from the current `main`.
+<Steps>
+
+1. Set up a checkout. See [Build from source](/developer/building/).
+2. Create a branch from an up-to-date `main`.
 3. Make small commits. Each commit does one thing and leaves the tests green.
 4. Run the gate before you push:
 
@@ -22,9 +23,13 @@ The commands on this page are untested: CI does not run them.
    make ci
    ```
 
+   The gate needs `shellcheck`, `prettier`, and `markdownlint` on your `PATH`. See [Test and CI](/developer/testing/).
+
 5. Push the branch and open a pull request against `main`.
-6. Wait for the check `ci`. Fix the failures and push again. A new push cancels the older run.
+6. Wait for the check `ci`. Fix the failures and push again. A later push cancels the older run.
 7. A maintainer merges with a rebase merge. Each of your commits lands on `main` as it is, so write each message for the history.
+
+</Steps>
 
 Do not push to `main` directly.
 
@@ -33,9 +38,9 @@ Do not push to `main` directly.
 Use one line in the form `type(scope): brief description`. Name the specific change in the description.
 
 ```text
-feat(gui): show the bundle icon in the frozen About box
-fix(app): set LSMinimumSystemVersion from bundled binaries, add copyright
-docs: add the manual, the developer guide, and the README
+feat(ci): enforce markdownlint on the two docs files that are clean now
+fix(ci): gate zizmor at medium so the Low npm-install finding does not block
+docs: describe the seven CI jobs and the format ratchet
 ```
 
 - Use a short type such as `feat`, `fix`, or `docs`.
@@ -45,11 +50,12 @@ docs: add the manual, the developer guide, and the README
 ## Follow the code rules
 
 - **Style.** Ruff formats and lints the code: 100 columns, Python 3.12, and the rules `E`, `F`, `I`, `B`, and `UP`. Run `make fmt` to fix style.
-- **Tests.** Add or update tests with the change. A test that needs a model, a voice, a JVM, or a network carries a marker, and the gate skips it. See [Test and CI](/developer/testing/).
+- **Tests.** Add or update tests with the change. A test that needs a model, a voice, a JVM, or a network carries a marker, and the gate skips it. See [Test and CI](/developer/testing/#use-the-markers).
 - **No network in the gate.** A gate test never reaches a real host. GUI tests use the fake service.
 - **Never swap a name.** Lookups and the lexicon change how a word sounds, never which word is said (rule R5). A test such as `NaHCO3` staying "N A H C O three" guards this rule.
 - **Shared types.** `cloudyreader/models.py` holds the contracts that every module imports. Change it with care, and update every user of a changed type.
-- **Dependencies.** Pin exact versions in `pyproject.toml`. Re-lock with the safe command on [Build the app](/developer/building/). Check that `uv.lock` names the public index.
+- **Dependencies.** Pin exact versions in `pyproject.toml`. Re-lock with the safe command in [Build from source](/developer/building/#lock-the-dependencies-safely). Check that `uv.lock` names the public index.
+- **Guards.** `make guards` fails when a tracked file names the vendor's own domain or a disk path of one machine, when `uv.lock` names a host that is not public, and when a workflow uses the privileged `pull_request_target` trigger.
 - **Generated files.** Never commit `.venv/`, `.data/`, `.cache/`, `dist/`, or `build/`. The `.gitignore` file lists them.
 
 ## Change the version
@@ -58,34 +64,136 @@ The version lives in three places. Change all three together:
 
 - `version` in `pyproject.toml`. The bundle's `Info.plist` and the package metadata read it.
 - `__version__` in `cloudyreader/__init__.py`. The HTTP `User-Agent` of lookups uses it.
-- `version` in the `cloudyreader` entry of `uv.lock`. Re-lock with the safe command on [Build the app](/developer/building/) to update it.
+- `version` in the `cloudyreader` entry of `uv.lock`. Re-lock with the safe command in [Build from source](/developer/building/#lock-the-dependencies-safely) to update it.
+
+`tests/packaging/test_version.py` checks that the three agree and pins the expected number, so update the number there too.
+
+A release also needs two more edits:
+
+- Add the release entry to `CHANGELOG.md`, which follows Keep a Changelog and Semantic Versioning.
+- Change `version` in `site/src/components/Footer.astro`, which names the version that the manual describes. Change it only after you check the manual against that release.
+
+To build the zip, see [Build the release zip](/developer/building/#build-the-release-zip).
 
 ## Edit the documentation
 
-The site lives in `docs/`. GitHub builds it from the branch `main`, folder `/docs`, with the theme that `docs/_config.yml` names. Each page is a Markdown file with front matter:
+The documentation site is an Astro Starlight project in `site/`. Its pages are Markdown (`.md`) and MDX (`.mdx`) files in `site/src/content/docs/`.
 
-```yaml
+### Where pages live
+
+These paths hold the documentation source:
+
+| Path                               | Holds                                                                                                  |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `site/src/content/docs/`           | Every page. A file's path gives its URL.                                                               |
+| `site/src/content/docs/manual/`    | The user manual. Its subfolders `tutorials/`, `tasks/`, `reference/`, and `concepts/` group the pages. |
+| `site/src/content/docs/about/`     | Privacy, security, licenses, the project, and the release notes.                                       |
+| `site/src/content/docs/developer/` | The developer pages.                                                                                   |
+| `site/public/img/`                 | The SVG figures.                                                                                       |
+| `site/src/components/`             | The `Figure` component and the footer.                                                                 |
+| `site/astro.config.mjs`            | The sidebar and the redirects.                                                                         |
+| `scripts/check_site.py`            | The checker for the built site.                                                                        |
+
+The sidebar follows the folders. A page in `manual/tutorials/`, `manual/tasks/`, `manual/reference/`, `manual/concepts/`, `about/`, or `developer/` appears in its group by itself. The Start here and Help groups name their pages in `astro.config.mjs`.
+
+### Run and check the site
+
+Install the locked packages and start the development server. Use the Node version in `site/.node-version`:
+
+```bash
+cd site
+npm ci
+npm run dev
+```
+
+`npm run dev` prints the local address. `site/.npmrc` turns off install scripts, and `npm ci` installs the exact versions in `site/package-lock.json`.
+
+Build the site and check the build before you push:
+
+```bash
+cd site
+npm run build
+cd ..
+python3 scripts/check_site.py site/dist
+```
+
+`npm run preview` in `site/` serves the build.
+
+The checker reads the built HTML and reports:
+
+- A page without exactly one `h1` element.
+- An internal link or `#fragment` that does not resolve.
+- An image without alt text.
+- A repeated id.
+- A link that hard-codes the site's host.
+- A resource that loads from another origin.
+
+It exits 0 when the site is clean, 1 with one line per problem, and 2 when the build folder is missing.
+
+Format each page before you push. Run `prettier --write` and `markdownlint --fix` on it. The pre-commit hooks select `.md` files and skip `.mdx` files, so run both tools yourself on an `.mdx` page.
+
+### Write a page
+
+Start every page with front matter:
+
+```text
 ---
-layout: page
-title: Voices and rotation
-nav_group: Manual
-nav_order: 3
-permalink: /manual/voices/
-description: One sentence that the page shows under its title.
+title: Voices and rotation modes
+description: 'One sentence that the page shows under its title.'
+sidebar:
+  order: 3
 ---
 ```
 
-- `nav_group` is `Manual` or `Developer`. `nav_order` sorts the navigation. Keep each value unique within its group.
-- Write a link as `[text](/manual/voices/)`. Never write the repository path or the domain into a link.
-- Add an image with `<Figure src="window-light.svg" dark="window-dark.svg" alt="..." caption="..." />`. Pass the `-light` file name. For a window snapshot, add `frame="window"`. Alt text is required.
-- Load no third-party script, style, font, or tracker. The site must work with no network except the page itself.
-- Write in American English with short, active sentences and the second person. Leave out marketing words and emoji.
-- Check every claim against the code. Document what the code does.
-- Run `python3 scripts/check_site.py` before you push. It checks the front matter, the links, the alt text, and the navigation order.
-- Do not edit or delete `docs/CNAME`. GitHub created it. It holds the custom domain.
+- `title` is the only H1 of the page. Do not write a `#` heading in the body. Keep the title to 60 characters or fewer, in sentence case.
+- `description` is one sentence of 160 characters or fewer. It is unique on the site.
+- `sidebar.order` places the page in its group. It starts at 1.
 
-## Know the license
+Write an internal link as a root-relative path with a trailing slash, as in `[Voices and rotation modes](/manual/reference/voices/)`. Never write the host.
+
+Add a figure with the `Figure` component in an `.mdx` page. The import path climbs one `../` per folder from the page's folder up to `src/`. This example is for a page in `developer/`:
+
+```text
+import Figure from '../../../components/Figure.astro';
+
+<Figure src="window-light.svg" dark="window-dark.svg" alt="..." caption="..." frame="window" />
+```
+
+The component takes these props. The image files live in `site/public/img/`:
+
+- `src`: the light file.
+- `dark`: the dark file.
+- `alt`: the alt text. It is required.
+- `caption`: one sentence under the figure.
+- `frame="window"`: draws a window frame around a snapshot of the app.
+- `wide`: lets a wide diagram scroll sideways on a phone instead of shrinking.
+- `callouts`: the name of a sidecar file that places numbered markers. `callouts="window-tour"` reads `window-tour.callouts.json`. The markers are hidden from assistive technology, so write the legend as an ordered list under the figure.
+
+This figure uses `frame="window"`:
+
+<Figure
+  src="window-light.svg"
+  dark="window-dark.svg"
+  frame="window"
+  alt="The Cloudy Reader window with a pasted toss-up question, the voice lessac, rotation off, the spoken script open, and the status Playing 2.0 s."
+  caption="A window snapshot inside the window frame that the component draws."
+/>
+
+`scripts/make_doc_snapshots.py` redraws the app figures from the live window. Run it after a change to the window, then review the changed SVG files. By default it writes to `site/public/img`:
+
+```bash
+uv run --frozen --offline --project . python scripts/make_doc_snapshots.py --out site/public/img
+```
+
+### Follow the content rules
+
+- Load no third-party script, style, font, or tracker. The site must work with no network except the page itself. The checker fails on a resource from another origin.
+- Write in American English, with short, active sentences and the second person. The [Documentation style guide](/developer/docs-style/) holds the full rules.
+- Check every claim against the code. Document what the code does.
+- Do not edit or delete `site/public/CNAME`. It holds the custom domain.
+
+## License
 
 The source of Cloudy Reader is licensed under the Apache License 2.0. The `LICENSE` file in the repository root holds the terms.
 
-The built `.app` also bundles GPL components, such as `piper-tts` and `jdk4py`, plus `phonemizer-fork` in a build with Kokoro. Distributing the `.app` is subject to their licenses. The third-party notices in the README list every bundled component.
+The built app also bundles GPL components, such as `piper-tts` and `jdk4py`, and `phonemizer-fork` in a build with Kokoro. Distributing the app is subject to their licenses. See [Licenses and credits](/about/licenses/) for every component.

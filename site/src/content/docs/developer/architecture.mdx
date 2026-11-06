@@ -16,7 +16,8 @@ The figure shows the path of one pasted question.
 <Figure
   src="pipeline-light.svg"
   dark="pipeline-dark.svg"
-  alt="A flow of boxes: question text, parser, name detection, name lookups, normalizer, respelling to IPA, a Piper or Kokoro voice, the WAV cache, and the player. Only name lookups and the voice download use the network."
+  wide
+  alt="A flow of boxes: question text, parser, name detection, name lookups, normalizer, respelling to IPA, a voice engine, the WAV cache, and the player. Only name lookups and the voice download use the network."
   caption="From pasted text to sound. Boxes with a dashed blue border use the network."
 />
 
@@ -99,21 +100,21 @@ An `Override` carries neutral IPA. The stress mark sits before the stressed syll
 
 ## Engines
 
-The two voice engines differ in these ways:
+The voice engines differ in these ways:
 
 | Aspect         | Piper                                                      | Kokoro                                                                                  |
 | -------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | Class          | `PiperEngine`                                              | `KokoroEngine`                                                                          |
 | `available()`  | The `piper` package is installed.                          | Apple silicon, backend packages present, and model files with the pinned SHA-256 value. |
-| `voices()`     | Every `.onnx` plus `.onnx.json` pair in the voices folder. | 28 voices, each with its published grade.                                               |
+| `voices()`     | Every `.onnx` plus `.onnx.json` pair in the voices folder. | Each voice in the pinned voice list, with its published grade.                          |
 | Output         | 16-bit mono WAV at the voice's sample rate.                | 16-bit mono WAV at 24,000 Hz.                                                           |
 | Version string | `piper-tts-<version>+r<render revision>`                   | `kokoro-82m@<revision>+misaki-ipa-2+r1`                                                 |
 
-Both engines write the pause after a segment as exact silence in the WAV file. That silence does not depend on the voice.
+Each engine writes the pause after a segment as exact silence in the WAV file. That silence does not depend on the voice.
 
-A voice can add its own silence around a line. Kokoro wraps each line in about 0.4 s of near silence, and Piper in a few milliseconds. Both engines call `trim_letter_padding` in `engines/padding.py` to cut that silence next to a choice letter.
+A voice can add its own silence around a line. The Piper and Kokoro engines call `trim_letter_padding` in `engines/padding.py` to cut that silence next to a choice letter.
 
-`TtsService.voices()` sets the order of the **Voice** menu. Engines follow `ENGINE_ORDER` in `voice_meta.py`, Kokoro first and Piper last. Inside an engine, the best grade or tier comes first, then the name.
+`TtsService.voices()` sets the order of the **Voice** menu. Engines follow `ENGINE_ORDER` in `voice_meta.py`. Inside an engine, the best grade or tier comes first, then the name.
 
 The voice picker selects the first installed voice when no saved voice applies.
 

@@ -94,10 +94,10 @@ Each folder under `tests/` holds one kind of test.
 
 Two checks reach real hosts. They never run in CI. Run them on a machine with internet access, outside any sandbox that blocks the network.
 
-| Command             | Checks                                                                                                                                      |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `make smoke-live`   | The PubChem and UniProt response shapes that the resolvers parse.                                                                           |
-| `make smoke-voices` | The voice download. It asks for byte 0 of every pinned voice and Kokoro file, then fetches the small files and checks their SHA-256 values. |
+| Command             | Checks                                                                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `make smoke-live`   | The PubChem and UniProt response shapes that the resolvers parse.                                                                          |
+| `make smoke-voices` | The voice download. It asks for byte 0 of every file that the app downloads, then fetches the small files and checks their SHA-256 values. |
 
 The small files total about 0.55 MB. `make smoke-voices` prints file names, statuses, and sizes, never a URL or a host. It ends with a `== verdict ==` block. Its lines start with `HELD`, `PARTIAL`, `BROKEN`, or `NO DATA`, and the last line starts with `RESULT:`.
 
