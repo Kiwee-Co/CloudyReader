@@ -49,7 +49,7 @@ A target that you name on the command line, such as `make deps`, always runs aga
 - The Java runtime and the jar for OPSIN, the bundled espeak-ng, and `afplay`.
 - The model files, the voice files, and, on Apple silicon, the Kokoro files and package.
 
-Every download that a `make` target starts goes through `scripts/fetch_assets.py`, which reads `assets.lock.json`. It saves each file in a fresh temporary folder and checks the size and the SHA-256 value. Only then does it move the file into place.
+The targets `models`, `voices`, and `kokoro` fetch the files that `assets.lock.json` lists with `scripts/fetch_assets.py`. The script saves each file in a fresh temporary folder and checks the size and the SHA-256 value. Only then does it move the file into place.
 
 ## Make targets
 
