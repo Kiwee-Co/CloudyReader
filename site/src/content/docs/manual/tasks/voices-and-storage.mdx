@@ -1,0 +1,170 @@
+---
+title: Manage voices and storage
+description: Check and retry voice downloads, add a Piper voice, copy voices to another Mac, free disk space, and reset the app.
+sidebar:
+  order: 7
+---
+
+import Figure from '../../../../components/Figure.astro';
+
+Use this page to see which voices the app has, fetch missing voices, add your own, and free disk space. The app keeps its voices and caches in the data folder, `~/Library/Application Support/cloudyreader`.
+
+To open the data folder, choose **Go > Go to Folder** in Finder, paste the path, and press Return.
+
+## Check which voices are installed
+
+1. Open Cloudy Reader.
+2. Open the **Voice** menu.
+
+The app downloads and checks the supported voices. [Voices and rotation modes](/manual/reference/voices/) lists them and the menu order.
+
+The menu groups the voices under the name of their [voice engine](/manual/reference/glossary/#voice-engine). The engine headings are labels, not choices.
+
+A row reads _name_ (_language_, _quality_). A dimmed row that says "not installed" is a voice whose file is missing. When every voice is installed, no row says "not installed".
+
+The menu shows placeholder text when it has no voice to list:
+
+- "Loading voices…": the app is listing the voices.
+- "No voice installed": no voice is on the Mac, and the menu is dimmed.
+- "Voices unavailable": the app could not list the voices, and the status bar shows an error.
+
+If the voices of one engine are missing from the menu, see [Troubleshooting](/manual/troubleshooting/#voices-from-one-engine-are-missing).
+
+## Download missing voices
+
+The app downloads missing supported voices by itself, once each time it starts. You can read with an installed voice while it works. It does not fetch a file that is already present.
+
+To retry a download that failed or stopped:
+
+1. Connect the Mac to the network.
+2. Quit Cloudy Reader with Command-Q.
+3. Open Cloudy Reader from **Applications**. Offline mode stops the download, so do not use the `--offline` option.
+4. Watch the status bar for "Downloading voices… _N_%" and a progress bar.
+5. When the percentage and the bar leave the status bar, open the **Voice** menu and check the list.
+
+<Figure
+  src="download-progress-light.svg"
+  dark="download-progress-dark.svg"
+  alt="The status bar while voices download: the text Downloading voices… 42% and a progress bar."
+  caption="The percentage counts a file as finished when its tries end."
+/>
+
+Point to the percentage to see the file in progress and the megabytes counted so far. A file whose tries all failed still counts, so a rising percentage does not show that voices arrived.
+
+Check the **Voice** menu, not the percentage. [The voice download does not progress](/manual/troubleshooting/#the-voice-download-does-not-progress) explains why.
+
+The percentage and the bar leave the status bar when the download ends, whatever the result. The status bar then shows "Voices downloaded." if it has no other message. If no voice arrived, the status bar keeps "No voice is installed." and shows no warning; see [No voice is installed](/manual/troubleshooting/#no-voice-is-installed).
+
+If some files fail on a Mac that already has a voice, the status bar can show the warning "Some voices could not be downloaded. They are tried again at the next start." Point to the message to read the names of the failed files, then repeat the steps above. The download does not resume a partial file, so each try starts that file again from the beginning.
+
+To stop a download, quit the app. It reports nothing, and the next start fetches the files that are still missing.
+
+The download never replaces a file that is already present, even a damaged one. Move the damaged file from the data folder to the Trash and open the app again.
+
+## Add a Piper voice
+
+Add a Piper voice when you want a voice beyond the supported voices. A voice has two files, `<name>.onnx` and `<name>.onnx.json`.
+
+1. Download both files from the [Piper voices repository on Hugging Face](https://huggingface.co/rhasspy/piper-voices).
+2. Quit Cloudy Reader with Command-Q.
+3. Open the data folder, then open its `voices` folder.
+4. Copy both files into `voices`.
+5. Open Cloudy Reader. The voice appears under **Piper** in the **Voice** menu.
+
+The app lists a voice only when both files are present and the `.onnx.json` file holds valid JSON. It takes the voice name from the file name, and the language and quality from the `.onnx.json` file. The menu sorts Piper voices by quality, best first, then by name.
+
+If a voice does not appear, the app skipped it. It prints a line that starts with "skipping voice" in Terminal. See [Read the lines the app prints](/manual/get-help/#read-the-lines-the-app-prints).
+
+A voice you add has three limits:
+
+- It never joins rotation, because rotation needs a known gender.
+- The app does not read a voice file again while it runs. Restart the app after you replace a file.
+- The pronunciation rules are written for English. The app lists a voice in another language, but the rules are not made for it.
+
+## Remove a voice you added
+
+1. Quit Cloudy Reader with Command-Q.
+2. Open the data folder, then open its `voices` folder.
+3. Move the voice's `.onnx` and `.onnx.json` files to the Trash.
+4. Open Cloudy Reader. The voice no longer appears in the **Voice** menu.
+
+If the removed voice was your selected voice, the app selects the first installed voice in the menu. Do not remove a supported voice this way: the app downloads it again at the next start unless offline mode is on.
+
+## Copy voices to another Mac
+
+Copy the voices to skip the download on the other Mac. Copy from a Mac where the voices work, because the app does not detect a damaged Piper file that has the right size.
+
+1. On the Mac that has the voices, quit Cloudy Reader and open the data folder.
+2. Copy the `voices` and `models` folders to a USB drive. Together they take about REL-DOWNLOAD-SIZE.
+3. On the other Mac, install Cloudy Reader but do not open it. See [Install, update, and uninstall](/manual/tasks/install/).
+4. In Finder, choose **Go > Go to Folder**, type `~/Library/Application Support`, and press Return.
+5. Open the `cloudyreader` folder. If it does not exist, choose **File > New Folder** and name the folder `cloudyreader`.
+6. Copy the `voices` and `models` folders from the drive into the `cloudyreader` folder.
+7. Open Cloudy Reader. The app downloads only the files that are missing.
+
+If the voices of one engine are missing from the menu after the copy, see [Troubleshooting](/manual/troubleshooting/#voices-from-one-engine-are-missing).
+
+## Free disk space
+
+The audio cache in the data folder keeps one WAV file for each distinct reading. It grows without limit, and the app never cleans it. The table lists the largest folders and what happens when you delete each one.
+
+| Folder or file        | Size                    | After you delete it                             |
+| --------------------- | ----------------------- | ----------------------------------------------- |
+| `cache/wav`           | Grows without limit     | Each question renders again at its next reading |
+| `voices` and `models` | About REL-DOWNLOAD-SIZE | The app downloads them again at the next start  |
+
+[Files, settings, and limits](/manual/reference/files-and-settings/#data-folder) lists the size of every file. The file you downloaded to install Cloudy Reader is outside the data folder. Delete it when you no longer need it, and keep it if you plan to install the app on another Mac.
+
+To delete the audio cache:
+
+1. Quit Cloudy Reader with Command-Q. **Repeat** needs the stored audio, so do not delete the cache while the app runs.
+2. Open the data folder, then open its `cache` folder.
+3. Move the `wav` folder to the Trash, then empty the Trash.
+
+The app creates the folder again at its next reading. Deleting voices frees space only until you open the app with a network again.
+
+## Reset the app
+
+Reset the app to remove its voices and caches and return every choice to its default.
+
+:::caution
+Resetting deletes voices you added by hand, and the app cannot download them again. Copy their files elsewhere first.
+:::
+
+1. Quit Cloudy Reader with Command-Q.
+
+2. In Finder, choose **Go > Go to Folder**, type `~/Library/Application Support`, and press Return.
+
+3. Move the `cloudyreader` folder to the Trash.
+
+4. Open Terminal from **Applications > Utilities** and run this command:
+
+   ```bash
+   defaults delete "com.cloudyreader.Cloudy Reader"
+   ```
+
+5. Open Cloudy Reader.
+
+{/* needs-fact: owner checklist: defaults delete on the preference domain */}
+
+With a network, the app downloads the voices again and starts with these defaults:
+
+- **Voice**: the first installed voice in the menu.
+- **Rotation**: **No rotation**.
+- **Read answer line**: not selected.
+- **Online lookups**: selected.
+- The window opens at its default size.
+
+[Files, settings, and limits](/manual/reference/files-and-settings/#preferences) lists the saved preference keys.
+
+To reset less, quit the app and do only one part:
+
+- Run only the `defaults delete` command to reset the choices and keep the voices.
+- Move only the `cache` folder inside the data folder to the Trash to clear both caches. The app creates it again.
+
+## Related
+
+- [Files, settings, and limits](/manual/reference/files-and-settings/#data-folder)
+- [Voices and rotation modes](/manual/reference/voices/)
+- [Work offline](/manual/tasks/work-offline/)
+- [Privacy](/about/privacy/)

@@ -1,0 +1,91 @@
+---
+title: Work offline
+description: 'Use Cloudy Reader with no network: download the voices first, then deselect Online lookups or start in offline mode.'
+sidebar:
+  order: 6
+---
+
+import Figure from '../../../../components/Figure.astro';
+
+Read questions with no network, at home or at a venue. The voices must be on the Mac first, because the app downloads them when it starts.
+
+## Download the voices first
+
+The app downloads its voices at the first launch and keeps them on the Mac, so the first launch needs a network.
+
+1. Connect the Mac to the network.
+2. Open Cloudy Reader and keep the window open until the percentage and the progress bar leave the status bar.
+3. Open the **Voice** menu and check the list.
+
+When the download succeeds, the **Voice** menu lists every supported voice, and no row says "not installed". If the menu stays empty or a row says "not installed", the download failed: quit the app and open it again with the network on. [Manage voices and storage](/manual/tasks/voices-and-storage/) shows how to follow the download and how to retry it.
+
+:::tip
+Test before the event. Turn Wi-Fi off, open Cloudy Reader, and read a question. If the question plays, the voice you chose works without a network.
+:::
+
+## Turn off name lookups
+
+Name lookups send a detected chemical, protein, or gene name to PubChem or UniProt. The answers never change what you hear. A lookup that cannot reach the service can hold a reading for up to 2.5 seconds. Turn lookups off to skip that wait and to keep every detected name on your Mac.
+
+The window has two options, and **Online lookups** controls name lookups.
+
+<Figure
+  src="options-light.svg"
+  dark="options-dark.svg"
+  alt="The Options area of the Cloudy Reader window with a checkbox labeled Read answer line and a checkbox labeled Online lookups."
+  caption="The Options area holds two checkboxes."
+  callouts="options"
+/>
+
+1. **Read answer line**: not selected.
+2. **Online lookups**: selected, the default.
+
+Deselect **Online lookups**. The app stops name lookups and remembers your choice for the next launch.
+
+## Start in offline mode
+
+Offline mode stops name lookups and the voice download until you quit the app.
+
+1. Quit Cloudy Reader with Command-Q. The app reads the option only when it starts.
+
+2. Open Terminal from **Applications > Utilities**.
+
+3. Run this command:
+
+   ```bash
+   open -a "Cloudy Reader" --args --offline
+   ```
+
+The Cloudy Reader window opens.
+
+:::note
+The window shows no sign of offline mode, and **Online lookups** stays as you left it. The variable `CLOUDYREADER_OFFLINE` has the same effect when you run the app by its path in Terminal. See [Command line](/manual/reference/command-line/) for the form.
+:::
+
+## Check what offline mode changes
+
+Offline mode stops two features:
+
+- Name lookups. PubChem and UniProt receive no request.
+- The voice download. The app sends no request, creates no folder, and shows no message.
+
+The diagram in [Privacy](/about/privacy/#figure-network-use) shows both features. Everything else works as usual:
+
+- Reading works with every installed voice. The local OPSIN check, which parses chemical names on your Mac, keeps running.
+- If no voice is installed, **Speak** stays dimmed. See [No voice is installed](/manual/troubleshooting/#no-voice-is-installed).
+- Offline mode is not saved. The next normal launch is online again.
+
+## Return to online use
+
+1. Quit Cloudy Reader with Command-Q.
+2. Open Cloudy Reader from **Applications**.
+3. Select **Online lookups** if you deselected it.
+
+The app is online again, and it downloads any voice that is missing.
+
+## Related
+
+- [Manage voices and storage](/manual/tasks/voices-and-storage/)
+- [Command line](/manual/reference/command-line/)
+- [Privacy](/about/privacy/)
+- [Run a team practice](/manual/tasks/team-practice/)
