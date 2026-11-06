@@ -79,6 +79,8 @@ _NO_VOICE = "No voice is installed."
 _PARTIAL = "Some voices could not be downloaded. They are tried again at the next start."
 _MB = 1_000_000  # decimal megabytes, as Finder counts them
 _DOWNLOADING = "Downloading voices"  # the bar's name for a report that names no group
+_POLITE = QAccessible.AnnouncementPoliteness.Polite
+_POLITENESS = {Tone.ERROR: QAccessible.AnnouncementPoliteness.Assertive, Tone.WARNING: _POLITE}
 
 
 class ClipboardSource(Protocol):
@@ -665,17 +667,22 @@ class MainWindow(QMainWindow):
             every = "\n".join(line for line, _ in skips)
             self._notify_if_idle(actionable[0], tone=Tone.WARNING, tooltip=every)
         elif outcome == "complete":
-            self._notify_if_idle("Voices downloaded.")
+            self._notify_if_idle("Voices downloaded.", announce=True)
         if getattr(result, "files", 0) > 0:
             self._refresh_voices()
         self.prefetch_finished.emit(result)
 
     def _notify_if_idle(
-        self, text: str, *, tone: Tone = Tone.INFO, tooltip: str | None = None
+        self,
+        text: str,
+        *,
+        tone: Tone = Tone.INFO,
+        tooltip: str | None = None,
+        announce: bool = False,
     ) -> None:
         """Show a download outcome only in an empty message slot: never over the user's own."""
         if not self._status.currentMessage():
-            self._notify(text, tooltip=tooltip, tone=tone)
+            self._notify(text, tooltip=tooltip, tone=tone, announce=announce)
 
     def _refresh_voices(self) -> None:
         """Re-list after downloads. One re-list in flight; requests meanwhile become one more."""
@@ -739,9 +746,28 @@ class MainWindow(QMainWindow):
         busy = self._busy or self._loading_voices
         self.busy_bar.setVisible(busy and self.prefetch_bar.isHidden())
 
-    def _notify(self, text: str, *, tooltip: str | None = None, tone: Tone = Tone.INFO) -> None:
+    def _notify(
+        self,
+        text: str,
+        *,
+        tooltip: str | None = None,
+        tone: Tone = Tone.INFO,
+        announce: bool = False,
+    ) -> None:
+        """Show a status message; with no modal, VoiceOver hears it through an announcement.
+
+        Errors are announced assertively, every time; warnings, and information passed with
+        announce, politely and once while they show. Other information stays silent, so that
+        VoiceOver never talks over the reading.
+        """
+        changed = (text, tone) != (self._status.currentMessage(), self._status.tone)
         self._status.show_message(text, tone)
         self._status.setToolTip(tooltip or text)
+        politeness = _POLITENESS.get(tone, _POLITE if announce else None)
+        if politeness is not None and (changed or tone is Tone.ERROR):
+            event = QAccessibleAnnouncementEvent(self._status, text)
+            event.setPoliteness(politeness)
+            QAccessible.updateAccessibility(event)
 
     def _clear_status(self) -> None:
         self._status.clearMessage()
@@ -750,11 +776,7 @@ class MainWindow(QMainWindow):
     def _show_error(self, exc: BaseException) -> None:
         detail = str(exc).strip() or type(exc).__name__
         text = f"Error: {detail.splitlines()[0]}"
-        self._notify(text, tooltip=f"Error: {detail}", tone=Tone.ERROR)
-        # No modal, so tell assistive tech the status changed.
-        event = QAccessibleAnnouncementEvent(self._status, text)
-        event.setPoliteness(QAccessible.AnnouncementPoliteness.Assertive)
-        QAccessible.updateAccessibility(event)
+        self._notify(text, tooltip=f"Error: {detail}", tone=Tone.ERROR)  # announced: no modal
         self.error_occurred.emit(text)
 
     def _play_status(self, text: str) -> None:
