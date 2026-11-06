@@ -92,12 +92,12 @@ These targets run the gates. [Test and CI](/developer/testing/) explains what ea
 
 These targets build the app, the release files, and the icon files.
 
-| Target       | What it does                                                                                                   |
-| ------------ | -------------------------------------------------------------------------------------------------------------- |
-| `app`        | Build `dist/Cloudy Reader.app`, ad-hoc signed. Takes `BUNDLE_VOICES`, `KOKORO`, `ENGINES`, and `ICON`.         |
-| `release`    | Build the lean app, then its zip and disk image with SHA-256 files in `dist/`. Takes `VERSION`. Never uploads. |
-| `icons`      | Regenerate the four icon candidates and `assets/icons/preview.png`.                                            |
-| `open-icons` | Open `assets/icons/preview.png`.                                                                               |
+| Target       | What it does                                                                                                              |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `app`        | Build `dist/Cloudy Reader.app`, ad-hoc signed. Takes `BUNDLE_VOICES`, `KOKORO`, `ENGINES`, `START_QUESTIONS`, and `ICON`. |
+| `release`    | Build the lean app, then its zip and disk image with SHA-256 files in `dist/`. Takes `VERSION`. Never uploads.            |
+| `icons`      | Regenerate the four icon candidates and `assets/icons/preview.png`.                                                       |
+| `open-icons` | Open `assets/icons/preview.png`.                                                                                          |
 
 ### Live checks and samples
 
@@ -135,23 +135,24 @@ These targets remove generated files.
 
 Pass a variable on the command line, as in `make voices VOICES="en_US-amy-medium"`. `make help` prints the variables with their defaults.
 
-| Variable        | Default                       | Effect                                                                               |
-| --------------- | ----------------------------- | ------------------------------------------------------------------------------------ |
-| `UV`            | `uv`                          | The uv executable.                                                                   |
-| `COV_MIN`       | `75`                          | The coverage floor for `make test`, in percent.                                      |
-| `VOICES`        | The pinned Piper ids          | The Piper ids for `make voices` and `make doctor`. Ids come from `assets.lock.json`. |
-| `OFFLINE`       | `0`                           | `1` makes uv use `--offline` and makes the fetcher refuse downloads.                 |
-| `CONFIRM`       | `no`                          | `yes` lets `clean-all` delete `.venv` and `.cache`.                                  |
-| `ONLINE`        | `0`                           | `1` makes `make doctor` also check that PubChem and UniProt answer.                  |
-| `VERIFY`        | `0`                           | `1` makes `make doctor` check the SHA-256 value of each asset.                       |
-| `APP_NAME`      | `Cloudy Reader`               | The bundle name for `make app` and `make release`.                                   |
-| `ICON`          | Empty                         | An icon folder under `assets/icons/`. Empty reads `assets/icons/default.txt`.        |
-| `KOKORO`        | `auto`                        | `auto`, `0`, or `1`. Whether `make app` bundles Kokoro.                              |
-| `ENGINES`       | `auto`                        | `auto`, `0`, or `1`. Whether `make app` bundles the optional engines.                |
-| `BUNDLE_VOICES` | `1`                           | `1` bundles the voices and the Kokoro model. `0` builds a lean app.                  |
-| `OUT`           | `dist`                        | The output folder for `make app` and `make release`.                                 |
-| `ENGINE`        | Empty                         | `chatterbox_turbo` or `qwen3_tts`. The engine that `make pin-engine` pins.           |
-| `VERSION`       | `version` in `pyproject.toml` | The version that `make release` checks and puts in the zip name.                     |
+| Variable          | Default                       | Effect                                                                                                                                                              |
+| ----------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `UV`              | `uv`                          | The uv executable.                                                                                                                                                  |
+| `COV_MIN`         | `75`                          | The coverage floor for `make test`, in percent.                                                                                                                     |
+| `VOICES`          | The pinned Piper ids          | The Piper ids for `make voices` and `make doctor`. Ids come from `assets.lock.json`.                                                                                |
+| `OFFLINE`         | `0`                           | `1` makes uv use `--offline` and makes the fetcher refuse downloads.                                                                                                |
+| `CONFIRM`         | `no`                          | `yes` lets `clean-all` delete `.venv` and `.cache`.                                                                                                                 |
+| `ONLINE`          | `0`                           | `1` makes `make doctor` also check that PubChem and UniProt answer.                                                                                                 |
+| `VERIFY`          | `0`                           | `1` makes `make doctor` check the SHA-256 value of each asset.                                                                                                      |
+| `APP_NAME`        | `Cloudy Reader`               | The bundle name for `make app` and `make release`.                                                                                                                  |
+| `ICON`            | Empty                         | An icon folder under `assets/icons/`. Empty reads `assets/icons/default.txt`.                                                                                       |
+| `KOKORO`          | `auto`                        | `auto`, `0`, or `1`. Whether `make app` bundles Kokoro.                                                                                                             |
+| `ENGINES`         | `auto`                        | `auto`, `0`, or `1`. Whether `make app` bundles the optional engines.                                                                                               |
+| `BUNDLE_VOICES`   | `1`                           | `1` bundles the voices and the Kokoro model. `0` builds a lean app.                                                                                                 |
+| `START_QUESTIONS` | `1`                           | `1` copies the test-fixture questions into the app, which shows one random question in the empty question box at start. `0` copies none. `make release` forces `0`. |
+| `OUT`             | `dist`                        | The output folder for `make app` and `make release`.                                                                                                                |
+| `ENGINE`          | Empty                         | `chatterbox_turbo` or `qwen3_tts`. The engine that `make pin-engine` pins.                                                                                          |
+| `VERSION`         | `version` in `pyproject.toml` | The version that `make release` checks and puts in the zip name.                                                                                                    |
 
 `scripts/build_app.sh` also reads two time limits from the environment. `SELFTEST_TIMEOUT` is the limit of each self-test run in whole seconds, and it defaults to 300. `PROBE_TIMEOUT` is the limit of the engine probe in seconds, and it defaults to 120. This example raises the self-test limit:
 
@@ -244,13 +245,13 @@ make setup   # the voices must exist in .data/voices
 make app
 ```
 
-`make app` builds a self-contained app: it copies the Piper voices and, when Kokoro is included, the Kokoro model folder into the bundle. Pass `BUNDLE_VOICES=0` for a lean app, which holds no voice and downloads them at first launch.
+`make app` builds a self-contained app: it copies the Piper voices and, when Kokoro is included, the Kokoro model folder into the bundle. Pass `BUNDLE_VOICES=0` for a lean app, which holds no voice and downloads them at first launch. By default it also copies the test-fixture questions, so the app shows one in the empty question box at start. That makes it a dev build. Pass `START_QUESTIONS=0` to leave them out.
 
 `make app` first runs `deps`, `models`, and the `packaging` dependency group. Then `scripts/build_app.sh` does the work. It stops at the first error.
 
 1. **Preflight.** It needs macOS, arm64, a valid `APP_NAME`, a whole-number `SELFTEST_TIMEOUT`, `.venv`, `codesign`, the scispaCy model, PyInstaller, and at least one Piper voice in `.data/voices`.
-2. **Inputs.** It picks the icon from `ICON` or `assets/icons/default.txt`. It checks `BUNDLE_VOICES`. It decides about Kokoro: `auto` bundles it only when the extra is installed and every pinned file has its pinned size. `1` demands it. `0` skips it. It then decides about the optional engines: `auto` tries them only with Kokoro, and only when `assets.lock.json` pins engine files. `1` demands them and needs `KOKORO=1`. `0` skips them.
-3. **PyInstaller.** It builds a one-folder bundle from `packaging/CloudyReader.spec` in `build/dist/`. The entry point is `packaging/launcher.py`. The log is `build/pyinstaller.log`. The script prints that log without two known harmless warnings and says how many it hid.
+2. **Inputs.** It picks the icon from `ICON` or `assets/icons/default.txt`. It checks `BUNDLE_VOICES` and `START_QUESTIONS`. It decides about Kokoro: `auto` bundles it only when the extra is installed and every pinned file has its pinned size. `1` demands it. `0` skips it. It then decides about the optional engines: `auto` tries them only with Kokoro, and only when `assets.lock.json` pins engine files. `1` demands them and needs `KOKORO=1`. `0` skips them.
+3. **PyInstaller.** It builds a one-folder bundle from `packaging/CloudyReader.spec` in `build/dist/`. The entry point is `packaging/launcher.py`. The log is `build/pyinstaller.log`. The script prints that log without two known harmless warnings and says how many it hid. With `START_QUESTIONS=1`, the spec adds the test-fixture questions as `Contents/Resources/start_questions`.
 4. **Engine probe.** When the build includes the engines, the script runs the staged bundle once with `CLOUDYREADER_PROBE=engines`, offline. The launcher hands that run to `cloudyreader/engines/bundle_probe.py`. The probe asks each engine's `supported()`, imports the packages that the engines need, and finds the decoder file that the Qwen3-TTS gate reads. It prints one `ok` or `FAIL` line for each check, loads no weights, and exits 1 when a check fails. After a failed probe, `ENGINES=auto` rebuilds the bundle without the engines, and `ENGINES=1` stops the build. The probe has a time limit of `PROBE_TIMEOUT` seconds, and its output goes to `build/engines-probe.log`.
 5. **Assets.** It copies `assets.lock.json` into `Contents/Resources/assets`. With `BUNDLE_VOICES=1` it also copies the Piper voices and the Kokoro folder, if used.
 6. **Info.plist check.** It lints the file. It requires an existing icon, a version, and `LSMinimumSystemVersion`.
@@ -258,7 +259,7 @@ make app
 8. **Ad-hoc signing.** It runs `codesign --force --deep -s -`. This uses no Developer ID and skips notarization.
 9. **Install.** It moves a previous `dist/Cloudy Reader.app` into `build/trash.*`. It deletes nothing. Then it moves the app into `dist/` and runs `codesign --verify --deep --strict`.
 10. **Self-test.** It runs the bundle with `--self-test`, offline and headless, twice on one data folder. A lean build (`BUNDLE_VOICES=0`) adds two steps. First, it links the host's voices and Kokoro model folder, if the host has one, into that folder. Then it runs a third time on an empty folder. The third run must exit 2 with `FAIL: no Piper voice installed` and no traceback.
-11. **Summary.** It prints the size, the voices, the Kokoro state, the engine state, and the ten largest components. When the build includes the engines, it also lists the engine folders and their sizes.
+11. **Summary.** It prints the size, the voices, the Kokoro state, the engine state, the start-question state, and the ten largest components. When the build includes the engines, it also lists the engine folders and their sizes.
 
 Each self-test run has a time limit of `SELFTEST_TIMEOUT` seconds. Logs go to `build/selftest-1.log` and `build/selftest-2.log`. With `BUNDLE_VOICES=0`, the third run logs to `build/selftest-no-voice.log`. `make clean-app` frees `build/` and the app in `dist/`.
 
@@ -279,6 +280,8 @@ The bundle carries these values:
 
 With the engines, the spec also collects their two modules, their `mlx_audio` model packages, the `transformers` tokenizer code that they load by name, and `tokenizers`. Weights never ship: they download.
 
+A build with `START_QUESTIONS=1` also holds the test-fixture questions in `Contents/Resources/start_questions`. A release holds none.
+
 ### Choose an icon
 
 Four candidates live in `assets/icons/`: `cloud-atom`, `cloud-book`, `cloud-voice`, and `cloud-wave`. The file `assets/icons/default.txt` names the default, `cloud-atom`.
@@ -291,7 +294,7 @@ ICON=cloud-wave make app
 
 ## Build the release zip
 
-`make release` builds the files that a GitHub release carries: a zip and a disk image, each with a SHA-256 file. Both hold the same lean app: no voice files and no Kokoro model. The app downloads them at first launch. `make release` never uploads anything.
+`make release` builds the files that a GitHub release carries: a zip and a disk image, each with a SHA-256 file. Both hold the same lean app: no voice files, no Kokoro model, and no test-fixture question. The app downloads them at first launch. `make release` never uploads anything.
 
 Set the version in every place that [Change the version](/developer/contributing/#change-the-version) lists. Then run the sync step, so that `.venv` knows the version, and build. This example builds version 0.0.2:
 
@@ -305,17 +308,17 @@ The sync step needs the network and the public package index. `VERSION` defaults
 `make release` runs three commands in order:
 
 1. `scripts/build_app.sh release-preflight` makes three checks. `VERSION` must look like `1.2.3`. The `cloudyreader` package metadata in `.venv` must say `VERSION`, because PyInstaller bundles that metadata and the About box and `--version` read it. `hdiutil` and `diskutil` must be on the `PATH`, because the disk image needs them. A metadata mismatch stops the build and names the sync step.
-2. `make app` with `BUNDLE_VOICES=0 OFFLINE=1 ICON=cloud-atom KOKORO=1` and the `ENGINES` value of the recipe builds the lean app with every check from [Build the app](#build-the-app).
+2. `make app` with `BUNDLE_VOICES=0 OFFLINE=1 ICON=cloud-atom KOKORO=1 START_QUESTIONS=0` and the `ENGINES` value of the recipe builds the lean app with every check from [Build the app](#build-the-app).
 3. `scripts/build_app.sh release` zips the app, builds the disk image, and checks both.
 
-The recipe sets `ENGINES` to `0` until `assets.lock.json` pins engine weights. The commit that pins them changes the recipe, so a release never bundles an engine whose files the app cannot download. An `ENGINES` value on your command line does not change the recipe.
+The recipe sets `ENGINES` to `auto`, so a release bundles the engines only when `assets.lock.json` pins their files and the engine probe passes. It sets `START_QUESTIONS` to `0`, so a release never holds the test-fixture questions. A value for either variable on your command line does not change the recipe.
 
 The last command works in this order:
 
 - It moves an older zip, disk image, and checksums with the same names into `build/trash.*`.
 - `ditto -c -k --keepParent --norsrc --noextattr` makes the zip. The command fails when the zip holds `__MACOSX`, `.DS_Store`, or `._` files.
 - It writes the SHA-256 beside the zip and checks the zip against it.
-- It extracts the zip and checks the extracted copy. The copy must pass `codesign --verify --deep --strict`, carry `VERSION` in `CFBundleShortVersionString`, print `Cloudy Reader <VERSION>` for `--version`, pass the voice audit, and pass the self-test.
+- It extracts the zip and checks the extracted copy. The copy must pass `codesign --verify --deep --strict`, carry `VERSION` in `CFBundleShortVersionString`, print `Cloudy Reader <VERSION>` for `--version`, pass the voice audit, pass the start-question audit, and pass the self-test.
 - It builds the disk image from that extracted copy, writes the SHA-256 beside the image, and checks the image against it. Then it runs the checks that [Build the disk image](#build-the-disk-image) lists.
 
 The release step leaves these files in `dist/`:
@@ -362,21 +365,23 @@ The build checks the image in this order:
 
 The script prints `build_app: error:` before each message. The table lists the text after it.
 
-| Message starts with                               | Fix                                                                                      |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `no .venv`                                        | Run `make deps`.                                                                         |
-| `no Piper voice (.onnx + .onnx.json) in`          | Run `make voices`.                                                                       |
-| `scispaCy model en_ner_craft_md is not installed` | Run `make models`.                                                                       |
-| `codesign not found`                              | Run `xcode-select --install`.                                                            |
-| `KOKORO=1 but`                                    | Run `make kokoro`. For `make app`, you can pass `KOKORO=auto` or `KOKORO=0` instead.     |
-| `ENGINES=1 needs KOKORO=1`                        | Pass `KOKORO=1`, or use `ENGINES=auto` or `ENGINES=0`.                                   |
-| `ENGINES=1 but the engine probe failed`           | Read `build/engines-probe.log`. Use `ENGINES=auto` to build without the engines.         |
-| `selftest-1 timed out after`                      | Read the log that the message names in `build/`. Raise `SELFTEST_TIMEOUT` on a slow Mac. |
-| `self-test run 1 exited`                          | Read `build/selftest-1.log`. Run 2 uses `build/selftest-2.log`.                          |
-| `voice binaries in the bundle`                    | A lean bundle holds a voice or model file. The message lists the paths.                  |
-| `VERSION must look like`                          | Pass three numbers, such as `VERSION=1.2.3`.                                             |
-| `the build venv's cloudyreader metadata says`     | Run the sync step, then run `make release` again.                                        |
-| `hdiutil not found` or `diskutil not found`       | Both tools ship with macOS. Check your `PATH`.                                           |
-| `the app says version`                            | `VERSION` and the version in `pyproject.toml` differ. Make them match.                   |
-| `the extracted copy's --version prints`           | The bundled metadata is stale. Run the sync step, then run `make release` again.         |
-| `could not make` or `dmgbuild could not make`     | Read `build/dmg-create.log`. The message names the disk image.                           |
+| Message starts with                               | Fix                                                                                                                                                      |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `no .venv`                                        | Run `make deps`.                                                                                                                                         |
+| `no Piper voice (.onnx + .onnx.json) in`          | Run `make voices`.                                                                                                                                       |
+| `scispaCy model en_ner_craft_md is not installed` | Run `make models`.                                                                                                                                       |
+| `codesign not found`                              | Run `xcode-select --install`.                                                                                                                            |
+| `KOKORO=1 but`                                    | Run `make kokoro`. For `make app`, you can pass `KOKORO=auto` or `KOKORO=0` instead.                                                                     |
+| `ENGINES=1 needs KOKORO=1`                        | Pass `KOKORO=1`, or use `ENGINES=auto` or `ENGINES=0`.                                                                                                   |
+| `ENGINES=1 but the engine probe failed`           | Read `build/engines-probe.log`. Use `ENGINES=auto` to build without the engines.                                                                         |
+| `START_QUESTIONS must be`                         | Pass `START_QUESTIONS=0` or `START_QUESTIONS=1`.                                                                                                         |
+| `selftest-1 timed out after`                      | Read the log that the message names in `build/`. Raise `SELFTEST_TIMEOUT` on a slow Mac.                                                                 |
+| `self-test run 1 exited`                          | Read `build/selftest-1.log`. Run 2 uses `build/selftest-2.log`.                                                                                          |
+| `voice binaries in the bundle`                    | A lean bundle holds a voice or model file. The message lists the paths.                                                                                  |
+| `test-fixture questions in the bundle`            | A release bundle holds the test-fixture questions. The message lists the paths. Build the release with `make release`, which forces `START_QUESTIONS=0`. |
+| `VERSION must look like`                          | Pass three numbers, such as `VERSION=1.2.3`.                                                                                                             |
+| `the build venv's cloudyreader metadata says`     | Run the sync step, then run `make release` again.                                                                                                        |
+| `hdiutil not found` or `diskutil not found`       | Both tools ship with macOS. Check your `PATH`.                                                                                                           |
+| `the app says version`                            | `VERSION` and the version in `pyproject.toml` differ. Make them match.                                                                                   |
+| `the extracted copy's --version prints`           | The bundled metadata is stale. Run the sync step, then run `make release` again.                                                                         |
+| `could not make` or `dmgbuild could not make`     | Read `build/dmg-create.log`. The message names the disk image.                                                                                           |
