@@ -15,7 +15,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QLabel,
     QMessageBox,
-    QStyleFactory,
     QWidget,
 )
 
@@ -166,18 +165,6 @@ WINDOW_SCREENS = {
 @pytest.fixture(params=list(APPEARANCES))
 def appearance(request) -> Qt.ColorScheme:
     return APPEARANCES[request.param]
-
-
-@pytest.fixture
-def mac_style(qapp):
-    """The style the app runs with on macOS, for the duration of one test."""
-    native = QStyleFactory.create("macOS")
-    if native is None:
-        pytest.skip("the macOS style exists only on macOS")
-    default = qapp.style().name()
-    QApplication.setStyle(native)
-    yield native
-    QApplication.setStyle(QStyleFactory.create(default))
 
 
 def at_minimum_size(qtbot, window) -> None:

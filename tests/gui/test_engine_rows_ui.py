@@ -5,6 +5,7 @@ from dataclasses import replace
 
 import pytest
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QWidget
 
 from cloudyreader.engine_catalog import LOW_DISK, NOT_IN_BUILD, NOT_WRITABLE
 from cloudyreader.gui.fake_service import ENGINE_FAKE_VOICES, FAKE_VOICES, FakeReaderService
@@ -140,10 +141,11 @@ def test_a_new_group_re_lists_once_so_a_finished_engine_appears_mid_run(qtbot, m
 
 @pytest.fixture
 def picker(qtbot):
-    widget = VoicePicker()
-    qtbot.addWidget(widget)
+    host = QWidget()
+    qtbot.addWidget(host)
+    widget = VoicePicker(host)
     widget.set_voices(ENGINE_FAKE_VOICES)
-    return widget
+    yield widget  # the host lives as long as the fixture: qtbot keeps only a weak reference
 
 
 def test_engine_groups_follow_piper_and_kokoro_under_their_titles(picker):

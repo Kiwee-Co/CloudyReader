@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtGui import QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSpinBox, QWidget
+from PySide6.QtWidgets import QComboBox, QFormLayout, QLabel, QSpinBox
 
 from cloudyreader.engine_catalog import TITLES
 from cloudyreader.gui import tokens
@@ -27,21 +27,23 @@ def _label(voice: VoiceInfo) -> str:
     return f"{voice.name} ({', '.join(d for d in details if d)})"
 
 
-class VoicePicker(QWidget):
+class VoicePicker(QObject):
     """Emits voice_changed(key) when the user lands on a voice. A rebuild never emits.
 
-    The caller places `label` (its buddy is the combo) beside the picker, as a form row does.
+    add_rows() puts the Voice row and the Speaker row into a form. The popup is a field of the
+    form itself: in a container or a box layout, macOS would move its visible edge off the
+    form's field edge. The Speaker row shows only for a voice with more than one speaker.
     """
 
     voice_changed = Signal(str)
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._voices: dict[str, VoiceInfo] = {}
         self._rows: dict[str, int] = {}  # installed voices only
-        self._model = QStandardItemModel(self)
 
         self.combo = QComboBox()
+        self._model = QStandardItemModel(self.combo)
         self.combo.setModel(self._model)
         self.combo.setAccessibleName("Voice")
         self.combo.setPlaceholderText(_NO_VOICE)
@@ -54,24 +56,16 @@ class VoicePicker(QWidget):
 
         self.label = QLabel("Voice:")
         self.label.setBuddy(self.combo)
-        speaker_label = QLabel("Speaker:")
-        speaker_label.setBuddy(self.speaker_spin)
-        self.speaker_box = QWidget()
-        speaker_layout = QHBoxLayout(self.speaker_box)
-        speaker_layout.setContentsMargins(0, 0, 0, 0)
-        speaker_layout.setSpacing(tokens.CONTROL_SPACING)
-        speaker_layout.addWidget(speaker_label)
-        speaker_layout.addWidget(self.speaker_spin)
-        self.speaker_box.hide()
-
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(tokens.GROUP_SPACING)
-        layout.addWidget(self.combo)
-        layout.addWidget(self.speaker_box)
-        layout.addStretch(1)  # given extra width, the popup still keeps its natural size
+        self.speaker_label = QLabel("Speaker:")
+        self.speaker_label.setBuddy(self.speaker_spin)
+        for widget in (self.speaker_label, self.speaker_spin):
+            widget.hide()
 
         self.combo.currentIndexChanged.connect(self._on_index_changed)
+
+    def add_rows(self, form: QFormLayout) -> None:
+        form.addRow(self.label, self.combo)
+        form.addRow(self.speaker_label, self.speaker_spin)  # hidden, it takes no room
 
     def set_voices(self, voices: Sequence[VoiceInfo], preferred: str | None = None) -> None:
         """Rebuild grouped by engine; select `preferred`, else the first installed voice."""
@@ -124,7 +118,7 @@ class VoicePicker(QWidget):
         return True
 
     def speaker_id(self) -> int | None:
-        return None if self.speaker_box.isHidden() else self.speaker_spin.value()
+        return None if self.speaker_spin.isHidden() else self.speaker_spin.value()
 
     def _on_index_changed(self, _index: int) -> None:
         self._sync_speaker()
@@ -139,4 +133,5 @@ class VoicePicker(QWidget):
         if multi:
             self.speaker_spin.setRange(0, voice.num_speakers - 1)
             self.speaker_spin.setValue(0)
-        self.speaker_box.setVisible(multi)
+        for widget in (self.speaker_label, self.speaker_spin):
+            widget.setVisible(multi)

@@ -179,21 +179,24 @@ def test_voice_and_options_share_one_right_aligned_label_column(window):
     form = form_of(window)
     label_role = QFormLayout.ItemRole.LabelRole
     field_role = QFormLayout.ItemRole.FieldRole
+    picker = window.voice_picker
 
     assert form.labelAlignment() & Qt.AlignmentFlag.AlignRight
-    assert form.itemAt(0, label_role).widget() is window.voice_picker.label
-    assert form.itemAt(0, field_role).widget() is window.voice_picker
-    assert form.itemAt(1, label_role).widget().text() == "Rotation:"
-    assert form.itemAt(1, label_role).widget().buddy() is window.rotation_combo
-    assert form.itemAt(1, field_role).widget() is window.rotation_combo
-    assert form.itemAt(2, label_role).widget().text() == "Options:"
-    assert form.itemAt(2, field_role).widget() is window.read_answer_check
-    assert form.itemAt(3, label_role) is None
-    assert form.itemAt(3, field_role).widget() is window.online_lookups_check
+    assert form.itemAt(0, label_role).widget() is picker.label
+    assert form.itemAt(0, field_role).widget() is picker.combo  # the popup itself: no container
+    assert form.itemAt(1, label_role).widget() is picker.speaker_label
+    assert form.itemAt(1, field_role).widget() is picker.speaker_spin
+    assert form.itemAt(2, label_role).widget().text() == "Rotation:"
+    assert form.itemAt(2, label_role).widget().buddy() is window.rotation_combo
+    assert form.itemAt(2, field_role).widget() is window.rotation_combo
+    assert form.itemAt(3, label_role).widget().text() == "Options:"
+    assert form.itemAt(3, field_role).widget() is window.read_answer_check
+    assert form.itemAt(4, label_role) is None
+    assert form.itemAt(4, field_role).widget() is window.online_lookups_check
 
 
 def test_options_label_does_not_rename_a_checkbox_for_assistive_tech(window):
-    label = form_of(window).itemAt(2, QFormLayout.ItemRole.LabelRole).widget()
+    label = form_of(window).itemAt(3, QFormLayout.ItemRole.LabelRole).widget()
 
     assert label.buddy() is None
 

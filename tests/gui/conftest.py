@@ -2,6 +2,7 @@ import os
 
 import pytest
 from PySide6.QtCore import QSettings
+from PySide6.QtWidgets import QApplication, QStyleFactory
 
 from cloudyreader.gui.fake_service import FakeClipboard, FakePlayer, FakeReaderService
 
@@ -66,3 +67,16 @@ def make_window(qtbot, service, player, settings, clipboard):
 @pytest.fixture
 def window(make_window):
     return make_window()
+
+
+@pytest.fixture
+def mac_style(qapp):
+    """The style the app runs with on macOS, for the duration of one test: its layout margins
+    and metrics are what the window must fit and align with."""
+    native = QStyleFactory.create("macOS")
+    if native is None:
+        pytest.skip("the macOS style exists only on macOS")
+    default = qapp.style().name()
+    QApplication.setStyle(native)
+    yield native
+    QApplication.setStyle(QStyleFactory.create(default))

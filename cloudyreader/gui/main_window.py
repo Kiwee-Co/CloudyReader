@@ -339,7 +339,7 @@ class MainWindow(QMainWindow):
         lines = tokens.QUESTION_MIN_LINES * QFontMetricsF(self.question_edit.font()).lineSpacing()
         self.question_card.setMinimumHeight(math.ceil(lines + 2 * tokens.CARD_PADDING))
 
-        self.voice_picker = VoicePicker()
+        self.voice_picker = VoicePicker(self)
         self.voice_picker.voice_changed.connect(self._drop_voice_note)  # the user chose: note done
         self.rotation_combo = QComboBox()
         self.rotation_combo.setAccessibleName("Voice rotation")
@@ -363,6 +363,11 @@ class MainWindow(QMainWindow):
         self.stop_button = self._action_button(self.stop_action, "Stop playback")
         self.speak_button = self._action_button(self.speak_action, "Speak the question")
         self.speak_button.setDefault(True)  # HIG (Buttons): the primary action is the default
+        # One width for the playback group, the widest label's, so the three read as one group.
+        playback = (self.repeat_button, self.stop_button, self.speak_button)
+        width = max(button.sizeHint().width() for button in playback)
+        for button in playback:
+            button.setMinimumWidth(width)
 
         self.script_toggle = DisclosureButton("Spoken script")
         self.script_toggle.setAccessibleDescription("Show or hide the text that is spoken")
@@ -378,14 +383,15 @@ class MainWindow(QMainWindow):
         self.script_panel = Card(self.script_view)
         self.script_panel.setMinimumHeight(tokens.SCRIPT_MIN_HEIGHT)
 
-        # HIG (Layout): a form with right-aligned labels; popups keep their natural width.
+        # HIG (Layout): a form with right-aligned labels; popups keep their natural width. Every
+        # field sits in the form directly, so the style lines up their visible edges.
         form = QFormLayout()
         form.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         form.setFormAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.FieldsStayAtSizeHint)
         form.setHorizontalSpacing(tokens.CONTROL_SPACING)
         form.setVerticalSpacing(tokens.CONTROL_SPACING)
-        form.addRow(self.voice_picker.label, self.voice_picker)
+        self.voice_picker.add_rows(form)
         rotation_label = QLabel("Rotation:")
         rotation_label.setBuddy(self.rotation_combo)  # a popup has no title of its own
         form.addRow(rotation_label, self.rotation_combo)

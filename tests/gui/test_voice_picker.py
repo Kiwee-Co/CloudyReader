@@ -1,5 +1,6 @@
 import pytest
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QFormLayout, QWidget
 
 from cloudyreader.gui.fake_service import FAKE_VOICES
 from cloudyreader.gui.voice_picker import VoicePicker
@@ -13,11 +14,13 @@ MICHAEL = "kokoro:am_michael"  # listed, not installed
 
 @pytest.fixture
 def picker(qtbot):
-    widget = VoicePicker()
-    qtbot.addWidget(widget)
+    host = QWidget()
+    qtbot.addWidget(host)
+    widget = VoicePicker(host)
+    widget.add_rows(QFormLayout(host))
     widget.set_voices(FAKE_VOICES)
-    widget.show()
-    return widget
+    host.show()
+    yield widget  # the host lives as long as the fixture: qtbot keeps only a weak reference
 
 
 def items(picker):
@@ -113,14 +116,15 @@ def test_voice_changed_is_silent_for_header_rows(qtbot, picker):
 
 
 def test_speaker_spin_is_hidden_for_a_single_speaker_voice(picker):
-    assert picker.speaker_box.isHidden()
+    assert picker.speaker_spin.isHidden()
     assert picker.speaker_id() is None
 
 
 def test_speaker_spin_appears_for_a_multi_speaker_voice(picker):
     picker.select_voice(LIBRITTS)
 
-    assert picker.speaker_box.isVisible()
+    assert picker.speaker_spin.isVisible()
+    assert picker.speaker_label.isVisible()  # its own form row, under the popup
     assert (picker.speaker_spin.minimum(), picker.speaker_spin.maximum()) == (0, 903)
     assert picker.speaker_id() == 0
 
@@ -137,7 +141,7 @@ def test_speaker_spin_hides_again_for_a_single_speaker_voice(picker):
     picker.speaker_spin.setValue(7)
     picker.select_voice(AMY)
 
-    assert picker.speaker_box.isHidden()
+    assert picker.speaker_spin.isHidden()
     assert picker.speaker_id() is None
 
 
@@ -157,7 +161,7 @@ def test_loading_state_shows_a_placeholder_and_disables_the_combo(picker):
 
     assert picker.voice_key() is None
     assert picker.speaker_id() is None
-    assert picker.speaker_box.isHidden()
+    assert picker.speaker_spin.isHidden()
     assert picker.combo.count() == 0
     assert picker.combo.placeholderText() == "Loading voices\u2026"
     assert not picker.combo.isEnabled()
