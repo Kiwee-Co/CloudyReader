@@ -9,9 +9,12 @@ const repo = 'https://github.com/Kiwee-Co/CloudyReader';
 // that do not exist yet. Without it, a missing page or style sheet fails the build.
 const pending = process.env.CR_PENDING === '1';
 const exists = (/** @type {string} */ path) => existsSync(new URL(path, import.meta.url));
-const page = (/** @type {string} */ slug) =>
-	['md', 'mdx'].some((ext) => exists(`./src/content/docs/${slug}.${ext}`));
-const pages = (/** @type {string[]} */ ...slugs) => (pending ? slugs.filter(page) : slugs);
+const page = (/** @type {string | { slug: string }} */ item) => {
+	const slug = typeof item === 'string' ? item : item.slug;
+	return ['md', 'mdx'].some((ext) => exists(`./src/content/docs/${slug}.${ext}`));
+};
+const pages = (/** @type {(string | { slug: string, label: string })[]} */ ...items) =>
+	pending ? items.filter(page) : items;
 const styles = (/** @type {string[]} */ ...files) => (pending ? files.filter(exists) : files);
 
 export default defineConfig({
@@ -44,7 +47,12 @@ export default defineConfig({
 			sidebar: [
 				{
 					label: 'Start here',
-					items: pages('manual/getting-started', 'download', 'manual/first-week'),
+					items: pages(
+						{ slug: 'manual/onboarding', label: 'Onboarding guide' },
+						'manual/getting-started',
+						'download',
+						'manual/first-week',
+					),
 				},
 				{ label: 'Tutorials', items: [{ autogenerate: { directory: 'manual/tutorials' } }] },
 				{ label: 'Tasks', items: [{ autogenerate: { directory: 'manual/tasks' } }] },
