@@ -1156,7 +1156,7 @@ def write_callouts(out: Path, name: str, markers: Sequence[Marker]) -> None:
     """The sidecar of a figure: light and dark share it, so the markers never drift."""
     path = out / f"{name}.callouts.json"
     body = {"image": name, "callouts": list(markers)}
-    path.write_text(json.dumps(body, indent=2) + "\n", encoding="utf-8")
+    path.write_text(json.dumps(body, indent=4) + "\n", encoding="utf-8")  # .prettierrc: JSON uses 4
     print(f"{path.name:34} {len(markers)} callouts")
 
 
