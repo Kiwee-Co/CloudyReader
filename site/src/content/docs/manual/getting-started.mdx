@@ -1,0 +1,155 @@
+---
+title: Get started
+description: Install Cloudy Reader, approve the first launch, let the voices download, and hear your first question in about five minutes.
+sidebar:
+  order: 1
+---
+
+import { Steps } from '@astrojs/starlight/components';
+import Figure from '../../../components/Figure.astro';
+
+This page takes you from the download to the first question you hear. It takes about 5 minutes on a 50 Mbps connection, plus the time to download Cloudy Reader.
+
+## Check your Mac
+
+<Steps>
+
+1. Choose **Apple menu > About This Mac**.
+2. Read the chip. A Mac with Apple silicon shows an Apple chip, such as Apple M2.
+3. Read the macOS version. It must be REL-MACOS-FLOOR or later.
+4. Make sure the Mac is online and has a working sound output.
+5. Make sure at least REL-DISK-TOTAL of disk space is free. **System Settings > General > Storage** shows the free space.
+
+</Steps>
+
+The chip is an Apple chip, macOS is REL-MACOS-FLOOR or later, and REL-DISK-TOTAL is free.
+
+An Intel-based Mac is not supported, and there is no workaround. If macOS is older than REL-MACOS-FLOOR, choose **System Settings > General > Software Update** and install any update to REL-MACOS-FLOOR or later. If no such update appears, the Mac is not supported. See [Your Mac is not supported](/manual/troubleshooting/#your-mac-is-not-supported). If the disk is too full, free some space before you go on.
+
+## Download and install
+
+<Steps>
+
+1. Open [Download Cloudy Reader](/download/) and download the zip (REL-ZIP-SIZE).
+2. Optional: check the SHA-256 with the command on that page.
+3. Double-click the zip in Finder to unzip it.
+4. Drag **Cloudy Reader** to the **Applications** folder. Do this before you open the app.
+
+</Steps>
+
+The figure shows the whole path to the first open. The next section covers its last two steps.
+
+<Figure
+  src="install-flow-light.svg"
+  dark="install-flow-dark.svg"
+  alt="Four steps of the first open: download the zip, move Cloudy Reader to Applications, open it, then click Open Anyway in System Settings > Privacy & Security."
+  caption="macOS blocks the first open, so the path ends with Open Anyway."
+/>
+
+Cloudy Reader is in the Applications folder. Delete the zip to free REL-ZIP-SIZE, or keep it to install the app on another Mac.
+
+If the checksum does not match, delete the zip and download it again. See [The checksum does not match](/manual/troubleshooting/#the-checksum-does-not-match). If the mismatch repeats, follow [Report a security issue](/manual/get-help/#report-a-security-issue).
+
+To build the app from source instead, see [Build from source](/developer/building/).
+
+## Open the app
+
+The app is signed ad hoc and is not notarized, so macOS asks you to approve the first launch once.
+
+<Steps>
+
+1. Open **Applications** and double-click Cloudy Reader.
+2. macOS says it cannot verify the app. Close the dialog. This message is expected: see [macOS cannot verify the app](/manual/troubleshooting/#macos-cannot-verify-the-app).
+3. Open **System Settings > Privacy & Security**.
+4. Scroll to **Security** and find the message about Cloudy Reader.
+5. Click **Open Anyway** and confirm with your password or Touch ID.
+6. Open Cloudy Reader again and click **Open**.
+
+</Steps>
+
+Approve only an app that comes from a source you trust. The dialog wording differs between macOS versions. [Approve the app](/manual/tasks/first-open/#approve-the-app) has the full procedure.
+
+The Cloudy Reader window opens.
+
+If there is no **Open Anyway** button, see [Open Anyway is missing](/manual/troubleshooting/#open-anyway-is-missing) and [If Open Anyway is missing](/manual/tasks/first-open/#if-open-anyway-is-missing). If macOS says the app is damaged, see [macOS says the app is damaged](/manual/troubleshooting/#macos-says-the-app-is-damaged). On a school or work Mac, ask the administrator.
+
+## Let the voices download
+
+Cloudy Reader downloads its voices at the first launch, about REL-DOWNLOAD-SIZE in all.
+
+<Steps>
+
+1. Keep the window open and the Mac online. Closing the window stops the download.
+2. Read the status bar at the bottom of the window. It shows "Loading voices…" briefly, then "No voice is installed." On the right, it shows "Downloading voices… _N_%" and a progress bar.
+3. Look at the **Voice** menu and the **Speak** button. Both are dimmed.
+4. Wait about 1 minute for the first voice to arrive.
+
+</Steps>
+
+<Figure
+  src="window-first-launch-light.svg"
+  dark="window-first-launch-dark.svg"
+  alt="The Cloudy Reader window at first launch: the Voice menu reads No voice installed, Speak is dimmed, and the status bar says No voice is installed. beside Downloading voices… 4% and a progress bar."
+  caption="The status bar shows the warning on the left and the download progress on the right."
+  frame="window"
+/>
+
+The **Voice** menu shows a voice, and **Speak** is no longer dimmed. You can go on to the next section now. The download continues in the background.
+
+When the download finishes, the progress label and bar leave the status bar, and the other voices appear in the **Voice** menu. The app then selects the first voice in the menu, unless you chose a voice yourself. After that, reading needs no network. [Manage voices and storage](/manual/tasks/voices-and-storage/) shows how to check the download.
+
+Check the **Voice** menu, not the percentage. A failed file counts as finished, so the percentage can rise while no voice arrives. If the label and bar leave the status bar and the menu is still empty, the download failed, and the status bar keeps "No voice is installed." with no other message.
+
+The download starts only at launch. Connect the Mac to the internet, quit the app with Command-Q, and open it again. See [No voice is installed](/manual/troubleshooting/#no-voice-is-installed) and [The voice download does not progress](/manual/troubleshooting/#the-voice-download-does-not-progress).
+
+A warning that some voices could not be downloaded can appear when the status bar has no other message. Quit the app and open it again to retry. See [Some voices could not be downloaded](/manual/troubleshooting/#some-voices-could-not-be-downloaded).
+
+## Hear a sample question
+
+Copy this toss-up. It has a chemical formula, so you hear how the app says one.
+
+```text
+TOSS-UP
+1) CHEMISTRY Multiple Choice Which gas forms when sodium bicarbonate, NaHCO3, reacts with acetic acid?
+W) Oxygen
+X) Hydrogen
+Y) Carbon dioxide
+Z) Nitrogen
+ANSWER: Y) CARBON DIOXIDE
+```
+
+<Steps>
+
+1. Click the question box and press Command-V. Or click **Paste**.
+2. Press Command-Return. Or click **Speak**.
+3. Listen. The status bar shows "Preparing…", then "Playing _n_ s."
+
+</Steps>
+
+You hear "Toss-up number one. Chemistry. Multiple choice." followed by the question and its four choices.
+
+<Figure
+  src="window-light.svg"
+  dark="window-dark.svg"
+  alt="The Cloudy Reader window with the sample toss-up pasted, a voice selected, rotation off, the spoken script open, and the status Playing 2.0 s."
+  caption="The window during a reading, with a different time in the status bar than yours."
+  frame="window"
+/>
+
+Click **Spoken script** to read the words the voice received. In this question, NaHCO3 appears as "N A H C O three". The app does not read the answer line unless you select **Read answer line**.
+
+:::note
+**Online lookups** is on by default and can send a detected chemical, protein, or gene name to PubChem or UniProt.
+It never sends the question, its answers do not change what you hear, and you can deselect it.
+See [What uses the network](/about/privacy/#what-uses-the-network).
+:::
+
+The first reading after the app opens can take longer than later readings, because the app loads its name-detection model once.
+
+If you hear nothing, see [You hear nothing](/manual/troubleshooting/#you-hear-nothing). If **Speak** is dimmed, see [Speak is dimmed](/manual/troubleshooting/#speak-is-dimmed). If the first reading takes a long time, see [The first reading is slow](/manual/troubleshooting/#the-first-reading-is-slow).
+
+## Next steps
+
+- [Your first week](/manual/first-week/) gives you five short sessions that build your skills.
+- [Read and review a question](/manual/tutorials/read-and-review/) teaches you to speak, stop, and repeat a question, check the spoken script, and hear the answer.
+- Students: [Practice on your own](/manual/tasks/practice-alone/). Coaches: [Run a team practice](/manual/tasks/team-practice/).
