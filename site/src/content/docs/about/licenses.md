@@ -77,6 +77,8 @@ The engine repositories are:
 
 The voice files, the engine files, and the Kokoro model are third-party works. They are not part of the Cloudy Reader source, and they keep the terms of their publishers. Read the model card of each repository for those terms.
 
+The app carries 12 short recordings of the choice letters W, X, Y, and Z, one for each letter in each of the voices Ryan, Aiden, and Chatterbox Turbo, about 0.4 MB in all. The models made them, so they are neither voice files nor engine files. Qwen3-TTS is licensed Apache-2.0. Chatterbox Turbo is licensed MIT upstream, and the card of the pinned mlx-community conversion lists Apache-2.0. Neither license limits the output audio.
+
 The name-detection model `en_ner_craft_md` 0.5.4 ships inside the app. It is the scispaCy CRAFT model, and its license is CC BY-SA 3.0.
 
 ## Online services

@@ -7,6 +7,43 @@ sidebar:
 
 This page records what each Cloudy Reader release changed, with its requirements and known limits. The newest release comes first.
 
+## Version 0.0.3
+
+Released November 6, 2026. Version 0.0.3 fixes how Qwen3-TTS and Chatterbox Turbo say the choice letters.
+
+### Requirements for 0.0.3
+
+Version 0.0.3 needs a Mac with Apple silicon and macOS 26.2 or later. See [Check your Mac](/manual/getting-started/#check-your-mac) for disk space and the network.
+
+### Download 0.0.3
+
+Get the files from [Download Cloudy Reader](/download/). Neither file holds voices or engines.
+
+### What is in 0.0.3
+
+- The choice letters W, X, Y, and Z are now said by name on Qwen3-TTS (Ryan, Aiden) and Chatterbox Turbo, not read as words like "way" or "see". Each letter plays a checked recording made with the same voice.
+
+### Known limits in 0.0.3
+
+These limits apply to version 0.0.3:
+
+- The app runs on a Mac with Apple silicon only. There is no build for an Intel-based Mac.
+- The app is [signed ad hoc](/manual/reference/glossary/#ad-hoc-signature) and is not [notarized](/manual/reference/glossary/#notarized), so the first launch needs a one-time approval. See [Open the app the first time](/manual/tasks/first-open/).
+- The first launch downloads the voices and both engines. See [Manage voices and storage](/manual/tasks/voices-and-storage/) for the size.
+- On a fresh install, a failed first download shows no warning, because the status bar already holds "No voice is installed." The next start tries the missing files again. See [No voice is installed](/manual/troubleshooting/#no-voice-is-installed).
+- The genders of the five Piper voices are a guess that nobody has checked by ear, and **Men only** and **Women only** use them.
+- Some voices add their own silence around each line, so some pauses run longer than others. See [Why pauses differ between voices](/manual/concepts/voice-engines/#why-pauses-differ-between-voices).
+- A failed file starts again from the beginning at the next start. A retry in the same run resumes a partial file.
+- Offline mode shows no status bar message when it skips the voice download. A dimmed row in the **Voice** menu can show the reason `offline: not downloaded`.
+- On a Mac with less than 24 [GiB](/manual/reference/files-and-settings/#built-in-limits) of memory, at most one of Chatterbox Turbo and Qwen3-TTS stays loaded. Switching between them reloads the engine.
+- One reading holds at most 8,000 characters with Chatterbox Turbo or Qwen3-TTS.
+- An engine can fail to say a short part, such as a single hard word. The status bar then shows `<engine> could not say '<part>'; try another voice`.
+- With **Read answer line** on, the answer letter can be mispronounced on Qwen3-TTS and Chatterbox Turbo, and Ryan can fail to read an answer that starts with a lone letter. The choice letters themselves are fine.
+- The window has no speed control and no volume control. The app has no export command, no way to add words to the lexicon, and no voice manager.
+- The pronunciation rules are written for English.
+- The question box takes plain text, so the app cannot read an image of a question.
+- Some written forms keep a slash or a dash, and a Piper voice then says it as written. See [Known limits](/manual/concepts/how-reading-works/#known-limits).
+
 ## Version 0.0.2
 
 Released November 6, 2026. Version 0.0.2 adds two voice engines, a disk image, and pronunciation fixes.

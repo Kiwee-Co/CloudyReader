@@ -11,7 +11,7 @@ Cloudy Reader needs a Mac with Apple silicon and macOS 26.2 or later. Apple sili
 
 If macOS asks for an administrator's name and password, ask the person who manages the Mac.
 
-1. [Download the disk image](/download/) (431 MB).
+1. [Download the disk image](/download/) (432 MB).
 2. Double-click the disk image unless your browser opened it. Drag **Cloudy Reader** onto **Applications** before you open it. Eject the disk image.
 3. Approve the app. The app is signed ad hoc and is not notarized, so macOS asks you to approve the [first launch](/manual/tasks/first-open/) once. Approve only a copy that matches the SHA-256 on [Download Cloudy Reader](/download/).
    - Open Cloudy Reader. macOS warns that it cannot verify the app. Close the warning dialog, and do not move the app to the Trash.

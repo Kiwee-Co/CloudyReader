@@ -106,7 +106,7 @@ The app's Help menu holds only **About Cloudy Reader**, so macOS moves that item
 
 ## How do I find the version?
 
-Choose **Cloudy Reader > About Cloudy Reader** to see "Version 0.0.2". In Terminal, `--version` prints "Cloudy Reader 0.0.2":
+Choose **Cloudy Reader > About Cloudy Reader** to see "Version 0.0.3". In Terminal, `--version` prints "Cloudy Reader 0.0.3":
 
 ```bash
 "/Applications/Cloudy Reader.app/Contents/MacOS/Cloudy Reader" --version
