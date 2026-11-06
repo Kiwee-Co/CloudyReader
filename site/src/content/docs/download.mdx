@@ -1,0 +1,91 @@
+---
+title: Download Cloudy Reader
+description: Download Cloudy Reader for a Mac with Apple silicon, check the file's SHA-256, and install the app.
+sidebar:
+  label: Download
+  order: 2
+---
+
+import { LinkButton, Steps } from '@astrojs/starlight/components';
+
+Cloudy Reader REL-VERSION is a zip file for a Mac with Apple silicon. This page has the file details, the requirements, its SHA-256, and the install steps.
+
+## Download version REL-VERSION
+
+- Version: REL-VERSION
+- Release date: REL-DATE
+- File name: `Cloudy-Reader-REL-VERSION-macos-arm64.zip`
+- Download size: REL-ZIP-SIZE
+- Size on disk after unzipping: REL-APP-SIZE
+
+The zip holds the app and no voices. At the first launch, the app downloads its voices, so keep the Mac online. Make sure your Mac meets the requirements below before you download.
+
+<LinkButton
+  href="https://github.com/Kiwee-Co/CloudyReader/releases/tag/vREL-VERSION"
+  icon="external"
+>
+  Open the version REL-VERSION release on GitHub
+</LinkButton>
+
+On the release page, click `Cloudy-Reader-REL-VERSION-macos-arm64.zip` under **Assets**. The **Source code** archives hold the code and not the app.
+
+## Check your Mac
+
+Cloudy Reader needs a Mac with Apple silicon and macOS REL-MACOS-FLOOR or later. [Check your Mac](/manual/getting-started/#check-your-mac) shows how to read your chip and macOS version, and lists the disk space and network needs. If a requirement fails, see [Your Mac is not supported](/manual/troubleshooting/#your-mac-is-not-supported).
+
+## Check the download
+
+The SHA-256 is a fingerprint of the file. If your copy has the same SHA-256, it is the same file as the published one. The value for `Cloudy-Reader-REL-VERSION-macos-arm64.zip` is:
+
+```text
+REL-ZIP-SHA256
+```
+
+To check your copy:
+
+<Steps>
+
+1. Open **Terminal**. It is in **Applications > Utilities**.
+2. Go to the folder that holds the zip. If your browser saves files in Downloads, run this command:
+
+   ```bash
+   cd ~/Downloads
+   ```
+
+3. Run the check:
+
+   ```bash
+   echo "REL-ZIP-SHA256  Cloudy-Reader-REL-VERSION-macos-arm64.zip" | shasum -a 256 -c
+   ```
+
+</Steps>
+
+The output must read:
+
+```text
+Cloudy-Reader-REL-VERSION-macos-arm64.zip: OK
+```
+
+Any other output means the download is damaged or is not this release. Delete the zip and download it again. See [The checksum does not match](/manual/troubleshooting/#the-checksum-does-not-match). If the mismatch repeats, follow [Report a security issue](/manual/get-help/#report-a-security-issue).
+
+For a school or work review, [Security and code signing](/about/security/) explains the signature, and [Privacy](/about/privacy/) lists every network use.
+
+## Install the app
+
+<Steps>
+
+1. Double-click the zip in Finder to unzip it.
+2. Drag **Cloudy Reader** to the **Applications** folder. Do this before you open the app.
+3. Open Cloudy Reader. macOS blocks the first launch until you approve it once. Follow [Approve the app](/manual/tasks/first-open/#approve-the-app).
+
+</Steps>
+
+Cloudy Reader is in the Applications folder. The app is signed ad hoc and is not notarized, which is why macOS asks for the approval.
+
+Next, [open the app](/manual/getting-started/#open-the-app), let the voices download, and hear a sample question. To update or remove the app later, see [Install, update, and uninstall](/manual/tasks/install/).
+
+## Other versions and source code
+
+[Release notes](/about/release-notes/) lists what each version changed and its known limits. The app never checks for updates, so get a later version from [all releases on GitHub](https://github.com/Kiwee-Co/CloudyReader/releases) when you want one.
+
+The source code is licensed under the Apache License 2.0 and lives on GitHub at [Kiwee-Co/CloudyReader](https://github.com/Kiwee-Co/CloudyReader). To build the app yourself, see [Build from source](/developer/building/). For the licenses of the bundled components, see [Licenses and credits](/about/licenses/).
