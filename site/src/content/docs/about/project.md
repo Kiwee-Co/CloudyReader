@@ -25,7 +25,7 @@ See [Licenses and credits](/about/licenses/) for the licenses of the components 
 
 ## Project status
 
-This manual describes version 0.0.1. The first public release was 0.0.1. Cloudy Reader needs a Mac with Apple silicon and macOS 26.2 or later. See [Check your Mac](/manual/getting-started/#check-your-mac) for the full requirements and [Release notes](/about/release-notes/) for the known limits.
+This manual describes version 0.0.2. The first public release was 0.0.1. Cloudy Reader needs a Mac with Apple silicon and macOS 26.2 or later. See [Check your Mac](/manual/getting-started/#check-your-mac) for the full requirements and [Release notes](/about/release-notes/) for the known limits.
 
 ## Contribute
 

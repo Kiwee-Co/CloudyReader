@@ -1,6 +1,6 @@
 ---
 title: Architecture
-description: 'How a pasted question becomes sound in the code: the pipeline stages, the module map, the data contracts, and the threads.'
+description: 'How a pasted question becomes sound in the code: the pipeline stages, the module map, the data contracts, the engines, and the threads.'
 sidebar:
   order: 2
 ---
@@ -17,15 +17,15 @@ The figure shows the path of one pasted question.
   src="pipeline-light.svg"
   dark="pipeline-dark.svg"
   wide
-  alt="A flow of boxes: question text, parser, entity detection, name lookups, normalizer, respelling to IPA, a voice engine, the WAV cache, and the player. Only name lookups and the voice download use the network."
-  caption="From pasted text to sound. Boxes with a dashed blue border use the network."
+  alt="A flow of boxes: question text, parser, entity detection, name lookups, normalizer, respelling to IPA, a voice box that names Piper and Kokoro as examples, the WAV cache, and the player. Only name lookups and the voice download use the network."
+  caption="From pasted text to sound; the voice box shows two example engines. Boxes with a dashed blue border use the network."
 />
 
 The diagram runs left to right across the top row. It then runs right to left across the middle row and down to the player. A dashed arrow joins the voice download to the voice. The legend marks boxes that run on the Mac and boxes that use HTTPS.
 
 `Pipeline.prepare(raw, voice_key, opts)` runs these steps in order:
 
-1. **Guard.** Blank text raises `ValueError("nothing to read")`. The voice is looked up first, so a wrong key fails before any lookup.
+1. **Guard.** Blank text raises `ValueError("nothing to read")`. The voice is looked up first, so a wrong key fails before any lookup. A voice that is not installed raises `ValueError` with the reason that its row shows.
 2. **Parse.** `QuestionParser.parse` returns `Question` objects. It also takes bracket guides out of the stem and the choices and keeps them as `Respelling` objects. No question raises `ValueError("nothing to read")`.
 3. **Detect.** `SciEntityDetector.detect` scans each stem and each choice. It scans the answer only when `read_answer` is on. It returns `EntitySpan` objects.
 4. **Resolve.** `ChainResolver.resolve_many` looks up the first span of each unique text within `lookup_budget_s`. The pipeline uses the online resolver when `opts.online_lookups` is true and `settings.offline` is false. Otherwise it uses the offline twin: cache and OPSIN only.
@@ -35,6 +35,8 @@ The diagram runs left to right across the top row. It then runs right to left ac
 
 Detection, resolution, and the engine pre-check only refine the speech. If one fails, `_best_effort` logs a warning and adds the note `<stage> failed (<ErrorType>); continuing without it`. The reading goes on.
 
+Before a reading, the window asks `Pipeline.load_hint(voice_key)`. Chatterbox Turbo and Qwen3-TTS answer with a status text until their model loads, and the window adds that text to the status of the reading. Piper and Kokoro define no hint, so they answer `None`, and so does a voice that is not ready.
+
 ### Keep rule R5
 
 The code states rule R5 in several modules: a resolution decides how a token is said, never which token is said. The pipeline hands resolutions to the normalizer only. It never reads a resolved name and never edits the questions or the script. The lexicon, the formula stage, and the normalizer follow the same rule.
@@ -43,32 +45,36 @@ The code states rule R5 in several modules: a resolution decides how a token is 
 
 Each row names a module or folder under `cloudyreader/`.
 
-| Module                | Role                                                                                                                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `__main__.py`         | The entry point. Parses the flags, runs the self-test, links bundled assets, builds the service, and starts the window.                                                         |
-| `config.py`           | `Settings` and `load_settings`. Reads `CLOUDYREADER_DATA_DIR` and `CLOUDYREADER_OFFLINE`.                                                                                       |
-| `models.py`           | The shared dataclasses and protocols. One module owns them. Everyone else imports.                                                                                              |
-| `parser.py`           | `QuestionParser` and `extract_guides`. Line- and regex-based. It never fails hard on odd input.                                                                                 |
-| `entities.py`         | `SciEntityDetector`: the scispaCy CRAFT model plus regexes for formulas, IUPAC-like names, gene symbols, enzymes, and proteins.                                                 |
-| `resolvers/`          | `chain.py` (`ChainResolver`), `opsin.py`, `pubchem.py`, `uniprot.py`, `http.py` (`HttpClient`), and `cache.py` (`ResolutionCache`).                                             |
-| `lexicon.py`          | `Lexicon`: the token to IPA table, and IUPAC names built from morphemes.                                                                                                        |
-| `respell.py`          | National Science Bowl bracket respellings, such as `FAR-ingks`, to General American IPA, driven by `data/respelling_rules.json`.                                                |
-| `units.py`            | Number words, units, symbols, and the text preparation that both stages share.                                                                                                  |
-| `formulas.py`         | Formulas, ions, scientific notation, exponents, ratios, and acronyms.                                                                                                           |
-| `spoken_fractions.py` | Fractions, mixed numbers, and fraction glyphs to words. `mark_fractions` runs before the unit stage, `say_marked` after it, and `speak_fractions` runs both for a say-as guide. |
-| `normalize.py`        | `ScriptNormalizer`: builds the segments, applies guides, and calls units, fractions, formulas, and the lexicon.                                                                 |
-| `tts.py`              | `TtsService`: the engine registry and the content-addressed WAV cache.                                                                                                          |
-| `engines/`            | `piper.py`, `kokoro.py`, and `misaki_ipa.py` (the IPA to misaki phoneme map).                                                                                                   |
-| `engines/padding.py`  | `trim_letter_padding`: cuts a voice's own silence next to a choice letter, so the pause after a letter lasts about the same in every voice.                                     |
-| `voices.py`           | Scans installed Piper voices. It also holds a catalog downloader, `VoiceManager`, that no app code calls.                                                                       |
-| `voice_meta.py`       | Gender and accent of English voices, for rotation. Also the voice listing order: `ENGINE_ORDER` and `voice_sort_key`.                                                           |
-| `rotation.py`         | `RotationMode` and `VoiceRotator`.                                                                                                                                              |
-| `prefetch.py`         | `VoicePrefetch`: the background voice download.                                                                                                                                 |
-| `frozen.py`           | Support for a PyInstaller bundle: finds `Contents/Resources` and links bundled assets.                                                                                          |
-| `audio.py`            | `AfplayPlayer`: playback through `/usr/bin/afplay`.                                                                                                                             |
-| `pipeline.py`         | `Pipeline` and `build_default_service`.                                                                                                                                         |
-| `gui/`                | `app.py`, `main_window.py`, `voice_picker.py`, `widgets.py`, `tokens.py`, `names.py`, and `fake_service.py`.                                                                    |
-| `data/`               | The JSON tables. See below.                                                                                                                                                     |
+| Module                     | Role                                                                                                                                                                            |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `__main__.py`              | The entry point. Parses the flags, runs the self-test, links bundled assets, builds the service, and starts the window.                                                         |
+| `config.py`                | `Settings` and `load_settings`. Reads `CLOUDYREADER_DATA_DIR` and `CLOUDYREADER_OFFLINE`.                                                                                       |
+| `models.py`                | The shared dataclasses and protocols. One module owns them. Everyone else imports.                                                                                              |
+| `parser.py`                | `QuestionParser` and `extract_guides`. Line- and regex-based. It never fails hard on odd input.                                                                                 |
+| `entities.py`              | `SciEntityDetector`: the scispaCy CRAFT model plus regexes for formulas, IUPAC-like names, gene symbols, enzymes, and proteins.                                                 |
+| `resolvers/`               | `chain.py` (`ChainResolver`), `opsin.py`, `pubchem.py`, `uniprot.py`, `http.py` (`HttpClient`), and `cache.py` (`ResolutionCache`).                                             |
+| `lexicon.py`               | `Lexicon`: the token to IPA table, and IUPAC names built from morphemes.                                                                                                        |
+| `respell.py`               | National Science Bowl bracket respellings, such as `FAR-ingks`, to General American IPA, driven by `data/respelling_rules.json`.                                                |
+| `units.py`                 | Number words, units, symbols, and the text preparation that both stages share.                                                                                                  |
+| `formulas.py`              | Formulas, ions, scientific notation, exponents, ratios, and acronyms.                                                                                                           |
+| `spoken_fractions.py`      | Fractions, mixed numbers, and fraction glyphs to words. `mark_fractions` runs before the unit stage, `say_marked` after it, and `speak_fractions` runs both for a say-as guide. |
+| `normalize.py`             | `ScriptNormalizer`: builds the segments, applies guides, and calls units, fractions, formulas, and the lexicon.                                                                 |
+| `tts.py`                   | `TtsService`: the engine registry, the dimmed rows of an engine that cannot speak yet, and the content-addressed WAV cache.                                                     |
+| `engine_catalog.py`        | The optional engines: what each needs, the files that `assets.lock.json` pins for it, and whether it can run or download here. Standard library only.                           |
+| `engines/`                 | `piper.py`, `kokoro.py`, `misaki_ipa.py` (the IPA to misaki phoneme map), `chatterbox_turbo.py`, and `qwen3_tts.py`.                                                            |
+| `engines/padding.py`       | `trim_letter_padding`: cuts a voice's own silence next to a choice letter, so the pause after a letter lasts about the same in every voice.                                     |
+| `engines/mlxkit.py`        | Helpers that the two optional engines share: model-file checks, text chunks, the short-unit retry, spoken respellings, the offline guard, and the model slot.                   |
+| `engines/qwen3_decoder.py` | The decoder gate of `qwen3_tts`: it reads the decoder source of `mlx_audio` and picks `upstream`, `patch`, or `blocked`.                                                        |
+| `engines/bundle_probe.py`  | The import probe of a built app. The launcher runs it when `CLOUDYREADER_PROBE=engines`.                                                                                        |
+| `voices.py`                | Scans installed Piper voices. It also holds a catalog downloader, `VoiceManager`, that no app code calls.                                                                       |
+| `voice_meta.py`            | Gender and accent of English voices, for rotation: `PIPER_GENDERS` and `ENGINE_GENDERS`. Also the voice listing order: `ENGINE_ORDER` and `voice_sort_key`.                     |
+| `rotation.py`              | `RotationMode` and `VoiceRotator`.                                                                                                                                              |
+| `prefetch.py`              | `VoicePrefetch`: the background download of the pinned files, group by group: the Piper voices, the Kokoro files, and the files of each optional engine.                        |
+| `frozen.py`                | Support for a PyInstaller bundle: finds `Contents/Resources` and links bundled assets.                                                                                          |
+| `audio.py`                 | `AfplayPlayer`: playback through `/usr/bin/afplay`.                                                                                                                             |
+| `pipeline.py`              | `Pipeline`, `build_default_service`, and the list of optional engines, `_OPTIONAL_ENGINES`.                                                                                     |
+| `gui/`                     | `app.py`, `main_window.py`, `voice_picker.py`, `widgets.py`, `tokens.py`, `names.py`, `motion.py`, and `fake_service.py`.                                                       |
+| `data/`                    | The JSON tables. See below.                                                                                                                                                     |
 
 ## Data contracts
 
@@ -91,16 +97,19 @@ Each row names a module or folder under `cloudyreader/`.
 
 The protocols `Parser`, `EntityDetector`, `Resolver`, `Normalizer`, `TtsEngine`, `AudioPlayer`, and `ReaderService` describe what each part needs from the others.
 
+`TtsService` also uses these optional parts of an engine when it has them. They are `version` and `voice_version(voice)` for the cache key, `placeholder_voices()` for dimmed rows, `load_hint()`, `script_warnings(script, voice)`, `last_warnings`, and `unavailable_reason`.
+
 ## How pronunciation reaches the voice
 
-An `Override` carries neutral IPA. The stress mark sits before the stressed syllable. There are no length marks. A stressed NURSE vowel is `ɜɹ`. Each engine converts the IPA.
+An `Override` carries neutral IPA. The stress mark sits before the stressed syllable. There are no length marks. A stressed NURSE vowel is `ɜɹ`. Each engine either converts the IPA or says the word from a spelling.
 
 - **Piper.** `to_piper_layout` moves stress marks to the espeak layout and adds the long vowels. `_usable_ipa` keeps only symbols in the voice's phoneme map and warns about the rest. The engine swaps each whole-word surface for an inline `[[ipa]]` block, longest surface first. Sentence marks move inside the block, because Piper drops punctuation after a block.
 - **Kokoro.** `ipa_to_misaki` maps the IPA to the phoneme alphabet of Kokoro-82M. The engine marks each surface as `[surface](/phonemes/)`. A symbol outside the model vocabulary is rejected with a warning.
+- **Chatterbox Turbo and Qwen3-TTS.** Neither engine takes IPA. `speakable` in `mlxkit.py` says a respelled word from its respelling, in lower case with its hyphens kept. It says a lexicon word or a checked chemical name as printed. The engine adds one warning that counts those words and names the first three. Chatterbox Turbo also drops square brackets from the text, because its tokenizer reads them as sound cues.
 
 ## Engines
 
-The voice engines differ in these ways:
+Piper and Kokoro take IPA. They differ in these ways:
 
 | Aspect         | Piper                                                      | Kokoro                                                                                  |
 | -------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -112,17 +121,38 @@ The voice engines differ in these ways:
 
 Each engine writes the pause after a segment as exact silence in the WAV file. That silence does not depend on the voice.
 
-A voice can add its own silence around a line. Each voice engine calls `trim_letter_padding` in `engines/padding.py` to cut that silence next to a choice letter.
+A voice can add its own silence around a line. Piper and Kokoro call `trim_letter_padding` in `engines/padding.py` to cut that silence next to a choice letter. The two optional engines do not call it.
 
-`TtsService.voices()` sets the order of the **Voice** menu. Engines follow `ENGINE_ORDER` in `voice_meta.py`. Inside an engine, the best grade or tier comes first, then the name.
+`TtsService.voices()` sets the order of the **Voice** menu. Engines follow `ENGINE_ORDER` in `voice_meta.py`. Inside an engine, the best grade or tier comes first, an ungraded voice comes last, and a tie goes by name. An engine that is not available lists the dimmed rows of its `placeholder_voices()`, when it has that method.
 
 The voice picker selects the first installed voice when no saved voice applies.
 
-`build_default_service` always registers Piper. It registers Kokoro only when `platform.machine()` is `arm64` and the module imports. Bump `_RENDER_REVISION` in `engines/piper.py`, or the `+r` suffix of `KokoroEngine.version`, when rendering changes, so old cached WAV files stop matching.
+`build_default_service` always registers Piper. It registers Kokoro only when `platform.machine()` is `arm64` and the module imports. Then `_optional_engines` imports each module of `_OPTIONAL_ENGINES`, on Apple silicon only. A module that is missing or broken is skipped with a log line, so the other engines still work. Bump `_RENDER_REVISION` in the module of an engine, or the `+r` suffix of `KokoroEngine.version`, when rendering changes, so old cached WAV files stop matching.
+
+### Optional engines
+
+`chatterbox_turbo` and `qwen3_tts` take plain text, not IPA. They share `engines/mlxkit.py`, and they differ in these ways:
+
+| Aspect         | Chatterbox Turbo                                                                     | Qwen3-TTS                                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| Class          | `ChatterboxTurboEngine`                                                              | `Qwen3TtsEngine`                                                                                          |
+| Voices         | One built-in voice, key `chatterbox_turbo:builtin`.                                  | Two presets, keys `qwen3_tts:ryan` and `qwen3_tts:aiden`.                                                 |
+| `available()`  | The catalog says `ready`, and no file damage is on record.                           | The catalog says `ready`, the decoder gate is open, and no refusal or damage is on record.                |
+| Chunk limit    | 280 characters                                                                       | 300 characters                                                                                            |
+| Version string | `chatterbox-turbo-4bit@<revision>+mlx-audio-<version>+<sampling>+r<render revision>` | `qwen3-tts-0.6b-customvoice-8bit@<revision>+mlx-audio-<version>+<sampling>+dec-<mode>+r<render revision>` |
+
+Both engines write 16-bit mono WAV at 24,000 Hz. In a version string, `<revision>` is the first 8 characters of the pinned commit, or `norev` when none is pinned. `<sampling>` is the sampling tag, such as `t0.8k1000p0.95r1.2`. `<mode>` is the mode of the decoder gate.
+
+- **Catalog.** `engine_catalog.py` holds `SPECS`: the repository, voices, license, credit, and expected files of each engine. `assess` returns one of `ready`, `missing`, `blocked`, or `broken`, with the reason to show. It checks these in order: the hard reason from the `supported()` of the module, the pins in the lock, the `gate()` of the module, damage, missing files, offline mode, and room to write. An engine with a hard reason or no pinned file has no row. Any other engine that is not ready shows dimmed rows from `placeholder_voices()`, and `VoiceInfo.reason` says why.
+- **Files.** `ModelFiles` in `mlxkit.py` checks the pinned files. `assess` uses `stat` only. A symlink, a pickle-capable file, an unpinned `.safetensors` file, a path that is not a file, or a wrong size marks the folder damaged. Before the first load, the engine hashes each pinned file once for each file state. A mismatch marks the folder damaged until a file changes.
+- **Text.** `speakable` turns each segment into text. `chunk_text` cuts the text at sentence ends, then clause ends, then spaces. `render_text` renders each chunk. A chunk under 24 characters, such as a choice letter, gets two tries. Then it gets one call with three copies of the text, and the engine crops the first copy. A longer chunk gets three tries. The engine puts 120 ms of silence between chunks and writes each pause as exact silence. Seeds come from the voice, the text, and the try number, so the same reading sounds the same. A script over `MAX_SCRIPT_CHARS` raises `EngineError`.
+- **Offline.** `offline_guard` sets `HF_HUB_OFFLINE` and `TRANSFORMERS_OFFLINE` for a load, and it swaps the Hugging Face download functions for stubs that raise. A load never reaches the network.
+- **Model slot.** The two engines share `SLOT`, a `ModelSlot`. It limits how many engine models stay loaded and unloads the oldest first, so switching engines can reload a model. Kokoro is outside it.
+- **Decoder gate.** `qwen3_tts` needs a fix for a decoder bug in `mlx_audio`. `decoder_gate` picks `upstream` when the fix is present, `patch` for the audited file that has the bug, and `blocked` for anything else. A blocked gate gives dimmed rows and no download. With `patch`, the engine patches the decoder before it loads the model, and `window_probe` must pass first.
 
 ## WAV cache
 
-`TtsService` keeps one WAV per distinct request in `cache/wav`. The file name is the SHA-256 value of a JSON object. The object holds the segments with their pauses and overrides, the voice key, the speed, the speaker, and the engine version. For Piper, the version also holds a fingerprint of the voice files, so a replaced voice renders again. Options that only shape the script are not in the key.
+`TtsService` keeps one WAV per distinct request in `cache/wav`. The file name is the SHA-256 value of a JSON object. The object holds the segments with their pauses and overrides, the voice key, the speed, the speaker, and the engine version. An engine that defines `voice_version` adds that value to the version. For Piper it is a fingerprint of the voice files, so a replaced voice renders again. For an optional engine it is the voice id and a fingerprint of the pinned files. Options that only shape the script are not in the key.
 
 A change to the segments, including a pause length, changes the file name. The app then renders the question again.
 
@@ -143,7 +173,7 @@ The app uses these threads:
 
 `AfplayPlayer` starts `afplay` as a child process, not as a thread. The process plays one clip. `stop` sends terminate, waits 2 seconds, then kills.
 
-Locks guard the shared state. `_SYNTH_LOCK` in `engines/piper.py` covers Piper, because espeak keeps process-wide state. `TtsService._lock` covers the cache. The Kokoro backend holds one lock. The entity detector holds two: `_start_lock` guards the model start, and `_infer_lock` serializes inference.
+Locks guard the shared state. `_SYNTH_LOCK` in `engines/piper.py` covers Piper, because espeak keeps process-wide state. `TtsService._lock` covers the cache. The Kokoro backend holds one lock. Each optional engine holds one lock for synthesis, and its backend holds another. `SLOT` serializes model loads. The entity detector holds two: `_start_lock` guards the model start, and `_infer_lock` serializes inference.
 
 ## The window
 
@@ -151,6 +181,7 @@ Locks guard the shared state. `_SYNTH_LOCK` in `engines/piper.py` covers Piper, 
 
 - **Layout.** The values live in `gui/tokens.py`, the only GUI file with raw numbers.
 - **Rotation.** `_start` asks the `VoiceRotator` for a voice after every guard has passed. A pick replaces the voice key and clears the speaker. An empty pool keeps the picker voice and shows a warning.
+- **First use.** `_start` asks the service for `load_hint(voice_key)`. When the engine gives a hint, the window adds it to the status text of the reading, except when that status is the rotation warning. A hint that raises is logged and dropped.
 - **Download.** After the first voice list, the window starts one daemon thread. The thread calls the service's `prefetch_voices(progress, cancel)`. A service without that hook gets no thread and no progress widgets.
 - **Shutdown.** `closeEvent` sets the cancel event, saves the geometry, and stops playback. The window stops playback again at `aboutToQuit`, because `afplay` outlives the app.
 
@@ -184,7 +215,9 @@ Edit these places to change common behavior:
 | A gene symbol without a digit   | `_KNOWN_GENES` in `entities.py` and `_GENE_SYMBOLS` in `formulas.py`                                  |
 | A pause length                  | The `*_MS` constants in `normalize.py`                                                                |
 | A pinned Piper voice            | `assets.lock.json`, `PIPER_GENDERS` in `voice_meta.py` (for rotation), and `VOICES` in the `Makefile` |
-| Another voice engine            | Implement `TtsEngine`, then register it in `_engines` in `pipeline.py`                                |
+| An engine's pinned files        | `make pin-engine ENGINE=<engine>`, which rewrites that engine's entries in `assets.lock.json`         |
+| An engine's expected files      | `SPECS` in `engine_catalog.py`, then run `make pin-engine`                                            |
+| Another voice engine            | Implement `TtsEngine`, then add it to `_engines` or `_OPTIONAL_ENGINES` in `pipeline.py`              |
 
 Run `make test` after each change.
 

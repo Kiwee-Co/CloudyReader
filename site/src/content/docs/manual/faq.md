@@ -20,6 +20,10 @@ No. Cloudy Reader is an [independent project](/about/project/). It is not affili
 
 Cloudy Reader needs a Mac with Apple silicon and macOS 26.2 or later. Intel-based Macs are not supported. See [Check your Mac](/manual/getting-started/#check-your-mac).
 
+## Which file should I download?
+
+Download the disk image. The zip is the alternative, and it holds the same app. See [Download Cloudy Reader](/download/) for both files and their checksums.
+
 ## Does it cost anything?
 
 Cloudy Reader asks for no payment, account, or license key. Its source code is open under the Apache License 2.0. See [Licenses and credits](/about/licenses/).
@@ -39,6 +43,10 @@ No: only the local OPSIN check can change how a chemical name sounds, and the ap
 ## Which voice should I use?
 
 Start with the first voice in the **Voice** menu and try others. Each voice shows a quality label in the menu, and a label does not say which voice suits your room or your ears. See [Voices and voice engines](/manual/concepts/voice-engines/).
+
+## Why are some voices dimmed?
+
+A dimmed voice cannot play yet, and its row ends with the reason, such as "not installed" or "not downloaded yet". Every reason except "not installed" is also the tooltip of the row. See [Voices from one engine are missing](/manual/troubleshooting/#voices-from-one-engine-are-missing) for the reasons and the fixes.
 
 ## Can I change the speaking speed?
 
@@ -62,7 +70,7 @@ With **Read answer line** selected, the app waits 5 seconds before it says the a
 
 ## Can I read a whole round at once?
 
-Yes: paste the whole round into the question box, and the app reads each question in order with 1.5 seconds between questions. It ignores round titles, page footers, and rule lines. See [Paste questions from a PDF or web page](/manual/tasks/paste-questions/).
+Yes: paste the whole round into the question box, and the app reads each question in order with 1.5 seconds between questions. It ignores round titles, page footers, and rule lines. Some voices limit the length of one reading (see [Built-in limits](/manual/reference/files-and-settings/#built-in-limits)), and [Paste questions from a PDF or web page](/manual/tasks/paste-questions/) covers the steps.
 
 ## Can I read a PDF directly?
 
@@ -86,15 +94,19 @@ That depends on your administrator. The app is signed ad hoc and is not notarize
 
 ## How much disk space and memory does it use?
 
-Cloudy Reader needs 1.8 GB of free disk space, and the audio cache has no size limit. [Check your Mac](/manual/getting-started/#check-your-mac) lists the requirements, and [Voices and voice engines](/manual/concepts/voice-engines/) covers memory. See [Free disk space](/manual/tasks/voices-and-storage/#free-disk-space) to clear the cache.
+Cloudy Reader needs 4.2 GB of free disk space, and the audio cache has no size limit. [Check your Mac](/manual/getting-started/#check-your-mac) lists the requirements, and [Voices and voice engines](/manual/concepts/voice-engines/) covers memory. See [Free disk space](/manual/tasks/voices-and-storage/#free-disk-space) to clear the cache.
 
 ## How do I update or uninstall it?
 
 The app has no update check, so look for a later version on the [releases page](https://github.com/Kiwee-Co/CloudyReader/releases), then replace the app in **Applications**. To uninstall, move the app to the Trash; the voices, caches, and preferences stay until you delete them. See [Install, update, and uninstall](/manual/tasks/install/).
 
+## Why is there no Help menu?
+
+The app's Help menu holds only **About Cloudy Reader**, so macOS moves that item into the application menu and hides the empty Help menu. The app has no command that opens this manual. See [Main window](/manual/reference/window/).
+
 ## How do I find the version?
 
-Choose **About Cloudy Reader** in the **Cloudy Reader** menu or the **Help** menu to see "Version 0.0.1". In Terminal, `--version` prints "Cloudy Reader 0.0.1":
+Choose **Cloudy Reader > About Cloudy Reader** to see "Version 0.0.2". In Terminal, `--version` prints "Cloudy Reader 0.0.2":
 
 ```bash
 "/Applications/Cloudy Reader.app/Contents/MacOS/Cloudy Reader" --version

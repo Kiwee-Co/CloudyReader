@@ -59,11 +59,21 @@ A few all-caps formulas, such as `CO` and `HF`, are also spelled. Words that are
 
 Next to a plus sign or an arrow, the same letters are spelled. The equation `2 Na + Cl2 → 2 NaCl` is read as "2 N A plus C L two yields 2 N A C L".
 
-Units, powers of ten, Greek letters, and symbols become the words a person says:
+Units, powers of ten, Greek letters, symbols, and function names become the words a person says:
 
 - `5 m/s` is "5 meters per second".
+- `a 2 kg cart` is "a 2 kilogram cart". A unit after "a" or "an" is singular.
 - `6.02 × 10^23` is "six point oh two times ten to the twenty-third".
 - `x ≤ 5` is "x is less than or equal to 5".
+- `x<3` is "x is less than 3".
+- `sin θ` is "sine theta". A function name such as `cos`, `tan`, or `ln` reads as a word too.
+- `log3 10` is "log base 3 of 10".
+
+A range reads with "to":
+
+- An en dash between two ascending numbers, with no spaces around it, is a range: `5–10 grams` is "5 to 10 grams".
+- A hyphen or a spaced dash is a range only before a unit, a percent sign, or a noun such as `pages` or `students`. For example, `5-10 g` is "5 to 10 grams".
+- Other forms, such as `pH 5-7`, stay as written.
 
 The app reads a written fraction as a fraction: `1/7` is "one seventh" and `3/4` is "three quarters". It leaves a slash alone when the text is not a plain fraction of whole numbers. `1.5/2` and the date `3/9/2024` keep their slash, and the unit step reads `m/s` as "meters per second".
 
@@ -74,6 +84,10 @@ The lexicon is a built-in table of 553 hard science words, such as `abiotic`, `a
 For a systematic chemical name such as `2-methylpropan-1-ol`, the app builds the sound from the parts of the name. A table of 153 name parts supplies the sounds, and the name gets one main stress. The app does this only when the OPSIN check parses the name and the table knows every part.
 
 OPSIN runs on your Mac with a Java runtime that is part of the app, so the check works offline. Without a lexicon entry, a guide, or a checked name, the voice engine decides how a word sounds. The **Spoken script** view shows a checked name as written, because its pronunciation travels with the word and not as text.
+
+Some voice engines take no [IPA](/manual/reference/glossary/#ipa), the phonetic symbols that carry an exact pronunciation. [Voices and voice engines](/manual/concepts/voice-engines/) names them. These engines say a respelled word from its respelling, in lower case. They say a lexicon word or a checked chemical name as printed.
+
+The status bar shows a warning. It counts the lexicon words and the checked names as hard words. See [Pronunciation guides](/manual/reference/pronunciation-guides/#warnings) for the wording.
 
 ## What online lookups do
 
@@ -112,9 +126,7 @@ The first reading after the app opens is slower for another reason. The app load
 These cases give results you may not expect. The spoken script is the same for every voice, and the examples show what a Piper voice says.
 
 - A slash that touches a letter, π, or a root sign stays a slash. `4/3πr3` becomes `4/3 pi r cubed` in the spoken script, and a Piper voice says "four slash three pi r cubed".
-- An en-dash range keeps its dash. A Piper voice says `5–10 grams` as "five ten grams", with no "to".
-- A `<` or `>` needs a space on each side. The app leaves `x<3` alone, and a Piper voice says "x three".
-- A base of two or three letters before `^` is spelled. `sin^2θ` becomes `s i n squared theta`.
+- A lower-case base of two or three letters before `^` is spelled, unless it is a function name. `ab^2` becomes `a b squared`, and `abc^3` becomes `a b c cubed`. `PV^2` stays `PV squared`.
 - Capital `CO` is spelled even in shouted text. `NO EVENT SHALL CO OCCUR` becomes `NO EVENT SHALL C O OCCUR`.
 - A possessive loses a lexicon entry with a Piper voice, and the status bar shows a warning. `Avogadro's number` is an example. See [Status messages](/manual/reference/status-messages/).
 - You cannot add words to the lexicon. A guide in the text is the only way to fix a word.

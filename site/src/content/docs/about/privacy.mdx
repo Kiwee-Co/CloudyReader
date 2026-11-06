@@ -9,7 +9,7 @@ import Figure from '../../../components/Figure.astro';
 
 ## Summary
 
-Cloudy Reader makes speech on your Mac and has no telemetry, analytics, crash reports, or update check. It uses the network for two features: [name lookups](/manual/reference/glossary/#name-lookup), which are on by default, and the [voice download](/manual/reference/glossary/#voice-download) of missing voices. A lookup sends one detected name, never the text around it, and [offline mode](/manual/reference/glossary/#offline-mode) stops both features.
+Cloudy Reader makes speech on your Mac and has no telemetry, analytics, crash reports, or update check. It uses the network for two features: [name lookups](/manual/reference/glossary/#name-lookup), which are on by default, and the [voice download](/manual/reference/glossary/#voice-download) of missing voice and engine files. A lookup sends one detected name, never the text around it, and [offline mode](/manual/reference/glossary/#offline-mode) stops both features.
 
 ## What stays on your Mac
 
@@ -30,13 +30,13 @@ Two features open a network connection, and no other part of the app does. Name 
 
 A name lookup runs only when **Online lookups** is selected and offline mode is off. It skips a name that the lexicon or the lookup cache already holds.
 
-The voice download starts at launch and runs only when a pinned voice file is missing and offline mode is off. The table lists each request.
+The voice download starts at launch and runs only when a pinned voice file or engine file is missing and offline mode is off. The table lists each request.
 
 | Feature        | Host                                                       | Used for                                           | What it sends                  |
 | -------------- | ---------------------------------------------------------- | -------------------------------------------------- | ------------------------------ |
 | Name lookup    | `pubchem.ncbi.nlm.nih.gov`                                 | A chemical name that the OPSIN check did not parse | The name, in the URL path      |
 | Name lookup    | `rest.uniprot.org`                                         | A protein or gene name                             | The name, as the `query` value |
-| Voice download | `huggingface.co`, then any HTTPS host that it redirects to | A voice file that is missing                       | One GET request for each file  |
+| Voice download | `huggingface.co`, then any HTTPS host that it redirects to | A voice file or an engine file that is missing     | One GET request for each file  |
 
 ## What a lookup sends
 
@@ -44,7 +44,7 @@ A lookup sends:
 
 - One name at a time: a chemical, protein, or gene name that name detection found in the stem or a choice. Name detection scans the answer line only when **Read answer line** is selected.
 - The name over HTTPS, in the URL path to PubChem and in the `query` value to UniProt.
-- Two headers of its own, `Accept: application/json` and `User-Agent: cloudyreader/0.0.1`, plus the standard headers of an HTTPS request.
+- Two headers of its own, `Accept: application/json` and `User-Agent: cloudyreader/0.0.2`, plus the standard headers of an HTTPS request.
 
 A lookup never sends:
 
@@ -62,18 +62,32 @@ The service sees your IP address and the time of each request, as with any web r
 
 ## What a voice download sends
 
-The first launch downloads the voice files from the Hugging Face repositories in the table. Each repository is pinned to one revision.
+The first launch downloads the voice files and the engine files from the Hugging Face repositories in the table. Each repository is pinned to one revision.
 
-| Source                                         | Revision                                   |
-| ---------------------------------------------- | ------------------------------------------ |
-| `huggingface.co/rhasspy/piper-voices`          | `b4e358ffcb232591bf73a540e70f7de528e4174a` |
-| `huggingface.co/mlx-community/Kokoro-82M-bf16` | `a71e4d38b236d968966a2002c4c895dbd12b1c3c` |
+| Source                                                              | Revision                                   |
+| ------------------------------------------------------------------- | ------------------------------------------ |
+| `huggingface.co/rhasspy/piper-voices`                               | `b4e358ffcb232591bf73a540e70f7de528e4174a` |
+| `huggingface.co/mlx-community/Kokoro-82M-bf16`                      | `a71e4d38b236d968966a2002c4c895dbd12b1c3c` |
+| `huggingface.co/mlx-community/chatterbox-turbo-4bit`                | `c63817725071d7b5269c7b558772d6e8cbf59cec` |
+| `huggingface.co/mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit` | `049ef77fe8816b536193c0c25f9a214d17921282` |
 
-Each request is a GET for one file, with the headers `Accept-Encoding: identity` and `User-Agent: cloudyreader-prefetch/0.1`. It carries no account, identifier, or text from your questions. Hugging Face can redirect a file to another HTTPS host, and the app follows at most five redirects and requires HTTPS for each one.
+The last two repositories hold the engine files for Chatterbox Turbo and Qwen3-TTS, in that order. The address of each engine file names the revision in the table.
 
-The app downloads only files that are missing. After every voice file is on the Mac, a start sends no download request. The Kokoro engine does not contact Hugging Face by itself, so only the voice download uses that host.
+The download runs in groups, in this order: the Piper voices, the Kokoro voices, Chatterbox Turbo, and Qwen3-TTS. All the groups together come to about 3.05 GB.
+
+Each request is a GET for one file, with the headers `Accept-Encoding: identity` and `User-Agent: cloudyreader-prefetch/0.1`. A retry that resumes a partial file also sends `Range: bytes=n-`, where n is the number of bytes the Mac already has. No request carries an account, an identifier, or text from your questions.
+
+Hugging Face can redirect a file to another HTTPS host. The app follows at most five redirects and requires HTTPS for each one.
+
+The app downloads only files that are missing. After every voice file and engine file is on the Mac, a start sends no download request. Only the voice download uses the Hugging Face host: see [How the voice engines stay offline](#how-the-voice-engines-stay-offline).
 
 The app checks every file against a pinned SHA-256 value: see [Security and code signing](/about/security/#how-voice-downloads-are-protected). See [Manage voices and storage](/manual/tasks/voices-and-storage/) for the download size and the steps.
+
+## How the voice engines stay offline
+
+The voice engines load only files that are already on your Mac. Kokoro loads with the Hugging Face offline switch on, which keeps it off the Hugging Face Hub.
+
+Chatterbox Turbo and Qwen3-TTS load with the Hugging Face and Transformers offline switches on. While they load, the app replaces the download functions of the Hugging Face libraries with stubs. A stub raises the error `snapshot_download is blocked: engine models load only from local files`.
 
 ## What the app never collects
 
@@ -87,7 +101,7 @@ The data folder is `~/Library/Application Support/cloudyreader`. A location with
 
 | Name             | Location                                                     | What it holds                                                                              |
 | ---------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| Voices           | `voices/` and `models/`                                      | The voice files that the voice download fetches                                            |
+| Voices           | `voices/` and `models/`                                      | The voice files and the engine files that the voice download fetches                       |
 | Audio cache      | `cache/wav/`                                                 | One WAV file for each distinct reading, named by a SHA-256 value                           |
 | Lookup cache     | `cache/resolutions.sqlite`                                   | Each name handled by a lookup or the OPSIN check, with its status, answer, and expiry time |
 | Download staging | `.prefetch/`                                                 | Partial downloads with the suffix `.part`                                                  |
@@ -115,7 +129,7 @@ Quit the app, then run this command in Terminal. Keep Terminal open while the ap
 "/Applications/Cloudy Reader.app/Contents/MacOS/Cloudy Reader" --offline
 ```
 
-In offline mode the app sends no request and creates no download folder, and the window shows no message about it. Download the voices before you go offline: see [Work offline](/manual/tasks/work-offline/).
+In offline mode the app sends no request and creates no download folder. A dimmed row in the **Voice** menu can show the reason `offline: not downloaded`. Download the voices before you go offline: see [Work offline](/manual/tasks/work-offline/).
 
 A network that blocks a host also stops the feature that uses it. A blocked lookup fails without a message, and the reading goes on. A network administrator who wants the first launch to work must allow `huggingface.co` and the HTTPS hosts that it redirects to.
 
@@ -123,10 +137,10 @@ A network that blocks a host also stops the feature that uses it. A blocked look
 
 - [PubChem](https://pubchem.ncbi.nlm.nih.gov), at `pubchem.ncbi.nlm.nih.gov`, answers name lookups for chemical names.
 - [UniProt](https://www.uniprot.org), at `rest.uniprot.org`, answers name lookups for protein and gene names.
-- [Hugging Face](https://huggingface.co), at `huggingface.co`, hosts the pinned voice files.
+- [Hugging Face](https://huggingface.co), at `huggingface.co`, hosts the pinned voice and engine files.
 
 Each service sees your IP address and the time of each request, and each applies its own terms. See [Licenses and credits](/about/licenses/) for every component and service.
 
 ## Changes to this statement
 
-This statement describes Cloudy Reader 0.0.1. A release that changes what the app sends or stores also changes this page, and its [release notes](/about/release-notes/) say so.
+This statement describes Cloudy Reader 0.0.2. A release that changes what the app sends or stores also changes this page, and its [release notes](/about/release-notes/) say so.

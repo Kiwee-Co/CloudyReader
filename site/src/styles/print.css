@@ -125,6 +125,15 @@
 		overflow-wrap: break-word;
 	}
 
+	/* A dense cheat sheet that opts in with cr-cheatsheet--tight (P18 in 0.0.2): tighter lines
+	   and cells, still 10 pt. */
+	body:has(.cr-cheatsheet--tight) .sl-markdown-content :is(p, li, th, td) {
+		line-height: 1.2;
+	}
+	body:has(.cr-cheatsheet--tight) .sl-markdown-content :is(th, td) {
+		padding-block: 0.06rem;
+	}
+
 	/* Two columns. WebKit, the engine of Safari, ignores CSS columns in print, so the layout is a
 	   grid of the sections that the page wraps in <div>s, two to a row. A page without section
 	   <div>s stays in one column. */

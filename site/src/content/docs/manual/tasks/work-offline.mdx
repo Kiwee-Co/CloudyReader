@@ -15,9 +15,9 @@ The app downloads its voices at the first launch and keeps them on the Mac, so t
 
 1. Connect the Mac to the network.
 2. Open Cloudy Reader and keep the window open until the percentage and the progress bar leave the status bar.
-3. Open the **Voice** menu and check the list.
+3. Open the **Voice** menu and check the rows of the voices you plan to use.
 
-When the download succeeds, the **Voice** menu lists every supported voice, and no row says "not installed". If the menu stays empty or a row says "not installed", the download failed: quit the app and open it again with the network on. [Manage voices and storage](/manual/tasks/voices-and-storage/) shows how to follow the download and how to retry it.
+When the download succeeds, the rows you need are not dimmed; a dimmed row cannot be chosen, and its reason says why. If the menu stays empty or a reason says that files are missing, quit the app and open it again with the network on. [Manage voices and storage](/manual/tasks/voices-and-storage/#check-which-voices-are-installed) lists every reason and shows how to retry the download.
 
 :::tip
 Test before the event. Turn Wi-Fi off, open Cloudy Reader, and read a question. If the question plays, the voice you chose works without a network.
@@ -59,7 +59,7 @@ Offline mode stops name lookups and the voice download until you quit the app.
 The Cloudy Reader window opens.
 
 :::note
-The window shows no sign of offline mode, and **Online lookups** stays as you left it. The variable `CLOUDYREADER_OFFLINE` has the same effect when you run the app by its path in Terminal. See [Command line](/manual/reference/command-line/) for the form.
+The status bar shows no message about offline mode, and **Online lookups** stays as you left it. The variable `CLOUDYREADER_OFFLINE` has the same effect when you run the app by its path in Terminal. See [Command line](/manual/reference/command-line/) for the form.
 :::
 
 ## Check what offline mode changes
@@ -67,11 +67,11 @@ The window shows no sign of offline mode, and **Online lookups** stays as you le
 Offline mode stops two features:
 
 - Name lookups. PubChem and UniProt receive no request.
-- The voice download. The app sends no request, creates no folder, and shows no message.
+- The voice download. The app sends no request, creates no folder, and shows no status bar message. Some voices whose files are missing read "offline: not downloaded" in the **Voice** menu.
 
 The diagram in [Privacy](/about/privacy/#figure-network-use) shows both features. Everything else works as usual:
 
-- Reading works with every installed voice. The local OPSIN check, which parses chemical names on your Mac, keeps running.
+- Reading works with every installed voice, and [How the voice engines stay offline](/about/privacy/#how-the-voice-engines-stay-offline) explains why no engine needs the network. The local OPSIN check, which parses chemical names on your Mac, keeps running.
 - If no voice is installed, **Speak** stays dimmed. See [No voice is installed](/manual/troubleshooting/#no-voice-is-installed).
 - Offline mode is not saved. The next normal launch is online again.
 

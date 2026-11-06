@@ -12,13 +12,13 @@ You choose a voice, then switch on rotation so the app picks a different voice f
 
 ## Before you start
 
-Let the first-launch download finish before you start. During the download, the **Voice** menu lists only the first voice to arrive, and the other voices appear as the download finishes. See [Manage voices and storage](/manual/tasks/voices-and-storage/) to check which voices are installed.
+Let the first-launch download finish before you start. During the download, the **Voice** menu does not list every voice yet. The other voices appear as the downloads finish. See [Manage voices and storage](/manual/tasks/voices-and-storage/) to check which voices are installed.
 
 Set the Mac's volume before you start. The app has no volume control.
 
 ## Choose a voice
 
-The **Voice** menu groups voices under a heading for each [voice engine](/manual/reference/glossary/#voice-engine). The headings are labels, not choices. Each row shows the voice's name, its language, and a quality label.
+The **Voice** menu groups voices under a heading for each [voice engine](/manual/reference/glossary/#voice-engine). The headings are labels, not choices, and a dimmed row is a voice that cannot play yet. Each row shows the voice's name, its language, and a quality label.
 
 <Figure
   src="voices-top-light.svg"
@@ -47,7 +47,7 @@ ANSWER: Y) CARBON DIOXIDE
 
    The question box shows the question, starting with TOSS-UP.
 
-3. Open the **Voice** menu and choose a voice other than the one it shows.
+3. Open the **Voice** menu and choose a voice that is not dimmed and differs from the one it shows.
 
    The **Voice** menu shows the voice you chose.
 
@@ -61,7 +61,7 @@ The app saves your choice and selects the same voice at the next start.
 
 ## Turn on Round robin
 
-**Round robin** reads each question with the next voice in the **Voice** menu.
+**Round robin** reads each question with the next voice in the **Voice** menu. It skips a dimmed voice and a voice that has no gender label.
 
 <Figure
   src="rotation-light.svg"
@@ -79,11 +79,11 @@ The app saves your choice and selects the same voice at the next start.
 
 2. Press Command-Return.
 
-   The status bar shows "Preparing with _voice_…", then "Playing _n_ s with _voice_." The _voice_ is a name and a gender. It is the first voice in the **Voice** menu when you have not used rotation since the app started. Otherwise it is the voice after the last one that rotation used.
+   The status bar shows "Preparing with _voice_…", then "Playing _n_ s with _voice_." The _voice_ is a name and a gender. When you have not used rotation since the app started, it is the first voice in the **Voice** menu that rotation can use. Otherwise it is the voice after the last one that rotation used.
 
 3. When the sound starts, press Command-Return again.
 
-   The status bar names the next voice in the **Voice** menu.
+   The status bar names the next voice in menu order.
 
 4. When the sound starts, press Command-Return a third time.
 
@@ -95,7 +95,7 @@ The **Voice** menu still shows the voice you chose, because rotation never chang
 
 ## Try a random deck
 
-**Random shuffle** deals the voices like a shuffled deck. No voice repeats until every voice has played.
+**Random shuffle** deals the voices like a shuffled deck. No voice repeats until every voice in the deck has played.
 
 <Steps>
 
@@ -193,7 +193,7 @@ The app saves the rotation mode and restores it at the next start. It does not s
 ## What you learned
 
 - The **Voice** menu groups voices under a heading for each voice engine, and each row shows a quality label.
-- **Round robin** takes the next voice in menu order. **Random shuffle** deals every voice once before any voice repeats.
+- **Round robin** takes the next voice in menu order. **Random shuffle** deals every voice in the deck once before any voice repeats.
 - **Men only**, **Women only**, and **US only (random shuffle)** deal from a smaller group.
 - The status bar names the voice of each rotation reading while the sound plays.
 - **Repeat** replays the last audio and does not move rotation on.

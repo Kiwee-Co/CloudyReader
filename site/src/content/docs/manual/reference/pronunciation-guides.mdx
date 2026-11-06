@@ -7,7 +7,7 @@ sidebar:
 
 import Figure from '../../../../components/Figure.astro';
 
-This page lists the forms a pronunciation guide takes, the rules for each kind, and the warnings a guide can cause.
+This page lists the forms a pronunciation guide takes, the rules for each kind, and the warnings that guides and voice engines raise.
 
 ## Where a guide goes
 
@@ -27,16 +27,16 @@ A guide matches its word exactly as printed. A different capital letter, a plura
 
 Write the sounds of the word with plain English spellings, one syllable at a time.
 
-| Rule      | What to write                                                                                                                                                                                                                                                                          |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Syllables | Join the syllables of a word with hyphens: `SY-kul`.                                                                                                                                                                                                                                   |
-| Words     | Separate the words of a name with a space: `KREBZ SY-kul`.                                                                                                                                                                                                                             |
-| Stress    | Write the stressed syllable in capitals. The first capitalized syllable of a word gets the main stress, and each later one gets a lighter stress.                                                                                                                                      |
-| One word  | A bracket with one lower-case word of three or more letters is a phonetic respelling: `[jool]`. Its one syllable is stressed. The words `sic`, `note`, `see`, `ibid`, `emphasis`, `added`, and `edited` are not guides.                                                                |
-| Variants  | Give a second variant after `or`. The app speaks the first: `[pi-KAHN or PEE-kan]` speaks `pi-KAHN`.                                                                                                                                                                                   |
-| Spellings | The app knows 93 spellings and matches the longest first, such as `ay`, `ee`, `eye`, `oh`, `oo`, `uh`, `ih`, `eh`, `ah`, `aw`, `ow`, `oy`, `er`, `ur`, `ar`, `or`, `air`, `eer`, `zh`, `th`, `dh`, `ng`, `ch`, `sh`, `kw`, `ks`, and `yoo`. A plain `y` stands for the vowel in "eye". |
+| Rule      | What to write                                                                                                                                                                                                                                                                                                           |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Syllables | Join the syllables of a word with hyphens: `SY-kul`.                                                                                                                                                                                                                                                                    |
+| Words     | Separate the words of a name with a space: `KREBZ SY-kul`.                                                                                                                                                                                                                                                              |
+| Stress    | Write the stressed syllable in capitals. The first capitalized syllable of a word gets the main stress, and each later one gets a lighter stress.                                                                                                                                                                       |
+| One word  | A bracket with one lower-case word of three or more letters is a phonetic respelling: `[jool]`. Its one syllable is stressed. The words `sic`, `note`, `see`, `ibid`, `emphasis`, `added`, and `edited` are not guides.                                                                                                 |
+| Variants  | Give a second variant after `or`. A voice engine that takes IPA speaks the first: `[pi-KAHN or PEE-kan]` speaks `pi-KAHN`. A voice engine that takes no IPA says both variants, joined by "or", so write one variant for its voices. See [Voices and voice engines](/manual/concepts/voice-engines/) for those engines. |
+| Spellings | The app knows 93 spellings and matches the longest first, such as `ay`, `ee`, `eye`, `oh`, `oo`, `uh`, `ih`, `eh`, `ah`, `aw`, `ow`, `oy`, `er`, `ur`, `ar`, `or`, `air`, `eer`, `zh`, `th`, `dh`, `ng`, `ch`, `sh`, `kw`, `ks`, and `yoo`. A plain `y` stands for the vowel in "eye".                                  |
 
-The printed word stays in the **Spoken script** view. The voice receives its sounds separately, as an exact pronunciation in [IPA](/manual/reference/glossary/#ipa).
+The printed word stays in the **Spoken script** view. A voice engine that takes IPA receives its sounds separately, as an exact pronunciation in [IPA](/manual/reference/glossary/#ipa).
 
 | You paste                    | Spoken script | Sounds (IPA)     |
 | ---------------------------- | ------------- | ---------------- |
@@ -47,6 +47,8 @@ The printed word stays in the **Spoken script** view. The voice receives its sou
 | `pecan [pi-KAHN or PEE-kan]` | pecan         | `pɪˈkɑn`         |
 | `jewel [jool]`               | jewel         | `ˈdʒul`          |
 | `olivine [OL-uh-veen]`       | olivine       | `ˈɑləvin`        |
+
+A voice engine that takes no IPA says the respelling in place of the word, in lower case with its hyphens kept: `KREBZ SY-kul` becomes `krebz sy-kul`. It says a [lexicon](/manual/reference/glossary/#lexicon) word as printed. It does the same for a systematic chemical name whose sound the app [builds from its parts](/manual/concepts/how-reading-works/#hard-words-and-chemical-names), and it raises a warning for both. See [Warnings](#warnings). For the engines that take no IPA, see [Voices and voice engines](/manual/concepts/voice-engines/).
 
 The app refuses a guide that it cannot place whole. It speaks the word plain, shows a warning, and never guesses.
 
@@ -79,6 +81,8 @@ A say-as guide replaces a printed expression with the words that you write.
 A bracket counts as a say-as guide when it follows a printed expression and holds `squared`, `cubed`, `prime`, `degrees`, `percent`, a number phrase such as `one-seventh`, or several words. A one-letter symbol such as `π`, an element with its oxidation state such as `copper(I)`, and an arrow before `[yields]` work the same way.
 
 A guide for a whole expression replaces everything in it. Without the two guides in the first row, the same text reads "x squared plus four and two sevenths". A fraction inside the guide's own words is read as a fraction.
+
+A say-as guide also replaces a function name at the start of the expression, such as `sin`. For `sin θ1 = sin θ2 [sine of theta sub 1 equals sine of theta sub 2]`, the voice says "sine of theta sub 1 equals sine of theta sub 2".
 
 ## Spell guides
 
@@ -116,22 +120,25 @@ Some brackets hold a note, not a guide. The app handles them as follows.
 
 ## Warnings
 
-A guide that the app cannot use raises a warning, and the reading goes on. The status bar shows each warning after "Warning:", or after "_n_ warnings:" when a reading raises several. A warning stays in the status bar after the sound ends. Point to the status bar to read a long warning in full.
+A guide that the app cannot use raises a warning, and the reading goes on. A voice engine also raises a warning when it cannot use an exact pronunciation. The status bar shows each warning after "Warning:", or after "_n_ warnings:" when a reading raises several. A warning stays in the status bar after the sound ends. Point to the status bar to read a long warning in full.
 
-Most engine messages mention an [override](/manual/reference/glossary/#override), an exact pronunciation for a word or phrase that a guide, the lexicon, or a systematic chemical name can set.
+A message that mentions an [override](/manual/reference/glossary/#override) refers to an exact pronunciation for a word or phrase. A guide, the lexicon, or a systematic chemical name can set it. A message that starts with _engine_ names Chatterbox Turbo or Qwen3-TTS.
 
-| Warning text                                                                                                 | What it means                                                                                                          |
-| ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| Guide [_guide_] dropped: '_word_' is not in the text.                                                        | The word that the guide describes is not in the text.                                                                  |
-| Guide for '_word_' dropped: it holds no words.                                                               | A say-as or spell guide holds only punctuation.                                                                        |
-| No pronunciation for respelling [_guide_]: '_word_' is spoken plain.                                         | The app cannot place the whole respelling, for example because every syllable is in capitals or a spelling is unknown. |
-| piper: dropped IPA symbol '_c_' (U+_XXXX_) from the override for '_word_': not in the phoneme map of _voice_ | The Piper voice has no sound for one symbol. The app keeps the rest.                                                   |
-| piper: override for '_word_' has no usable IPA symbols; spoken plain                                         | The Piper voice has no sound for any symbol, so it says the word plain.                                                |
-| piper: override surface '_word_' not found in the segment text                                               | The word is not in the text that the voice speaks. One cause is the possessive `Avogadro's` of a word in the lexicon.  |
-| Kokoro: override surface '_w_' has a bracket; spoken plain                                                   | The word holds a bracket character, so the voice says it plain.                                                        |
-| Kokoro: dropped _chars_ from IPA '_ipa_' for '_w_'                                                           | The Kokoro voice has no sound for some characters of the pronunciation.                                                |
-| Kokoro: no usable phonemes for '_w_'; spoken plain                                                           | The Kokoro voice has no sound for any part of the pronunciation.                                                       |
-| Kokoro: override surface '_w_' not found in segment text                                                     | The word is not in the text that the voice speaks.                                                                     |
-| Kokoro: could not pronounce '_w_'; it was skipped                                                            | The Kokoro voice could not turn the word into sounds, so it says nothing for the word.                                 |
+| Warning text                                                                                                 | What it means                                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Guide [_guide_] dropped: '_word_' is not in the text.                                                        | The word that the guide describes is not in the text.                                                                                                 |
+| Guide for '_word_' dropped: it holds no words.                                                               | A say-as or spell guide holds only punctuation.                                                                                                       |
+| No pronunciation for respelling [_guide_]: '_word_' is spoken plain.                                         | The app cannot place the whole respelling, for example because every syllable is in capitals or a spelling is unknown.                                |
+| piper: dropped IPA symbol '_c_' (U+_XXXX_) from the override for '_word_': not in the phoneme map of _voice_ | The Piper voice has no sound for one symbol. The app keeps the rest.                                                                                  |
+| piper: override for '_word_' has no usable IPA symbols; spoken plain                                         | The Piper voice has no sound for any symbol, so it says the word plain.                                                                               |
+| piper: override surface '_word_' not found in the segment text                                               | The word is not in the text that the voice speaks. One cause is the possessive `Avogadro's` of a word in the lexicon.                                 |
+| Kokoro: override surface '_w_' has a bracket; spoken plain                                                   | The word holds a bracket character, so the voice says it plain.                                                                                       |
+| Kokoro: dropped _chars_ from IPA '_ipa_' for '_w_'                                                           | The Kokoro voice has no sound for some characters of the pronunciation.                                                                               |
+| Kokoro: no usable phonemes for '_w_'; spoken plain                                                           | The Kokoro voice has no sound for any part of the pronunciation.                                                                                      |
+| Kokoro: override surface '_w_' not found in segment text                                                     | The word is not in the text that the voice speaks.                                                                                                    |
+| Kokoro: could not pronounce '_w_'; it was skipped                                                            | The Kokoro voice could not turn the word into sounds, so it says nothing for the word.                                                                |
+| _engine_ cannot take IPA: _N_ hard words use the printed spelling (_a_, _b_, _c_ and _M_ more)               | The engine takes no IPA, so it says each named word as printed, such as a word from the lexicon. The message names up to 3 words and counts the rest. |
+| _engine_ cannot take IPA: 1 hard word uses the printed spelling (_word_)                                     | The same warning for one word.                                                                                                                        |
+| _engine_: override for '_word_' not found in the segment text                                                | The word is not in the text that the voice speaks.                                                                                                    |
 
-To fix a warning, correct the guide and read the question again. If a voice has no sound for a symbol, spell the sound another way or remove the guide. For a guided lesson, see [Fix a mispronounced word](/manual/tutorials/fix-a-word/). For every other message, see [Status messages](/manual/reference/status-messages/). For what the app says without a guide, see [Pronunciation examples](/manual/reference/pronunciation-examples/).
+To fix a warning, correct the guide and read the question again. If a voice has no sound for a symbol, spell the sound another way or remove the guide. To change how an engine that takes no IPA says a word, add a phonetic respelling after the word. For a guided lesson, see [Fix a mispronounced word](/manual/tutorials/fix-a-word/). For every other message, see [Status messages](/manual/reference/status-messages/). For what the app says without a guide, see [Pronunciation examples](/manual/reference/pronunciation-examples/).

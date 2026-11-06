@@ -9,16 +9,28 @@ Use this page to put Cloudy Reader on one or several Macs, to install a new vers
 
 ## Install the app
 
-Cloudy Reader comes as one zip file. It holds the app and no voices. The unzipped app takes 1.06 GB on disk. The app downloads its voices at the first launch.
+Cloudy Reader comes as a disk image and as a zip file. Each holds the same app and no voices. The installed app takes 1.06 GB on disk. The app downloads its voices at the first launch.
 
 Cloudy Reader needs a Mac with Apple silicon and macOS 26.2 or later. See [Check your Mac](/manual/getting-started/#check-your-mac) for the disk space and the network connection that the first launch needs.
+
+### Install from the disk image
+
+The disk image is the recommended download.
+
+1. Download the disk image and check its SHA-256. See [Download Cloudy Reader](/download/).
+2. Double-click the disk image in Finder to open it. It appears as the **Cloudy Reader** volume and holds `Cloudy Reader.app` and a link to the **Applications** folder.
+3. Drag **Cloudy Reader** onto the **Applications** link beside it.
+4. Eject the disk image. In the Finder sidebar, click the eject button next to the **Cloudy Reader** volume.
+5. Open Cloudy Reader from the **Applications** folder, not from the disk image. macOS blocks the first launch, so follow [Open the app the first time](/manual/tasks/first-open/).
+
+### Install from the zip
 
 1. Download the zip and check its SHA-256. See [Download Cloudy Reader](/download/).
 2. Double-click the zip in Finder to unzip it. The file `Cloudy Reader.app` appears.
 3. Drag **Cloudy Reader** to **Applications** in the Finder sidebar. Do this before you open the app. The commands in this manual use `/Applications/Cloudy Reader.app`.
 4. Open Cloudy Reader from the **Applications** folder. macOS blocks the first launch, so follow [Open the app the first time](/manual/tasks/first-open/).
 
-Cloudy Reader is in the **Applications** folder. Keep the zip if you plan to install the app on another Mac.
+Cloudy Reader is in the **Applications** folder after either install. Keep the file that you downloaded if you plan to install the app on another Mac.
 
 ## Install on several Macs
 
@@ -26,11 +38,11 @@ Every Mac must meet the requirements in [Check your Mac](/manual/getting-started
 
 The app is one bundle, `Cloudy Reader.app`, with the bundle identifier `com.cloudyreader.CloudyReader`. Administrators can read how the app is signed in [Security and code signing](/about/security/) and what it sends in [Privacy](/about/privacy/).
 
-To save download time, download the zip once and copy it to the other Macs. Copy the zip, not the app. The SHA-256 describes the zip, so each Mac can check its own copy.
+To save download time, download the disk image or the zip once and copy it to the other Macs. Copy the downloaded file, not the app. The SHA-256 describes the file, so each Mac can check its own copy.
 
-1. Download the zip on one Mac and check its SHA-256.
-2. Copy the zip to each other Mac, for example with a USB drive or AirDrop.
-3. On each Mac, check the SHA-256 again, unzip the file, and move the app to **Applications**.
+1. Download the file on one Mac and check its SHA-256.
+2. Copy the file to each other Mac, for example with a USB drive or AirDrop.
+3. On each Mac, check the SHA-256 again and install the app. See [Install the app](#install-the-app).
 4. On each Mac, approve the app. See [Open the app the first time](/manual/tasks/first-open/).
 
 Each Mac downloads the voices at its first launch. To skip that download, copy the voices from a Mac where they work. See [Manage voices and storage](/manual/tasks/voices-and-storage/).
@@ -42,9 +54,9 @@ On a Mac that a school or an employer manages, ask the administrator to approve 
 Cloudy Reader has no update check. Look for a new version on [Cloudy Reader releases on GitHub](https://github.com/Kiwee-Co/CloudyReader/releases). The [Release notes](/about/release-notes/) list what each version changed.
 
 1. Quit Cloudy Reader. Press Command-Q.
-2. Download the zip of the new version and check its SHA-256.
+2. Download the disk image or the zip of the new version and check its SHA-256.
 3. Move the old **Cloudy Reader** from the **Applications** folder to the Trash.
-4. Double-click the zip in Finder, then move the new **Cloudy Reader** to **Applications**.
+4. Install the new **Cloudy Reader** from the disk image or from the zip. See [Install from the disk image](#install-from-the-disk-image) and [Install from the zip](#install-from-the-zip).
 5. Open the app and approve it as before. See [Open the app the first time](/manual/tasks/first-open/).
 
 An update replaces only the app. Your voices, caches, and saved choices stay in the data folder and the preferences file. At every launch, the voice download fetches the files that are missing, unless offline mode is on.
@@ -53,9 +65,9 @@ To confirm the version, see [Check the installed version](#check-the-installed-v
 
 ## Check the installed version
 
-Choose **About Cloudy Reader** in the **Cloudy Reader** menu or the **Help** menu. The box shows the version, such as "Version 0.0.1". Click **OK** to close the box.
+Choose **Cloudy Reader > About Cloudy Reader**. The box shows the version, such as "Version 0.0.2". Click **OK** to close the box.
 
-In Terminal, run this command to print the app name and the version, such as `Cloudy Reader 0.0.1`:
+In Terminal, run this command to print the app name and the version, such as `Cloudy Reader 0.0.2`:
 
 ```bash
 "/Applications/Cloudy Reader.app/Contents/MacOS/Cloudy Reader" --version
@@ -81,7 +93,7 @@ Cloudy Reader writes its own files in three places, and it removes its temporary
 
 6. Empty the Trash.
 
-The app, its voices, and its saved choices are gone. If you chose another location for the data folder, move that folder to the Trash instead. See [Data folder](/manual/reference/files-and-settings/#data-folder).
+The app, its voices, and its saved choices are gone. If you chose another location for the data folder, move that folder to the Trash instead. [Data folder](/manual/reference/files-and-settings/#data-folder) lists every folder in it.
 
 :::tip
 Keep the `cloudyreader` folder if you plan to install the app again. The voices stay, and the next install skips the download.

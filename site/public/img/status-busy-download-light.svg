@@ -1,17 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="680" height="65" viewBox="0 0 680 65" role="img" aria-labelledby="title desc" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="64" viewBox="0 0 680 64" role="img" aria-labelledby="title desc" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif">
 <title id="title">A busy status bar</title>
-<desc id="desc">The status bar in Light Mode while a reading is prepared during the voice download: Preparing… on the left, Downloading voices… 42% with its progress bar, and the busy bar on the right.</desc>
-<defs><clipPath id="clip1"><rect x="0" y="36" width="680" height="29"/></clipPath></defs>
-<rect x="0" y="36" width="680" height="29" fill="#ececec"/>
+<desc id="desc">The status bar in Light Mode while a reading is prepared during the voice download: Preparing… on the left, then Downloading Kokoro… 42% (144 of 342 MB) with its progress bar on the right.</desc>
+<defs><clipPath id="clip1"><rect x="0" y="36" width="680" height="28"/></clipPath></defs>
+<rect x="0" y="36" width="680" height="28" fill="#ececec"/>
 <g clip-path="url(#clip1)">
 <path d="M0 36.25H680" stroke-width="0.5" stroke="#838383"/>
-<text x="20" y="55.03" font-size="12" fill="#000000" fill-opacity="0.85">Preparing…</text>
-<text x="290" y="54.09" font-size="12" fill="#000000" fill-opacity="0.85">Downloading voices… 42%</text>
-<rect x="448" y="48" width="96" height="6" rx="3" fill="#e0e0e0"/>
-<rect x="448" y="48" width="40.32" height="6" rx="3" fill="#077eff"/>
-<rect x="564" y="48" width="96" height="6" rx="3" fill="#e0e0e0"/>
-<rect x="581.28" y="48" width="32.64" height="6" rx="3" opacity="0.55" fill="#077eff"/>
+<text x="20" y="54.53" font-size="12" style="font-variant-numeric:tabular-nums" textLength="64.12" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Preparing…</text>
+<text x="532" y="54.59" text-anchor="end" font-size="12" style="font-variant-numeric:tabular-nums" fill="#000000" textLength="252.06" lengthAdjust="spacingAndGlyphs" opacity="0.85">Downloading Kokoro… 42% (144 of 342 MB)</text>
+<rect x="540" y="47" width="120" height="6" rx="3" fill="#e0e0e0"/>
+<rect x="540" y="47" width="50.4" height="6" rx="3" fill="#077eff"/>
 </g>
-<rect x="0.25" y="36.25" width="679.5" height="28.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.2"/>
+<rect x="0.25" y="36.25" width="679.5" height="27.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.2"/>
 </svg>

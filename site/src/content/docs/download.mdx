@@ -8,23 +8,23 @@ sidebar:
 
 import { LinkButton, Steps } from '@astrojs/starlight/components';
 
-Cloudy Reader 0.0.1 is a zip file for a Mac with Apple silicon. This page has the file details, the requirements, its SHA-256, and the install steps.
+Cloudy Reader 0.0.2 comes as a disk image and as a zip. Both hold the same app for a Mac with Apple silicon. This page has the file details, the requirements, the SHA-256 values, and the install steps.
 
-## Download version 0.0.1
+## Download version 0.0.2
 
-- Version: 0.0.1
-- Release date: November 5, 2026
-- File name: `Cloudy-Reader-0.0.1-macos-arm64.zip`
-- Download size: 459 MB
-- Size on disk after unzipping: 1.06 GB
+- Version: 0.0.2
+- Release date: November 6, 2026
+- Disk image (recommended): `Cloudy-Reader-0.0.2-macos-arm64.dmg`, 431 MB
+- Zip: `Cloudy-Reader-0.0.2-macos-arm64.zip`, 460 MB
+- Size on disk after install: 1.06 GB
 
-The zip holds the app and no voices. At the first launch, the app downloads its voices, so keep the Mac online. Make sure your Mac meets the requirements below before you download.
+Both files hold the app and no voices. At the first launch, the app downloads its voices, so keep the Mac online. Make sure your Mac meets the requirements below before you download.
 
-<LinkButton href={`https://github.com/Kiwee-Co/CloudyReader/releases/tag/v0.0.1`} icon="external">
-  Open the version 0.0.1 release on GitHub
+<LinkButton href={`https://github.com/Kiwee-Co/CloudyReader/releases/tag/v0.0.2`} icon="external">
+  Open the version 0.0.2 release on GitHub
 </LinkButton>
 
-On the release page, click `Cloudy-Reader-0.0.1-macos-arm64.zip` under **Assets**. The **Source code** archives hold the code and not the app.
+On the release page, click the file you want under **Assets**: `Cloudy-Reader-0.0.2-macos-arm64.dmg` or `Cloudy-Reader-0.0.2-macos-arm64.zip`. The **Source code** archives hold the code and not the app.
 
 ## Check your Mac
 
@@ -32,10 +32,11 @@ Cloudy Reader needs a Mac with Apple silicon and macOS 26.2 or later. [Check you
 
 ## Check the download
 
-The SHA-256 is a fingerprint of the file. If your copy has the same SHA-256, it is the same file as the published one. The value for `Cloudy-Reader-0.0.1-macos-arm64.zip` is:
+The SHA-256 is a fingerprint of the file. If your copy has the same SHA-256, it is the same file as the published one. Each line gives a SHA-256 and the file name:
 
 ```text
-cf363ff419296e00b1d4406a7d846329f4712e0ac86bd9c022e8c1c70fd8ce6d
+1d0c56d65b631bfa681e4644a35ee43aed84187897763e618d93a4e6537b7de9  Cloudy-Reader-0.0.2-macos-arm64.dmg
+b36a1a8e5e38417569cb72f0c824e275b820ada164722ea92f35465ad62072fd  Cloudy-Reader-0.0.2-macos-arm64.zip
 ```
 
 To check your copy:
@@ -43,31 +44,46 @@ To check your copy:
 <Steps>
 
 1. Open Terminal. It is in **Applications > Utilities**.
-2. Go to the folder that holds the zip. If your browser saves files in Downloads, run this command:
+2. Go to the folder that holds the file. If your browser saves files in Downloads, run this command:
 
    ```bash
    cd ~/Downloads
    ```
 
-3. Run the check:
+3. Run the check for the file you downloaded. For the disk image:
 
    ```bash
-   echo "cf363ff419296e00b1d4406a7d846329f4712e0ac86bd9c022e8c1c70fd8ce6d  Cloudy-Reader-0.0.1-macos-arm64.zip" | shasum -a 256 -c
+   echo "1d0c56d65b631bfa681e4644a35ee43aed84187897763e618d93a4e6537b7de9  Cloudy-Reader-0.0.2-macos-arm64.dmg" | shasum -a 256 -c
+   ```
+
+   For the zip:
+
+   ```bash
+   echo "b36a1a8e5e38417569cb72f0c824e275b820ada164722ea92f35465ad62072fd  Cloudy-Reader-0.0.2-macos-arm64.zip" | shasum -a 256 -c
    ```
 
 </Steps>
 
-The output must read:
+The output must read `Cloudy-Reader-0.0.2-macos-arm64.dmg: OK` for the disk image, or `Cloudy-Reader-0.0.2-macos-arm64.zip: OK` for the zip.
 
-```text
-Cloudy-Reader-0.0.1-macos-arm64.zip: OK
-```
-
-Any other output means the download is damaged or is not this release. Delete the zip and download it again. See [The checksum does not match](/manual/troubleshooting/#the-checksum-does-not-match). If the mismatch repeats, follow [Report a security issue](/manual/get-help/#report-a-security-issue).
+Any other output means the download is damaged or is not this release. Delete the file and download it again. See [The checksum does not match](/manual/troubleshooting/#the-checksum-does-not-match). If the mismatch repeats, follow [Report a security issue](/manual/get-help/#report-a-security-issue).
 
 For a school or work review, [Security and code signing](/about/security/) explains the signature, and [Privacy](/about/privacy/) lists every network use.
 
 ## Install the app
+
+### Install from the disk image
+
+<Steps>
+
+1. Double-click the disk image to open it.
+2. Drag **Cloudy Reader** onto the **Applications** link beside it. Do this before you open the app.
+3. Eject the disk image: click the eject button next to the **Cloudy Reader** volume in the Finder sidebar.
+4. Open Cloudy Reader from the **Applications** folder. macOS blocks the first launch until you approve it once. Follow [Approve the app](/manual/tasks/first-open/#approve-the-app).
+
+</Steps>
+
+### Install from the zip
 
 <Steps>
 

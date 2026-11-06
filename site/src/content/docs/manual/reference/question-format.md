@@ -125,7 +125,7 @@ ANSWER: 9
 With **Read answer line** off, the spoken script is the text below. The pause after the toss-up stem is 1.5 seconds.
 
 ```text
-Toss-up number two. Physics. Short answer. A cart moves 90 meters in 6 seconds at a constant speed. What is its speed in meters per second? Bonus number two. Physics. Short answer. What is the kinetic energy, in joules, of a 2 kilograms cart that moves at 3 meters per second?
+Toss-up number two. Physics. Short answer. A cart moves 90 meters in 6 seconds at a constant speed. What is its speed in meters per second? Bonus number two. Physics. Short answer. What is the kinetic energy, in joules, of a 2 kilogram cart that moves at 3 meters per second?
 ```
 
 With **Read answer line** on, the script adds `Answer. 15.` and `Answer. 9.`. Each follows a pause of 5 seconds after its stem, and 1.5 seconds follows `Answer. 15.`.
@@ -140,6 +140,6 @@ The parser has these limits.
 | Category without a label | Without a printed format label, capital words count as the category only when each one is a known category word: `BIOLOGY`, `CHEMISTRY`, `PHYSICS`, `MATH`, `MATHEMATICS`, `ENERGY`, `EARTH`, `SPACE`, `SCIENCE`, `SCIENCES`, `GENERAL`, `LIFE`, `PHYSICAL`, `AND`, `&`, `COMPUTER`, or `ASTRONOMY`. |
 | Plain text               | The question box takes plain text only.                                                                                                                                                                                                                                                              |
 | Nothing to read          | A paste with no stem and no choices shows "Error: nothing to read" in the status bar. A bare `TOSS-UP` and a paste of only round titles and page footers do the same. See [The app finds nothing to read](/manual/troubleshooting/#the-app-finds-nothing-to-read).                                   |
-| Length                   | The app sets no limit on the length of a paste. See [Built-in limits](/manual/reference/files-and-settings/#built-in-limits).                                                                                                                                                                        |
+| Length                   | The app sets no limit on the length of a paste. A voice can limit the length of one reading. See [Built-in limits](/manual/reference/files-and-settings/#built-in-limits).                                                                                                                           |
 
 For the steps to paste from a PDF, see [Paste questions from a PDF or web page](/manual/tasks/paste-questions/). For how the app says formulas and symbols, see [Pronunciation examples](/manual/reference/pronunciation-examples/).

@@ -30,6 +30,10 @@ The tree shows the folders the app creates and the files it puts in them. The `.
     - voices/
       - af_heart.safetensors
       - ...
+  - chatterbox_turbo/ Chatterbox Turbo model files
+    - ...
+  - qwen3_tts/ Qwen3-TTS model files
+    - ...
 - cache/
   - wav/ Audio cache
     - ...
@@ -44,28 +48,32 @@ The tree shows the folders the app creates and the files it puts in them. The `.
 
 Each location below is relative to the data folder.
 
-| Item             | Location                   | Content                                                                                                                                               |
-| ---------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Piper voices     | `voices/`                  | A `.onnx` file and a `.onnx.json` file for each voice.                                                                                                |
-| Kokoro model     | `models/kokoro/`           | `config.json` and `kokoro-v1_0.safetensors`.                                                                                                          |
-| Kokoro voices    | `models/kokoro/voices/`    | One `.safetensors` file for each voice.                                                                                                               |
-| Audio cache      | `cache/wav/`               | One WAV file for each distinct reading. The file name is a SHA-256 value. The cache has no size limit, and the app never cleans it.                   |
-| Lookup cache     | `cache/resolutions.sqlite` | The results of name lookups, kept for 30 days when a name is found and 1 day when it is not. The app creates it at every start, even in offline mode. |
-| Download staging | `.prefetch/`               | Partial voice downloads with the suffix `.part`.                                                                                                      |
+| Item                   | Location                   | Content                                                                                                                                               |
+| ---------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Piper voices           | `voices/`                  | A `.onnx` file and a `.onnx.json` file for each voice.                                                                                                |
+| Kokoro model           | `models/kokoro/`           | `config.json` and `kokoro-v1_0.safetensors`.                                                                                                          |
+| Kokoro voices          | `models/kokoro/voices/`    | One `.safetensors` file for each voice.                                                                                                               |
+| Chatterbox Turbo files | `models/chatterbox_turbo/` | The model files of the engine, in this folder or in one sub-folder.                                                                                   |
+| Qwen3-TTS files        | `models/qwen3_tts/`        | The model files of the engine, in this folder or in one sub-folder.                                                                                   |
+| Audio cache            | `cache/wav/`               | One WAV file for each distinct reading. The file name is a SHA-256 value. The cache has no size limit, and the app never cleans it.                   |
+| Lookup cache           | `cache/resolutions.sqlite` | The results of name lookups, kept for 30 days when a name is found and 1 day when it is not. The app creates it at every start, even in offline mode. |
+| Download staging       | `.prefetch/`               | Partial downloads with the suffix `.part`.                                                                                                            |
 
 ### Sizes
 
 The sizes below are decimal, as Finder shows them.
 
-| Item                                                 | Size                |
-| ---------------------------------------------------- | ------------------- |
-| One Piper voice                                      | 63.2 MB             |
-| Kokoro model                                         | 327.1 MB            |
-| One Kokoro voice                                     | 0.52 MB             |
-| The Piper and Kokoro voices                          | 0.66 GB             |
-| Everything that the first launch downloads           | 0.66 GB in 40 files |
-| One minute of audio in the audio cache, Piper voice  | About 2.6 MB        |
-| One minute of audio in the audio cache, Kokoro voice | About 2.9 MB        |
+| Item                                                                                 | Size                |
+| ------------------------------------------------------------------------------------ | ------------------- |
+| One Piper voice                                                                      | 63.2 MB             |
+| Kokoro model                                                                         | 327.1 MB            |
+| One Kokoro voice                                                                     | 0.52 MB             |
+| The Piper and Kokoro voices                                                          | 0.66 GB             |
+| The Chatterbox Turbo files                                                           | 0.42 GB             |
+| The Qwen3-TTS files                                                                  | 1.97 GB             |
+| Everything that the first launch downloads                                           | 3.05 GB in 61 files |
+| One minute of audio in the audio cache, Piper voice                                  | About 2.6 MB        |
+| One minute of audio in the audio cache, Kokoro, Chatterbox Turbo, or Qwen3-TTS voice | About 2.9 MB        |
 
 To free disk space, see [Free disk space](/manual/tasks/voices-and-storage/#free-disk-space). To start over, see [Reset the app](/manual/tasks/voices-and-storage/#reset-the-app).
 
@@ -88,7 +96,7 @@ The app has no settings window. It saves five keys in `~/Library/Preferences/com
 defaults read "com.cloudyreader.Cloudy Reader"
 ```
 
-The app writes a checkbox, voice, or rotation key when you change it.
+The app writes a checkbox, voice, or rotation key when you change it, and `geometry` when the window closes.
 
 | Key              | Type    | Default | What it stores                                                                                           |
 | ---------------- | ------- | ------- | -------------------------------------------------------------------------------------------------------- |
@@ -113,21 +121,56 @@ The app does not save the speaker number, the rotation deck and last voice, or w
 
 ## Built-in limits
 
-These values are fixed. The app reads none of them from the environment or from a file. For what a lookup sends, see [Privacy](/about/privacy/#what-uses-the-network).
+These values are fixed. The app reads none of them from the environment or from a file. A GiB is 1,073,741,824 bytes, about 1.07 GB.
 
-| Limit                                      | Value                                                                                     |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------- |
-| Name lookups for one reading, total time   | 2.5 seconds, shared with the OPSIN check                                                  |
-| One lookup request                         | Up to 4 seconds, within what is left of the 2.5 seconds                                   |
-| Lookup request rate                        | 5 requests per second, with no burst                                                      |
-| Retries after HTTP 429 or 503              | 2, after 0.5 and 1 second, if time is left                                                |
-| Lookups at once                            | Up to 16                                                                                  |
-| Longest name a lookup sends                | 256 characters                                                                            |
-| Lookup cache life                          | 30 days for a found name, 1 day for a name not found                                      |
-| Voice download tries for one file          | 3, with waits of 2 and then 4 seconds                                                     |
-| Voice download timeout                     | 10 seconds to connect, 30 seconds of waiting for data                                     |
-| Redirects in a voice download              | At most 5, each over HTTPS                                                                |
-| Age at which a partial download is removed | 24 hours                                                                                  |
-| Speaking speed                             | 1.0, with no speed control in the window                                                  |
-| Audio cache size                           | No limit                                                                                  |
-| Paste length                               | No limit; name detection uses pattern matching alone for a text over 1,000,000 characters |
+### Name lookups
+
+These limits apply to the name lookups of one reading. For what a lookup sends, see [Privacy](/about/privacy/#what-uses-the-network).
+
+| Limit                                    | Value                                                   |
+| ---------------------------------------- | ------------------------------------------------------- |
+| Name lookups for one reading, total time | 2.5 seconds, shared with the OPSIN check                |
+| One lookup request                       | Up to 4 seconds, within what is left of the 2.5 seconds |
+| Lookup request rate                      | 5 requests per second, with no burst                    |
+| Retries after HTTP 429 or 503            | 2, after 0.5 and 1 second, if time is left              |
+| Lookups at once                          | Up to 16                                                |
+| Longest name a lookup sends              | 256 characters                                          |
+| Lookup cache life                        | 30 days for a found name, 1 day for a name not found    |
+
+### Downloads
+
+These limits apply to every file of the voice download.
+
+| Limit                                      | Value                                                 |
+| ------------------------------------------ | ----------------------------------------------------- |
+| Voice download tries for one file          | 3, with waits of 2 and then 4 seconds                 |
+| Voice download timeout                     | 10 seconds to connect, 30 seconds of waiting for data |
+| Redirects in a voice download              | At most 5, each over HTTPS                            |
+| Age at which a partial download is removed | 24 hours                                              |
+| File types of a downloaded file            | `.onnx`, `.json`, `.safetensors`, or `.txt`           |
+
+### Chatterbox Turbo and Qwen3-TTS downloads
+
+These limits apply to the downloads of Chatterbox Turbo and Qwen3-TTS. The other downloads run neither the disk check nor the folder check.
+
+| Limit               | Value                                                                                 |
+| ------------------- | ------------------------------------------------------------------------------------- |
+| File types          | Only `.safetensors`, `.json`, and `.txt`, in the engine's folder or in one sub-folder |
+| Free disk space     | 1.1 times the bytes still missing for that engine, plus 1 GiB                         |
+| Models folder       | The app must be able to write files to the `models` folder                            |
+| When the app checks | When the download starts, and again before it downloads each of the two engines       |
+
+A failed check skips the download of that engine. For the messages, see [Status messages](/manual/reference/status-messages/). For what to do, see [Manage voices and storage](/manual/tasks/voices-and-storage/). For what each engine is, see [Voices and voice engines](/manual/concepts/voice-engines/).
+
+### Reading and audio
+
+These limits apply to a reading and its audio.
+
+| Limit                                          | Value                                                                                                          |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Speaking speed                                 | 1.0, with no speed control in the window                                                                       |
+| Audio cache size                               | No limit                                                                                                       |
+| Paste length                                   | No limit; name detection uses pattern matching alone for a text over 1,000,000 characters                      |
+| Reading length, Chatterbox Turbo and Qwen3-TTS | At most 8,000 characters of spoken script in one reading. A reading covers every question in the question box. |
+
+A reading over the length limit shows an error. See [Status messages](/manual/reference/status-messages/).

@@ -101,9 +101,13 @@ A status message that starts with "Warning:" or "_n_ warnings:". The reading goe
 
 ## Voices
 
+### Chatterbox Turbo
+
+A voice engine whose built-in voice shows in the **Voice** menu as `Chatterbox Turbo (built-in)`. It needs a Mac with Apple silicon and takes no IPA. See [Voices and voice engines](/manual/concepts/voice-engines/).
+
 ### Grade
 
-The mark that the **Voice** menu shows after the language of a voice. A Kokoro voice has a letter grade from the model, from A at the top to F+ at the bottom. A Piper voice has a quality label, such as `medium`. See [Voices and voice engines](/manual/concepts/voice-engines/).
+The mark that the **Voice** menu shows after the language of a voice. A Kokoro voice has a letter grade from the model, from A at the top to F+ at the bottom. A Piper voice has a quality label, such as `medium`. A Chatterbox Turbo voice shows `4-bit` and a Qwen3-TTS voice shows `8-bit` in place of a grade. The label names the MLX build of the model that the app uses. See [Voices and voice engines](/manual/concepts/voice-engines/).
 
 ### Kokoro
 
@@ -112,6 +116,10 @@ A voice engine whose voices show a letter grade in the **Voice** menu. It needs 
 ### Piper
 
 A voice engine whose voices have lower-case names in the **Voice** menu, such as `lessac`.
+
+### Qwen3-TTS
+
+A voice engine whose voices are ready-made presets with fixed names, such as `Aiden (male)`. It needs a Mac with Apple silicon and takes no IPA. See [Voices and voice engines](/manual/concepts/voice-engines/).
 
 ### Rotation
 
@@ -135,13 +143,13 @@ One entry that you can choose in the **Voice** menu, such as "Heart (female)".
 
 ### Voice engine
 
-The speech software that makes a set of voices, such as Piper or Kokoro. See [Voices and voice engines](/manual/concepts/voice-engines/).
+The speech software that makes a set of voices, such as Piper. See [Voices and rotation modes](/manual/reference/voices/) for every engine and [Voices and voice engines](/manual/concepts/voice-engines/) for how the engines differ.
 
 ## Pronunciation
 
 ### IPA
 
-The International Phonetic Alphabet, a notation for speech sounds. The app turns a phonetic respelling into IPA, and the voice engine speaks the word from it.
+The International Phonetic Alphabet, a notation for speech sounds. The app turns a phonetic respelling into IPA. A voice engine that takes IPA speaks the word from it. An engine that takes no IPA says the respelling instead. See [Pronunciation guides](/manual/reference/pronunciation-guides/).
 
 ### Lexicon
 
@@ -218,6 +226,10 @@ The `cache/wav` folder in the data folder. It holds one WAV file for each distin
 ### Data folder
 
 The folder where the app keeps its voices and caches: `~/Library/Application Support/cloudyreader`. See [Data folder](/manual/reference/files-and-settings/#data-folder).
+
+### Disk image (DMG)
+
+A file with the extension `.dmg` that macOS opens as a disk. The Cloudy Reader disk image opens as a volume named **Cloudy Reader**. The volume holds `Cloudy Reader.app` and a link to the **Applications** folder. To install the app, drag it onto the link. See [Install, update, and uninstall](/manual/tasks/install/).
 
 ### Gatekeeper
 

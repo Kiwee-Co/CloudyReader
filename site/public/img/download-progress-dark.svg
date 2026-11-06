@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="680" height="29" viewBox="0 0 680 29" role="img" aria-labelledby="title desc" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="28" viewBox="0 0 680 28" role="img" aria-labelledby="title desc" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif">
 <title id="title">Voice download progress</title>
-<desc id="desc">The status bar in Dark Mode during the voice download: Downloading voices… 42% and a progress bar.</desc>
-<defs><clipPath id="clip1"><rect x="0" y="0" width="680" height="29"/></clipPath></defs>
-<rect x="0" y="0" width="680" height="29" fill="#323232"/>
+<desc id="desc">The status bar in Dark Mode during the voice download: Downloading Kokoro… 42% (144 of 342 MB) and a progress bar.</desc>
+<defs><clipPath id="clip1"><rect x="0" y="0" width="680" height="28"/></clipPath></defs>
+<rect x="0" y="0" width="680" height="28" fill="#323232"/>
 <g clip-path="url(#clip1)">
 <path d="M0 0.25H680" stroke-width="0.5" stroke="#838383"/>
-<text x="406" y="18.09" font-size="12" fill="#ffffff" fill-opacity="0.85">Downloading voices… 42%</text>
-<rect x="564" y="12" width="96" height="6" rx="3" fill="#474747"/>
-<rect x="564" y="12" width="40.32" height="6" rx="3" fill="#1c6cdc"/>
+<text x="532" y="18.59" text-anchor="end" font-size="12" style="font-variant-numeric:tabular-nums" fill="#ffffff" textLength="252.06" lengthAdjust="spacingAndGlyphs" opacity="0.85">Downloading Kokoro… 42% (144 of 342 MB)</text>
+<rect x="540" y="11" width="120" height="6" rx="3" fill="#474747"/>
+<rect x="540" y="11" width="50.4" height="6" rx="3" fill="#1c6cdc"/>
 </g>
-<rect x="0.25" y="0.25" width="679.5" height="28.5" fill="none" stroke-width="0.5" stroke="#ffffff" stroke-opacity="0.14"/>
+<rect x="0.25" y="0.25" width="679.5" height="27.5" fill="none" stroke-width="0.5" stroke="#ffffff" stroke-opacity="0.14"/>
 </svg>

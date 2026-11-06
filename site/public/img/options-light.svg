@@ -1,56 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="476.69" height="112" viewBox="11 431 238.34 56" role="img" aria-labelledby="title desc" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="476.69" height="112" viewBox="11 432 238.34 56" role="img" aria-labelledby="title desc" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif">
 <title id="title">The options</title>
 <desc id="desc">The two options in Light Mode: Read answer line, not selected, and Online lookups, selected.</desc>
-<defs><clipPath id="clip1"><rect x="0" y="0" width="680" height="620"/></clipPath><clipPath id="clip2"><rect x="21" y="21" width="638" height="322"/></clipPath><linearGradient id="grad3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2690ff"/><stop offset="1" stop-color="#047dff"/></linearGradient><linearGradient id="grad4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2690ff"/><stop offset="1" stop-color="#047dff"/></linearGradient></defs>
+<defs><clipPath id="clip1"><rect x="0" y="0" width="680" height="620"/></clipPath><clipPath id="clip2"><rect x="24" y="24" width="632" height="323"/></clipPath><linearGradient id="grad3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2690ff"/><stop offset="1" stop-color="#047dff"/></linearGradient><linearGradient id="grad4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2690ff"/><stop offset="1" stop-color="#047dff"/></linearGradient></defs>
 <rect x="0" y="0" width="680" height="620" fill="#ececec"/>
 <g clip-path="url(#clip1)">
-<path d="M0 591.25H680" stroke-width="0.5" stroke="#838383"/>
-<rect x="20.5" y="20.5" width="639" height="323" stroke-width="1" fill="#ffffff" stroke="#b6b6b6"/>
-<path d="M21 20.5H659" stroke-width="1" stroke="#8e8e8e"/>
-<g clip-path="url(#clip2)" font-size="13" fill="#000000" fill-opacity="0.85"><text x="27" y="39.56" textLength="392.38" lengthAdjust="spacingAndGlyphs" fill="#6e6e73">Paste a National Science Bowl question, then press ⌘↵ to hear it.</text></g>
-<text x="37" y="382.56" font-size="13" fill="#000000" fill-opacity="0.85">Voice:</text>
-<rect x="87.5" y="368.6" width="278" height="20.5" rx="5.5" fill="#000000" fill-opacity="0.24"/>
-<rect x="87.5" y="368" width="278" height="20.5" rx="5.5" fill="#ffffff"/>
-<rect x="87.75" y="368.25" width="277.5" height="20" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.13"/>
-<rect x="347" y="370" width="15.5" height="16.5" rx="4" fill="url(#grad3)"/>
-<path d="M351.75 376.75l3 -2.8l3 2.8M351.75 379.75l3 2.8l3 -2.8" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="96.5" y="383.16" font-size="13" fill="#000000" fill-opacity="0.85">lessac (en-US, medium)</text>
-<text x="20" y="421.56" font-size="13" fill="#000000" fill-opacity="0.85">Rotation:</text>
-<rect x="84.5" y="406.6" width="189" height="20.5" rx="5.5" fill="#000000" fill-opacity="0.24"/>
-<rect x="84.5" y="406" width="189" height="20.5" rx="5.5" fill="#ffffff"/>
-<rect x="84.75" y="406.25" width="188.5" height="20" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.13"/>
-<rect x="255" y="408" width="15.5" height="16.5" rx="4" fill="url(#grad4)"/>
-<path d="M259.75 414.75l3 -2.8l3 2.8M259.75 417.75l3 2.8l3 -2.8" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="93.5" y="421.16" font-size="13" fill="#000000" fill-opacity="0.85">No rotation</text>
-<text x="23" y="450.56" font-size="13" fill="#000000" fill-opacity="0.85">Options:</text>
-<rect x="81.5" y="438" width="14" height="14" rx="3.5" fill="#000000" fill-opacity="0.24"/>
-<rect x="81.5" y="437.5" width="14" height="14" rx="3.5" fill="#ffffff"/>
-<rect x="81.75" y="437.75" width="13.5" height="13.5" rx="3.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.18"/>
-<text x="100" y="449.91" font-size="13" fill="#000000" fill-opacity="0.85">Read answer line</text>
-<rect x="81.5" y="461.5" width="14" height="14" rx="3.5" fill="#077eff"/>
-<path d="M84.9 468.9L87.5 471.5L92.1 465.9" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="100" y="473.91" font-size="13" fill="#000000" fill-opacity="0.85">Online lookups</text>
-<rect x="20" y="499.6" width="63" height="20" rx="5.5" fill="#000000" fill-opacity="0.24"/>
-<rect x="20" y="499" width="63" height="20" rx="5.5" fill="#ffffff"/>
-<rect x="20.25" y="499.25" width="62.5" height="19.5" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.13"/>
-<text x="51.5" y="513.91" text-anchor="middle" font-size="13" fill="#000000" fill-opacity="0.85">Paste</text>
-<rect x="95" y="499.6" width="129" height="20" rx="5.5" fill="#000000" fill-opacity="0.24"/>
-<rect x="95" y="499" width="129" height="20" rx="5.5" fill="#ffffff"/>
-<rect x="95.25" y="499.25" width="128.5" height="19.5" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.13"/>
-<text x="159.5" y="513.91" text-anchor="middle" font-size="13" fill="#000000" fill-opacity="0.85">Speak Clipboard</text>
-<rect x="437" y="499.6" width="73" height="20" rx="5.5" fill="#000000" fill-opacity="0.24"/>
-<rect x="437" y="499" width="73" height="20" rx="5.5" fill="#f5f5f5"/>
-<rect x="437.25" y="499.25" width="72.5" height="19.5" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.13"/>
-<text x="473.5" y="513.91" text-anchor="middle" font-size="13" fill="#000000" fill-opacity="0.25">Repeat</text>
-<rect x="522" y="499.6" width="58" height="20" rx="5.5" fill="#000000" fill-opacity="0.24"/>
-<rect x="522" y="499" width="58" height="20" rx="5.5" fill="#f5f5f5"/>
-<rect x="522.25" y="499.25" width="57.5" height="19.5" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.13"/>
-<text x="551" y="513.91" text-anchor="middle" font-size="13" fill="#000000" fill-opacity="0.25">Stop</text>
-<rect x="592" y="499.6" width="68" height="20" rx="5.5" fill="#000000" fill-opacity="0.24"/>
-<rect x="592" y="499" width="68" height="20" rx="5.5" fill="#077eff"/>
-<text x="626" y="513.91" text-anchor="middle" font-size="13" fill="#ffffff">Speak</text>
-<path d="M24.5 555.5L28.5 559L24.5 562.5" fill="none" stroke-width="1.6" stroke="#acacac" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="39" y="563.91" font-size="13" fill="#000000" fill-opacity="0.85">Spoken script</text>
+<path d="M0 592.25H680" stroke-width="0.5" stroke="#838383"/>
+<rect x="20.5" y="20.5" width="639" height="330" rx="7.5" fill="#ffffff" stroke-width="1" stroke="#7c7c80"/>
+<g clip-path="url(#clip2)" font-size="15" fill="#6e6e73"><text x="32" y="46.5" textLength="434.25" lengthAdjust="spacingAndGlyphs">Paste a National Science Bowl question, then press ⌘↵ to hear it.</text></g>
+<text x="37" y="388.56" font-size="13" fill="#000000" textLength="36.34" lengthAdjust="spacingAndGlyphs" opacity="0.85">Voice:</text>
+<rect x="84.5" y="373.6" width="278" height="20.5" rx="5.5" fill="#000000" fill-opacity="0.24"/>
+<rect x="84.5" y="373" width="278" height="20.5" rx="5.5" fill="#ffffff"/>
+<rect x="84.75" y="373.25" width="277.5" height="20" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.13"/>
+<rect x="344" y="375" width="15.5" height="16.5" rx="4" fill="url(#grad3)"/>
+<path d="M348.75 381.75l3 -2.8l3 2.8M348.75 384.75l3 2.8l3 -2.8" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="93.5" y="388.16" font-size="13" textLength="143.53" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">lessac (en-US, medium)</text>
+<text x="20" y="422.56" font-size="13" fill="#000000" textLength="53.55" lengthAdjust="spacingAndGlyphs" opacity="0.85">Rotation:</text>
+<rect x="84.5" y="407.6" width="189" height="20.5" rx="5.5" fill="#000000" fill-opacity="0.24"/>
+<rect x="84.5" y="407" width="189" height="20.5" rx="5.5" fill="#ffffff"/>
+<rect x="84.75" y="407.25" width="188.5" height="20" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.13"/>
+<rect x="255" y="409" width="15.5" height="16.5" rx="4" fill="url(#grad4)"/>
+<path d="M259.75 415.75l3 -2.8l3 2.8M259.75 418.75l3 2.8l3 -2.8" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="93.5" y="422.16" font-size="13" textLength="66.5" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">No rotation</text>
+<text x="23" y="451.56" font-size="13" fill="#000000" textLength="50.53" lengthAdjust="spacingAndGlyphs" opacity="0.85">Options:</text>
+<rect x="81.5" y="439" width="14" height="14" rx="3.5" fill="#000000" fill-opacity="0.24"/>
+<rect x="81.5" y="438.5" width="14" height="14" rx="3.5" fill="#ffffff"/>
+<rect x="81.75" y="438.75" width="13.5" height="13.5" rx="3.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.18"/>
+<text x="100" y="450.91" font-size="13" textLength="101.34" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Read answer line</text>
+<rect x="81.5" y="462.5" width="14" height="14" rx="3.5" fill="#077eff"/>
+<path d="M84.9 469.9L87.5 472.5L92.1 466.9" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="100" y="474.91" font-size="13" textLength="88.53" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Online lookups</text>
+<rect x="20" y="500.6" width="63" height="20" rx="5.5" fill="#000000" fill-opacity="0.24"/>
+<rect x="20" y="500" width="63" height="20" rx="5.5" fill="#ffffff"/>
+<rect x="20.25" y="500.25" width="62.5" height="19.5" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.13"/>
+<text x="51.5" y="514.91" text-anchor="middle" font-size="13" fill="#000000" textLength="32.81" lengthAdjust="spacingAndGlyphs" opacity="0.85">Paste</text>
+<rect x="95" y="500.6" width="129" height="20" rx="5.5" fill="#000000" fill-opacity="0.24"/>
+<rect x="95" y="500" width="129" height="20" rx="5.5" fill="#ffffff"/>
+<rect x="95.25" y="500.25" width="128.5" height="19.5" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.13"/>
+<text x="159.5" y="514.91" text-anchor="middle" font-size="13" fill="#000000" textLength="98.31" lengthAdjust="spacingAndGlyphs" opacity="0.85">Speak Clipboard</text>
+<rect x="417" y="500.6" width="73" height="20" rx="5.5" fill="#000000" fill-opacity="0.24"/>
+<rect x="417" y="500" width="73" height="20" rx="5.5" fill="#f5f5f5"/>
+<rect x="417.25" y="500.25" width="72.5" height="19.5" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.13"/>
+<text x="453.5" y="514.91" text-anchor="middle" font-size="13" fill="#000000" textLength="42.2" lengthAdjust="spacingAndGlyphs" opacity="0.25">Repeat</text>
+<rect x="502" y="500.6" width="73" height="20" rx="5.5" fill="#000000" fill-opacity="0.24"/>
+<rect x="502" y="500" width="73" height="20" rx="5.5" fill="#f5f5f5"/>
+<rect x="502.25" y="500.25" width="72.5" height="19.5" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.13"/>
+<text x="538.5" y="514.91" text-anchor="middle" font-size="13" fill="#000000" textLength="27.78" lengthAdjust="spacingAndGlyphs" opacity="0.25">Stop</text>
+<rect x="587" y="500.6" width="73" height="20" rx="5.5" fill="#000000" fill-opacity="0.24"/>
+<rect x="587" y="500" width="73" height="20" rx="5.5" fill="#077eff"/>
+<text x="623.5" y="514.91" text-anchor="middle" font-size="13" fill="#ffffff" textLength="37.06" lengthAdjust="spacingAndGlyphs">Speak</text>
+<path d="M24.5 556.5L28.5 560L24.5 563.5" fill="none" stroke-width="1.6" stroke="#acacac" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="39" y="564.91" font-size="13" textLength="82.09" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Spoken script</text>
 </g>
 </svg>

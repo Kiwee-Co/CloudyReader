@@ -5,46 +5,38 @@ sidebar:
   order: 3
 ---
 
-<div class="cr-cheatsheet">
+<div class="cr-cheatsheet cr-cheatsheet--tight">
 
-This page lists every message in the Cloudy Reader status bar, what it means, and what to do. A message stays until a later message replaces it, unless its row says that it clears.
+This page lists every message in the Cloudy Reader status bar.
 
-## Information messages
+## Information messages, warnings, and errors
 
-Information messages show no icon before the text.
+A message stays until a later message replaces it, unless its row says that it clears. Warnings and errors show an icon before the text; information messages show none.
 
-| Message                                                                                   | What it means and what to do                                                                            |
-| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Loading voices…                                                                           | The app lists the voices, then the message clears.                                                      |
-| [Downloading voices… _N_%](/manual/troubleshooting/#the-voice-download-does-not-progress) | A download runs. Failed files count in _N_, so check the **Voice** menu. The label leaves when it ends. |
-| Voices downloaded.                                                                        | The download finished. Nothing to do.                                                                   |
-| [Paste a question first.](/manual/troubleshooting/#the-app-finds-nothing-to-read)         | The question box has no text. Paste or type one.                                                        |
-| [Clipboard is empty.](/manual/troubleshooting/#the-app-finds-nothing-to-read)             | The clipboard has no text. Copy the text again.                                                         |
-| Preparing…                                                                                | The app prepares the reading. Wait. With rotation: Preparing with _voice_ (_gender_)…                   |
-| Playing _n_ s.                                                                            | The sound plays. With rotation: Playing _n_ s with _voice_ (_gender_). It clears at the end.            |
-| Repeating.                                                                                | Repeat plays it again. It clears at the end.                                                            |
-| Stopped.                                                                                  | Stop ended the sound. Repeat plays it again.                                                            |
-
-## Warnings
-
-A warning icon comes before the text.
-
-| Message                                                                                                                                      | What it means and what to do                                                                                                           |
-| -------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| [No voice is installed.](/manual/troubleshooting/#no-voice-is-installed)                                                                     | Wait for the download. A failed download adds no message. It clears when a voice appears.                                              |
-| [Some voices could not be downloaded. They are tried again at the next start.](/manual/troubleshooting/#some-voices-could-not-be-downloaded) | The tooltip lists the failed files. Quit and reopen the app to retry.                                                                  |
-| No installed voice matches “_mode_”; using the selected voice.                                                                               | No installed voice fits the mode, so the selected voice plays. See [When no voice fits](/manual/reference/voices/#when-no-voice-fits). |
-| [Warning: _text_](/manual/troubleshooting/#a-word-sounds-wrong)                                                                              | The reading plays. See [Pronunciation guides](/manual/reference/pronunciation-guides/).                                                |
-| _n_ warnings: _text_; _text_                                                                                                                 | Several warnings. Read each one.                                                                                                       |
-
-## Errors
-
-An error icon comes before the text.
-
-| Message                                                                                                                        | What it means and what to do                                                                                                                                         |
-| ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Error: nothing to read](/manual/troubleshooting/#the-app-finds-nothing-to-read)                                               | The app found no question. Paste it again.                                                                                                                           |
-| [Error: cannot run /usr/bin/afplay: _error_ or Error: WAV not found: _path_](/manual/troubleshooting/#the-player-cannot-start) | macOS cannot start the player, or the audio file is gone.                                                                                                            |
-| Error: _first line_                                                                                                            | A step failed. Point to the message to read all of it. See [A voice error appears](/manual/troubleshooting/#a-voice-error-appears) or [Get help](/manual/get-help/). |
+| Message                                                                                                                                      | What it means and what to do                                                                                                                                      |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Loading voices…                                                                                                                              | The app lists the voices, then it clears.                                                                                                                         |
+| [Downloading _engine_… _N_% (_x_ of _y_ MB)](/manual/troubleshooting/#the-voice-download-does-not-progress)                                  | _N_ and the MB count one engine's files. Failed files count, so check the **Voice** menu.                                                                         |
+| Voices downloaded.                                                                                                                           | All downloads finished. Nothing to do.                                                                                                                            |
+| [Paste a question first.](/manual/troubleshooting/#the-app-finds-nothing-to-read)                                                            | The question box has no text. Paste or type one.                                                                                                                  |
+| [Clipboard is empty.](/manual/troubleshooting/#the-app-finds-nothing-to-read)                                                                | The clipboard has no text. Copy the text again.                                                                                                                   |
+| Preparing…                                                                                                                                   | The app prepares the reading. Wait. With rotation: Preparing with _voice_ (_gender_)…                                                                             |
+| [Preparing… loading _engine_ (first use only)](/manual/troubleshooting/#the-first-use-of-an-engine-is-slow)                                  | The voice engine loads its model, so the reading takes longer. Wait.                                                                                              |
+| Playing _n_ s.                                                                                                                               | The sound plays. With rotation: Playing _n_ s with _voice_ (_gender_). It clears at the end.                                                                      |
+| Repeating.                                                                                                                                   | Repeat plays it again. It clears at the end.                                                                                                                      |
+| Stopped.                                                                                                                                     | Stop ended the sound. Repeat plays it again.                                                                                                                      |
+| [_name_ is not ready: _reason_. Using _name_.](/manual/troubleshooting/#the-voice-changes-by-itself)                                         | The saved voice is not ready. The note clears when that voice is ready or you choose a voice.                                                                     |
+| [No voice is installed.](/manual/troubleshooting/#no-voice-is-installed)                                                                     | **Warning.** Wait for the download. A failed download adds no message. It clears when a voice appears.                                                            |
+| [Some voices could not be downloaded. They are tried again at the next start.](/manual/troubleshooting/#some-voices-could-not-be-downloaded) | **Warning.** The tooltip lists the failed files. Quit and reopen the app to retry.                                                                                |
+| [_engine_ not downloaded: _reason_](/manual/troubleshooting/#voices-from-one-engine-are-missing)                                             | **Warning.** Fix the reason, then quit and reopen the app. The tooltip lists every skip.                                                                          |
+| No installed voice matches “_mode_”; using the selected voice.                                                                               | **Warning.** No voice fits the mode, so the selected voice plays. See [When no voice fits](/manual/reference/voices/#when-no-voice-fits).                         |
+| [Warning: _text_](/manual/troubleshooting/#a-word-sounds-wrong)                                                                              | The reading plays. See [Pronunciation guides](/manual/reference/pronunciation-guides/).                                                                           |
+| _n_ warnings: _text_; _text_                                                                                                                 | Several warnings. Read each one.                                                                                                                                  |
+| [Error: nothing to read](/manual/troubleshooting/#the-app-finds-nothing-to-read)                                                             | The app found no question. Paste it again.                                                                                                                        |
+| [Error: cannot run /usr/bin/afplay: _error_ or Error: WAV not found: _path_](/manual/troubleshooting/#the-player-cannot-start)               | macOS cannot start the player, or the audio file is gone.                                                                                                         |
+| [Error: _engine_ reads at most 8,000 characters at once; this has _N_](/manual/troubleshooting/#a-voice-error-appears)                       | The spoken script is longer than the voice engine reads at once. Read fewer questions.                                                                            |
+| [Error: _engine_ could not say '_part_'; try another voice](/manual/troubleshooting/#a-voice-cannot-say-a-short-part)                        | The voice engine made no usable sound for a part, such as a choice letter. Choose another voice.                                                                  |
+| [Error: damaged: SHA-256 mismatch for _file_](/manual/tasks/voices-and-storage/#check-which-voices-are-installed)                            | A model file is damaged. Later readings fail at once with the same reason until you quit the app.                                                                 |
+| Error: _first line_                                                                                                                          | A step failed. Point to the message to read it all. See [A voice error appears](/manual/troubleshooting/#a-voice-error-appears) or [Get help](/manual/get-help/). |
 
 </div>

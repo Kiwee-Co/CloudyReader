@@ -1,6 +1,6 @@
 ---
 title: 'Security and code signing'
-description: 'How Cloudy Reader is signed, why macOS asks you to approve it, how to check the download, and how voice downloads are verified.'
+description: 'How Cloudy Reader is signed, why macOS asks you to approve it, how to check the download, and how voice and engine downloads are verified.'
 sidebar:
   order: 2
 ---
@@ -62,11 +62,11 @@ The bundle identifier is `com.cloudyreader.CloudyReader`, and the executable is 
 
 ## How voice downloads are protected
 
-A list bundled in the app pins every voice file by URL, size, and SHA-256. The download follows these rules:
+A list bundled in the app pins every voice file and every engine file by URL, size, and SHA-256. The download follows these rules:
 
 - Transport: HTTPS only. The app follows at most five redirects, and each one must use HTTPS with a host.
 - Pinned list: the list gives each file's URL, group, size, and SHA-256. One unsafe or malformed entry rejects the whole list, and then nothing downloads.
-- File types: only `.onnx`, `.json`, and `.safetensors` files. The app rejects a name with a pickle suffix, because a pickle file can run code when a program loads it.
+- File types: Piper and Kokoro files end in `.onnx`, `.json`, `.safetensors`, or `.txt`, and engine files end in `.safetensors`, `.json`, or `.txt`. Every group refuses `.pt`, `.pth`, `.pkl`, `.pickle`, `.ckpt`, and `.bin` files, because a pickle file can run code when a program loads it.
 - Status and length: HTTP status 200, a `Content-Length` equal to the pinned size, and no more bytes than that size.
 - Content: the exact byte count and the pinned SHA-256.
 - Staging: each file downloads to a private `.prefetch` folder in the data folder, and moves into place only after every check passes.
@@ -79,6 +79,18 @@ A list bundled in the app pins every voice file by URL, size, and SHA-256. The d
 These checks run when a file downloads. Afterward, the app counts a file as installed when it is a regular file of the pinned size.
 
 It does not hash a Piper voice file again. It hashes the Kokoro configuration and model files when it lists voices, once for each launch.
+
+### Engine files
+
+The files of Chatterbox Turbo and Qwen3-TTS go through the same download checks, and they get these checks too:
+
+- Commit-pinned addresses: the address of each engine file names one 40-character commit. A Chatterbox Turbo or Qwen3-TTS file goes under `models/<engine>/`, with at most one sub-folder.
+- Disk check: before each engine group, the free disk space must hold the missing bytes times 1.1 plus 1 [GiB](/manual/reference/files-and-settings/#built-in-limits), and the models folder must be writable. If either check fails, the app skips the group. The check runs when the app plans the download and again when the group starts.
+- Re-hash before the first load: the app checks every pinned file against its SHA-256 value before an engine first loads, and each launch hashes an unchanged file once. A mismatch stops that reading with an error that starts `Error: damaged: SHA-256 mismatch for`. Later readings with the engine fail at once until you quit the app or the file changes.
+- Pickle files: the app refuses a pickle suffix at download. A damage check, which reads only file properties and runs whenever the app lists voices, also marks a pickle-capable file in an engine folder as damaged.
+- Other damage: the same check marks an engine as damaged for a symlink, an unpinned `.safetensors` file, a pinned path that is not a file, or a file of the wrong size.
+
+A file that fails the property check dims the engine's voices with the reason `damaged: <detail>` when the app lists voices. A SHA-256 mismatch does not dim them at that point, because the app hashes a file only when the engine first loads. An engine loads only files on your Mac: see [How the voice engines stay offline](/about/privacy/#how-the-voice-engines-stay-offline).
 
 ## What the app can access
 

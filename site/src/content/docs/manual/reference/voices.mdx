@@ -1,23 +1,26 @@
 ---
 title: Voices and rotation modes
-description: Every voice in Cloudy Reader by engine, language, and grade, the Voice menu order, and the exact rules of the six rotation modes.
+description: Every voice in Cloudy Reader by engine, language, and grade, the Voice menu order, why a voice is dimmed, and the exact rules of the six rotation modes.
 sidebar:
   order: 4
 ---
 
 import Figure from '../../../../components/Figure.astro';
 
-This page lists every supported voice, the order of the **Voice** menu, and the exact rules of the six rotation modes.
+This page lists every supported voice, the **Voice** menu order, why a voice is dimmed, and the exact rules of the six rotation modes.
 
 ## Voice engines
 
-A [voice engine](/manual/reference/glossary/#voice-engine) makes a set of voices on your Mac. This table compares the engines. For what the engines are and how to choose a voice, see [Voices and voice engines](/manual/concepts/voice-engines/).
+A [voice engine](/manual/reference/glossary/#voice-engine) makes a set of voices on your Mac. This table compares the engines in menu order. For what the engines are and how to choose a voice, see [Voices and voice engines](/manual/concepts/voice-engines/).
 
-| Property      | Piper                                                          | Kokoro                                                                           |
-| ------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Voices        | 5                                                              | 28                                                                               |
-| Menu name     | The name part of the file name, such as lessac                 | The part of the id after the underscore, with the gender, such as Heart (female) |
-| Quality label | The quality in the voice's config file: medium for every voice | A letter grade from the model's `VOICES.md` file, from A down to F+              |
+| Engine           | Voices | Key prefix         | Menu name                                                                        | Quality label                                                       |
+| ---------------- | ------ | ------------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Kokoro           | 28     | `kokoro`           | The part of the id after the underscore, with the gender, such as Heart (female) | A letter grade from the model's `VOICES.md` file, from A down to F+ |
+| Chatterbox Turbo | 1      | `chatterbox_turbo` | Chatterbox Turbo (built-in)                                                      | A fixed label for the model build, 4-bit. The voice has no grade.   |
+| Qwen3-TTS        | 2      | `qwen3_tts`        | The preset name with the gender, such as Aiden (male)                            | A fixed label for the model build, 8-bit. The voices have no grade. |
+| Piper            | 5      | `piper`            | The name part of the file name, such as lessac                                   | The quality in the voice's config file: medium for every voice      |
+
+The key of a voice is the key prefix of its engine, a colon, and the id of the voice, as in `kokoro:af_heart`. Error messages and the saved voice setting use the key.
 
 ## Kokoro voices
 
@@ -54,6 +57,23 @@ The first letter of an id gives the language: a is en-US, and b is en-GB. The se
 | Santa (male)      | `am_santa`    | en-US    | D-    |
 | Adam (male)       | `am_adam`     | en-US    | F+    |
 
+## Chatterbox Turbo voice
+
+Chatterbox Turbo has one built-in voice, and it does not clone a voice. The language en names English with no region. The voice has no gender label, so it never rotates.
+
+| Voice                       | Id        | Language | Quality label | Gender label |
+| --------------------------- | --------- | -------- | ------------- | ------------ |
+| Chatterbox Turbo (built-in) | `builtin` | en       | 4-bit         | None         |
+
+## Qwen3-TTS voices
+
+Qwen3-TTS has two preset voices, and it does not clone a voice. The gender labels come from the upstream preset names, and the project has not checked them by ear. The language en names English with no region.
+
+| Voice        | Id      | Language | Quality label | Gender label |
+| ------------ | ------- | -------- | ------------- | ------------ |
+| Aiden (male) | `aiden` | en-US    | 8-bit         | male         |
+| Ryan (male)  | `ryan`  | en       | 8-bit         | male         |
+
 ## Piper voices
 
 The Piper voices are all medium quality. The **Voice** menu shows their names in lower case, as the file names give them. Each voice is two files: the file name plus `.onnx`, and the file name plus `.onnx.json`. The gender labels come from upstream, and the project has not checked them by ear.
@@ -70,11 +90,11 @@ The Piper voices are all medium quality. The **Voice** menu shows their names in
 
 Each voice engine has a heading in the **Voice** menu. The headings are labels, not choices. The menu sorts the voices by these keys, in this order.
 
-| Sort key | Rule                                                                                                                                                    |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Engine   | Kokoro first, then Piper.                                                                                                                               |
-| Grade    | The best grade first. Kokoro grades run from A down to F+. Piper qualities run from high to medium, low, and `x_low`. A voice with no grade comes last. |
-| Name     | Voices with the same grade sort by name, ignoring case.                                                                                                 |
+| Sort key | Rule                                                                                                                                                                                                            |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Engine   | Kokoro, then Chatterbox Turbo, then Qwen3-TTS, then Piper.                                                                                                                                                      |
+| Grade    | The best grade first. Kokoro grades run from A down to F+. Piper qualities run from high to medium, low, and `x_low`. A voice with no grade comes last, and no Chatterbox Turbo or Qwen3-TTS voice has a grade. |
+| Name     | Voices with the same grade sort by name, ignoring case.                                                                                                                                                         |
 
 <Figure
   src="voices-top-light.svg"
@@ -84,33 +104,59 @@ Each voice engine has a heading in the **Voice** menu. The headings are labels, 
   frame="window"
 />
 
-Each row reads _name_ (_language_, _quality_). A voice that is not installed is dimmed, cannot be chosen, and adds "not installed" to its row. These rows are examples.
+Each row reads _name_ (_language_, _quality_). A voice that cannot run is dimmed, cannot be chosen, and adds its reason to its row. These rows are examples.
 
-| Row                                  | Example                                   |
-| ------------------------------------ | ----------------------------------------- |
-| An installed Kokoro voice            | Heart (female) (en-US, A)                 |
-| An installed Piper voice             | lessac (en-US, medium)                    |
-| A Kokoro voice that is not installed | Bella (female) (en-US, A-, not installed) |
+| Row                                             | Example                                                     |
+| ----------------------------------------------- | ----------------------------------------------------------- |
+| An installed Kokoro voice                       | Heart (female) (en-US, A)                                   |
+| An installed Qwen3-TTS voice                    | Aiden (male) (en-US, 8-bit)                                 |
+| An installed Piper voice                        | lessac (en-US, medium)                                      |
+| A Kokoro voice that is not installed            | Bella (female) (en-US, A-, not installed)                   |
+| A Chatterbox Turbo voice that is not downloaded | Chatterbox Turbo (built-in) (en, 4-bit, not downloaded yet) |
 
 <Figure
   src="voices-light.svg"
   dark="voices-dark.svg"
-  alt="The Voice menu scrolled to the end of the Kokoro list, with Adam (male) (en-US, F+, not installed) dimmed. The Piper heading and the Piper voices follow, with lessac selected."
-  caption="The end of the Voice menu: the last Kokoro voice is dimmed, then the Piper voices."
+  alt="The Voice menu scrolled to the end of the Kokoro list, with Adam (male) (en-US, F+, not installed) dimmed. The Chatterbox Turbo, Qwen3-TTS, and Piper headings follow, each with its voices, with lessac selected."
+  caption="The end of the Voice menu: the last Kokoro voice is dimmed, then the Chatterbox Turbo, Qwen3-TTS, and Piper voices."
   frame="window"
 />
 
-Kokoro lists every voice once its model files are installed and pass the SHA-256 check. Piper lists a voice only when both of its files exist.
+Kokoro lists every voice once its model files are installed and pass the SHA-256 check. Piper lists a voice only when both of its files exist. Chatterbox Turbo and Qwen3-TTS list their voices as ready once all of their files are installed and valid. Until then, they list dimmed rows with a reason. An engine that the app does not include, has no files for, or cannot run on this Mac shows no heading and no rows.
 
-At each start, the app selects the voice that you chose last, if it is installed. Otherwise it selects the first installed voice in the menu. The app saves a voice only when you choose it, so a finished voice download can move an automatic selection to a better voice.
+At each start, the app selects the voice that you chose last, if it is installed. Otherwise it selects the first installed voice in the menu. If the voice that you chose last is dimmed with a reason, the status bar says why: see [Status messages](/manual/reference/status-messages/). The app saves a voice only when you choose it, so a finished voice download can move an automatic selection to a better voice.
 
-| Situation at the start                               | Selected voice            |
-| ---------------------------------------------------- | ------------------------- |
-| You chose a voice before, and it is installed        | That voice                |
-| No saved choice, and every voice is installed        | Heart (female) (en-US, A) |
-| No saved choice, and only Piper voices are installed | alan (en-GB, medium)      |
+| Situation at the start                               | Selected voice                        |
+| ---------------------------------------------------- | ------------------------------------- |
+| You chose a voice before, and it is installed        | That voice                            |
+| You chose a voice before, and it is not installed    | The first installed voice in the menu |
+| No saved choice, and every voice is installed        | Heart (female) (en-US, A)             |
+| No saved choice, and only Piper voices are installed | alan (en-GB, medium)                  |
 
 To download missing voices or add a Piper voice, see [Manage voices and storage](/manual/tasks/voices-and-storage/).
+
+## Dimmed voices and their reasons
+
+A voice that cannot run is dimmed and cannot be chosen. Its row ends with the reason. Every reason except "not installed" is also the tooltip of the row, which shows it whole if the menu cuts the row short. For the fix for each reason, see [Voices from one engine are missing](/manual/troubleshooting/#voices-from-one-engine-are-missing). The first part of the figure shows dimmed rows while their engine downloads. The second part shows the status bar at the first reading with an engine.
+
+<Figure
+  src="engine-rows-light.svg"
+  dark="engine-rows-dark.svg"
+  alt="The Voice menu open, with the Qwen3-TTS rows Aiden (male) (en-US, 8-bit, not downloaded yet) and Ryan (male) (en, 8-bit, not downloaded yet) dimmed. A second part shows the status bar text Preparing… loading Chatterbox Turbo (first use only)."
+  caption="While an engine downloads, its voices stay dimmed and say why, and the first reading with an engine loads its model first."
+/>
+
+This table lists every reason that a row can show.
+
+| Reason in the row                                | What it means                                                                                                                                                                              |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| not installed                                    | A Kokoro voice whose own file is missing.                                                                                                                                                  |
+| not downloaded yet                               | The files of the engine are not on the Mac yet.                                                                                                                                            |
+| offline: not downloaded                          | Offline mode is on, so the app downloads nothing.                                                                                                                                          |
+| not enough disk space: needs _X_ GB, _Y_ GB free | The Mac has less free space than the download needs. The amount needed is the size of the missing files plus a margin.                                                                     |
+| the models folder is not writable                | The app cannot add files to the `models` folder.                                                                                                                                           |
+| damaged: _detail_                                | A file in the engine's folder fails a check. The detail names a wrong size, a link in place of a file, a pickle-capable file, weights that the app does not expect, or a SHA-256 mismatch. |
+| waiting for a Qwen3 decoder fix (_detail_)       | The app cannot use the Qwen3-TTS decoder, so it does not run or download Qwen3-TTS.                                                                                                        |
 
 ## Rotation modes
 
@@ -129,10 +175,10 @@ The last column counts the voices in the pool when every voice is installed.
 | Mode                         | The next voice is                                                                       | Voices in the pool |
 | ---------------------------- | --------------------------------------------------------------------------------------- | ------------------ |
 | **No rotation**              | The voice in the **Voice** menu, with the number in the **Speaker** box.                | Not used           |
-| **Round robin**              | The voice after the last one used, in menu order. After the last voice comes the first. | 33                 |
-| **Random shuffle**           | The next voice from a shuffled deck of the pool.                                        | 33                 |
-| **US only (random shuffle)** | The next voice from a shuffled deck of the en-US voices in the pool.                    | 23                 |
-| **Men only**                 | The next voice from a shuffled deck of the voices labeled male.                         | 15                 |
+| **Round robin**              | The voice after the last one used, in menu order. After the last voice comes the first. | 35                 |
+| **Random shuffle**           | The next voice from a shuffled deck of the pool.                                        | 35                 |
+| **US only (random shuffle)** | The next voice from a shuffled deck of the en-US voices in the pool.                    | 24                 |
+| **Men only**                 | The next voice from a shuffled deck of the voices labeled male.                         | 17                 |
 | **Women only**               | The next voice from a shuffled deck of the voices labeled female.                       | 18                 |
 
 **Round robin** takes the first voice of the pool when no voice was used yet, or when the last voice left the pool. With every voice installed, that voice is the first voice in the menu, Heart (female) (en-US, A).
@@ -145,8 +191,10 @@ A voice joins the pool when it meets all four conditions:
 
 - It is installed.
 - It has exactly one speaker.
-- It is an English voice with a known gender. Every Kokoro voice qualifies, because its id gives the gender. Of the Piper voices, only the voices in the Piper table above qualify.
-- It fits the mode. **US only (random shuffle)** needs en-US, **Men only** needs male, and **Women only** needs female.
+- It is an English voice with a known gender. Every Kokoro voice qualifies, because its id gives the gender. Both Qwen3-TTS voices qualify. The Chatterbox Turbo voice has no gender label, so it never qualifies. Of the Piper voices, only the voices in the Piper table above qualify.
+- It fits the mode. **US only (random shuffle)** needs the language en-US, **Men only** needs male, and **Women only** needs female.
+
+The Qwen3-TTS voice Ryan has the language en, with no region, so **US only (random shuffle)** takes Aiden and skips Ryan. **Men only** takes both.
 
 The pool keeps the menu order and counts each voice once. The app rebuilds the pool from the voice list at the start of every reading.
 
@@ -174,4 +222,4 @@ When no installed voice fits the mode, the pool is empty. The reading then uses 
 No installed voice matches “Men only”; using the selected voice.
 ```
 
-The text names the mode that found no voice. For example, **Men only** finds no voice when every installed voice is labeled female. This can happen during the first voice download, when only the first voice to arrive is installed. A warning about the reading itself replaces this message.
+The text names the mode that found no voice. For example, **Men only** finds no voice when no installed voice is labeled male. This can happen during the first voice download, when only the first voice to arrive is installed. A warning about the reading itself replaces this message.

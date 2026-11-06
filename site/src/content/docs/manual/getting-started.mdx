@@ -21,11 +21,11 @@ This page takes you from the download to the first question you hear. The [Onboa
 2. Read the chip. A Mac with Apple silicon shows an Apple chip, such as Apple M2. A Mac that shows an Intel processor is an Intel-based Mac.
 3. Read the macOS version. It must be 26.2 or later.
 4. Make sure the Mac is online and has a working sound output.
-5. Make sure at least 1.8 GB of disk space is free. **System Settings > General > Storage** shows the free space.
+5. Make sure at least 4.2 GB of disk space is free. **System Settings > General > Storage** shows the free space.
 
 </Steps>
 
-The chip is an Apple chip, macOS is 26.2 or later, and 1.8 GB is free.
+The chip is an Apple chip, macOS is 26.2 or later, and 4.2 GB is free.
 
 An Intel-based Mac is not supported: the release has no Intel build. If macOS is older than 26.2, choose **System Settings > General > Software Update** and install any update to 26.2 or later. If no such update appears, the Mac is not supported. See [Your Mac is not supported](/manual/troubleshooting/#your-mac-is-not-supported). If the disk is too full, free some space before you go on.
 
@@ -33,10 +33,11 @@ An Intel-based Mac is not supported: the release has no Intel build. If macOS is
 
 <Steps>
 
-1. Open [Download Cloudy Reader](/download/) and download the zip (459 MB).
+1. Open [Download Cloudy Reader](/download/) and download the disk image (431 MB).
 2. Optional: check the download with the checksum command on that page. It runs in Terminal and confirms that the file is complete and unchanged.
-3. Find the zip in the **Downloads** folder in Finder and double-click it to unzip it. If your browser already unzipped it, skip this step.
-4. Drag **Cloudy Reader** to the **Applications** folder. Do this before you open the app.
+3. Find the disk image in the **Downloads** folder in Finder and double-click it to open it. If your browser already opened it, skip this step.
+4. Drag **Cloudy Reader** onto the **Applications** link beside it. Do this before you open the app.
+5. Eject the disk image: click the eject button next to the **Cloudy Reader** volume in the Finder sidebar.
 
 </Steps>
 
@@ -45,15 +46,15 @@ The figure shows the whole path to the first open. The next section covers its l
 <Figure
   src="install-flow-light.svg"
   dark="install-flow-dark.svg"
-  alt="Four steps of the first open: download the zip, move Cloudy Reader to Applications, open it, then click Open Anyway in System Settings > Privacy & Security."
+  alt="Four steps of the first open: download the disk image, drag Cloudy Reader to Applications, open it, then click Open Anyway in System Settings > Privacy & Security."
   caption="macOS blocks the first open, so the path ends with Open Anyway."
 />
 
-Cloudy Reader is in the **Applications** folder. Delete the zip to free 459 MB, or keep it to install the app on another Mac.
+Cloudy Reader is in the **Applications** folder. Delete the disk image to free 431 MB, or keep it to install the app on another Mac.
 
-If the checksum does not match, delete the zip and download it again. See [The checksum does not match](/manual/troubleshooting/#the-checksum-does-not-match). If the mismatch repeats, follow [Report a security issue](/manual/get-help/#report-a-security-issue).
+If the checksum does not match, delete the disk image and download it again. See [The checksum does not match](/manual/troubleshooting/#the-checksum-does-not-match). If the mismatch repeats, follow [Report a security issue](/manual/get-help/#report-a-security-issue).
 
-To build the app from source instead, see [Build from source](/developer/building/).
+To install from the zip instead, see [Install, update, and uninstall](/manual/tasks/install/). To build the app from source, see [Build from source](/developer/building/).
 
 ## Open the app
 
@@ -78,34 +79,34 @@ If there is no **Open Anyway** button, it shows only after a blocked attempt: [o
 
 ## Let the voices download
 
-Cloudy Reader downloads its voices at the first launch, about 0.66 GB in all.
+Cloudy Reader downloads its voices at the first launch, about 3.05 GB in all.
 
 <Steps>
 
 1. Keep the window open and the Mac online. Closing the window stops the download.
-2. Read the status bar at the bottom of the window. It shows "Loading voices…" briefly, then "No voice is installed." On the right, it shows "Downloading voices… _N_%" and a progress bar.
+2. Read the status bar at the bottom of the window. It shows "Loading voices…" briefly, then "No voice is installed." On the right, it shows a progress label that starts with "Downloading", a percentage, and a progress bar.
 3. Look at the **Voice** pop-up menu below the question box and the **Speak** button in the row of buttons. Both are dimmed.
-4. Wait for the first voice to arrive. It usually takes under a minute.
+4. Wait for the first voice to arrive. It usually takes under a minute. The download then continues with the other engines, one at a time.
 
 </Steps>
 
 <Figure
   src="window-first-launch-light.svg"
   dark="window-first-launch-dark.svg"
-  alt="The Cloudy Reader window at first launch: the Voice menu reads No voice installed, Speak is dimmed, and the status bar says No voice is installed. beside Downloading voices… 4% and a progress bar."
+  alt="The Cloudy Reader window at first launch: the Voice menu reads No voice installed, Speak is dimmed, and the status bar shows the warning No voice is installed. beside a download label and a progress bar."
   caption="The status bar shows the warning on the left and the download progress on the right."
   frame="window"
 />
 
 The **Voice** menu shows a voice, and **Speak** is no longer dimmed. You can go on to the next section now. The download continues in the background.
 
-When the download finishes, the progress label and bar leave the status bar, and the other voices appear in the **Voice** menu. The app then selects the first voice in the menu, unless you chose a voice yourself. After that, reading needs no network. [Manage voices and storage](/manual/tasks/voices-and-storage/) shows how to check the download.
+The other voices appear in the **Voice** menu as the rest of the download finishes. Until you choose a voice yourself, the menu selects its first voice, so the selection can move as voices arrive. When the whole download ends, the progress label and bar leave the status bar. After that, reading needs no network. [Manage voices and storage](/manual/tasks/voices-and-storage/) shows how to check the download.
 
 Check the **Voice** menu, not the percentage. A failed file counts as finished, so the percentage can rise while no voice arrives. If the label and bar leave the status bar and the menu is still empty, the download failed, and the status bar keeps "No voice is installed." with no other message.
 
 To retry a failed download, connect the Mac to the internet, quit the app with Command-Q, and open it again. The download starts only at launch. See [No voice is installed](/manual/troubleshooting/#no-voice-is-installed) and [The voice download does not progress](/manual/troubleshooting/#the-voice-download-does-not-progress).
 
-If some voices could not be downloaded, a warning can appear at the left of the status bar when no other message is showing. Quit the app and open it again to retry. See [Some voices could not be downloaded](/manual/troubleshooting/#some-voices-could-not-be-downloaded).
+If part of the download fails or is skipped, a warning can appear at the left of the status bar when no other message is showing. Quit the app and open it again to retry. See [Some voices could not be downloaded](/manual/troubleshooting/#some-voices-could-not-be-downloaded).
 
 ## Hear a sample question
 

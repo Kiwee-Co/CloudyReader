@@ -5,49 +5,49 @@
             "n": 1,
             "part": "question box",
             "x": 97.06,
-            "y": 36.94
+            "y": 37.58
         },
         {
             "n": 2,
             "part": "Voice menu",
-            "x": 57.57,
-            "y": 42.46
+            "x": 57.13,
+            "y": 42.78
         },
         {
             "n": 3,
             "part": "Rotation menu",
             "x": 44.04,
-            "y": 48.59
+            "y": 48.27
         },
         {
             "n": 4,
             "part": "options",
             "x": 33.43,
-            "y": 55.16
+            "y": 54.84
         },
         {
             "n": 5,
             "part": "Paste and Speak Clipboard",
             "x": 36.76,
-            "y": 63.55
+            "y": 63.23
         },
         {
             "n": 6,
             "part": "Repeat, Stop, and Speak",
-            "x": 60.44,
-            "y": 63.55
+            "x": 57.5,
+            "y": 63.23
         },
         {
             "n": 7,
             "part": "Spoken script",
             "x": 21.63,
-            "y": 71.61
+            "y": 71.29
         },
         {
             "n": 8,
             "part": "status bar",
             "x": 95.29,
-            "y": 97.66
+            "y": 97.74
         }
     ]
 }

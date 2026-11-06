@@ -6,6 +6,7 @@ sidebar:
 ---
 
 import { Steps } from '@astrojs/starlight/components';
+import Figure from '../../../components/Figure.astro';
 
 Find the symptom, read the cause, and apply the fix. Quoted text is what Cloudy Reader shows, character for character. An italic letter or word, such as _n_, stands for a value that changes.
 
@@ -36,8 +37,8 @@ The check in Terminal does not print the "OK" line.
 
 <Steps>
 
-1. Compare the size of your download with the size that [Download Cloudy Reader](/download/) lists. A different size means that your file is not the published file.
-2. Run the check again from the folder that holds the download. Copy the command from that page, because a typing error in the hash fails the check.
+1. Compare the size of your download with the size that [Download Cloudy Reader](/download/) lists for that file. A different size means that your file is not the published file.
+2. Run the check again from the folder that holds the download. Copy the command for your file from that page, because a typing error in the hash fails the check.
 3. If the check still fails, delete your download and get it again from that page. Then run the check again.
 4. If the check fails on a second download, do not open the app. Follow [Report a security issue](/manual/get-help/#report-a-security-issue).
 
@@ -92,9 +93,28 @@ macOS says that the app is damaged.
 
 Advanced users can [remove the quarantine flag](/manual/tasks/first-open/#remove-the-quarantine-flag). Do that only for an app that you trust, and never against the policy of a managed Mac.
 
+### The app is gone after you eject the disk image
+
+Cloudy Reader does not open, or it is not in the **Applications** folder, after you eject the disk image.
+
+**Cause.** The disk image is a read-only copy of the app. The Cloudy Reader volume holds the app and a link to the **Applications** folder. Opening the app inside the disk image runs it from there and does not install it, so ejecting the disk image takes the app away.
+
+**Fix.**
+
+<Steps>
+
+1. Open the disk image file again.
+2. Drag **Cloudy Reader** onto the **Applications** link beside it.
+3. Quit Cloudy Reader if it runs from the disk image, then eject the disk image.
+4. Open Cloudy Reader from the **Applications** folder. If macOS blocks the first launch, follow [Open the app the first time](/manual/tasks/first-open/).
+
+</Steps>
+
+[Install, update, and uninstall](/manual/tasks/install/) has the steps for each download.
+
 ## Voices
 
-The app downloads its voices at the first launch. [Manage voices and storage](/manual/tasks/voices-and-storage/) shows how to check and retry the download.
+The app downloads its voices at the first launch, one download for each voice engine. [Manage voices and storage](/manual/tasks/voices-and-storage/) shows how to check and retry the downloads.
 
 ### No voice is installed
 
@@ -110,8 +130,8 @@ The status bar shows "No voice is installed." The **Voice** menu is dimmed and r
 
 <Steps>
 
-1. Look at the right end of the status bar. If "Downloading voices… _N_%" shows, keep the window open until a voice appears in the **Voice** menu. Closing the window stops the download.
-2. If the percentage and the progress bar disappear and the menu stays empty, the download failed. If no percentage ever shows, offline mode may have skipped it. In both cases, check the internet connection and the free disk space.
+1. Look at the right end of the status bar. If a label that starts with "Downloading" shows, keep the window open until a voice appears in the **Voice** menu. Closing the window stops the download.
+2. If the label and the progress bar disappear and the menu stays empty, the download failed. If no label ever shows, offline mode may have skipped it. In both cases, check the internet connection and the free disk space.
 3. Quit the app with Command-Q and open it from the **Applications** folder. The download starts at each launch, and this start is not in offline mode.
 4. If the download fails again, see [The voice download does not progress](#the-voice-download-does-not-progress).
 
@@ -121,15 +141,16 @@ The status bar shows "No voice is installed." The **Voice** menu is dimmed and r
 
 ### The voice download does not progress
 
-The status bar shows "Downloading voices… 0%" for a while, or the percentage climbs and no voice appears in the **Voice** menu.
+The label "Downloading _group_… _N_% (_x_ of _y_ MB)" stays at 0 percent for a while. The percentage can also climb while no voice appears in the **Voice** menu.
 
-**Cause.** The Mac does not receive the voice files. The app tries each file 3 times, with waits of 2 and then 4 seconds between the tries. The percentage counts a file as finished when its tries end, even when every try failed.
+**Cause.** The Mac does not receive the voice files. The label shows one download at a time, such as the files of one voice engine, and its percentage belongs to that download. The app tries each file 3 times, with waits of 2 and then 4 seconds between the tries. The percentage counts a file as finished when its tries end, even when every try failed.
 
 With no connection, the status bar behaves like this:
 
 - The percentage stays at 0 while the first small files fail, and then it climbs in steps.
+- The next download starts again at 0, because each download has its own percentage.
 - Each failed file takes about 6 seconds, so a run in which every file fails takes minutes.
-- When the run ends, the percentage and the progress bar disappear, and no voice has arrived.
+- When the run ends, the label and the progress bar disappear, and no voice has arrived.
 - A connection that hangs takes longer, because each try can wait up to 10 seconds to connect.
 
 **Fix.**
@@ -137,7 +158,7 @@ With no connection, the status bar behaves like this:
 <Steps>
 
 1. Open the **Voice** menu. The download works when the first voice appears in the menu. A rising percentage is not proof, because failed files count as finished.
-2. If the percentage and the progress bar have disappeared and the menu is empty, the download failed. Check the Wi-Fi and any VPN.
+2. If the label and the progress bar have disappeared and the menu is empty, the download failed. Check the Wi-Fi and any VPN.
 3. On a school or work network, ask the administrator to allow the download. [What uses the network](/about/privacy/#what-uses-the-network) lists the hosts.
 4. When the connection works, quit the app with Command-Q and open it again. On a slow connection, keep the window open until the first voice appears.
 
@@ -162,31 +183,57 @@ The status bar shows the warning "Some voices could not be downloaded. They are 
 
 ### Few voices are in the Voice menu at first
 
-During the first download, the **Voice** menu lists only the first voice to arrive.
+During the first download, the **Voice** menu lists only some of the voices.
 
-**Cause.** The app updates the **Voice** menu when the first voice arrives and again when the whole download ends. The other voices stay out of the menu until then, even after their files arrive.
+**Cause.** The app updates the **Voice** menu when the first voice arrives, and again when each download ends. A download covers the files of one voice engine. The other voices of that engine stay out of the menu until the download ends, even after their files arrive.
 
-**Fix.** Wait until the download finishes: the percentage and the progress bar disappear. The menu then lists every voice. [Voices and rotation modes](/manual/reference/voices/) lists them all, and [Manage voices and storage](/manual/tasks/voices-and-storage/) shows how to check the download.
+**Fix.** Wait until the downloads finish: the label and the progress bar disappear. The menu then lists every voice. [Voices and rotation modes](/manual/reference/voices/) lists them all, and [Manage voices and storage](/manual/tasks/voices-and-storage/) shows how to check the downloads.
 
 ### Voices from one engine are missing
 
-The **Voice** menu has no heading for one voice engine, or the rows of one engine are dimmed and their labels contain "not installed".
+The **Voice** menu has no heading for one voice engine, or the rows of one engine are dimmed. The label of a dimmed row contains "not installed" or a reason.
 
-**Cause.** The files of that engine are not all on the Mac. The app lists an engine's voices only when the engine's files are present and valid. Some engines list all their voices and dim the voices whose own file is missing. Three cases apply:
+**Cause.** The files of that engine are not all on the Mac, or the app cannot use them yet. The app lists an engine's voices as ready only when the engine's files are present and valid. An engine that cannot speak yet shows dimmed rows. Four cases apply:
 
-- The download has not finished. The menu may not list an engine's voices until the whole download ends.
+- The download has not finished. An engine's voices appear in the menu when that engine's download ends.
 - The download stopped early. Closing the window, losing the connection, or starting in offline mode stops it.
 - A file is damaged. The download does not replace a file that is already there, so it never fetches that file again.
+- The app does not include the engine, or it has no files to download for it. The menu then shows no heading and no reason.
 
 **Fix.**
 
 <Steps>
 
-1. Wait until the percentage and the progress bar disappear. If no download runs, check the internet connection. Then quit the app with Command-Q and open it again.
-2. If Kokoro voices are still missing, quit the app. In Finder, choose **Go > Go to Folder** and paste `~/Library/Application Support/cloudyreader/models`. This is the `models` folder in the [data folder](/manual/reference/files-and-settings/#data-folder). Move the `kokoro` folder to the Trash.
-3. Open the app with the Mac online. The download fetches the missing files again.
+1. If the label of a dimmed row has a reason, find it in the table below and follow the fix.
+2. Otherwise wait until the label and the progress bar disappear. If no download runs, check the internet connection. Then quit the app with Command-Q and open it again.
+3. If Kokoro voices are still missing, quit the app. In Finder, choose **Go > Go to Folder** and paste `~/Library/Application Support/cloudyreader/models`. This is the `models` folder in the [data folder](/manual/reference/files-and-settings/#data-folder). Move the `kokoro` folder to the Trash.
+4. Open the app with the Mac online. The download fetches the missing files again.
 
 </Steps>
+
+The first part of the figure shows dimmed rows that name their reason. The second part shows the status bar at the first reading with an engine: see [The first use of an engine is slow](#the-first-use-of-an-engine-is-slow).
+
+<Figure
+  src="engine-rows-light.svg"
+  dark="engine-rows-dark.svg"
+  alt="The Voice menu open, with the Qwen3-TTS rows Aiden (male) (en-US, 8-bit, not downloaded yet) and Ryan (male) (en, 8-bit, not downloaded yet) dimmed. A second part shows the status bar text Preparing… loading Chatterbox Turbo (first use only)."
+  caption="While an engine downloads, its voices stay dimmed and say why, and the first reading with an engine loads its model first."
+/>
+
+The table lists the reasons that a dimmed row can show.
+
+| Reason in the row                                | What it means                                                                       | What to do                                                                                                           |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| not downloaded yet                               | The files of the engine are not on the Mac yet.                                     | Wait until the downloads finish. If no download runs, open the app again with the Mac online.                        |
+| offline: not downloaded                          | Offline mode skipped the download.                                                  | Quit the app and open it from the **Applications** folder. That start is not in offline mode.                        |
+| not enough disk space: needs _X_ GB, _Y_ GB free | The Mac has less free space than the download needs.                                | Free at least the first amount, then quit the app and open it again.                                                 |
+| the models folder is not writable                | The app cannot add files to the `models` folder.                                    | Give your account write access to the folder, then quit the app and open it again.                                   |
+| damaged: _detail_                                | A file in the engine's folder is damaged or unexpected.                             | Quit the app, move the engine's folder in `models` to the Trash, and open the app with the Mac online.               |
+| waiting for a Qwen3 decoder fix (_detail_)       | The app cannot use the Qwen3-TTS decoder, so it does not run or download Qwen3-TTS. | Use a voice from another engine. If the detail says the decoder window check failed, quit the app and open it again. |
+
+In the [data folder](/manual/reference/files-and-settings/#data-folder), the `voices` folder holds the Piper voices. The `models` folder holds one folder for each other engine that has model files.
+
+After a download, the status bar can also show "_Engine_ not downloaded: _reason_" when a disk or write reason stopped that engine's download. The status bar shows it only when it has no other message, and its tooltip lists every skipped download.
 
 For a Piper voice, see [A voice error appears](#a-voice-error-appears).
 
@@ -202,17 +249,19 @@ The **Voice** menu reads "Voices unavailable", and the status bar shows an error
 
 The status bar shows "Preparing with _name_ (_gender_)…", or the **Voice** menu moves to another voice.
 
-**Cause.** One of three cases applies:
+**Cause.** One of four cases applies:
 
 - Rotation is on. With any mode except **No rotation**, **Speak** takes the voice from the rotation pool for each reading and not from the **Voice** menu.
-- You never chose a voice. Until you do, the app selects the first installed voice in the **Voice** menu. When the download finishes, the selection moves to the first voice in the menu.
+- You never chose a voice. Until you do, the app selects the first installed voice in the **Voice** menu. The menu changes when a download ends, so the selection can move more than once during the first launch.
+- The voice that you chose earlier is not ready. The status bar shows "_name_ is not ready: _reason_. Using _name_." The app uses the other voice, and it switches to your voice when that voice is ready.
 - A rotation mode has no voice that fits. The status bar shows "No installed voice matches “Men only”; using the selected voice." The app then uses the voice in the **Voice** menu.
 
 **Fix.**
 
 - Rotation: choose **No rotation** in the **Rotation** menu. [Rotation modes](/manual/reference/voices/#rotation-modes) explains each mode.
 - No chosen voice: choose the voice that you want in the **Voice** menu. The app saves the choice for the next start.
-- No voice fits: wait until the download ends, or choose another rotation mode.
+- Voice not ready: wait until the voice is ready, or choose another voice. The table in [Voices from one engine are missing](#voices-from-one-engine-are-missing) explains each reason.
+- No voice fits: wait until the downloads end, or choose another rotation mode.
 
 ## Reading
 
@@ -224,9 +273,9 @@ The status bar shows "Preparing with _name_ (_gender_)…", or the **Voice** men
 
 **Fix.** Match the status bar to one case:
 
-- "Loading voices…" with a moving bar at the right: wait until the bar stops.
+- "Loading voices…": wait until the message changes.
 - "No voice is installed.": see [No voice is installed](#no-voice-is-installed).
-- "Preparing…" with a moving bar: wait for "Playing _n_ s." The first reading takes longer, as [The first reading is slow](#the-first-reading-is-slow) explains.
+- "Preparing…": wait for "Playing _n_ s." The first reading takes longer, as [The first reading is slow](#the-first-reading-is-slow) explains.
 - The **Voice** menu reads "Voices unavailable": see [The Voice menu cannot list the voices](#the-voice-menu-cannot-list-the-voices).
 
 **Repeat** stays dimmed until a reading has played, and **Stop** stays dimmed unless sound is playing. This is normal.
@@ -257,26 +306,44 @@ The status bar shows an error that names a voice or a voice engine. The message 
 
 - "Error: voice '_key_' is not installed"
 - "Error: unknown voice '_key_'"
-- "Error: TTS engine 'kokoro' is unavailable (voice kokoro:_id_)"
+- "Error: TTS engine '_engine_' is unavailable (voice _key_)"
 - "Error: Piper voice model not found: _path_"
 - "Error: invalid Piper voice config _path_"
+- "Error: _engine_ reads at most _limit_ characters at once; this has _count_"
 
-**Cause.** The voice that you chose cannot be used. Its files may be missing or damaged, its voice engine may not start, or the voice list may be out of date. The message names the voice by its id, such as `kokoro:af_heart`, or names the voice's file.
+**Cause.** The voice that you chose cannot be used, or the text is too long for its engine. Its files may be missing or damaged, its voice engine may not start, or the voice list may be out of date. The message names the voice by its id, such as `kokoro:af_heart`, or names the voice's file. A message about a voice that is not installed, or an engine that is unavailable, can end with a reason. A dimmed row shows the same reasons.
 
 **Fix.**
 
 - Choose another voice in the **Voice** menu and click **Speak**. If the voice list is out of date, quit the app with Command-Q and open it again. [Voices and rotation modes](/manual/reference/voices/) lists the menu name of each voice with its id or its file name.
-- For an error about a voice engine, see [Voices from one engine are missing](#voices-from-one-engine-are-missing).
+- If the message ends with a reason, or says that an engine is unavailable, see the table in [Voices from one engine are missing](#voices-from-one-engine-are-missing).
 - For a Piper voice that the app downloads, quit the app with Command-Q. If the message says "invalid Piper voice config", move the file that it names to the Trash. Open the app again with the Mac online, and the download fetches the missing file.
 - For a Piper voice that you added, copy its files again: [Add a Piper voice](/manual/tasks/voices-and-storage/#add-a-piper-voice).
+- If the message says the engine reads at most a number of characters, paste fewer questions at once, or choose a voice from another engine.
+
+### A voice cannot say a short part
+
+The status bar shows "Error: _engine_ could not say '_part_'; try another voice".
+
+**Cause.** The engine made no usable sound for that part after its tries. For a short part, such as a choice letter, the app tries twice, and then once more with the part repeated three times. If every try fails, the app stops the reading and shows the error.
+
+**Fix.** Choose another voice and click **Speak**. The app repeats the same tries for the same voice and text, so reading it again with that voice does not help.
 
 ### The first reading is slow
 
 The status bar shows "Preparing…" for several seconds before the first reading plays.
 
-**Cause.** The app starts loading its name-detection model when it opens, and the first reading waits for it. On a Mac with an M2 Ultra chip, the wait was about 6 seconds, and a slower Mac waits longer. The first reading with some voices also waits while their voice engine loads; [Voices and voice engines](/manual/concepts/voice-engines/) says which voices.
+**Cause.** The app starts loading its name-detection model when it opens, and the first reading waits for it. On a Mac with an M2 Ultra chip, the wait was about 6 seconds, and a slower Mac waits longer. The first reading with a voice from some engines also waits while that engine loads. The status bar then says so: see [The first use of an engine is slow](#the-first-use-of-an-engine-is-slow).
 
 **Fix.** Wait for "Playing _n_ s." The delay happens once each time the app starts. To get it out of the way, read one short question after you open the app. To hear the last reading again at once, click **Repeat**. Reading the same question again with the same voice also starts at once, because the app keeps the audio in its audio cache.
+
+### The first use of an engine is slow
+
+The status bar shows "Preparing… loading _engine_ (first use only)". With rotation on, it shows "Preparing with _name_ (_gender_)… loading _engine_ (first use only)".
+
+**Cause.** The engine loads its model the first time that you read with one of its voices after the app starts. The message says "first use only" because the engine then stays loaded. A Mac keeps only one or two of these engines loaded at once. The message can show again after you switch to another engine and back. [Voices and voice engines](/manual/concepts/voice-engines/) explains the limit.
+
+**Fix.** Wait for "Playing _n_ s." To get the wait out of the way before a practice, read one short question with the voice after you open the app. During a practice, stay with the voices of one engine, because switching engines can load an engine again.
 
 ### A reading waits when lookups are on
 
@@ -292,13 +359,13 @@ Cloudy Reader holds a lot of memory.
 
 **Cause.** The app keeps its models in memory while it runs.
 
-**Fix.** Quit other apps that you do not need, and quit Cloudy Reader when you finish. [Voices and voice engines](/manual/concepts/voice-engines/) covers the memory that the voice engines use.
+**Fix.** Quit other apps that you do not need, and quit Cloudy Reader when you finish. [Voices and voice engines](/manual/concepts/voice-engines/) has the memory values that the project measured.
 
 ### A word sounds wrong
 
 A word sounds wrong, with or without a warning in the status bar.
 
-**Cause.** The app sets the sound of the hard science words in its built-in lexicon, and of the systematic chemical names that it can parse. For any other word, the voice follows its own rules and can mispronounce the word. A [pronunciation guide](/manual/reference/glossary/#pronunciation-guide) in the text sets the sound of one word.
+**Cause.** For a voice engine that takes IPA, the app sets the sound of the hard science words in its built-in lexicon. It also sets the sound of the systematic chemical names that it can parse. Chatterbox Turbo and Qwen3-TTS take no IPA. They say a respelled word from its respelling, and a lexicon word or a checked chemical name as printed. For any other word, the voice follows its own rules and can mispronounce the word. A [pronunciation guide](/manual/reference/glossary/#pronunciation-guide) in the text sets the sound of one word.
 
 **Fix.**
 
@@ -310,7 +377,7 @@ A word sounds wrong, with or without a warning in the status bar.
 
 </Steps>
 
-[Fix a mispronounced word](/manual/tutorials/fix-a-word/) teaches the three kinds of guides, and [Pronunciation guides](/manual/reference/pronunciation-guides/) lists the syntax. The app leaves some written forms as they are, such as a slash next to a letter, and a Piper voice then says "slash". [How a question becomes speech](/manual/concepts/how-reading-works/) lists these limits.
+[Fix a mispronounced word](/manual/tutorials/fix-a-word/) teaches the three kinds of guides, and [Pronunciation guides](/manual/reference/pronunciation-guides/) lists the syntax. A warning that says an engine "cannot take IPA" means that the engine says the hard words from their printed spelling. Choose a voice from another engine to hear the exact pronunciations that the app sets. The app leaves some written forms as they are, such as a slash next to a letter, and a Piper voice then says "slash". [How a question becomes speech](/manual/concepts/how-reading-works/) lists these limits.
 
 ### A warning says an override surface was not found
 
