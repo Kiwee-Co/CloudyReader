@@ -205,6 +205,11 @@ def test_angle_brackets_inside_a_say_as_guide_stay_intact():
         ("log2(8)", "log base 2 of (8)"),
         ("log10 x", "log base 10 of x"),
         ("log 2", "log 2"),
+        # A number glued to "log" with no argument after it is the argument, never split.
+        ("log100 = 2", "log 100 equals 2"),
+        ("What is log25?", "What is log 25?"),
+        ("log1000 = 3", "log 1000 equals 3"),
+        ("pH = -log10[H+]", "pH equals -log 10 H plus"),
         ("sin1 = cos 2", "sine 1 equals cosine 2"),
         # A digit glued on is the argument, as in the double angle "sin2θ".
         ("sin2θ", "sine 2 theta"),

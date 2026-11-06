@@ -226,7 +226,8 @@ def _function_pattern() -> re.Pattern[str]:
 
 
 # "log3 10" is a flattened subscript, read the way moderators do: "log base 3 of 10".
-_LOG_BASE = re.compile(r"(?<![A-Za-z])[Ll]og(?P<base>\d{1,3})\s*(?=\(|\d|[A-Za-z](?![\w']))")
+# The base takes every glued digit: "log100 = 2" has no base, it is log of 100.
+_LOG_BASE = re.compile(r"(?<![A-Za-z])[Ll]og(?P<base>\d{1,3})(?!\d)\s*(?=\(|\d|[A-Za-z](?![\w']))")
 
 
 def _speak_function(m: re.Match[str]) -> str:
