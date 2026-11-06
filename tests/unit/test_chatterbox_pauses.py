@@ -17,6 +17,7 @@ import pytest
 from cloudyreader.config import Settings
 from cloudyreader.engine_catalog import Assessment, Pinned, PinnedFile
 from cloudyreader.engines.chatterbox_turbo import ChatterboxTurboEngine
+from cloudyreader.engines.letter_clips import LetterClips
 from cloudyreader.engines.mlxkit import ModelSlot
 from cloudyreader.models import RenderOptions, Segment, SpokenScript
 from cloudyreader.normalize import CHOICE_PAUSE_MS, LETTER_PAUSE_MS, STEM_PAUSE_MS
@@ -59,6 +60,7 @@ def engine(tmp_path: Path) -> ChatterboxTurboEngine:
         pinned=Pinned(pins, "0" * 40),
         assess=lambda: Assessment("ready", "", 0, True),
         slot=ModelSlot(capacity=1),
+        clips=LetterClips(None),  # the tone says every letter: silence is measured exactly
     )
 
 

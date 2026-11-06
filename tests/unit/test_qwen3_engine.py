@@ -30,6 +30,7 @@ from cloudyreader.engine_catalog import Assessment, Pinned, PinnedFile
 from cloudyreader.engines import mlxkit
 from cloudyreader.engines import qwen3_decoder as qd
 from cloudyreader.engines import qwen3_tts as qt
+from cloudyreader.engines.letter_clips import LetterClips
 from cloudyreader.engines.mlxkit import EngineError, EngineUnavailable, ModelSlot
 from cloudyreader.engines.qwen3_decoder import WAITING, DecoderGate
 from cloudyreader.engines.qwen3_tts import (
@@ -149,6 +150,7 @@ def engine(settings: Settings, backend: FakeBackend) -> Qwen3TtsEngine:
         assess=lambda: READY,
         slot=ModelSlot(),
         decoder=lambda: PATCH,
+        clips=LetterClips(None),  # every letter reaches the fake model; clip tests bring their own
     )
 
 
@@ -921,7 +923,12 @@ def test_the_model_gets_each_choice_letter_as_its_name_in_english(
         settings.models_dir / "qwen3_tts", slot=ModelSlot(), decoder=lambda: PATCH
     )
     engine = Qwen3TtsEngine(
-        settings, backend, pinned=install(settings), assess=lambda: READY, decoder=lambda: PATCH
+        settings,
+        backend,
+        pinned=install(settings),
+        assess=lambda: READY,
+        decoder=lambda: PATCH,
+        clips=LetterClips(None),
     )
     script = SpokenScript(tuple(Segment(f"{c}.", LETTER_PAUSE_MS) for c in "WXYZ"))
 

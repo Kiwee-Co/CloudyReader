@@ -15,6 +15,7 @@ import pytest
 
 from cloudyreader.config import Settings
 from cloudyreader.engine_catalog import Assessment, Pinned, PinnedFile
+from cloudyreader.engines.letter_clips import LetterClips
 from cloudyreader.engines.mlxkit import ModelSlot
 from cloudyreader.engines.qwen3_decoder import DecoderGate
 from cloudyreader.engines.qwen3_tts import Qwen3TtsEngine
@@ -62,6 +63,7 @@ def engine(tmp_path: Path) -> Qwen3TtsEngine:
         assess=lambda: Assessment("ready", "", 0, True),
         slot=ModelSlot(),
         decoder=lambda: DecoderGate("patch", "test"),
+        clips=LetterClips(None),  # the tone says every letter: silence is measured exactly
     )
 
 

@@ -25,6 +25,8 @@ import numpy as np
 from cloudyreader import engine_catalog
 from cloudyreader.config import Settings
 from cloudyreader.engine_catalog import Assessment, Pinned, PinnedFile
+from cloudyreader.engines import letter_clips
+from cloudyreader.engines.letter_clips import LetterClips
 from cloudyreader.engines.mlxkit import (
     INTER_CHUNK_MS,
     MAX_SCRIPT_CHARS,
@@ -68,8 +70,9 @@ RESPELLING_STYLE = "hyphen"
 MAX_CHUNK_CHARS = 280  # about 20 s: Turbo drifts past 25 to 30 s of audio
 TOKENS_PER_S = 25  # speech tokens per second of audio; render_text's budget is already 2 x est
 TOKEN_CAP = (100, 800)
-# In the cache key: bump it when chunking, caps, seeds, speakable, the ladder or text prep change.
-_RENDER_REVISION = 3
+# In the cache key: bump it when chunking, caps, seeds, speakable, the ladder, text prep or letter
+# clips change.
+_RENDER_REVISION = 4
 _BRACKETS = re.compile(r"[\[\]]")
 BRACKET_WARNING = f"{TITLE}: square brackets were dropped (the model reads them as sound cues)"
 
@@ -210,6 +213,7 @@ class ChatterboxTurboEngine:
         pinned: Pinned | None = None,
         assess: Callable[[], Assessment] | None = None,
         slot: ModelSlot | None = None,
+        clips: LetterClips | None = None,
     ) -> None:
         self.model_dir = Path(settings.models_dir) / KEY
         self._pinned = pinned if pinned is not None else engine_catalog.pinned(settings, KEY)
@@ -218,6 +222,7 @@ class ChatterboxTurboEngine:
             if assess is not None
             else functools.partial(engine_catalog.assess, settings, KEY)
         )
+        self._clips = clips if clips is not None else letter_clips.CLIPS
         self.backend: TextBackend = (
             backend
             if backend is not None
@@ -380,9 +385,12 @@ class ChatterboxTurboEngine:
 
     def _segment(self, segment: Segment, text: str, voice: VoiceInfo) -> np.ndarray:
         """One segment on its own (never merged across a pause): its chunks, INTER_CHUNK_MS
-        between them, then exactly its pause, whatever the chunking did."""
+        between them, then exactly its pause, whatever the chunking did. A lone choice letter
+        plays its verified clip when there is one."""
         parts: list[np.ndarray] = []
-        if text:
+        if (clip := self._clips.get(KEY, VOICE_ID, segment, SAMPLE_RATE)) is not None:
+            parts.append(clip)
+        elif text:
             # chunk_text may grow a chunk by min_chars when a short fragment joins it.
             limit = MAX_CHUNK_CHARS - SHORT_CHARS
             for index, chunk in enumerate(chunk_text(text, max_chars=limit, min_chars=SHORT_CHARS)):

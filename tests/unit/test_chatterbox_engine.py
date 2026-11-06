@@ -36,6 +36,7 @@ from cloudyreader.engines.chatterbox_turbo import (
     supported,
     token_cap,
 )
+from cloudyreader.engines.letter_clips import LetterClips
 from cloudyreader.engines.mlxkit import EngineError, EngineUnavailable, ModelSlot
 from cloudyreader.models import Override, RenderOptions, Segment, SpokenScript, VoiceInfo
 from cloudyreader.normalize import LETTER_PAUSE_MS
@@ -147,7 +148,12 @@ def backend() -> FakeBackend:
 def engine(settings: Settings, backend: FakeBackend) -> ChatterboxTurboEngine:
     pinned = install(settings)
     return ChatterboxTurboEngine(
-        settings, backend, pinned=pinned, assess=lambda: READY, slot=ModelSlot(capacity=1)
+        settings,
+        backend,
+        pinned=pinned,
+        assess=lambda: READY,
+        slot=ModelSlot(capacity=1),
+        clips=LetterClips(None),  # every letter reaches the fake model; clip tests bring their own
     )
 
 

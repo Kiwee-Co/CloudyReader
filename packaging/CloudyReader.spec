@@ -106,6 +106,14 @@ if START_QUESTIONS:
         for path in sorted((fixtures / "questions").glob("*.txt"))
     ]
     datas.append((str(fixtures / "tossup_earth_science.txt"), "start_questions"))
+# Every build, release or dev: the engines play these for a lone choice letter
+# (cloudyreader/engines/letter_clips.py), read from the package's own path under Resources.
+LETTER_CLIPS = ROOT / "cloudyreader" / "engines" / "letter_clips"
+datas += [
+    (str(path), path.parent.relative_to(ROOT).as_posix())
+    for path in sorted(LETTER_CLIPS.rglob("*"))
+    if path.suffix in (".json", ".wav")
+]
 a = Analysis(  # noqa: F821
     [ENTRY],
     pathex=[str(ROOT)],

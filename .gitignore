@@ -144,3 +144,5 @@ scripts/image/.ghe-token
 .venv/
 .ruff_cache/
 *.wav
+# The engines' verified letter clips ship with the code (cloudyreader/engines/letter_clips.py).
+!cloudyreader/engines/letter_clips/**/*.wav

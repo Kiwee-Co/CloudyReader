@@ -24,7 +24,8 @@ import numpy as np
 from cloudyreader import engine_catalog
 from cloudyreader.config import Settings
 from cloudyreader.engine_catalog import Assessment, Pinned, PinnedFile
-from cloudyreader.engines import mlxkit
+from cloudyreader.engines import letter_clips, mlxkit
+from cloudyreader.engines.letter_clips import LetterClips
 from cloudyreader.engines.mlxkit import (
     INTER_CHUNK_MS,
     MAX_SCRIPT_CHARS,
@@ -77,8 +78,9 @@ MAX_CHUNK_CHARS = 300  # about 21 s
 MIN_CHUNK_CHARS = 24  # a shorter fragment joins its neighbor inside the segment
 TOKENS_PER_S = 12.5  # codec frames per second of audio
 TOKEN_CAP = (64, 2048)
-# Bump when chunking, caps, seeds, speakable, the short-unit ladder or text prep change.
-_RENDER_REVISION = 3
+# Bump when chunking, caps, seeds, speakable, the short-unit ladder, text prep or the letter clips
+# change.
+_RENDER_REVISION = 4
 _ENDINGS = ".!?"
 _CLOSERS = "\"')]”’"
 WINDOW_FAILED = f"{WAITING} (the decoder window check failed)"
@@ -265,6 +267,7 @@ class Qwen3TtsEngine:
         assess: Callable[[], Assessment] | None = None,
         slot: ModelSlot | None = None,
         decoder: Callable[[], DecoderGate] = decoder_gate,
+        clips: LetterClips | None = None,
     ) -> None:
         self.model_dir = Path(settings.models_dir) / KEY
         self._pinned = pinned if pinned is not None else engine_catalog.pinned(settings, KEY)
@@ -274,6 +277,7 @@ class Qwen3TtsEngine:
             else functools.partial(engine_catalog.assess, settings, KEY)
         )
         self._decoder = decoder
+        self._clips = clips if clips is not None else letter_clips.CLIPS
         self.backend: TextBackend = (
             backend
             if backend is not None
@@ -437,9 +441,12 @@ class Qwen3TtsEngine:
         return Audio(out_wav, SAMPLE_RATE, len(samples) / SAMPLE_RATE, False)
 
     def _segment(self, segment: Segment, text: str, voice_id: str) -> np.ndarray:
-        """One segment on its own: its chunks, then exactly its pause, whatever the chunking."""
+        """One segment on its own: its chunks, then exactly its pause, whatever the chunking. A
+        lone choice letter plays its verified clip for this voice when there is one."""
         parts: list[np.ndarray] = []
-        if text:
+        if (clip := self._clips.get(KEY, voice_id, segment, SAMPLE_RATE)) is not None:
+            parts.append(clip)
+        elif text:
             chunks = chunk_text(text, max_chars=MAX_CHUNK_CHARS, min_chars=MIN_CHUNK_CHARS)
             for index, chunk in enumerate(chunks):
                 if index:

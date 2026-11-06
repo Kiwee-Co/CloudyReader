@@ -1,0 +1,136 @@
+{
+    "clips": [
+        {
+            "engine": "chatterbox_turbo",
+            "voice": "builtin",
+            "letter": "W",
+            "rate": 24000,
+            "frames": 19440,
+            "sha256": "293335433874c3d6ce5ea0eedaf12dfeaef4461a36cf17a066862672c565d4d0",
+            "take": 5,
+            "seed": 417629850,
+            "text": "double you."
+        },
+        {
+            "engine": "chatterbox_turbo",
+            "voice": "builtin",
+            "letter": "X",
+            "rate": 24000,
+            "frames": 12480,
+            "sha256": "923dcaff74190d3ec422bdb63daac8a6634d82cd2edbee505e6de590ea07ba86",
+            "take": 6,
+            "seed": 3894057330,
+            "text": "ecks."
+        },
+        {
+            "engine": "chatterbox_turbo",
+            "voice": "builtin",
+            "letter": "Y",
+            "rate": 24000,
+            "frames": 15840,
+            "sha256": "ffff8ea6577f23a2ce10fff7d2616c4f0ed9885cb517dd520d8cfc3e2c7eb26a",
+            "take": 7,
+            "seed": 146002427,
+            "text": "Why."
+        },
+        {
+            "engine": "chatterbox_turbo",
+            "voice": "builtin",
+            "letter": "Z",
+            "rate": 24000,
+            "frames": 11760,
+            "sha256": "419d0b4cb8157a5f11f324755599ec024a40b54dfaa428773046f416d205dfd0",
+            "take": 2,
+            "seed": 1520669476,
+            "text": "Z."
+        },
+        {
+            "engine": "qwen3_tts",
+            "voice": "aiden",
+            "letter": "W",
+            "rate": 24000,
+            "frames": 23040,
+            "sha256": "2976c176a912896da7d51110b6dc9a63b269ee899f99142fbb1765d5298263cd",
+            "take": 1,
+            "seed": 867035516,
+            "text": "double you."
+        },
+        {
+            "engine": "qwen3_tts",
+            "voice": "aiden",
+            "letter": "X",
+            "rate": 24000,
+            "frames": 12480,
+            "sha256": "934506d416c1e062ce524fc2859feef642f3e3bc1795221cbc20a5df18257639",
+            "take": 6,
+            "seed": 2630433633,
+            "text": "ecks."
+        },
+        {
+            "engine": "qwen3_tts",
+            "voice": "aiden",
+            "letter": "Y",
+            "rate": 24000,
+            "frames": 22800,
+            "sha256": "e8de720af846e790aed507d7ce9535b7ac2f5cce7b24db063b83e64197b79743",
+            "take": 1,
+            "seed": 1557996015,
+            "text": "Why."
+        },
+        {
+            "engine": "qwen3_tts",
+            "voice": "aiden",
+            "letter": "Z",
+            "rate": 24000,
+            "frames": 13440,
+            "sha256": "2964fde5e17479ca0de78f4d0423189237b0f9cdb16f5b5c517940ebff7d8a5c",
+            "take": 1,
+            "seed": 1998292252,
+            "text": "Z."
+        },
+        {
+            "engine": "qwen3_tts",
+            "voice": "ryan",
+            "letter": "W",
+            "rate": 24000,
+            "frames": 17040,
+            "sha256": "a1de18f73385b62b7b873cf7de2e9ea3320d6af1b52c0b2ceeb9bfce245be8f3",
+            "take": 3,
+            "seed": 336804395,
+            "text": "double you."
+        },
+        {
+            "engine": "qwen3_tts",
+            "voice": "ryan",
+            "letter": "X",
+            "rate": 24000,
+            "frames": 20160,
+            "sha256": "770e66a0be8ac004a4c2ffd1f18a282858aa2676f94838d4c79ae73c0b3de239",
+            "take": 1,
+            "seed": 2752055346,
+            "text": "ecks."
+        },
+        {
+            "engine": "qwen3_tts",
+            "voice": "ryan",
+            "letter": "Y",
+            "rate": 24000,
+            "frames": 15120,
+            "sha256": "cf511939a22a6922126cbe6bd3a38fa1a576056f083f9343d9754e3ffddb68cb",
+            "take": 7,
+            "seed": 1037211538,
+            "text": "Why."
+        },
+        {
+            "engine": "qwen3_tts",
+            "voice": "ryan",
+            "letter": "Z",
+            "rate": 24000,
+            "frames": 15840,
+            "sha256": "50e3f079c607347bcfdc577df7f900720c1707799282c9b66b1126f2149fae11",
+            "take": 23,
+            "seed": 4180417742,
+            "text": "Z."
+        }
+    ]
+}
