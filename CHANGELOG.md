@@ -4,7 +4,7 @@ All notable changes to Cloudy Reader are recorded in this file, which follows Ke
 
 <!-- markdownlint-disable MD024 -->
 
-## [0.0.2] - 2026-11-05
+## [0.0.2] - 2026-11-06
 
 ### Added
 
