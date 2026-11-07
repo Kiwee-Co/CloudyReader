@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QEvent, QObject, QPoint, QRect, QRectF, QSize, Qt
+import math
+
+from PySide6.QtCore import QEvent, QObject, QPoint, QPointF, QRect, QRectF, QSize, Qt
 from PySide6.QtGui import (
     QColor,
     QFont,
     QPainter,
+    QPainterPath,
     QPaintEvent,
     QPalette,
     QPen,
@@ -31,6 +34,14 @@ _FOLLOW = {QEvent.Type.FocusIn, QEvent.Type.FocusOut, QEvent.Type.Move, QEvent.T
 _FOLLOW |= {QEvent.Type.Show, QEvent.Type.Hide}
 _SHOWN = {QEvent.Type.ShowToParent, QEvent.Type.HideToParent}  # a child shown or hidden itself
 _TABULAR = QFont.Tag("tnum")  # OpenType tabular figures: every digit one width
+# Each corner of a continuous rect, clockwise: where it sits on the rect, then the unit steps of
+# the edge running into it and of the edge running out of it.
+_CORNERS = (
+    ("topRight", (1, 0), (0, 1)),
+    ("bottomRight", (0, 1), (-1, 0)),
+    ("bottomLeft", (-1, 0), (0, -1)),
+    ("topLeft", (0, -1), (1, 0)),
+)
 
 
 def text_style(points: int) -> QFont:
@@ -47,6 +58,59 @@ def tabular(font: QFont) -> QFont:
     return font
 
 
+def _unit(dx: float, dy: float, fallback: tuple[int, int]) -> tuple[float, float]:
+    length = math.hypot(dx, dy)
+    return (dx / length, dy / length) if length else fallback
+
+
+def continuous_rect(rect: QRectF, radius: float) -> QPainterPath:
+    """A rounded rect whose corners ease into its edges (continuous curvature), as macOS draws.
+
+    Each corner is a cubic, a short circular arc (itself a cubic) and a cubic, after Figma's
+    corner-smoothing construction, over (1 + CORNER_SMOOTHING) * radius of both edges. A rect
+    too small for that gives up smoothing first, then radius. CORNER_SMOOTHING 0 is circular.
+    """
+    path = QPainterPath()
+    span = min((1 + tokens.CORNER_SMOOTHING) * radius, min(rect.width(), rect.height()) / 2)
+    if radius <= 0 or span <= 0:
+        path.addRect(rect)
+        return path
+    smoothing = max(0.0, min(tokens.CORNER_SMOOTHING, span / radius - 1))
+    radius = min(radius, span)
+    arc = math.radians(90 * (1 - smoothing))  # the circular part of each corner
+    arc_length = math.sin(arc / 2) * radius * math.sqrt(2)
+    ease = math.radians(45 * smoothing)
+    c = radius * math.tan(ease / 2) * math.cos(ease)
+    d = c * math.tan(ease)
+    b = (span - arc_length - c - d) / 3
+    a = 2 * b
+    handle = 4 / 3 * math.tan(arc / 4) * radius  # a cubic's best fit to a circular arc
+    for index, (name, (ux, uy), (vx, vy)) in enumerate(_CORNERS):
+        corner = getattr(rect, name)()
+
+        def at(back: float, on: float, k: QPointF = corner, u=(ux, uy), v=(vx, vy)) -> QPointF:
+            """back along the incoming edge from the corner, then on along the outgoing one."""
+            return QPointF(k.x() - u[0] * back + v[0] * on, k.y() - u[1] * back + v[1] * on)
+
+        start, eased_in, eased_out = at(span, 0), at(span - a - b, 0), at(0, span - a - b)
+        arc_in, arc_out = at(span - a - b - c, d), at(d, span - a - b - c)
+        if index == 0:
+            path.moveTo(start)
+        else:
+            path.lineTo(start)
+        path.cubicTo(at(span - a, 0), eased_in, arc_in)
+        tx, ty = _unit(arc_in.x() - eased_in.x(), arc_in.y() - eased_in.y(), (ux, uy))
+        sx, sy = _unit(eased_out.x() - arc_out.x(), eased_out.y() - arc_out.y(), (vx, vy))
+        path.cubicTo(
+            QPointF(arc_in.x() + tx * handle, arc_in.y() + ty * handle),
+            QPointF(arc_out.x() - sx * handle, arc_out.y() - sy * handle),
+            arc_out,
+        )
+        path.cubicTo(eased_out, at(0, span - a), at(0, span))
+    path.closeSubpath()
+    return path
+
+
 class DisclosureButton(QToolButton):
     """A disclosure triangle beside its label, like NSButton's disclosure bezel.
 
@@ -59,7 +123,9 @@ class DisclosureButton(QToolButton):
         self.setText(text)
         self.setCheckable(True)
         self.setAutoRaise(True)
-        self.setFont(text_style(tokens.TEXT_BODY_PT))  # tool buttons default to the small font
+        title = text_style(tokens.TEXT_BODY_PT)  # tool buttons default to the small font
+        title.setWeight(QFont.Weight.DemiBold)  # a section title, as in Finder's Get Info window
+        self.setFont(title)
         self.setAttribute(Qt.WidgetAttribute.WA_MacShowFocusRect)  # QMacStyle's focus ring
         self.toggled.connect(self._sync_arrow)
         self._sync_arrow(False)
@@ -105,12 +171,19 @@ class DisclosureButton(QToolButton):
 class Card(QWidget):
     """A rounded surface around one text view: the question card or the spoken-script panel.
 
-    It paints the fill and, when it has one, the outline. The view inside has no frame and no
-    background of its own, so the fill shows through; its text sits CARD_PADDING from the edge.
+    It paints the fill and, when it has one, the outline, on continuous corners. The view inside
+    has no frame and no background of its own, so the fill shows through; its text sits padding
+    from the edge: CARD_PADDING for the question, PANEL_PADDING for the script.
     The card shows and hides with its view, so callers keep toggling the view alone.
     """
 
-    def __init__(self, view: QPlainTextEdit, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        view: QPlainTextEdit,
+        parent: QWidget | None = None,
+        *,
+        padding: int = tokens.CARD_PADDING,
+    ) -> None:
         super().__init__(parent)
         self.view = view
         self._fill: QColor | None = None  # None: the system's text background, QPalette.Base
@@ -123,7 +196,7 @@ class Card(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(inset, inset, inset, inset)
         layout.addWidget(view)
-        view.document().setDocumentMargin(tokens.CARD_PADDING - inset)
+        view.document().setDocumentMargin(padding - inset)
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)  # a click on the padding edits too
         self.setFocusProxy(view)
         if view.isHidden():
@@ -160,7 +233,7 @@ class Card(QWidget):
             rect, radius = rect.adjusted(half, half, -half, -half), radius - half
             painter.setPen(QPen(self._border, tokens.BORDER_WIDTH))
         painter.setBrush(self.fill)
-        painter.drawRoundedRect(rect, radius, radius)
+        painter.drawPath(continuous_rect(rect, radius))
 
 
 class FocusRing(QWidget):
@@ -231,4 +304,6 @@ class FocusRing(QWidget):
         for color, width, middle in strokes:
             painter.setPen(QPen(color, width))
             radius = self._radius + middle
-            painter.drawRoundedRect(edge.adjusted(-middle, -middle, middle, middle), radius, radius)
+            painter.drawPath(
+                continuous_rect(edge.adjusted(-middle, -middle, middle, middle), radius)
+            )
