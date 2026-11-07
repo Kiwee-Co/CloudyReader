@@ -293,3 +293,16 @@ def test_the_message_is_painted_in_its_ink(bar, monkeypatch):
     xs = range(text_rect.left(), text_rect.right() + 1)
     ys = range(text_rect.top(), text_rect.bottom() + 1)
     assert any(tinted(x, y) for x in xs for y in ys)
+
+
+def test_the_message_layout_keeps_its_shape_for_the_figure_generator(bar):
+    bar.show_message("Error: boom", Tone.ERROR)
+
+    icon, text, elided = bar.message_layout()
+
+    assert (icon.left(), icon.width(), icon.height()) == (
+        tokens.MARGIN,
+        *(tokens.STATUS_ICON_SIZE,) * 2,
+    )
+    assert text.left() == icon.right() + 1 + tokens.INDICATOR_SPACING
+    assert elided == "Error: boom"

@@ -1,11 +1,20 @@
-"""The status bar: a message after its tone icon, and the elided labels that share its line."""
+"""The status bar: a message after its tone glyph, and the elided labels that share its line."""
 
 from __future__ import annotations
 
 import enum
 
-from PySide6.QtCore import QEvent, QRect, QSize, Qt
-from PySide6.QtGui import QColor, QHelpEvent, QPainter, QPaintEvent, QPalette, QResizeEvent
+from PySide6.QtCore import QEvent, QPointF, QRect, QRectF, QSize, Qt
+from PySide6.QtGui import (
+    QColor,
+    QHelpEvent,
+    QPainter,
+    QPaintEvent,
+    QPalette,
+    QPen,
+    QPolygonF,
+    QResizeEvent,
+)
 from PySide6.QtWidgets import QLabel, QStatusBar, QStyle, QStyleOption, QToolTip, QWidget
 
 from cloudyreader.gui import theme, tokens
@@ -22,10 +31,37 @@ class Tone(enum.Enum):
     ERROR = "error"
 
 
-_TONE_ICONS = {
-    Tone.WARNING: QStyle.StandardPixmap.SP_MessageBoxWarning,
-    Tone.ERROR: QStyle.StandardPixmap.SP_MessageBoxCritical,
-}
+_GLYPH_TONES = frozenset({Tone.WARNING, Tone.ERROR})  # information shows no glyph
+
+
+def paint_tone_glyph(painter: QPainter, rect: QRect | QRectF, tone: Tone, color: QColor) -> None:
+    """Draw the tone's line glyph in rect: a triangle for a warning, a circle for an error, each
+    around an exclamation mark. Two shapes, so the tone never rests on color alone."""
+    if tone not in _GLYPH_TONES:
+        return
+    painter.save()
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    box = QRectF(rect)
+    painter.translate(box.topLeft())
+    scale = box.width() / tokens.GLYPH_BOX  # the geometry is drawn on the GLYPH_BOX grid
+    painter.scale(scale, scale)
+    pen = QPen(color, tokens.STATUS_GLYPH_STROKE)
+    pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+    pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+    painter.setPen(pen)
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    if tone is Tone.WARNING:
+        painter.drawPolygon(QPolygonF([QPointF(*point) for point in tokens.GLYPH_WARNING_OUTLINE]))
+        bar, dot = tokens.GLYPH_WARNING_BAR, tokens.GLYPH_WARNING_DOT
+    else:
+        radius = tokens.GLYPH_ERROR_RADIUS
+        painter.drawEllipse(QPointF(*tokens.GLYPH_ERROR_CENTER), radius, radius)
+        bar, dot = tokens.GLYPH_ERROR_BAR, tokens.GLYPH_ERROR_DOT
+    painter.drawLine(QPointF(*bar[0]), QPointF(*bar[1]))
+    painter.setPen(Qt.PenStyle.NoPen)
+    painter.setBrush(color)
+    painter.drawEllipse(QPointF(*dot), tokens.GLYPH_DOT_RADIUS, tokens.GLYPH_DOT_RADIUS)
+    painter.restore()
 
 
 class ElidedLabel(QLabel):
@@ -56,7 +92,7 @@ class ElidedLabel(QLabel):
 
 
 class StatusBar(QStatusBar):
-    """QStatusBar that draws its message after a tone icon, at the window margin, elided.
+    """QStatusBar that draws its message after a tone glyph, at the window margin, elided.
 
     showMessage() and currentMessage() work as usual; show_message() also sets the tone.
     Information reads quietly in the secondary ink; set_roles() gives the appearance's colors.
@@ -88,6 +124,14 @@ class StatusBar(QStatusBar):
             return QColor(self._roles.secondary_text)
         return self.palette().color(QPalette.ColorRole.WindowText)
 
+    def glyph_color(self) -> QColor:
+        """The warning or the error role; information has no glyph, so no valid color."""
+        if self._tone is Tone.WARNING:
+            return QColor(self._roles.warning)
+        if self._tone is Tone.ERROR:
+            return QColor(self._roles.error)
+        return QColor()
+
     def add_cluster(self, cluster: QWidget) -> None:
         """Add a permanent widget that yields width to the message: the message gets what it
         needs, up to MESSAGE_MIN_SHARE of the line, and the cluster the rest."""
@@ -104,7 +148,7 @@ class StatusBar(QStatusBar):
         if not self.currentMessage():
             return 0
         icon = (
-            tokens.STATUS_ICON_SIZE + tokens.INDICATOR_SPACING if self._tone in _TONE_ICONS else 0
+            tokens.STATUS_ICON_SIZE + tokens.INDICATOR_SPACING if self._tone in _GLYPH_TONES else 0
         )
         return icon + self.fontMetrics().horizontalAdvance(self.currentMessage())
 
@@ -117,7 +161,7 @@ class StatusBar(QStatusBar):
     def show_message(self, text: str, tone: Tone = Tone.INFO) -> None:
         self._tone = tone
         self.showMessage(text)
-        self._cap_cluster()  # a tone icon needs room too
+        self._cap_cluster()  # a tone glyph needs room too
         self.update()  # showMessage() repaints only when the text itself changes
 
     def _on_message_changed(self, text: str) -> None:
@@ -133,7 +177,7 @@ class StatusBar(QStatusBar):
             if not child.isHidden():  # a permanent widget, or the size grip
                 right = min(right, child.geometry().left() - tokens.GROUP_SPACING)
         left, icon_rect = area.left(), QRect()
-        if self._tone in _TONE_ICONS:
+        if self._tone in _GLYPH_TONES:
             size = tokens.STATUS_ICON_SIZE
             icon_rect = QRect(left, area.center().y() - size // 2, size, size)
             left = icon_rect.right() + 1 + tokens.INDICATOR_SPACING
@@ -151,7 +195,7 @@ class StatusBar(QStatusBar):
         if not self.currentMessage():
             return
         icon_rect, text_rect, text = self.message_layout()
-        if icon_rect.isValid():  # full-color system alert badges: legible in both appearances
-            self.style().standardIcon(_TONE_ICONS[self._tone], None, self).paint(painter, icon_rect)
+        if icon_rect.isValid():
+            paint_tone_glyph(painter, icon_rect, self._tone, self.glyph_color())
         painter.setPen(self.ink())
         painter.drawText(text_rect, _LEFT_CENTER, text)
