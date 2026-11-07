@@ -182,7 +182,9 @@ def test_the_message_keeps_a_share_of_the_status_line():
     assert 0 < tokens.MESSAGE_MIN_SHARE < 1
 
 
-@pytest.mark.parametrize("retired", ["TEXT_INSET", "BUSY_BAR_WIDTH"])
+@pytest.mark.parametrize(
+    "retired", ["TEXT_INSET", "BUSY_BAR_WIDTH", "SCRIPT_MIN_HEIGHT", "ABOUT_TEXT_MIN_WIDTH"]
+)
 def test_retired_tokens_are_gone(retired):
     assert not hasattr(tokens, retired)
 

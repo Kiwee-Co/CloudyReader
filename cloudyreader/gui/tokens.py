@@ -28,7 +28,6 @@ WINDOW_DEFAULT_SIZE = (680, 640)
 # the 480 pt minimum window whole with the script open and the Speaker row shown.
 QUESTION_MIN_LINES = 3
 SCRIPT_MIN_LINES = 2
-SCRIPT_MIN_HEIGHT = 96  # the panel's floor until the window sizes it by SCRIPT_MIN_LINES
 QUESTION_STRETCH = 3  # how the spare height splits between the question card and the panel
 SCRIPT_STRETCH = 2
 VOICE_COMBO_MIN_CHARS = 32  # 362 pt: the longest supported label shows whole when closed
@@ -40,7 +39,6 @@ ABOUT_WIDTH = 300  # the About panel, at least; wider when its description needs
 ABOUT_ICON_SIZE = 64  # the system About panel's icon
 ABOUT_ICON_GAP = 16  # the icon to the app name
 ABOUT_LINE_GAP = 4  # the app name to the version
-ABOUT_TEXT_MIN_WIDTH = 280  # the alert-style About box: its one-line description fits
 STATUS_ICON_SIZE = 16
 DISCLOSURE_SIZE = 13  # NSButton's disclosure triangle at regular control size
 INDICATOR_SPACING = 6  # between a small icon or disclosure triangle and its text
