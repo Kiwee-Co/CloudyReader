@@ -5,10 +5,10 @@ from __future__ import annotations
 import enum
 
 from PySide6.QtCore import QEvent, QRect, QSize, Qt
-from PySide6.QtGui import QHelpEvent, QPainter, QPaintEvent, QPalette, QResizeEvent
+from PySide6.QtGui import QColor, QHelpEvent, QPainter, QPaintEvent, QPalette, QResizeEvent
 from PySide6.QtWidgets import QLabel, QStatusBar, QStyle, QStyleOption, QToolTip, QWidget
 
-from cloudyreader.gui import tokens
+from cloudyreader.gui import theme, tokens
 from cloudyreader.gui.widgets import tabular, text_style
 
 _LEFT_CENTER = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
@@ -59,12 +59,14 @@ class StatusBar(QStatusBar):
     """QStatusBar that draws its message after a tone icon, at the window margin, elided.
 
     showMessage() and currentMessage() work as usual; show_message() also sets the tone.
+    Information reads quietly in the secondary ink; set_roles() gives the appearance's colors.
     """
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._tone = Tone.INFO
         self._cluster: QWidget | None = None
+        self._roles = theme.roles(theme.current())  # until the window passes its appearance
         self.setFont(tabular(text_style(tokens.TEXT_CALLOUT_PT)))  # "Playing 2.4 s." holds still
         self.setSizeGripEnabled(False)  # macOS windows resize from any edge; no grip to make room
         self.setMinimumHeight(tokens.STATUS_LINE_HEIGHT)
@@ -75,6 +77,16 @@ class StatusBar(QStatusBar):
     @property
     def tone(self) -> Tone:
         return self._tone
+
+    def set_roles(self, roles: theme.Roles) -> None:
+        self._roles = roles
+        self.update()
+
+    def ink(self) -> QColor:
+        """Information is quiet, in the secondary ink; a warning or an error, in the text color."""
+        if self._tone is Tone.INFO:
+            return QColor(self._roles.secondary_text)
+        return self.palette().color(QPalette.ColorRole.WindowText)
 
     def add_cluster(self, cluster: QWidget) -> None:
         """Add a permanent widget that yields width to the message: the message gets what it
@@ -141,5 +153,5 @@ class StatusBar(QStatusBar):
         icon_rect, text_rect, text = self.message_layout()
         if icon_rect.isValid():  # full-color system alert badges: legible in both appearances
             self.style().standardIcon(_TONE_ICONS[self._tone], None, self).paint(painter, icon_rect)
-        painter.setPen(self.palette().color(QPalette.ColorRole.WindowText))
+        painter.setPen(self.ink())
         painter.drawText(text_rect, _LEFT_CENTER, text)

@@ -1,16 +1,18 @@
-"""The status line: its height, one progress bar at a time, and the message's share of the line."""
+"""The status line: its height, its inks, one progress bar at a time, and the message's share of
+the line."""
 
 import threading
 
 import pytest
 from PySide6.QtCore import QEvent, QPoint, Qt
-from PySide6.QtGui import QFont, QHelpEvent
+from PySide6.QtGui import QColor, QFont, QHelpEvent, QPalette
 from PySide6.QtWidgets import QApplication, QToolTip
 
-from cloudyreader.gui import tokens
+from cloudyreader.gui import theme, tokens
 from cloudyreader.gui.fake_service import FakeReaderService
-from cloudyreader.gui.status import ElidedLabel
+from cloudyreader.gui.status import ElidedLabel, StatusBar, Tone
 from cloudyreader.prefetch import PrefetchProgress, PrefetchResult
+from tests.gui.test_tokens import LOOKS
 
 MB = 10**6
 ENGINE_LABEL = "Downloading Chatterbox Turbo… 42% (176 of 420 MB)"
@@ -232,3 +234,62 @@ def check_label_beside_bar(qtbot, make_window, request, width, voices, message) 
 def test_counting_digits_are_tabular(window):
     for widget in (window.statusBar(), window.prefetch_label):
         assert widget.font().featureValue(TNUM) == 1
+
+
+# --- inks ----------------------------------------------------------------------------------------
+
+
+@pytest.fixture
+def bar(qtbot):
+    widget = StatusBar()
+    qtbot.addWidget(widget)
+    widget.resize(tokens.WINDOW_DEFAULT_SIZE[0], tokens.STATUS_LINE_HEIGHT)
+    widget.show()
+    return widget
+
+
+@pytest.mark.parametrize("name", list(LOOKS))
+def test_information_reads_in_the_secondary_ink_of_the_appearance(bar, name):
+    roles = theme.roles(LOOKS[name])
+    bar.set_roles(roles)
+
+    bar.show_message("Playing 2.4 s with Heart (female, Kokoro).")
+
+    assert bar.ink() == QColor(roles.secondary_text)
+
+
+@pytest.mark.parametrize("tone", [Tone.WARNING, Tone.ERROR])
+@pytest.mark.parametrize("name", list(LOOKS))
+def test_a_warning_or_an_error_reads_in_the_text_color(bar, name, tone):
+    bar.set_roles(theme.roles(LOOKS[name]))
+
+    bar.show_message("Some status text", tone)
+
+    assert bar.ink() == bar.palette().color(QPalette.ColorRole.WindowText)
+
+
+def test_a_new_status_bar_takes_the_appearance_it_starts_in(qtbot, monkeypatch):
+    monkeypatch.setattr(theme, "current", lambda: LOOKS["hc-dark"])
+    widget = StatusBar()
+    qtbot.addWidget(widget)
+
+    widget.show_message("Stopped.")
+
+    assert widget.ink() == QColor(theme.roles(LOOKS["hc-dark"]).secondary_text)
+
+
+def test_the_message_is_painted_in_its_ink(bar, monkeypatch):
+    magenta = QColor("#ff00ff")
+    monkeypatch.setattr(StatusBar, "ink", lambda _self: magenta)
+    bar.show_message("Stopped.")
+    _icon, text_rect, _text = bar.message_layout()
+
+    image = bar.grab().toImage()
+
+    def tinted(x: int, y: int) -> bool:  # magenta over gray: red and blue well above green
+        color = image.pixelColor(x, y)
+        return min(color.red(), color.blue()) - color.green() > 64
+
+    xs = range(text_rect.left(), text_rect.right() + 1)
+    ys = range(text_rect.top(), text_rect.bottom() + 1)
+    assert any(tinted(x, y) for x in xs for y in ys)
