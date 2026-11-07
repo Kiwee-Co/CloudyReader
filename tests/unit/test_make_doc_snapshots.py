@@ -370,3 +370,16 @@ def test_the_macos_figure_opens_the_voice_menu_at_samantha(env, snapshots):
 
     assert ">macOS voices<" in xml or ">macOS</text>" in xml  # the section header
     assert "Samantha (US, female) · macOS · Enhanced" in xml
+
+
+def test_the_menu_figure_describes_the_label_it_draws(env, snapshots):
+    xml = snapshots.fig_menu(env, env.scheme(False), "voices", top=True).xml()
+
+    assert "starting with Heart (US, female) · Kokoro · Grade A, and a scroll arrow" in xml
+    assert "(en-US, A)" not in xml  # the label the app showed before its look changed
+
+
+def test_the_window_figure_names_its_voice_as_the_menu_does(env, snapshots):
+    xml = snapshots.fig_window(env, env.scheme(False)).xml()
+
+    assert "the voice Lessac, the Rotation row" in xml

@@ -1059,7 +1059,7 @@ def fig_window(env: Env, look: Look) -> Svg:
         env.pump(lambda: win.statusBar().currentMessage() == PLAYING, "playing status")
         desc = (
             f"The main window in {appearance(look.dark)}: a pasted toss-up question, the voice "
-            "lessac, the Rotation row set to No rotation, the spoken script shown, and the status "
+            "Lessac, the Rotation row set to No rotation, the spoken script shown, and the status "
             f"{PLAYING}"
         )
         svg = Svg(win.width(), win.height(), "Cloudy Reader main window", desc)
@@ -1089,7 +1089,7 @@ def fig_menu(env: Env, look: Look, which: str, *, top: bool = False) -> Svg:
             title = "Voice menu, top of the list"
             desc = (
                 f"The Voice menu open in {appearance(look.dark)} at its top: the Kokoro heading, "
-                "then the highest-graded voices, starting with Heart (female) (en-US, A), and a "
+                f"then the highest-graded voices, starting with {items[current].text}, and a "
                 "scroll arrow where the list goes on."
             )
         elif which == "voices":
@@ -1099,9 +1099,9 @@ def fig_menu(env: Env, look: Look, which: str, *, top: bool = False) -> Svg:
             under = "under their engine name" if len(later) == 1 else "each under its heading"
             desc = (
                 f"The Voice menu open in {appearance(look.dark)}: the end of the Kokoro list, best "
-                "first, names with their gender, one voice dimmed because it is not installed, "
-                f"then the {series(later)} voices, {under}, and a scroll arrow where the list goes "
-                "on."
+                "first, each row with its accent, gender, engine, and quality, one voice dimmed "
+                f"because it is not installed, then the {series(later)} voices, {under}, and a "
+                "scroll arrow where the list goes on."
             )
         else:
             title = "Rotation menu"
