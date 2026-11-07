@@ -1353,8 +1353,8 @@ def fig_window_tour(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
         env.pump(lambda: win.statusBar().currentMessage() == PLAYING, "playing status")
         desc = (
             f"The main window in {appearance(look.dark)} during a reading: the question box, the "
-            "Voice and Rotation menus, the two options, the Repeat, Stop, and Speak buttons, the "
-            "Spoken script, and the status bar."
+            "Spoken script under it, the Voice and Rotation menus, the two options, the Repeat, "
+            "Stop, and Speak buttons, and the status bar."
         )
         svg = Svg(win.width(), win.height(), "The parts of the Cloudy Reader window", desc)
         draw_content(svg, look, win)
@@ -1372,14 +1372,14 @@ def fig_window_tour(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
         )
         toggle_x = toggle.left() + tokens.DISCLOSURE_SIZE + tokens.INDICATOR_SPACING + toggle_text
         bar = c.geo(win.statusBar())
-        markers = [
+        markers = [  # numbered top to bottom, as the window reads
             marker(1, "question box", svg, question.right(), question.bottom()),
-            marker(2, "Voice menu", svg, voice.right() + SIDE, voice.center().y()),
-            marker(3, "Rotation menu", svg, rotation.right() + SIDE, rotation.center().y()),
-            marker(4, "options", svg, options_x, options_y),
+            marker(2, "Spoken script", svg, toggle_x + SIDE, toggle.center().y()),
+            marker(3, "Voice menu", svg, voice.right() + SIDE, voice.center().y()),
+            marker(4, "Rotation menu", svg, rotation.right() + SIDE, rotation.center().y()),
+            marker(5, "options", svg, options_x, options_y),
             # In the empty stretch at the start of the button row, beside the group it names.
-            marker(5, "Repeat, Stop, and Speak", svg, repeat.left() - SIDE, repeat.center().y()),
-            marker(6, "Spoken script", svg, toggle_x + SIDE, toggle.center().y()),
+            marker(6, "Repeat, Stop, and Speak", svg, repeat.left() - SIDE, repeat.center().y()),
             marker(7, "status bar", svg, bar.right() - 32, bar.center().y()),
         ]
     return svg, markers

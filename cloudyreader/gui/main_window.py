@@ -137,6 +137,11 @@ def _voice_label(voice: VoiceInfo) -> str:
     return f"{voice.name} ({profile.gender})"
 
 
+def _card_height(view: QPlainTextEdit, lines: int, padding: int) -> int:
+    """The least height of a card that shows this many lines of its view inside padding."""
+    return math.ceil(lines * QFontMetricsF(view.font()).lineSpacing() + 2 * padding)
+
+
 def _emit(signals: _Signals, name: str, value: object) -> None:
     try:
         getattr(signals, name).emit(value)
@@ -325,8 +330,9 @@ class MainWindow(QMainWindow):
         self.question_edit.setFont(text_style(tokens.TEXT_QUESTION_PT))  # the primary surface
         # The question is the primary reading surface: a rounded card, outlined to meet 3:1.
         self.question_card = Card(self.question_edit)
-        lines = tokens.QUESTION_MIN_LINES * QFontMetricsF(self.question_edit.font()).lineSpacing()
-        self.question_card.setMinimumHeight(math.ceil(lines + 2 * tokens.CARD_PADDING))
+        self.question_card.setMinimumHeight(
+            _card_height(self.question_edit, tokens.QUESTION_MIN_LINES, tokens.CARD_PADDING)
+        )
 
         self.voice_picker = VoicePicker(self)
         self.voice_picker.voice_changed.connect(self._drop_voice_note)  # the user chose: note done
@@ -335,6 +341,11 @@ class MainWindow(QMainWindow):
         self.rotation_combo.setToolTip("How Speak picks the next voice.")
         for mode in RotationMode:
             self.rotation_combo.addItem(mode.label, str(mode))
+        # One width for both pop-ups, the wider one's, so the form's fields share a right edge too.
+        popups = (self.voice_picker.combo, self.rotation_combo)
+        popup_width = max(popup.sizeHint().width() for popup in popups)
+        for popup in popups:
+            popup.setMinimumWidth(popup_width)
         self.read_answer_check = QCheckBox("Read answer line")
         self.read_answer_check.setToolTip("Also read the ANSWER line aloud.")
         self.online_lookups_check = QCheckBox("Online lookups")
@@ -353,6 +364,7 @@ class MainWindow(QMainWindow):
             button.setMinimumWidth(width)
 
         self.script_toggle = DisclosureButton("Spoken script")
+        self.script_toggle.setChecked(True)  # open from the start: it shows what Speak will say
         self.script_toggle.setAccessibleDescription("Show or hide the text that is spoken")
         self.script_toggle.toggled.connect(self._toggle_script)
         self.script_view = QPlainTextEdit()
@@ -361,10 +373,11 @@ class MainWindow(QMainWindow):
         self.script_view.setPlaceholderText("The words that are spoken appear here.")
         self.script_view.setAccessibleDescription(self.script_view.placeholderText())
         self.script_view.setFont(text_style(tokens.TEXT_CALLOUT_PT))  # secondary to the question
-        self.script_view.hide()
         # Secondary by three things together: a recessed fill, smaller type, a quieter color.
         self.script_panel = Card(self.script_view)
-        self.script_panel.setMinimumHeight(tokens.SCRIPT_MIN_HEIGHT)
+        self.script_panel.setMinimumHeight(
+            _card_height(self.script_view, tokens.SCRIPT_MIN_LINES, tokens.CARD_PADDING)
+        )
 
         # HIG (Layout): a form with right-aligned labels; popups keep their natural width. Every
         # field sits in the form directly, so the style lines up their visible edges.
@@ -392,13 +405,18 @@ class MainWindow(QMainWindow):
         script.addWidget(self.script_toggle, 0, Qt.AlignmentFlag.AlignLeft)
         script.addWidget(self.script_panel)
 
+        # Top to bottom as the eye reads: the question, the script it turns into right under it,
+        # then the form and the buttons. Spare height goes to the two text surfaces.
         layout = QVBoxLayout()
         layout.setContentsMargins(*(tokens.MARGIN,) * 4)
-        layout.setSpacing(tokens.SECTION_SPACING)
-        layout.addWidget(self.question_card, 3)
+        layout.setSpacing(0)  # every gap is named: RELATED_SPACING under the card, then sections
+        layout.addWidget(self.question_card, tokens.QUESTION_STRETCH)
+        layout.addSpacing(tokens.RELATED_SPACING)
+        layout.addLayout(script, tokens.SCRIPT_STRETCH)
+        layout.addSpacing(tokens.SECTION_SPACING)
         layout.addLayout(form)
+        layout.addSpacing(tokens.SECTION_SPACING)
         layout.addLayout(buttons)
-        layout.addLayout(script, 2)
         central = QWidget()
         central.setLayout(layout)
         self.setCentralWidget(central)
@@ -447,8 +465,10 @@ class MainWindow(QMainWindow):
         for bar in (self.prefetch_bar, self.busy_bar):
             bar.setAttribute(Qt.WidgetAttribute.WA_LayoutUsesWidgetRect)
 
-        order = [
+        order = [  # the visual order, top to bottom (WCAG 2.4.3)
             self.question_edit,
+            self.script_toggle,
+            self.script_view,
             self.voice_picker.combo,
             self.voice_picker.speaker_spin,
             self.rotation_combo,
@@ -457,8 +477,6 @@ class MainWindow(QMainWindow):
             self.repeat_button,
             self.stop_button,
             self.speak_button,
-            self.script_toggle,
-            self.script_view,
         ]
         for first, second in pairwise(order):
             QWidget.setTabOrder(first, second)

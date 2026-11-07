@@ -45,13 +45,12 @@ def test_tab_takes_the_ring_off_for_a_native_control(qtbot, active):
 
     qtbot.keyClick(active.question_edit, Qt.Key.Key_Tab)
 
-    assert active.voice_picker.combo.hasFocus()
+    assert active.script_toggle.hasFocus()  # the Spoken script title, next in the visual order
     assert ring(active).isHidden()
 
 
-def test_the_script_panel_gets_the_ring_once_shown(qtbot, active):
-    active.script_toggle.click()
-    focus(qtbot, active.script_view)
+def test_the_script_panel_gets_the_ring(qtbot, active):
+    focus(qtbot, active.script_view)  # open from the start
 
     assert ring(active).isVisible()
     assert ring(active).geometry() == ringed(active, active.script_panel)

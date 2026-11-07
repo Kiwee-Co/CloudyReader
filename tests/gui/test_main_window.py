@@ -42,7 +42,7 @@ def test_initial_state(window):
     assert not window.stop_button.isEnabled()
     assert not window.read_answer_check.isChecked()
     assert window.online_lookups_check.isChecked()
-    assert window.script_view.isHidden()
+    assert window.script_view.isVisible()
     assert status(window) == ""
 
 
@@ -319,20 +319,20 @@ def test_repeat_when_the_player_has_nothing_to_replay_says_so(window, player):
 # --- script and warnings ---------------------------------------------------------------------
 
 
-def test_script_area_is_collapsed_and_shows_the_spoken_text(qtbot, window):
-    assert window.script_view.isHidden()
+def test_script_area_is_open_and_shows_the_spoken_text(qtbot, window):
+    assert window.script_view.isVisible()
+    assert window.script_toggle.arrowType() == Qt.ArrowType.DownArrow
     assert window.script_view.isReadOnly()
 
     speak(qtbot, window, "alpha\nbeta")
     assert window.script_view.toPlainText() == "alpha beta"
-    assert window.script_view.isHidden()
 
-    window.script_toggle.click()
-    assert window.script_view.isVisible()
-    assert window.script_toggle.arrowType() == Qt.ArrowType.DownArrow
     window.script_toggle.click()
     assert window.script_view.isHidden()
     assert window.script_toggle.arrowType() == Qt.ArrowType.RightArrow
+    window.script_toggle.click()
+    assert window.script_view.isVisible()
+    assert window.script_toggle.arrowType() == Qt.ArrowType.DownArrow
 
 
 def test_one_warning_reaches_the_status_bar(qtbot, window, service):
@@ -661,8 +661,10 @@ def test_tab_leaves_the_text_box_instead_of_typing_a_tab(window):
 
 
 def test_focus_chain_follows_the_visual_order(window):
-    expected = [
+    expected = [  # design spec 5.8: the visual order, top to bottom
         window.question_edit,
+        window.script_toggle,
+        window.script_view,
         window.voice_picker.combo,
         window.voice_picker.speaker_spin,
         window.rotation_combo,
@@ -671,8 +673,6 @@ def test_focus_chain_follows_the_visual_order(window):
         window.repeat_button,
         window.stop_button,
         window.speak_button,
-        window.script_toggle,
-        window.script_view,
     ]
     chain, widget = [], window.question_edit
     while True:

@@ -39,6 +39,7 @@ SHOWN = (
     "stop_button",
     "speak_button",
     "script_toggle",
+    "script_view",
 )
 
 

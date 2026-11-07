@@ -130,8 +130,7 @@ def test_cut_and_copy_need_a_selection(window):
 
 
 def test_the_read_only_script_allows_copy_but_not_editing(qtbot, window):
-    speak(qtbot, window, "alpha beta")
-    window.script_toggle.click()
+    speak(qtbot, window, "alpha beta")  # the script is open from the start
     window.script_view.setFocus()
 
     window.select_all_action.trigger()

@@ -122,7 +122,14 @@ def test_the_script_sits_frameless_in_a_panel_without_an_outline(window):
     assert view.frameShape() == QFrame.Shape.NoFrame
     assert not view.viewport().autoFillBackground()
     assert panel.border is None
-    assert panel.minimumHeight() == tokens.SCRIPT_MIN_HEIGHT
+
+
+def test_the_panel_shows_at_least_two_lines(window):
+    line = QFontMetricsF(window.script_view.font()).lineSpacing()
+
+    shown = window.script_panel.minimumHeight() - 2 * tokens.CARD_PADDING
+
+    assert shown >= tokens.SCRIPT_MIN_LINES * line
 
 
 @pytest.mark.parametrize(("scheme", "look"), LOOKS)
@@ -138,18 +145,17 @@ def test_the_panel_fill_and_secondary_text_come_from_the_tokens_at_aa(window, sc
 
 def test_the_panel_shows_and_hides_with_the_script(qtbot, window):
     panel = window.script_panel
+    assert panel.isVisible()  # open from the start
+
+    window.script_toggle.click()
     assert panel.isHidden()
 
     window.script_toggle.click()
     assert panel.isVisible()
     assert window.script_view.isVisible()
 
-    window.script_toggle.click()
-    assert panel.isHidden()
-
 
 def test_the_panel_paints_its_fill_and_no_outline(window):
-    window.script_toggle.click()
     panel = window.script_panel
     image = panel.grab().toImage()
     middle = image.height() // 2
