@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="213" height="22" viewBox="0 0 213 22" role="img" aria-labelledby="title">
+<title id="title">voices: download at first launch</title>
+<clipPath id="shape"><rect width="213" height="22" rx="6"/></clipPath>
+<g clip-path="url(#shape)">
+<rect width="54" height="22" fill="#edeef3"/>
+<rect x="54" width="159" height="22" fill="#e6e0fb"/>
+</g>
+<rect x="0.5" y="0.5" width="212" height="21" rx="5.5" fill="none" stroke="#000000" stroke-opacity="0.1"/>
+<g font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12">
+<text x="8" y="15" fill="#353841" font-weight="500" textLength="37.01" lengthAdjust="spacingAndGlyphs">voices</text>
+<text x="62" y="15" fill="#5a3fd0" font-weight="600" textLength="142.03" lengthAdjust="spacingAndGlyphs">download at first launch</text>
+</g>
+</svg>

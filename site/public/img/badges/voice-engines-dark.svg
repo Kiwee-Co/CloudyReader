@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="185" height="22" viewBox="0 0 185 22" role="img" aria-labelledby="title">
+<title id="title">voice engines: on your Mac</title>
+<clipPath id="shape"><rect width="185" height="22" rx="6"/></clipPath>
+<g clip-path="url(#shape)">
+<rect width="96" height="22" fill="#353841"/>
+<rect x="96" width="89" height="22" fill="#150f55"/>
+</g>
+<rect x="0.5" y="0.5" width="184" height="21" rx="5.5" fill="none" stroke="#ffffff" stroke-opacity="0.14"/>
+<g font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12">
+<text x="8" y="15" fill="#edeef3" font-weight="500" textLength="79.17" lengthAdjust="spacingAndGlyphs">voice engines</text>
+<text x="104" y="15" fill="#d4cbfb" font-weight="600" textLength="72.03" lengthAdjust="spacingAndGlyphs">on your Mac</text>
+</g>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="143" height="22" viewBox="0 0 143 22" role="img" aria-labelledby="title">
+<title id="title">license: Apache-2.0</title>
+<clipPath id="shape"><rect width="143" height="22" rx="6"/></clipPath>
+<g clip-path="url(#shape)">
+<rect width="57" height="22" fill="#edeef3"/>
+<rect x="57" width="86" height="22" fill="#e6e0fb"/>
+</g>
+<rect x="0.5" y="0.5" width="142" height="21" rx="5.5" fill="none" stroke="#000000" stroke-opacity="0.1"/>
+<g font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12">
+<text x="8" y="15" fill="#353841" font-weight="500" textLength="40.73" lengthAdjust="spacingAndGlyphs">license</text>
+<text x="65" y="15" fill="#5a3fd0" font-weight="600" textLength="69.18" lengthAdjust="spacingAndGlyphs">Apache-2.0</text>
+</g>
+</svg>
