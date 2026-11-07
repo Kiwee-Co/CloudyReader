@@ -295,7 +295,7 @@ def test_macos_labels_carry_the_tier_alone(macos_genders):
 
     assert voice_label(samantha) == "Samantha (US, female) · macOS · Enhanced"
     assert voice_label(daniel) == "Daniel (UK, male) · macOS · Premium"
-    assert voice_label(fiona) == "Fiona (Scotland) · macOS · Standard"
+    assert voice_label(fiona) == "Fiona (Scotland, female) · macOS · Standard"
     assert voice_label(zed) == "Zed · macOS · Standard"
     assert LABEL.fullmatch(voice_label(samantha))
 

@@ -341,7 +341,7 @@ def test_macos_voices_list_under_their_own_header_after_the_others(picker):
     picker.set_voices([*ENGINE_FAKE_VOICES, *MACOS_FAKE_VOICES])
 
     assert [h.text() for h in headers(picker)][-2:] == ["Qwen3-TTS", "macOS"]
-    assert row(picker, "macos:Samantha").text() == "Samantha (US) · macOS · Enhanced"
+    assert row(picker, "macos:Samantha").text() == "Samantha (US, female) · macOS · Enhanced"
     assert headers(picker)[-1].data(Qt.ItemDataRole.AccessibleTextRole) == "macOS voices"
 
 
