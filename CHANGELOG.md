@@ -10,11 +10,20 @@ All notable changes to Cloudy Reader are recorded in this file, which follows Ke
 
 - `make release` stops when the app carries a folder path of the build machine. The check reads raw files, zip entries, entries of the packed app archive, the packed Python modules, and link targets.
 - `make release` refuses a build Python under the home folder, because its path would ship inside the app.
+- The macOS system voices: the Voice menu lists the English voices installed on your Mac, without the novelty voices, under a macOS heading after the other engines. Nothing downloads.
 
 ### Changed
 
 - `make release` runs `hdiutil verify` up to 3 times, and only an EAGAIN failure gets a retry. A failure prints the last 20 lines of the log.
-- A run from the checkout, or from a dev build made with `make app`, shows one random test-fixture question at start. A release build starts empty.
+- A run from the checkout, or from a dev build made with `make app`, shows one random test-fixture question at start, never the one shown at the last start. A release build starts empty.
+- The window has a new look: the Spoken script sits under the question and fills as you add text.
+- The Voice menu shows the engine and the precision of every voice.
+- A new About panel, in the style of macOS, opens from the app menu.
+- The status bar draws its warning and error icons as lines.
+
+### Removed
+
+- The Paste and Speak Clipboard buttons, and the Speak Clipboard command.
 
 ### Fixed
 
