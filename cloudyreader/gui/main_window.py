@@ -53,6 +53,7 @@ from PySide6.QtWidgets import (
 
 from cloudyreader.engine_catalog import TITLES, is_actionable
 from cloudyreader.gui import theme, tokens
+from cloudyreader.gui.live_script import LiveScript
 from cloudyreader.gui.motion import reduce_motion
 from cloudyreader.gui.names import APP_NAME, app_version
 from cloudyreader.gui.status import ElidedLabel, StatusBar, Tone
@@ -237,6 +238,7 @@ class MainWindow(QMainWindow):
         hints.colorSchemeChanged.connect(self._apply_appearance)
         hints.accessibility().contrastPreferenceChanged.connect(self._on_contrast_changed)
         self._restore_settings()
+        self._live_script = self._follow_the_question()
         self._load_voices()
         self._refresh_controls()
         self.question_edit.setFocus()
@@ -535,6 +537,37 @@ class MainWindow(QMainWindow):
         self.online_lookups_check.toggled.connect(lambda on: saved.setValue("online_lookups", on))
         self.voice_picker.voice_changed.connect(lambda key: saved.setValue("voice", key))
         self.rotation_combo.currentIndexChanged.connect(self._on_rotation_changed)
+
+    def _follow_the_question(self) -> LiveScript | None:
+        """The Spoken script follows the box, built offline on the worker once the box rests.
+
+        Connected after the restore, so restoring an option schedules nothing. A service without
+        the preview hook leaves the panel to Speak.
+        """
+        preview = getattr(self._service, "preview_script", None)
+        if not callable(preview):
+            return None
+        live = LiveScript(
+            lambda raw, opts: preview(raw, opts).text(),
+            self._pool,
+            debounce_ms=tokens.SCRIPT_DEBOUNCE_MS,
+            parent=self,  # after the pool: the pool goes first and waits for a running preview
+        )
+        live.script_ready.connect(self.script_view.setPlainText)
+        self.question_edit.textChanged.connect(self._preview_script)
+        self.read_answer_check.toggled.connect(self._preview_script)
+        return live
+
+    def _preview_script(self) -> None:
+        if self._live_script is not None:
+            self._live_script.schedule(self.question_edit.toPlainText(), self._options())
+
+    def _options(self, speaker_id: int | None = None) -> RenderOptions:
+        return RenderOptions(
+            read_answer=self.read_answer_check.isChecked(),
+            online_lookups=self.online_lookups_check.isChecked(),
+            speaker_id=speaker_id,
+        )
 
     def _on_rotation_changed(self, _index: int) -> None:
         mode = RotationMode.parse(self.rotation_combo.currentData())
@@ -884,11 +917,9 @@ class MainWindow(QMainWindow):
             preparing, tone = self._fallback, Tone.WARNING
         if tone is Tone.INFO and (hint := self._load_hint(voice_key)):
             preparing = f"{preparing} {hint}"  # a model loads first: say why this one is slow
-        opts = RenderOptions(
-            read_answer=self.read_answer_check.isChecked(),
-            online_lookups=self.online_lookups_check.isChecked(),
-            speaker_id=speaker_id,
-        )
+        opts = self._options(speaker_id)
+        if self._live_script is not None:
+            self._live_script.cancel()  # Speak's own script owns the panel from here
         self._set_busy(True)
         self._notify(preparing, tone=tone)
         self._pool.start(
@@ -1020,6 +1051,8 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event: QCloseEvent) -> None:
         self._closing = True  # a result still in flight must not start audio after close
         self._prefetch_cancel.set()  # the download stops at its next chunk and reports nothing
+        if self._live_script is not None:
+            self._live_script.cancel()  # no preview starts on the worker after close
         self._settings.setValue("geometry", self.saveGeometry())
         self._silence()
         super().closeEvent(event)
