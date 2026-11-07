@@ -105,14 +105,14 @@ make app     # writes "dist/Cloudy Reader.app", ad-hoc signed
 
 ## Voices and rotation
 
-| Rotation mode | The next voice comes from |
-| --- | --- |
-| No rotation | The voice you chose in **Voice**. |
-| Round robin | The installed voices in menu order. After the last voice, it starts over. |
-| Random shuffle | A shuffled deck of all installed voices. No voice repeats until the deck is empty. |
-| US only (random shuffle) | The same deck, limited to en-US voices. |
-| Men only | The same deck, limited to male voices. |
-| Women only | The same deck, limited to female voices. |
+| Rotation mode            | The next voice comes from                                                          |
+| ------------------------ | ---------------------------------------------------------------------------------- |
+| No rotation              | The voice you chose in **Voice**.                                                  |
+| Round robin              | The installed voices in menu order. After the last voice, it starts over.          |
+| Random shuffle           | A shuffled deck of all installed voices. No voice repeats until the deck is empty. |
+| US only (random shuffle) | The same deck, limited to en-US voices.                                            |
+| Men only                 | The same deck, limited to male voices.                                             |
+| Women only               | The same deck, limited to female voices.                                           |
 
 Rotation uses installed, single-speaker English voices with a known gender. **Repeat** replays the last audio, so it keeps that voice. Details: [Voices and rotation](https://kiwee-co.github.io/CloudyReader/manual/voices/).
 
@@ -137,18 +137,18 @@ Read the full manual and the developer guide at **<https://kiwee-co.github.io/Cl
 
 Run `make help` to list every target and variable.
 
-| Command | What it does |
-| --- | --- |
-| `make setup` | Sync dependencies, install the NER model, and fetch the five Piper voices. |
-| `make run` | Start the app with `CLOUDYREADER_DATA_DIR` set to `.data`. |
-| `make kokoro` | Add the Kokoro engine (Apple Silicon only). |
-| `make doctor` | Print a read-only health report with the fix for each missing item. |
-| `make test` | Run the gate tests with a 75 percent coverage floor. |
-| `make check` | Run `ruff check` and `ruff format --check`. |
-| `make fmt` | Run `ruff format` and `ruff check --fix`. |
-| `make guards` | Run the policy guards: vendor domain, lock hosts, disk paths, and workflow triggers. |
-| `make ci` | Run `guards`, `check`, `test`, then `precommit`. This is the commit gate. It needs `shellcheck`, `prettier`, and `markdownlint` on the `PATH`. |
-| `make app` | Build `dist/Cloudy Reader.app`. |
+| Command       | What it does                                                                                                                                   |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `make setup`  | Sync dependencies, install the NER model, and fetch the five Piper voices.                                                                     |
+| `make run`    | Start the app with `CLOUDYREADER_DATA_DIR` set to `.data`.                                                                                     |
+| `make kokoro` | Add the Kokoro engine (Apple Silicon only).                                                                                                    |
+| `make doctor` | Print a read-only health report with the fix for each missing item.                                                                            |
+| `make test`   | Run the gate tests with a 75 percent coverage floor.                                                                                           |
+| `make check`  | Run `ruff check` and `ruff format --check`.                                                                                                    |
+| `make fmt`    | Run `ruff format` and `ruff check --fix`.                                                                                                      |
+| `make guards` | Run the policy guards: vendor domain, lock hosts, disk paths, and workflow triggers.                                                           |
+| `make ci`     | Run `guards`, `check`, `test`, then `precommit`. This is the commit gate. It needs `shellcheck`, `prettier`, and `markdownlint` on the `PATH`. |
+| `make app`    | Build `dist/Cloudy Reader.app`.                                                                                                                |
 
 ## Contributing
 
@@ -162,26 +162,26 @@ Several of them are GPL components. They include `piper-tts` (GPL-3.0-or-later) 
 
 The license names below come from the package metadata of the versions that `pyproject.toml` and `uv.lock` pin, except the row for the letter recordings, which names the licenses of the models that made them. This table is not legal advice.
 
-| Component | Role in Cloudy Reader | License |
-| --- | --- | --- |
-| [Piper](https://github.com/OHF-voice/piper1-gpl) (`piper-tts` 1.8.0) | Piper engine; includes espeak-ng phonemization | GPL-3.0-or-later |
-| [phonemizer-fork](https://pypi.org/project/phonemizer-fork/) 3.3.2 | Phonemization for Kokoro (Kokoro extra) | GPLv3 or later (package classifier) |
-| [Piper voices](https://huggingface.co/rhasspy/piper-voices) | The 5 pinned voices, downloaded or bundled | Set per voice; read each model card |
-| [Kokoro-82M](https://huggingface.co/mlx-community/Kokoro-82M-bf16) (MLX conversion) | Kokoro model and 28 voices | Set by the model card |
-| The 12 letter recordings (W, X, Y, and Z for Ryan, Aiden, and the Chatterbox Turbo voice; about 0.4 MB) | Said instead of the model for a lone choice letter | Generated with Qwen3-TTS (Apache-2.0) and Chatterbox Turbo (MIT upstream; the pinned MLX card says Apache-2.0). Neither license limits the output audio. |
-| [MLX](https://github.com/ml-explore/mlx) 0.32.4 and [mlx-audio](https://github.com/Blaizzy/mlx-audio) 0.6.3 | Run Kokoro on Apple Silicon | MIT |
-| misaki 0.9.4 | Phoneme markup for Kokoro | Apache License 2.0 |
-| [spaCy](https://spacy.io) 3.7.5 | Runtime for the NER model | MIT |
-| [scispaCy](https://allenai.github.io/scispacy/) 0.6.2 and [`en_ner_craft_md`](https://allenai.github.io/SciSpaCy/) 0.5.4 | The scientific NER model (trained on CRAFT) | scispaCy: Apache Software License. Model: CC BY-SA 3.0 |
-| [OPSIN](https://github.com/dan2097/opsin) through [py2opsin](https://github.com/JacksonBurns/py2opsin) 1.2.0 | Parse IUPAC names | py2opsin: MIT |
-| [jdk4py](https://github.com/activeviam/jdk4py) 25.0.2.1 | Java runtime that runs OPSIN | GPL v2 (package classifier) |
-| [Qt for Python (PySide6)](https://pyside.org) 6.12.0 | The window | LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only |
-| [ONNX Runtime](https://onnxruntime.ai) 1.31.1 | Runs Piper voices | MIT |
-| [httpx](https://github.com/encode/httpx) 0.28.1 | HTTP client for lookups and downloads | BSD-3-Clause |
-| [PyInstaller](https://pyinstaller.org) 6.22.3 | Builds the `.app` | GPLv2-or-later with a build exception |
-| [PubChem](https://pubchem.ncbi.nlm.nih.gov) | Optional name lookups | Service terms apply |
-| [UniProt](https://www.uniprot.org) | Optional name lookups | Service terms apply |
-| [Hugging Face](https://huggingface.co) | Hosts the pinned voice files | Service terms apply |
+| Component                                                                                                                | Role in Cloudy Reader                              | License                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Piper](https://github.com/OHF-voice/piper1-gpl) (`piper-tts` 1.8.0)                                                     | Piper engine; includes espeak-ng phonemization     | GPL-3.0-or-later                                                                                                                                         |
+| [phonemizer-fork](https://pypi.org/project/phonemizer-fork/) 3.3.2                                                       | Phonemization for Kokoro (Kokoro extra)            | GPLv3 or later (package classifier)                                                                                                                      |
+| [Piper voices](https://huggingface.co/rhasspy/piper-voices)                                                              | The 5 pinned voices, downloaded or bundled         | Set per voice; read each model card                                                                                                                      |
+| [Kokoro-82M](https://huggingface.co/mlx-community/Kokoro-82M-bf16) (MLX conversion)                                      | Kokoro model and 28 voices                         | Set by the model card                                                                                                                                    |
+| The 12 letter recordings (W, X, Y, and Z for Ryan, Aiden, and the Chatterbox Turbo voice; about 0.4 MB)                  | Said instead of the model for a lone choice letter | Generated with Qwen3-TTS (Apache-2.0) and Chatterbox Turbo (MIT upstream; the pinned MLX card says Apache-2.0). Neither license limits the output audio. |
+| [MLX](https://github.com/ml-explore/mlx) 0.32.4 and [mlx-audio](https://github.com/Blaizzy/mlx-audio) 0.6.3              | Run Kokoro on Apple Silicon                        | MIT                                                                                                                                                      |
+| misaki 0.9.4                                                                                                             | Phoneme markup for Kokoro                          | Apache License 2.0                                                                                                                                       |
+| [spaCy](https://spacy.io) 3.7.5                                                                                          | Runtime for the NER model                          | MIT                                                                                                                                                      |
+| [scispaCy](https://allenai.github.io/scispacy/) 0.6.2 and [`en_ner_craft_md`](https://allenai.github.io/SciSpaCy/) 0.5.4 | The scientific NER model (trained on CRAFT)        | scispaCy: Apache Software License. Model: CC BY-SA 3.0                                                                                                   |
+| [OPSIN](https://github.com/dan2097/opsin) through [py2opsin](https://github.com/JacksonBurns/py2opsin) 1.2.0             | Parse IUPAC names                                  | py2opsin: MIT                                                                                                                                            |
+| [jdk4py](https://github.com/activeviam/jdk4py) 25.0.2.1                                                                  | Java runtime that runs OPSIN                       | GPL v2 (package classifier)                                                                                                                              |
+| [Qt for Python (PySide6)](https://pyside.org) 6.12.0                                                                     | The window                                         | LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only                                                                                                            |
+| [ONNX Runtime](https://onnxruntime.ai) 1.31.1                                                                            | Runs Piper voices                                  | MIT                                                                                                                                                      |
+| [httpx](https://github.com/encode/httpx) 0.28.1                                                                          | HTTP client for lookups and downloads              | BSD-3-Clause                                                                                                                                             |
+| [PyInstaller](https://pyinstaller.org) 6.22.3                                                                            | Builds the `.app`                                  | GPLv2-or-later with a build exception                                                                                                                    |
+| [PubChem](https://pubchem.ncbi.nlm.nih.gov)                                                                              | Optional name lookups                              | Service terms apply                                                                                                                                      |
+| [UniProt](https://www.uniprot.org)                                                                                       | Optional name lookups                              | Service terms apply                                                                                                                                      |
+| [Hugging Face](https://huggingface.co)                                                                                   | Hosts the pinned voice files                       | Service terms apply                                                                                                                                      |
 
 The optional Kokoro extra also installs `en-core-web-sm`, `espeakng-loader`, and `num2words`. Check their licenses upstream.
 
