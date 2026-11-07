@@ -43,7 +43,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMainWindow,
-    QMessageBox,
     QPlainTextEdit,
     QProgressBar,
     QPushButton,
@@ -53,6 +52,7 @@ from PySide6.QtWidgets import (
 
 from cloudyreader.engine_catalog import TITLES, is_actionable
 from cloudyreader.gui import theme, tokens
+from cloudyreader.gui.about import AboutPanel
 from cloudyreader.gui.live_script import LiveScript
 from cloudyreader.gui.motion import reduce_motion
 from cloudyreader.gui.names import APP_NAME, app_version
@@ -71,6 +71,7 @@ log = logging.getLogger(__name__)
 _QUEUED = Qt.ConnectionType.QueuedConnection
 _NATIVE = QKeySequence.SequenceFormat.NativeText
 _NO_VOICE = "No voice is installed."
+_ABOUT = "Reads National Science Bowl questions aloud."
 _PARTIAL = "Some voices could not be downloaded. They are tried again at the next start."
 _MB = 1_000_000  # decimal megabytes, as Finder counts them
 _DOWNLOADING = "Downloading voices"  # the bar's name for a report that names no group
@@ -193,7 +194,7 @@ class MainWindow(QMainWindow):
         self._has_played = False
         self._closing = False
         self._playback_text = ""  # status text owned by playback: cleared when audio ends
-        self._about_box: QMessageBox | None = None
+        self._about_box: AboutPanel | None = None
         self._voices: list[VoiceInfo] = []  # the latest list, for rotation
         self._rotator = VoiceRotator() if rotator is None else rotator
         self._picked_label: str | None = None  # the rotated voice of the reading in flight
@@ -503,7 +504,7 @@ class MainWindow(QMainWindow):
         look = theme.current()
         if scheme is not None and scheme != Qt.ColorScheme.Unknown:  # the signal names the scheme
             look = dataclasses.replace(look, dark=scheme == Qt.ColorScheme.Dark)
-        roles = theme.roles(look)
+        self._roles = roles = theme.roles(look)
         question = QPalette()  # sets no role yet, so every other role keeps following the system
         question.setColor(QPalette.ColorRole.PlaceholderText, QColor(roles.placeholder))
         self.question_edit.setPalette(question)
@@ -517,6 +518,8 @@ class MainWindow(QMainWindow):
         self.script_panel.set_colors(QColor(roles.panel_fill), outline)
         self.voice_picker.set_dark(look.dark)
         self._focus_ring.set_dark(look.dark)
+        if self._about_box is not None:
+            self._about_box.set_secondary(QColor(roles.secondary_text))
 
     def _on_contrast_changed(self, _preference: Qt.ContrastPreference) -> None:
         self._apply_appearance()
@@ -1003,20 +1006,8 @@ class MainWindow(QMainWindow):
             self._about_box.raise_()
             self._about_box.activateWindow()
             return
-        box = QMessageBox(self)
-        box.setWindowTitle(f"About {APP_NAME}")
-        box.setTextFormat(Qt.TextFormat.PlainText)
-        box.setText(APP_NAME)
-        about = f"Version {app_version()}\nReads National Science Bowl questions aloud."
-        box.setInformativeText(about)
-        for label in box.findChildren(QLabel):  # wide enough that the description never wraps
-            if label.text() == about:
-                label.setMinimumWidth(tokens.ABOUT_TEXT_MIN_WIDTH)
-        icon = self.windowIcon()
-        if not icon.isNull():
-            box.setIconPixmap(icon.pixmap(tokens.ABOUT_ICON_SIZE, tokens.ABOUT_ICON_SIZE))
-        box.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-        box.setWindowModality(Qt.WindowModality.NonModal)  # like the system About panel
+        box = AboutPanel(APP_NAME, app_version(), _ABOUT, self.windowIcon(), self)
+        box.set_secondary(QColor(self._roles.secondary_text))
         box.finished.connect(self._forget_about_box)  # on close, before the deferred delete
         self._about_box = box
         box.show()

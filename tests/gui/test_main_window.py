@@ -6,9 +6,10 @@ from dataclasses import replace
 import pytest
 from PySide6.QtCore import QPoint, QSettings, Qt, QTimer
 from PySide6.QtGui import QAction, QGuiApplication, QIcon, QKeySequence, QPixmap
-from PySide6.QtWidgets import QApplication, QMessageBox, QPushButton, QWidget
+from PySide6.QtWidgets import QApplication, QPushButton, QWidget
 
 from cloudyreader.gui import fake_service, main_window, names, tokens
+from cloudyreader.gui.about import AboutPanel
 from cloudyreader.gui.fake_service import FakePlayer, FakeReaderService
 from cloudyreader.gui.main_window import MainWindow, _Job, _Signals
 from cloudyreader.models import RenderOptions
@@ -725,9 +726,11 @@ def test_about_and_quit_use_the_standard_macos_app_menu_roles(window):
 def test_about_box_shows_the_name_and_version_without_blocking(window):
     window.about_action.trigger()
 
-    box = window.findChild(QMessageBox)  # macOS alerts ignore window titles, so skip that
-    assert box.text() == "Cloudy Reader"
-    assert f"Version {importlib.metadata.version('cloudyreader')}" in box.informativeText()
+    box = window.findChild(AboutPanel)
+    assert box.windowTitle() == "About Cloudy Reader"
+    assert box.name_label.text() == "Cloudy Reader"
+    assert box.version_label.text() == f"Version {importlib.metadata.version('cloudyreader')}"
+    assert box.description_label.text() == "Reads National Science Bowl questions aloud."
     assert not box.isModal()
     box.close()
 
@@ -740,8 +743,8 @@ def test_about_box_says_dev_when_the_package_metadata_is_missing(window, monkeyp
 
     window.about_action.trigger()
 
-    box = window.findChild(QMessageBox)
-    assert "Version dev" in box.informativeText()
+    box = window.findChild(AboutPanel)
+    assert box.version_label.text() == "Version dev"
     box.close()
 
 
@@ -752,8 +755,8 @@ def test_about_box_carries_the_app_icon_when_there_is_one(qapp, window):
     try:
         window.about_action.trigger()
 
-        box = window.findChild(QMessageBox)
-        assert not box.iconPixmap().isNull()
+        box = window.findChild(AboutPanel)
+        assert not box.icon_label.pixmap().isNull()
         box.close()
     finally:
         qapp.setWindowIcon(QIcon())

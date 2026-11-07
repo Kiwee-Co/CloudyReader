@@ -5,9 +5,10 @@ import threading
 import pytest
 from PySide6.QtCore import QCoreApplication, QEvent, QSettings, Qt
 from PySide6.QtGui import QColor, QGuiApplication, QKeySequence, QPalette
-from PySide6.QtWidgets import QApplication, QFormLayout, QLabel, QLineEdit, QMessageBox
+from PySide6.QtWidgets import QApplication, QFormLayout, QLineEdit
 
-from cloudyreader.gui import tokens
+from cloudyreader.gui import theme, tokens
+from cloudyreader.gui.about import AboutPanel
 from cloudyreader.gui.fake_service import FakeReaderService
 from cloudyreader.gui.status import Tone
 
@@ -401,13 +402,12 @@ def test_the_about_description_stays_on_one_line(request, qtbot, make_window, na
         request.getfixturevalue("mac_style")
     window = make_window()
     window.about_action.trigger()
-    box = window.findChild(QMessageBox)
+    box = window.findChild(AboutPanel)
     qtbot.waitUntil(box.isVisible)
-    description = "Reads National Science Bowl questions aloud."
-    label = next(w for w in box.findChildren(QLabel) if description in w.text())
+    label = box.description_label
 
-    assert label.minimumWidth() == tokens.ABOUT_TEXT_MIN_WIDTH
-    assert label.width() >= label.fontMetrics().horizontalAdvance(description)
+    assert label.text() == "Reads National Science Bowl questions aloud."
+    assert label.width() >= label.fontMetrics().horizontalAdvance(label.text())
     box.close()
 
 
@@ -415,12 +415,40 @@ def test_about_box_is_a_single_panel_like_the_system_one(window):
     window.about_action.trigger()
     window.about_action.trigger()
 
-    boxes = window.findChildren(QMessageBox)
+    boxes = window.findChildren(AboutPanel)
     assert len(boxes) == 1
     boxes[0].close()
     QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
 
     window.about_action.trigger()
 
-    assert len(window.findChildren(QMessageBox)) == 1
-    window.findChild(QMessageBox).close()
+    assert len(window.findChildren(AboutPanel)) == 1
+    window.findChild(AboutPanel).close()
+
+
+@pytest.mark.parametrize("dark", [False, True])
+@pytest.mark.parametrize("high", [False, True])
+def test_the_about_text_follows_the_appearance(window, monkeypatch, dark, high):
+    window.about_action.trigger()
+    box = window.findChild(AboutPanel)
+    monkeypatch.setattr(theme, "current", lambda hints=None: theme.Appearance(dark, high))
+
+    QGuiApplication.styleHints().colorSchemeChanged.emit(
+        Qt.ColorScheme.Dark if dark else Qt.ColorScheme.Light
+    )
+
+    secondary = theme.roles(theme.Appearance(dark, high)).secondary_text
+    for label in (box.version_label, box.description_label):
+        assert label.palette().color(QPalette.ColorRole.WindowText).name() == secondary
+    box.close()
+
+
+def test_a_new_about_panel_opens_in_the_current_appearance(window):
+    QGuiApplication.styleHints().colorSchemeChanged.emit(Qt.ColorScheme.Dark)
+
+    window.about_action.trigger()
+
+    box = window.findChild(AboutPanel)
+    ink = box.version_label.palette().color(QPalette.ColorRole.WindowText)
+    assert ink.name() == tokens.TEXT_SECONDARY_DARK
+    box.close()

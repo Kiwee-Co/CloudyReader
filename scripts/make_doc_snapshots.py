@@ -51,8 +51,8 @@ from PySide6.QtWidgets import (  # noqa: E402
     QApplication,
     QCheckBox,
     QComboBox,
+    QDialog,
     QLabel,
-    QMessageBox,
     QPlainTextEdit,
     QProgressBar,
     QPushButton,
@@ -1249,33 +1249,33 @@ def fig_states(env: Env, look: Look) -> Svg:
 
 def fig_about(env: Env, look: Look, logo: Logo) -> Svg:
     from cloudyreader.gui import main_window
+    from cloudyreader.gui.about import AboutPanel
 
     with env.window() as (win, _service):
-        shown: list[QMessageBox] = []
-        original = QMessageBox.show
+        shown: list[AboutPanel] = []
         version = main_window.app_version
 
-        def hidden_show(box: QMessageBox) -> None:
+        def hidden_show(box: AboutPanel) -> None:
             box.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen)
             shown.append(box)
-            original(box)
+            QDialog.show(box)
 
-        QMessageBox.show = hidden_show  # type: ignore[method-assign]
+        AboutPanel.show = hidden_show  # type: ignore[method-assign]
         if env.app_version is not None:  # the release's version, not this checkout's metadata
             main_window.app_version = lambda: env.app_version
         try:
             win.about_action.trigger()
         finally:
-            QMessageBox.show = original  # type: ignore[method-assign]
+            del AboutPanel.show  # QDialog's own again
             main_window.app_version = version
         box = shown[0]
         env.app.processEvents()
         desc = (
             f"The About panel in {appearance(look.dark)}: the app icon, the name Cloudy Reader, "
-            "the version, a one-line description, and an OK button."
+            "the version, and a one-line description."
         )
         svg = Svg(box.width(), box.height(), "About Cloudy Reader", desc)
-        svg.scale = 2  # a 251-point panel reads too small at its own size beside the text
+        svg.scale = 2  # a 300-point panel reads too small at its own size beside the text
         draw_content(svg, look, box, icon=lambda r: logo.draw(svg, r))
         box.close()
     return svg

@@ -14,11 +14,11 @@ from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
     QLabel,
-    QMessageBox,
     QWidget,
 )
 
 from cloudyreader.gui import tokens
+from cloudyreader.gui.about import AboutPanel
 from cloudyreader.gui.fake_service import ENGINE_FAKE_VOICES, FakeReaderService
 from cloudyreader.prefetch import PrefetchProgress, PrefetchResult
 
@@ -213,15 +213,15 @@ def test_each_state_shows_its_own_parts(qtbot, make_window, request):
 def test_the_about_panel_draws_whole(qtbot, window, appearance):
     QGuiApplication.styleHints().colorSchemeChanged.emit(appearance)
     window.about_action.trigger()
-    box = window.findChild(QMessageBox)
+    box = window.findChild(AboutPanel)
     qtbot.waitUntil(box.isVisible)
     try:
         assert_draws(box)
         assert clipped(box) == []
         texts = [label.text() for label in box.findChildren(QLabel) if label.isVisible()]
         assert "Cloudy Reader" in texts
-        assert any("Reads National Science Bowl questions aloud." in text for text in texts)
-        assert [b.text() for b in box.findChildren(QAbstractButton) if b.isVisible()] == ["OK"]
+        assert "Reads National Science Bowl questions aloud." in texts
+        assert [b for b in box.findChildren(QAbstractButton) if b.isVisible()] == []  # no buttons
     finally:
         box.close()
 
