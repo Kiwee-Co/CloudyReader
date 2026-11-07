@@ -5,9 +5,12 @@ sidebar:
   order: 1
 ---
 
+import Badges from '../../../components/Badges.astro';
 import Figure from '../../../components/Figure.astro';
 
 ## Summary
+
+<Badges names={['telemetry', 'voice-engines']} />
 
 Cloudy Reader makes speech on your Mac and has no telemetry, analytics, crash reports, or update check. It uses the network for two features: [name lookups](/manual/reference/glossary/#name-lookup), which are on by default, and the [voice download](/manual/reference/glossary/#voice-download) of missing voice and engine files. A lookup sends one detected name, never the text around it, and [offline mode](/manual/reference/glossary/#offline-mode) stops both features.
 
