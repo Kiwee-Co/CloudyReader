@@ -116,3 +116,12 @@ def test_closing_drops_a_waiting_preview(qtbot, window, service):
     qtbot.wait(SETTLE_MS)
 
     assert service.preview_calls == []
+
+
+def test_a_change_after_close_builds_no_preview(qtbot, window, service):
+    window.close()
+
+    window.question_edit.setPlainText("q")
+    qtbot.wait(SETTLE_MS)
+
+    assert service.preview_calls == []

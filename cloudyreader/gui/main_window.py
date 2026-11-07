@@ -562,7 +562,7 @@ class MainWindow(QMainWindow):
         return live
 
     def _preview_script(self) -> None:
-        if self._live_script is not None:
+        if self._live_script is not None and not self._closing:  # no job after close's wait
             self._live_script.schedule(self.question_edit.toPlainText(), self._options())
 
     def _options(self, speaker_id: int | None = None) -> RenderOptions:
@@ -1042,8 +1042,12 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event: QCloseEvent) -> None:
         self._closing = True  # a result still in flight must not start audio after close
         self._prefetch_cancel.set()  # the download stops at its next chunk and reports nothing
-        if self._live_script is not None:
-            self._live_script.cancel()  # no preview starts on the worker after close
         self._settings.setValue("geometry", self.saveGeometry())
         self._silence()
+        if self._live_script is not None:
+            self._live_script.cancel()  # no preview starts on the worker after close
+        # Deleting the pool waits for a running job while holding the GIL, which a Python job
+        # needs to finish: drop the queued jobs and wait here, where the wait releases the GIL.
+        self._pool.clear()
+        self._pool.waitForDone()
         super().closeEvent(event)

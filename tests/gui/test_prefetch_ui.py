@@ -140,11 +140,10 @@ def test_a_failed_re_list_only_logs(qtbot, window, service, caplog):
 def test_a_re_list_arriving_after_close_is_dropped(qtbot, window, service):
     gate = service.voices_gate = threading.Event()
     window._refresh_voices()
-    window.close()
+    gate.set()  # the list is ready; its signal reaches the window only after close()
 
     with qtbot.assertNotEmitted(window.voices_refreshed):
-        gate.set()
-        window._pool.waitForDone(5000)
+        window.close()  # waits for the worker
         qtbot.wait(100)
 
 

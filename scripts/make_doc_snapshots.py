@@ -438,12 +438,11 @@ class Env:
             self.pump(lambda: not win.loading_voices, "voices listed")
             yield win, service
         finally:
+            if service.gate is not None:
+                service.gate.set()  # a held reading ends first: close() waits for the worker
             win.close()  # cancels a held download: it reports nothing after this
-            for gate in (service.gate, service.prefetch_gate):
-                if gate is not None:
-                    gate.set()
-            # Deleting the window waits for its pool; a job still held there would need the GIL.
-            win._pool.waitForDone(10_000)
+            if service.prefetch_gate is not None:
+                service.prefetch_gate.set()
             win.deleteLater()
             self.app.processEvents()
 

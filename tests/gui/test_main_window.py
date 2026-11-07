@@ -565,11 +565,10 @@ def test_a_slow_voice_list_that_fails_ends_the_loading_state(qtbot, make_window,
 def test_a_voice_list_arriving_after_close_is_dropped(qtbot, make_window, service):
     gate = service.voices_gate = threading.Event()
     window = make_window(wait_for_voices=False)
-    window.close()
+    gate.set()  # the list is ready; its signal reaches the window only after close()
 
     with qtbot.assertNotEmitted(window.voices_settled):
-        gate.set()
-        window._pool.waitForDone(5000)  # private on purpose: the worker has no public handle
+        window.close()  # waits for the worker
         qtbot.wait(100)
 
     assert window.loading_voices
@@ -579,11 +578,10 @@ def test_a_voice_list_failure_arriving_after_close_is_dropped(qtbot, make_window
     gate = service.voices_gate = threading.Event()
     service.voices_error = RuntimeError("late")
     window = make_window(wait_for_voices=False)
-    window.close()
+    gate.set()
 
     with qtbot.assertNotEmitted(window.error_occurred):
-        gate.set()
-        window._pool.waitForDone(5000)
+        window.close()
         qtbot.wait(100)
 
 
@@ -786,10 +784,9 @@ def test_a_result_arriving_after_close_is_not_played(qtbot, window, service, pla
     gate = service.gate = threading.Event()
     window.question_edit.setPlainText("q")
     window.speak_button.click()
-    window.close()
+    gate.set()  # the reading is ready; its signal reaches the window only after close()
 
-    gate.set()
-    window._pool.waitForDone(5000)  # private on purpose: the worker has no public handle
+    window.close()  # waits for the worker
     qtbot.wait(100)  # deliver the queued result
 
     assert player.played == []
@@ -800,11 +797,10 @@ def test_an_error_arriving_after_close_is_dropped(qtbot, window, service):
     service.error = RuntimeError("late")
     window.question_edit.setPlainText("q")
     window.speak_button.click()
-    window.close()
+    gate.set()
 
     with qtbot.assertNotEmitted(window.error_occurred):
-        gate.set()
-        window._pool.waitForDone(5000)
+        window.close()
         qtbot.wait(100)
 
 

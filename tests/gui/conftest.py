@@ -9,6 +9,15 @@ from cloudyreader.gui.fake_service import FakePlayer, FakeReaderService
 # Forced, not defaulted: a GUI test must never open a real window.
 # Qt reads it when the QApplication starts, so setting it after the imports is early enough.
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
+GATES = ("gate", "voices_gate", "prefetch_gate", "preview_gate")  # the fake's holds, by knob
+
+
+def open_gates(service) -> None:
+    """Release every job the fake still holds: a closing window waits for its worker."""
+    for name in GATES:
+        gate = getattr(service, name, None)
+        if gate is not None:
+            gate.set()
 
 
 @pytest.fixture(autouse=True)
@@ -55,7 +64,8 @@ def make_window(qtbot, service, player, settings):
         from cloudyreader.gui.main_window import MainWindow
 
         win = MainWindow(service, player, settings=settings, rotator=rotator)
-        qtbot.addWidget(win)
+        # pytest-qt closes the window before any finalizer runs: open the gates first.
+        qtbot.addWidget(win, before_close_func=lambda _win: open_gates(service))
         win.show()
         if wait_for_voices:  # the list loads on a worker thread
             qtbot.waitUntil(lambda: not win.loading_voices, timeout=5000)
