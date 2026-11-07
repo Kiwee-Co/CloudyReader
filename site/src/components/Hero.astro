@@ -1,0 +1,112 @@
+---
+// The landing page's hero: the app icon over the title, the tagline and the actions beside the
+// window picture, and the badge row under both. Another page with a hero (404) keeps Starlight's.
+import { LinkButton } from '@astrojs/starlight/components';
+import Default from '@astrojs/starlight/components/Hero.astro';
+import Badges from './Badges.astro';
+
+const { entry } = Astro.locals.starlightRoute;
+const { title = entry.data.title, tagline, image, actions = [] } = entry.data.hero ?? {};
+const picture = image && 'html' in image ? image.html : undefined;
+// The title keeps Starlight's id, _top: the skip link points at it.
+---
+
+{
+	Astro.url.pathname !== '/' ? (
+		<Default />
+	) : (
+		<div class="cr-hero">
+			<div class="cr-hero__copy">
+				<img class="cr-hero__icon" src="/img/logo.svg" width="256" height="256" alt="Cloudy Reader app icon" />
+				<h1 id="_top" data-page-title set:html={title} />
+				{tagline && <p class="cr-hero__tagline" set:html={tagline} />}
+				{actions.length > 0 && (
+					<div class="cr-hero__actions">
+						{actions.map(({ attrs: { class: className, ...attrs } = {}, icon, link: href, text, variant }) => (
+							<LinkButton {href} {variant} icon={icon?.name} class:list={[className]} {...attrs}>
+								{text}
+								{icon?.html && <Fragment set:html={icon.html} />}
+							</LinkButton>
+						))}
+					</div>
+				)}
+			</div>
+			{picture && <div class="cr-hero__picture" set:html={picture} />}
+			<div class="cr-hero__badges">
+				<Badges names={['platform', 'voice-engines', 'telemetry', 'license']} />
+			</div>
+		</div>
+	)
+}
+
+<style>
+	/* One centered column on a phone. From 50rem the copy and the picture sit side by side, and
+	   the badge row spans both. */
+	.cr-hero {
+		display: grid;
+		gap: 2.5rem;
+		align-items: center;
+		padding-block: 1.5rem 2rem;
+	}
+	.cr-hero__copy {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1.25rem;
+		text-align: center;
+	}
+	.cr-hero__icon {
+		inline-size: clamp(4.5rem, calc(3rem + 4vw), 6rem);
+		block-size: auto;
+	}
+	.cr-hero h1 {
+		margin: 0;
+		font-size: clamp(var(--sl-text-3xl), calc(0.25rem + 5vw), var(--sl-text-6xl));
+		font-weight: 600;
+		line-height: var(--sl-line-height-headings);
+		color: var(--sl-color-white);
+	}
+	.cr-hero__tagline {
+		max-inline-size: 50ch;
+		margin: 0;
+		font-size: clamp(var(--sl-text-base), calc(0.0625rem + 2vw), var(--sl-text-xl));
+		color: var(--sl-color-gray-2);
+	}
+	.cr-hero__actions {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 1rem 2rem;
+		margin-block-start: 0.5rem;
+	}
+	.cr-hero__badges :global(.cr-badges) {
+		justify-content: center;
+	}
+	.cr-hero__picture {
+		inline-size: min(100%, 34rem);
+		margin-inline: auto;
+	}
+	@media (min-width: 50rem) {
+		.cr-hero {
+			grid-template-columns: 7fr 6fr;
+			grid-template-areas: 'copy picture' 'badges badges';
+			gap: 2.5rem 4%;
+			padding-block: clamp(2.5rem, calc(1rem + 8vmin), 7rem);
+		}
+		.cr-hero__copy {
+			grid-area: copy;
+			align-items: flex-start;
+			text-align: start;
+		}
+		.cr-hero__picture {
+			grid-area: picture;
+		}
+		.cr-hero__badges {
+			grid-area: badges;
+		}
+		.cr-hero__actions,
+		.cr-hero__badges :global(.cr-badges) {
+			justify-content: flex-start;
+		}
+	}
+</style>

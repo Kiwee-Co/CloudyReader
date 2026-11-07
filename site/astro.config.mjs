@@ -77,7 +77,10 @@ export default defineConfig({
 				'./src/styles/figures.css',
 				'./src/styles/print.css',
 			),
-			components: { Footer: './src/components/Footer.astro' },
+			components: {
+				Footer: './src/components/Footer.astro',
+				Hero: './src/components/Hero.astro',
+			},
 		}),
 	],
 });
