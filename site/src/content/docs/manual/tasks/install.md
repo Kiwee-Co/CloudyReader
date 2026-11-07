@@ -65,7 +65,7 @@ To confirm the version, see [Check the installed version](#check-the-installed-v
 
 ## Check the installed version
 
-Choose **Cloudy Reader > About Cloudy Reader**. The box shows the version, such as "Version 0.0.3". Click **OK** to close the box.
+Choose **Cloudy Reader > About Cloudy Reader**. The panel shows the version, such as "Version 0.0.3". Press Command-W or Escape to close the panel.
 
 In Terminal, run this command to print the app name and the version, such as `Cloudy Reader 0.0.3`:
 

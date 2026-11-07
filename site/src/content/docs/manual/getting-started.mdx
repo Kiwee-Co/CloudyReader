@@ -81,28 +81,32 @@ If there is no **Open Anyway** button, it shows only after a blocked attempt: [o
 
 Cloudy Reader downloads its voices at the first launch, about 3.05 GB in all.
 
+The **macOS** voices belong to the system and need no download. A Mac that lists one can speak a question while the other voices download.
+
 <Steps>
 
 1. Keep the window open and the Mac online. Closing the window stops the download.
-2. Read the status bar at the bottom of the window. It shows "Loading voices…" briefly, then "No voice is installed." On the right, it shows a progress label that starts with "Downloading", a percentage, and a progress bar.
-3. Look at the **Voice** pop-up menu below the question box and the **Speak** button in the row of buttons. Both are dimmed.
-4. Wait for the first voice to arrive. It usually takes under a minute. The download then continues with the other engines, one at a time.
+2. Read the status bar at the bottom of the window. On the right, it shows a progress label that starts with "Downloading", a percentage, and a progress bar.
+3. Open the **Voice** pop-up menu below the question box. The voices under **macOS** work at once, and the other voices join the menu as their downloads end.
+4. Wait for the first downloaded voice, or go on with a macOS voice. The first downloaded voice usually arrives in under a minute. The download then continues with the other engines, one at a time.
 
 </Steps>
+
+On a Mac that lists no macOS voice, the window waits for the first downloaded voice. The **Voice** menu reads "No voice installed", and **Speak** is dimmed. The status bar shows "No voice is installed." with no icon, beside the download progress.
 
 <Figure
   src="window-first-launch-light.svg"
   dark="window-first-launch-dark.svg"
-  alt="The Cloudy Reader window at first launch: the Voice menu reads No voice installed, Speak is dimmed, and the status bar shows the warning No voice is installed. beside a download label and a progress bar."
-  caption="The status bar shows the warning on the left and the download progress on the right."
+  alt="The Cloudy Reader window at the first launch of a Mac with no macOS voice. The Voice menu reads No voice installed, and Speak is dimmed. The status bar shows No voice is installed next to the download label and bar."
+  caption="With no voice yet, the status bar shows a plain message on the left and the download progress on the right."
   frame="window"
 />
 
-The **Voice** menu shows a voice, and **Speak** is no longer dimmed. You can go on to the next section now. The download continues in the background.
+When the **Voice** menu shows a voice, **Speak** works. You can go on to the next section. The download continues in the background.
 
-The other voices appear in the **Voice** menu as the rest of the download finishes. Until you choose a voice yourself, the menu selects its first voice, so the selection can move as voices arrive. When the whole download ends, the progress label and bar leave the status bar. After that, reading needs no network. [Manage voices and storage](/manual/tasks/voices-and-storage/) shows how to check the download.
+The other voices appear in the **Voice** menu as the rest of the download finishes. Until you choose a voice yourself, the menu selects its first installed voice, so the selection can move as voices arrive. When the whole download ends, the progress label and bar leave the status bar. After that, reading needs no network. [Manage voices and storage](/manual/tasks/voices-and-storage/) shows how to check the download.
 
-Check the **Voice** menu, not the percentage. A failed file counts as finished, so the percentage can rise while no voice arrives. If the label and bar leave the status bar and the menu is still empty, the download failed, and the status bar keeps "No voice is installed." with no other message.
+Check the **Voice** menu, not the percentage. A failed file counts as finished, so the percentage can rise while no voice arrives. If the label and bar leave the status bar and the downloaded voices are still missing or dimmed, the download failed. A Mac with no macOS voice then shows "No voice is installed." with a warning icon and no other message.
 
 To retry a failed download, connect the Mac to the internet, quit the app with Command-Q, and open it again. The download starts only at launch. See [No voice is installed](/manual/troubleshooting/#no-voice-is-installed) and [The voice download does not progress](/manual/troubleshooting/#the-voice-download-does-not-progress).
 
@@ -124,7 +128,7 @@ ANSWER: Y) CARBON DIOXIDE
 
 <Steps>
 
-1. Click the question box, the large text area at the top of the window. Press Command-V, or click **Paste**.
+1. Click the question box, the large text area at the top of the window. Press Command-V.
 2. Press Command-Return. Or click **Speak**.
 3. Listen. The status bar shows "Preparing…", then "Playing _n_ s."
 
@@ -132,15 +136,17 @@ ANSWER: Y) CARBON DIOXIDE
 
 You hear "Toss-up number one. Chemistry. Multiple choice." followed by the question and its four choices.
 
+A macOS voice takes no IPA. The status bar then shows "Warning: macOS cannot take IPA: 1 hard word uses the printed spelling (bicarbonate)" in place of the playing time. The reading plays, and the voice says that word from its spelling. See [A word sounds wrong](/manual/troubleshooting/#a-word-sounds-wrong).
+
 <Figure
   src="window-light.svg"
   dark="window-dark.svg"
-  alt="The Cloudy Reader window with the sample toss-up pasted, a voice selected, rotation off, the spoken script open, and the status Playing 19.3 s."
+  alt="The Cloudy Reader window with the sample toss-up in the question box and the Spoken script under it. The voice is Lessac, rotation is off, and the status reads Playing 19.3 s."
   caption="The window during a reading, with a different time in the status bar than yours."
   frame="window"
 />
 
-Click **Spoken script** to read the words the voice received. In this question, NaHCO3 appears as "N A H C O three". The app does not read the answer line unless you select **Read answer line**.
+The **Spoken script** under the question box shows the words the voice receives. It fills as you paste. In this question, NaHCO3 appears as "N A H C O three". The app does not read the answer line unless you select **Read answer line**.
 
 :::note
 **Online lookups** is on by default and can send a detected chemical, protein, or gene name to PubChem or UniProt, never the question.
