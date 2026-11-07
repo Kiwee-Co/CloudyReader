@@ -127,7 +127,7 @@ def test_the_script_sits_frameless_in_a_panel_without_an_outline(window):
 def test_the_panel_shows_at_least_two_lines(window):
     line = QFontMetricsF(window.script_view.font()).lineSpacing()
 
-    shown = window.script_panel.minimumHeight() - 2 * tokens.CARD_PADDING
+    shown = window.script_panel.minimumHeight() - 2 * tokens.PANEL_PADDING
 
     assert shown >= tokens.SCRIPT_MIN_LINES * line
 

@@ -211,10 +211,10 @@ def test_popup_keeps_its_natural_width_like_a_native_form(window):
     assert form.fieldGrowthPolicy() == QFormLayout.FieldGrowthPolicy.FieldsStayAtSizeHint
 
 
-def test_the_script_text_sits_card_padding_from_the_panel_edge(window):
+def test_the_script_text_sits_panel_padding_from_the_panel_edge(window):
     inset = window.script_panel.layout().contentsMargins().left()
 
-    assert inset + window.script_view.document().documentMargin() == tokens.CARD_PADDING
+    assert inset + window.script_view.document().documentMargin() == tokens.PANEL_PADDING
 
 
 def test_spoken_script_is_secondary_text(window):

@@ -378,9 +378,9 @@ class MainWindow(QMainWindow):
         self.script_view.setAccessibleDescription(self.script_view.placeholderText())
         self.script_view.setFont(text_style(tokens.TEXT_CALLOUT_PT))  # secondary to the question
         # Secondary by three things together: a recessed fill, smaller type, a quieter color.
-        self.script_panel = Card(self.script_view)
+        self.script_panel = Card(self.script_view, padding=tokens.PANEL_PADDING)
         self.script_panel.setMinimumHeight(
-            _card_height(self.script_view, tokens.SCRIPT_MIN_LINES, tokens.CARD_PADDING)
+            _card_height(self.script_view, tokens.SCRIPT_MIN_LINES, tokens.PANEL_PADDING)
         )
 
         # HIG (Layout): a form with right-aligned labels; popups keep their natural width. Every
