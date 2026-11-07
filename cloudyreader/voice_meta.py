@@ -213,10 +213,14 @@ def display_name(voice: VoiceInfo) -> str:
 
 
 def precision_of(voice: VoiceInfo) -> str:
-    """The model's own format. Without one, the tier; a Kokoro grade is never a precision."""
+    """The label's last field: the model's own format. Without one, a Kokoro voice's published
+    grade (`Grade A`), else the tier. A grade letter on another engine shows nothing."""
     if voice.precision:
         return voice.precision
-    return "" if _GRADE.fullmatch(voice.quality.strip().upper()) else voice.quality
+    grade = _GRADE.fullmatch(voice.quality.strip().upper())
+    if grade:
+        return f"Grade {grade[0]}" if voice.engine == "kokoro" else ""
+    return voice.quality
 
 
 def row_reason(voice: VoiceInfo) -> str:
@@ -227,10 +231,10 @@ def row_reason(voice: VoiceInfo) -> str:
 
 
 def voice_label(voice: VoiceInfo) -> str:
-    """`Heart (US, female) · Kokoro · bf16`, and ` — <reason>` after it when not installed.
+    """`Heart (US, female) · Kokoro · Grade A`, and ` — <reason>` after it when not installed.
 
     Accent and gender show only where known. The text is the row of the pop-up list and the
-    closed pop-up button alike. It never holds a grade letter.
+    closed pop-up button alike.
     """
     profile = profile_of(voice)
     accent = accent_of(voice.language)

@@ -103,7 +103,7 @@ def test_macos_voices_list_after_every_other_engine():
 
 @pytest.mark.parametrize("voice", [HEART, LESSAC, PIPER_HIGH, MAC_ENHANCED, RYAN])
 def test_the_rank_reads_the_tier_never_the_precision(voice):
-    labelled = dataclasses.replace(voice, precision="bf16 or whatever the label says")
+    labelled = dataclasses.replace(voice, precision="whatever the label says")
 
     assert grade_score(labelled) == grade_score(voice)
     assert voice_sort_key(labelled) == voice_sort_key(voice)

@@ -46,8 +46,8 @@ def test_voices_are_grouped_by_engine_under_header_rows(picker):
         "Alan (UK, male) · Piper · medium",
         "LibriTTS (US) · Piper · high",
         "Kokoro",
-        "Heart (US, female) · Kokoro · bf16",
-        "Michael (US, male) · Kokoro · bf16 — not downloaded yet",
+        "Heart (US, female) · Kokoro · Grade A",
+        "Michael (US, male) · Kokoro · Grade C+ — not downloaded yet",
     ]
 
 
@@ -236,10 +236,10 @@ def test_a_row_shows_the_label_and_voiceover_hears_the_spoken_form(picker):
     )
 
 
-def test_a_header_reads_the_engine_title_and_no_grade_letter_shows_anywhere(picker):
+def test_a_header_reads_the_engine_title_and_only_kokoro_rows_say_grade(picker):
     assert [h.text() for h in headers(picker)] == ["Piper", "Kokoro"]
     for item in items(picker):
-        assert " A " not in f" {item.text()} " and "C+" not in item.text()  # Heart is A, Michael C+
+        assert ("Grade" in item.text()) == ("· Kokoro ·" in item.text())
 
 
 def test_only_a_kokoro_grade_or_a_dimmed_reason_gets_a_tooltip(picker):
@@ -251,11 +251,21 @@ def test_only_a_kokoro_grade_or_a_dimmed_reason_gets_a_tooltip(picker):
     assert row(picker, "qwen3_tts:ryan").toolTip() == ""
 
 
+def test_the_closed_button_reads_the_kokoro_grade_and_no_text_anywhere_says_bf16(picker):
+    picker.set_voices(ENGINE_FAKE_VOICES, preferred=HEART)
+
+    assert picker.combo.currentText() == "Heart (US, female) · Kokoro · Grade A"
+    shown = [picker.combo.currentText(), picker.combo.toolTip()]
+    for item in items(picker):
+        shown += [item.text(), item.toolTip(), str(item.data(Qt.ItemDataRole.AccessibleTextRole))]
+    assert not [text for text in shown if "bf16" in text.lower()]
+
+
 def test_the_closed_pop_up_tooltip_speaks_the_selected_voice(picker):
     assert picker.combo.toolTip() == "Lessac, American English, female. Piper, medium."
 
     picker.select_voice(HEART)
-    assert picker.combo.toolTip() == "Heart, American English, female. Kokoro, bf16."
+    assert picker.combo.toolTip() == "Heart, American English, female. Kokoro, Grade A."
 
     picker.set_voices(FAKE_VOICES, preferred=AMY)  # a rebuild emits nothing, the tip still follows
     assert picker.combo.toolTip().startswith("Amy, American English")

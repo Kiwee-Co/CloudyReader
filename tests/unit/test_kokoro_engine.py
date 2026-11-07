@@ -19,6 +19,7 @@ from cloudyreader.engines import kokoro
 from cloudyreader.engines.kokoro import (
     RECOMMENDED_VOICES,
     SAMPLE_RATE,
+    VOICE_GRADES,
     InProcessBackend,
     KokoroEngine,
     KokoroError,
@@ -207,11 +208,11 @@ def test_voices_all_voices_flag(models_dir: Path) -> None:
     assert len(keys) == 28 and len(set(keys)) == 28 and "kokoro:am_adam" in keys
 
 
-def test_every_voice_names_the_bf16_weights_and_keeps_its_grade(models_dir: Path) -> None:
+def test_every_voice_lists_its_published_grade_and_no_precision(models_dir: Path) -> None:
     voices = KokoroEngine(models_dir, FakeBackend(), all_voices=True).voices()
 
-    assert {v.precision for v in voices} == {"bf16"}  # KOKORO_REPO is Kokoro-82M-bf16
-    assert next(v for v in voices if v.key == "kokoro:af_heart").quality == "A"  # the rank's input
+    assert {v.precision for v in voices} == {""}  # the menu shows the grade instead
+    assert {v.key.partition(":")[2]: v.quality for v in voices} == VOICE_GRADES  # the label
 
 
 def test_voices_empty_off_apple_silicon(engine: KokoroEngine, monkeypatch) -> None:

@@ -40,8 +40,8 @@ FAKE_VOICES: tuple[VoiceInfo, ...] = (
         True,
         precision="high",
     ),
-    VoiceInfo("kokoro:af_heart", "kokoro", "Heart", "en-US", "A", 1, True, precision="bf16"),
-    VoiceInfo("kokoro:am_michael", "kokoro", "Michael", "en-US", "C+", 1, False, precision="bf16"),
+    VoiceInfo("kokoro:af_heart", "kokoro", "Heart", "en-US", "A", 1, True),
+    VoiceInfo("kokoro:am_michael", "kokoro", "Michael", "en-US", "C+", 1, False),
 )
 # The engine rows a Mac with Apple Silicon lists: one dimmed row that says why, two ready voices.
 ENGINE_FAKE_VOICES: tuple[VoiceInfo, ...] = (

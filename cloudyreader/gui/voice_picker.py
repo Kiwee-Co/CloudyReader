@@ -37,7 +37,7 @@ _Index = QModelIndex | QPersistentModelIndex
 
 
 def _tooltip(voice: VoiceInfo) -> str:
-    """What the row's text does not say: a dimmed row's whole reason, Kokoro's published grade."""
+    """What the row's text does not say: a dimmed row's whole reason, a Kokoro grade's source."""
     if not voice.installed:
         return voice.reason
     return f"Published grade {voice.quality}" if voice.engine == "kokoro" and voice.quality else ""

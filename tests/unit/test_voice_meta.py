@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import dataclasses
 import json
 import re
@@ -12,9 +13,11 @@ from pathlib import Path
 
 import pytest
 
+import cloudyreader
 from cloudyreader import engine_catalog, voice_meta
 from cloudyreader.engines import chatterbox_turbo, kokoro, qwen3_tts
 from cloudyreader.engines.kokoro import VOICE_GRADES, KokoroEngine
+from cloudyreader.gui.fake_service import ENGINE_FAKE_VOICES, MACOS_FAKE_VOICES
 from cloudyreader.models import VoiceInfo
 from cloudyreader.voice_meta import (
     ENGINE_ORDER,
@@ -197,9 +200,9 @@ def make(
     return VoiceInfo(key, engine, name, language, quality, 1, installed, None, reason, precision)
 
 
-HEART = make("kokoro:af_heart", "Heart (female)", "en-US", "A", "bf16")
-EMMA = make("kokoro:bf_emma", "Emma (female)", "en-GB", "B-", "bf16")
-MICHAEL = make("kokoro:am_michael", "Michael (male)", "en-US", "C+", "bf16", installed=False)
+HEART = make("kokoro:af_heart", "Heart (female)", "en-US", "A")  # Kokoro lists no precision
+EMMA = make("kokoro:bf_emma", "Emma (female)", "en-GB", "B-")
+MICHAEL = make("kokoro:am_michael", "Michael (male)", "en-US", "C+", installed=False)
 BUILTIN = make(
     "chatterbox_turbo:builtin",
     "Chatterbox Turbo (built-in)",
@@ -217,9 +220,9 @@ JENNY = make("piper:en_GB-jenny_dioco-medium", "jenny_dioco", "en-GB", "medium",
 LIBRITTS = make("piper:en_US-libritts-high", "libritts", "en-US", "high", "high")
 
 LABELS = [
-    (HEART, "Heart (US, female) · Kokoro · bf16"),
-    (EMMA, "Emma (UK, female) · Kokoro · bf16"),
-    (MICHAEL, "Michael (US, male) · Kokoro · bf16 — not downloaded yet"),
+    (HEART, "Heart (US, female) · Kokoro · Grade A"),
+    (EMMA, "Emma (UK, female) · Kokoro · Grade B-"),
+    (MICHAEL, "Michael (US, male) · Kokoro · Grade C+ — not downloaded yet"),
     (BUILTIN, "Built-in · Chatterbox Turbo · 4-bit — not downloaded yet"),
     (QWEN_RYAN, "Ryan (male) · Qwen3-TTS · 8-bit"),  # language "en": no region, so no accent
     (AIDEN, "Aiden (US, male) · Qwen3-TTS · 8-bit"),
@@ -249,14 +252,19 @@ def real_voices_fixture(tmp_path, monkeypatch) -> list[VoiceInfo]:
     return real_voices(tmp_path, monkeypatch)
 
 
-def test_every_real_voice_has_a_precision_and_the_label_format(real_voices):
+def last_field(info: VoiceInfo) -> str:
+    """What a real row's label ends with: a Kokoro voice's grade, else the model's own format."""
+    return f"Grade {info.quality}" if info.engine == "kokoro" else info.precision
+
+
+def test_every_real_voice_has_a_last_field_and_the_label_format(real_voices):
     assert len(real_voices) == 28 + 5 + 2 + 1
     for info in real_voices:
         for shown in (info, dataclasses.replace(info, installed=False, reason="")):
             parts = LABEL.fullmatch(voice_label(shown))
             assert parts, voice_label(shown)
             assert parts["engine"] == engine_title(info.engine)
-            assert parts["precision"] == info.precision != ""
+            assert parts["precision"] == last_field(info) != ""
 
 
 def test_labels_are_unique_over_every_engines_real_voices(real_voices):
@@ -266,20 +274,41 @@ def test_labels_are_unique_over_every_engines_real_voices(real_voices):
     assert list(unique_labels(real_voices).values()) == labels  # no clash: no id appended
 
 
-def test_no_visible_label_holds_a_grade_letter(real_voices):
+def test_only_kokoro_labels_hold_a_grade_letter_and_it_is_the_voices_own(real_voices):
     for info in real_voices:
-        for shown in (info, dataclasses.replace(info, precision="")):  # even without a precision
-            assert not GRADE.search(voice_label(shown)), voice_label(shown)
-            assert not GRADE.search(spoken_label(shown)), spoken_label(shown)
+        for shown in (info, dataclasses.replace(info, installed=False, reason="")):
+            said = GRADE.findall(voice_label(shown)) + GRADE.findall(spoken_label(shown))
+            assert said == ([info.quality] * 2 if info.engine == "kokoro" else []), said
 
 
-def test_only_kokoro_rows_carry_the_grade_and_only_as_the_order_s_input(real_voices):
-    graded = {info.key: info.quality for info in real_voices if info.engine == "kokoro"}
+def test_a_kokoro_voice_carries_its_published_grade_and_no_precision(real_voices):
+    kokoro_rows = [info for info in real_voices if info.engine == "kokoro"]
 
-    assert graded["kokoro:af_heart"] == "A"
-    assert all(
-        precision_of(info) != info.quality for info in real_voices if info.engine == "kokoro"
-    )
+    assert {info.key.partition(":")[2]: info.quality for info in kokoro_rows} == VOICE_GRADES
+    assert {info.precision for info in kokoro_rows} == {""}
+    assert all(precision_of(info) == f"Grade {info.quality}" for info in kokoro_rows)
+
+
+def test_no_voice_text_says_bf16_in_the_list_the_button_or_the_spoken_form(real_voices):
+    for info in (*real_voices, *ENGINE_FAKE_VOICES, *MACOS_FAKE_VOICES):
+        for shown in (info, dataclasses.replace(info, installed=False, reason="")):
+            texts = (voice_label(shown), spoken_label(shown), voice_phrase(shown))
+            assert not [t for t in texts if "bf16" in t.lower()], texts
+
+
+def test_no_app_string_says_bf16_except_the_model_repo_id():
+    root = Path(cloudyreader.__file__).parent
+    said = [
+        f"{path.relative_to(root)}:{node.lineno}"
+        for path in sorted(root.rglob("*.py"))
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8")))
+        if isinstance(node, ast.Constant)
+        and isinstance(node.value, str)
+        and "bf16" in node.value.lower()
+        and node.value != kokoro.KOKORO_REPO
+    ]
+
+    assert said == []
 
 
 @pytest.mark.parametrize(("info", "label"), LABELS, ids=[i.key for i, _ in LABELS])
@@ -300,13 +329,13 @@ def test_macos_labels_carry_the_tier_alone(macos_genders):
     assert LABEL.fullmatch(voice_label(samantha))
 
 
-def test_a_voice_without_precision_drops_the_field_and_never_shows_the_grade():
-    no_precision = dataclasses.replace(HEART, precision="")
-
-    assert voice_label(no_precision) == "Heart (US, female) · Kokoro"
-    assert precision_of(no_precision) == ""
+def test_a_voice_without_precision_shows_its_tier_and_a_grade_only_on_kokoro():
+    assert precision_of(HEART) == "Grade A"
+    assert precision_of(dataclasses.replace(HEART, quality=" b+ ")) == "Grade B+"  # as ranked
+    assert voice_label(dataclasses.replace(HEART, quality="")) == "Heart (US, female) · Kokoro"
     assert precision_of(dataclasses.replace(LESSAC, precision="")) == "medium"  # a tier is no grade
     assert precision_of(make("macos:X", "X", "en-US", "Enhanced")) == "Enhanced"
+    assert precision_of(make("piper:x", "x", "en-US", "A")) == ""  # Kokoro only has grades
 
 
 @pytest.mark.parametrize(
@@ -385,7 +414,7 @@ def test_unique_labels_add_the_id_after_a_clash_only():
 
     labels = unique_labels([one, two, HEART])
 
-    assert labels["kokoro:af_heart"] == "Heart (US, female) · Kokoro · bf16"
+    assert labels["kokoro:af_heart"] == "Heart (US, female) · Kokoro · Grade A"
     assert labels[one.key] == "A (US) · Piper · medium [xx_US-a-medium]"
     assert labels[two.key] == "A (US) · Piper · medium [yy_US-a-medium]"
     assert len(set(labels.values())) == 3
@@ -394,14 +423,14 @@ def test_unique_labels_add_the_id_after_a_clash_only():
 @pytest.mark.parametrize(
     ("info", "spoken"),
     [
-        (HEART, "Heart, American English, female. Kokoro, bf16."),
-        (EMMA, "Emma, British English, female. Kokoro, bf16."),
+        (HEART, "Heart, American English, female. Kokoro, Grade A."),
+        (EMMA, "Emma, British English, female. Kokoro, Grade B-."),
         (QWEN_RYAN, "Ryan, male. Qwen3-TTS, 8-bit."),
         (LIBRITTS, "Libritts, American English. Piper, high."),
         (BUILTIN, "Built-in. Chatterbox Turbo, 4-bit. Not available: not downloaded yet."),
         (
             MICHAEL,
-            "Michael, American English, male. Kokoro, bf16. Not available: not downloaded yet.",
+            "Michael, American English, male. Kokoro, Grade C+. Not available: not downloaded yet.",
         ),
     ],
 )

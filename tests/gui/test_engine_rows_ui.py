@@ -183,7 +183,7 @@ def test_every_reason_reads_in_the_row_and_the_whole_of_it_in_the_tooltip(picker
 def test_a_row_without_a_reason_says_it_is_not_downloaded_yet_and_has_no_tooltip(picker):
     item = row(picker, MICHAEL)
 
-    assert item.text() == "Michael (US, male) · Kokoro · bf16 — not downloaded yet"
+    assert item.text() == "Michael (US, male) · Kokoro · Grade C+ — not downloaded yet"
     assert item.toolTip() == ""
 
 

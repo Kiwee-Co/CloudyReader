@@ -158,7 +158,8 @@ def test_the_header_delegate_hands_the_row_to_the_menus_own_below_the_gap(picker
         QRect(0, 50 + tokens.SECTION_HEADER_GAP, 100, 30 - tokens.SECTION_HEADER_GAP),
     ]
     assert (
-        view.itemDelegateForIndex(row_index(picker, "Heart (US, female) · Kokoro · bf16")) is menu
+        view.itemDelegateForIndex(row_index(picker, "Heart (US, female) · Kokoro · Grade A"))
+        is menu
     )
 
 
@@ -187,7 +188,7 @@ def test_the_open_menu_draws_headers_in_the_secondary_color(qtbot, picker):
         first, header, voice = (
             drawn("Piper"),
             drawn("Kokoro"),
-            drawn("Heart (US, female) · Kokoro · bf16"),
+            drawn("Heart (US, female) · Kokoro · Grade A"),
         )
 
         assert header.height() == first.height() + tokens.SECTION_HEADER_GAP
