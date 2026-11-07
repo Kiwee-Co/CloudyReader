@@ -8,6 +8,7 @@ import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
+from PySide6.QtCore import QSettings
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
@@ -15,11 +16,12 @@ from cloudyreader.frozen import bundle_resources_dir
 from cloudyreader.gui.main_window import MainWindow
 from cloudyreader.gui.names import APP_NAME, ORG_NAME
 from cloudyreader.models import AudioPlayer, ReaderService
-from cloudyreader.start_question import pick_start_question
+from cloudyreader.start_question import pick_start_question, question_id
 
 log = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+START_QUESTION_KEY = "start_question"  # the question_id of the last launch's start question
 
 
 def _bare_name(name: object) -> str | None:
@@ -72,11 +74,13 @@ def run(
     player: AudioPlayer,
     argv: Sequence[str] = (),
     *,
-    start_question: Callable[[], str | None] = pick_start_question,
+    start_question: Callable[..., str | None] = pick_start_question,
+    settings: QSettings | None = None,
 ) -> int:
     """Show the window and block until it closes. Returns the process exit code.
 
-    `start_question` gives the text for the empty question box, or None for none.
+    `start_question(avoid=...)` gives the text for the empty question box, or None for none;
+    `avoid` is the id the last launch saved. `settings` defaults to the app's own store.
     """
     # No setStyle and no style sheet: the platform default is the native macOS look.
     app = QApplication.instance()
@@ -89,12 +93,14 @@ def run(
     if icon_path is not None:
         # On macOS this is also the Dock icon. An unreadable file yields a null icon: no change.
         app.setWindowIcon(QIcon(str(icon_path)))
-    window = MainWindow(service, player)
+    if settings is None:
+        settings = QSettings()  # after the names above: QSettings derives its location from them
+    window = MainWindow(service, player, settings=settings)
     # Only the app shows a start question: a test fixture from a checkout or a dev build. A
     # release carries no fixtures, so its box starts empty.
-    question = start_question()
-    if question is not None:
-        window.show_start_question(question)
+    question = start_question(avoid=settings.value(START_QUESTION_KEY))
+    if question is not None and window.show_start_question(question):
+        settings.setValue(START_QUESTION_KEY, question_id(question))  # saved once it shows
     bundle_icon = bundle_icon_path()
     if bundle_icon is not None:
         # Only for the About box: the Dock shows the bundle icon already, and a macOS title bar

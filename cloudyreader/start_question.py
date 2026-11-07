@@ -4,11 +4,13 @@ A source checkout reads its own tests/fixtures. A dev build (`make app`, START_Q
 a copy of the same `*.txt` files in Contents/Resources/start_questions; a release build carries
 none, so its box starts empty. Every well-formed question, one per (file, index) pair, is one
 candidate, and each is equally likely: a file of three questions weighs three times one of one.
-The box gets the question's own block (Question.raw), its ANSWER line included.
+The box gets the question's own block (Question.raw), its ANSWER line included. A launch leaves
+out the question the last launch showed, unless nothing else is left, so two in a row differ.
 """
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import random
 import re
@@ -73,11 +75,20 @@ def sample_questions(folder: Path) -> list[str]:
     return [block for path in paths if path.is_file() for block in _questions_in(path)]
 
 
-def pick_start_question(rng: random.Random | None = None, folder: Path | None = None) -> str | None:
+def question_id(text: str) -> str:
+    """The id a launch saves for the question it showed: the SHA-256 of the block, so two files
+    holding the same block share one id."""
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def pick_start_question(
+    rng: random.Random | None = None, folder: Path | None = None, avoid: object = None
+) -> str | None:
     """One candidate of sample_questions, each equally likely; None when there is none.
 
-    `folder` defaults to fixtures_dir(). A sample is a courtesy: a broken folder means an empty
-    box, never a failed start.
+    `avoid` is the question_id the last launch showed; a stale or non-string value leaves every
+    candidate in. `folder` defaults to fixtures_dir(). A sample is a courtesy: a broken folder
+    means an empty box, never a failed start.
     """
     try:
         folder = fixtures_dir() if folder is None else folder
@@ -87,4 +98,7 @@ def pick_start_question(rng: random.Random | None = None, folder: Path | None = 
         return None
     if not questions:
         return None
+    if isinstance(avoid, str):  # the last launch's question goes, unless it is all there is
+        fresh = [question for question in questions if question_id(question) != avoid]
+        questions = fresh or questions
     return (random.Random() if rng is None else rng).choice(questions)

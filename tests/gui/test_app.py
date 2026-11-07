@@ -1,9 +1,12 @@
 import gc
 import logging
 import os
+import random
 import shutil
 import subprocess
 import sys
+from functools import partial
+from itertools import pairwise
 from pathlib import Path
 
 import pytest
@@ -11,11 +14,16 @@ from PySide6.QtCore import QSettings, Qt, QTimer
 from PySide6.QtGui import QIcon, QImage
 from PySide6.QtWidgets import QApplication
 
-from cloudyreader.gui.app import dev_icon_path, run
+from cloudyreader.gui.app import START_QUESTION_KEY, dev_icon_path, run
 from cloudyreader.gui.fake_service import FakePlayer, FakeReaderService
 from cloudyreader.gui.names import APP_NAME, ORG_NAME
 from cloudyreader.models import Audio
-from cloudyreader.start_question import CHECKOUT_FIXTURES, sample_questions
+from cloudyreader.start_question import (
+    CHECKOUT_FIXTURES,
+    pick_start_question,
+    question_id,
+    sample_questions,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -303,8 +311,8 @@ def as_shown(questions: list[str]) -> set[str]:
 
 
 def test_run_shows_the_start_question_it_is_given(qapp):
-    assert box_at_start(qapp, start_question=lambda: SAMPLE) == SAMPLE
-    assert box_at_start(qapp, start_question=lambda: None) == ""
+    assert box_at_start(qapp, start_question=lambda avoid: SAMPLE) == SAMPLE
+    assert box_at_start(qapp, start_question=lambda avoid: None) == ""
 
 
 def test_run_shows_a_random_test_fixture_question_by_default(qapp):
@@ -347,3 +355,87 @@ def test_a_frozen_dev_build_shows_a_bundled_question_and_a_release_none(
     (questions / "01.txt").write_text(f"{SAMPLE}\n", encoding="utf-8")
 
     assert box_at_start(qapp) == SAMPLE
+
+
+# --- a different question at every launch ------------------------------------------------------
+
+OTHER = "TOSS-UP\n2) PHYSICS Short Answer What is the SI unit of force?\nANSWER: NEWTON"
+
+
+def prefs(tmp_path: Path) -> QSettings:
+    """A fresh handle on one settings file, as each launch opens the app's store anew."""
+    return QSettings(str(tmp_path / "prefs.ini"), QSettings.Format.IniFormat)
+
+
+def by_box(folder: Path) -> dict[str, str]:
+    """Each candidate, keyed by the text the box gives back for it."""
+    return {question.replace("\u00a0", " "): question for question in sample_questions(folder)}
+
+
+def test_the_next_launch_shows_another_question_and_saves_its_id(qapp, tmp_path):
+    candidates = by_box(CHECKOUT_FIXTURES)
+
+    first = box_at_start(qapp, settings=prefs(tmp_path))
+    assert prefs(tmp_path).value(START_QUESTION_KEY) == question_id(candidates[first])
+
+    second = box_at_start(qapp, settings=prefs(tmp_path))  # a second window, the same settings
+    assert second != first
+    assert prefs(tmp_path).value(START_QUESTION_KEY) == question_id(candidates[second])
+
+
+def test_ten_launches_in_a_row_never_repeat(qapp, tmp_path):
+    shown = [box_at_start(qapp, settings=prefs(tmp_path)) for _ in range(10)]
+
+    assert all(earlier != later for earlier, later in pairwise(shown)), shown
+
+
+def test_with_two_questions_the_launches_alternate(qapp, tmp_path):
+    # Two candidates make a repeat a coin flip: without the exclusion this seed repeats.
+    folder = tmp_path / "fixtures"
+    (folder / "questions").mkdir(parents=True)
+    (folder / "questions" / "01.txt").write_text(SAMPLE, encoding="utf-8")
+    (folder / "questions" / "02.txt").write_text(OTHER, encoding="utf-8")
+    pick = partial(pick_start_question, random.Random(4), folder)
+
+    shown = [box_at_start(qapp, start_question=pick, settings=prefs(tmp_path)) for _ in range(10)]
+
+    assert shown == [shown[0], shown[1]] * 5
+    assert {shown[0], shown[1]} == {SAMPLE, OTHER}
+
+
+@pytest.mark.parametrize("saved", [42, ["a", "b"], "not an id", "0" * 64, b"\xff\x00"])
+def test_a_wrong_typed_or_stale_saved_id_is_ignored(qapp, tmp_path, saved):
+    prefs(tmp_path).setValue(START_QUESTION_KEY, saved)
+
+    box = box_at_start(qapp, settings=prefs(tmp_path))
+
+    candidates = by_box(CHECKOUT_FIXTURES)
+    assert box in candidates
+    assert prefs(tmp_path).value(START_QUESTION_KEY) == question_id(candidates[box])
+
+
+def test_an_unreadable_settings_file_still_shows_a_question(qapp, tmp_path):
+    (tmp_path / "prefs.ini").write_bytes(bytes(range(256)) * 4)
+
+    assert box_at_start(qapp, settings=prefs(tmp_path)) in by_box(CHECKOUT_FIXTURES)
+
+
+def test_the_id_is_saved_only_once_the_question_shows(qapp, tmp_path):
+    asked = []
+
+    def giving(text):
+        def start_question(avoid=None):
+            asked.append(avoid)
+            return text
+
+        return start_question
+
+    box_at_start(qapp, start_question=giving(" \n"), settings=prefs(tmp_path))  # refused: blank
+    box_at_start(qapp, start_question=giving(None), settings=prefs(tmp_path))
+    assert prefs(tmp_path).value(START_QUESTION_KEY) is None
+
+    box_at_start(qapp, start_question=giving(SAMPLE), settings=prefs(tmp_path))
+    box_at_start(qapp, start_question=giving(OTHER), settings=prefs(tmp_path))
+
+    assert asked == [None, None, None, question_id(SAMPLE)]  # each launch avoids the last shown
+    assert prefs(tmp_path).value(START_QUESTION_KEY) == question_id(OTHER)

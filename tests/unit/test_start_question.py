@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import random
 import shutil
 import sys
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -18,6 +20,7 @@ from cloudyreader.start_question import (
     MAX_BYTES,
     fixtures_dir,
     pick_start_question,
+    question_id,
     sample_questions,
     well_formed,
 )
@@ -31,6 +34,14 @@ PAIR = (
     "TOSS-UP\n2) MATH Short Answer What is 2 + 2?\nANSWER: 4\n"
     "BONUS\n2) MATH Short Answer What is 3 + 3?\nANSWER: 6\n"
 )
+
+
+class Recorder(random.Random):
+    """A seeded random.Random that also records the candidates it was offered."""
+
+    def choice(self, seq):
+        self.offered = list(seq)
+        return super().choice(seq)
 
 
 class Chooser:
@@ -289,3 +300,61 @@ def test_the_bundled_copy_keeps_the_fixture_layout(tmp_path):
     shutil.copy(TOSSUP, copy)
 
     assert sample_questions(copy) == sample_questions(FIXTURES)
+
+
+# --- a different question at every launch --------------------------------------------------------
+
+
+def test_the_id_is_the_sha256_of_the_block():
+    assert question_id(GOOD) == hashlib.sha256(GOOD.encode("utf-8")).hexdigest()
+    assert question_id(GOOD) != question_id(GOOD.replace("force", "work"))
+
+
+def test_the_last_launchs_question_is_never_picked_again():
+    questions = sample_questions(FIXTURES)
+
+    for seed, last in enumerate(dict.fromkeys(questions)):  # each candidate as the last one
+        rng = Recorder(seed)
+
+        picked = pick_start_question(rng, FIXTURES, avoid=question_id(last))
+
+        assert rng.offered == [question for question in questions if question != last]
+        assert picked != last
+
+
+def test_the_other_questions_stay_equally_likely(tmp_path):
+    texts = [GOOD.replace("force", word).strip() for word in ("force", "work", "power", "charge")]
+    folder = fixture_folder(tmp_path, {f"questions/{i}.txt": text for i, text in enumerate(texts)})
+    rng = random.Random(2026)
+
+    counts = Counter(
+        pick_start_question(rng, folder, avoid=question_id(texts[0])) for _ in range(1200)
+    )
+
+    assert set(counts) == set(texts[1:])  # never the last one
+    assert all(340 <= count <= 460 for count in counts.values()), counts  # 400 each, 3.7 sigma
+
+
+def test_a_lone_question_repeats(tmp_path):
+    lone = fixture_folder(tmp_path / "lone", {"questions/01.txt": GOOD})
+    # Two files with one block: nothing else to show either.
+    twins = fixture_folder(
+        tmp_path / "twins", {"questions/01.txt": GOOD, "tossup_earth_science.txt": GOOD}
+    )
+
+    for folder in (lone, twins):
+        assert (
+            pick_start_question(random.Random(0), folder, avoid=question_id(GOOD.strip()))
+            == GOOD.strip()
+        )
+
+
+@pytest.mark.parametrize(
+    "avoid", [None, "", "0" * 64, "not an id", 42, b"bytes", ["a"], question_id("another block")]
+)
+def test_a_stale_or_wrong_typed_id_leaves_every_question_in(avoid):
+    chooser = Chooser(0)
+
+    pick_start_question(chooser, FIXTURES, avoid=avoid)  # type: ignore[arg-type]
+
+    assert chooser.offered == sample_questions(FIXTURES)
