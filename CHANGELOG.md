@@ -17,7 +17,7 @@ All notable changes to Cloudy Reader are recorded in this file, which follows Ke
 - `make release` runs `hdiutil verify` up to 3 times, and only an EAGAIN failure gets a retry. A failure prints the last 20 lines of the log.
 - A run from the checkout, or from a dev build made with `make app`, shows one random test-fixture question at start, never the one shown at the last start. A release build starts empty.
 - The window has a new look: the Spoken script sits under the question and fills as you add text.
-- The Voice menu shows the engine and the precision of every voice.
+- The Voice menu shows the engine and the quality of every voice: its precision, its tier, or Kokoro's published grade.
 - A new About panel, in the style of macOS, opens from the app menu.
 - The status bar draws its warning and error icons as lines.
 
