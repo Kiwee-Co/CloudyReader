@@ -9,15 +9,13 @@ import subprocess
 import sys
 import typing
 from pathlib import Path
-from types import MappingProxyType, SimpleNamespace
+from types import MappingProxyType
 
 import pytest
 
 from cloudyreader import engine_catalog, voice_meta
 from cloudyreader.engines import chatterbox_turbo, kokoro, qwen3_tts
-from cloudyreader.engines.chatterbox_turbo import ChatterboxTurboEngine
 from cloudyreader.engines.kokoro import VOICE_GRADES, KokoroEngine
-from cloudyreader.engines.qwen3_tts import Qwen3TtsEngine
 from cloudyreader.models import VoiceInfo
 from cloudyreader.voice_meta import (
     ENGINE_ORDER,
@@ -39,6 +37,7 @@ from cloudyreader.voice_meta import (
     voice_phrase,
 )
 from cloudyreader.voices import scan_installed
+from tests.voice_table import real_voices
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -240,22 +239,9 @@ def macos_genders(monkeypatch):
     monkeypatch.setattr(voice_meta, "ENGINE_GENDERS", table)
 
 
-@pytest.fixture
-def real_voices(tmp_path, monkeypatch) -> list[VoiceInfo]:
-    """Every engine's own rows, built by its own code and without loading a model."""
-    monkeypatch.setattr(kokoro, "_supported_platform", lambda: True)
-    rows = KokoroEngine(tmp_path / "kokoro", all_voices=True).voices()  # files missing: dimmed
-    folder = tmp_path / "piper"
-    folder.mkdir()
-    for vid in PINNED_PIPER:
-        (folder / f"{vid}.onnx").write_bytes(b"model")
-        config = {"language": {"code": vid.split("-")[0]}, "audio": {"quality": "medium"}}
-        (folder / f"{vid}.onnx.json").write_text(json.dumps(config), encoding="utf-8")
-    rows += scan_installed(folder)
-    engine = SimpleNamespace(model_dir=tmp_path / "models")
-    rows += [Qwen3TtsEngine._voice(engine, vid, installed=True) for vid in qwen3_tts.VOICES]
-    rows.append(ChatterboxTurboEngine._voice(engine, installed=True))
-    return rows
+@pytest.fixture(name="real_voices")
+def real_voices_fixture(tmp_path, monkeypatch) -> list[VoiceInfo]:
+    return real_voices(tmp_path, monkeypatch)
 
 
 def test_every_real_voice_has_a_precision_and_the_label_format(real_voices):
