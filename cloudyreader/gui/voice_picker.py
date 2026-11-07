@@ -226,9 +226,9 @@ class VoicePicker(QObject):
         self._sync_speaker(voice)
 
     def _sync_speaker(self, voice: VoiceInfo | None) -> None:
-        multi = voice is not None and voice.num_speakers > 1
-        if voice is not None and multi:
-            last = voice.num_speakers - 1
+        speakers = 1 if voice is None else voice.num_speakers
+        if speakers > 1:
+            last = speakers - 1
             self.speaker_spin.setRange(0, last)
             self.speaker_spin.setValue(0)
             self.speaker_spin.setToolTip(f"Speakers are numbered 0 to {last}.")
@@ -236,4 +236,4 @@ class VoicePicker(QObject):
                 f"Choose a speaker of this voice. 0 to {last}."
             )
         for widget in (self.speaker_label, self.speaker_spin):
-            widget.setVisible(multi)
+            widget.setVisible(speakers > 1)
