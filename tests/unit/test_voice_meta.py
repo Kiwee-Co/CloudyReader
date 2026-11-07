@@ -4,17 +4,40 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import re
 import subprocess
 import sys
 import typing
 from pathlib import Path
+from types import MappingProxyType, SimpleNamespace
 
 import pytest
 
-from cloudyreader.engines import kokoro
+from cloudyreader import engine_catalog, voice_meta
+from cloudyreader.engines import chatterbox_turbo, kokoro, qwen3_tts
+from cloudyreader.engines.chatterbox_turbo import ChatterboxTurboEngine
 from cloudyreader.engines.kokoro import VOICE_GRADES, KokoroEngine
+from cloudyreader.engines.qwen3_tts import Qwen3TtsEngine
 from cloudyreader.models import VoiceInfo
-from cloudyreader.voice_meta import PIPER_GENDERS, Gender, VoiceProfile, profile_of
+from cloudyreader.voice_meta import (
+    ENGINE_ORDER,
+    ENGINE_TITLES,
+    NOT_DOWNLOADED,
+    PIPER_GENDERS,
+    ROW_REASON_MAX,
+    Gender,
+    VoiceProfile,
+    accent_of,
+    display_name,
+    engine_title,
+    precision_of,
+    profile_of,
+    row_reason,
+    spoken_label,
+    unique_labels,
+    voice_label,
+    voice_phrase,
+)
 from cloudyreader.voices import scan_installed
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -150,6 +173,277 @@ def test_unknown_or_non_english_voices_have_no_profile(info):
 )
 def test_odd_input_gives_none_instead_of_raising(odd):
     assert profile_of(odd) is None
+
+
+# --- Voice menu text: one label per voice --------------------------------------------------------
+
+LABEL = re.compile(
+    r"(?P<name>[^()·—]+?)(?: \((?P<detail>[^()]+)\))?"
+    r" · (?P<engine>Kokoro|Chatterbox Turbo|Qwen3-TTS|Piper|macOS)"
+    r" · (?P<precision>[^·—]+?)(?: — (?P<reason>.+))?"
+)
+GRADE = re.compile(r"(?<!\w)[A-DF][+-]?(?!\w)")  # a standalone grade letter: A, C+, F-
+
+
+def make(
+    key: str,
+    name: str,
+    language: str,
+    quality: str,
+    precision: str = "",
+    *,
+    installed: bool = True,
+    reason: str = "",
+) -> VoiceInfo:
+    engine = key.partition(":")[0]
+    return VoiceInfo(key, engine, name, language, quality, 1, installed, None, reason, precision)
+
+
+HEART = make("kokoro:af_heart", "Heart (female)", "en-US", "A", "bf16")
+EMMA = make("kokoro:bf_emma", "Emma (female)", "en-GB", "B-", "bf16")
+MICHAEL = make("kokoro:am_michael", "Michael (male)", "en-US", "C+", "bf16", installed=False)
+BUILTIN = make(
+    "chatterbox_turbo:builtin",
+    "Chatterbox Turbo (built-in)",
+    "en",
+    "4-bit",
+    "4-bit",
+    installed=False,
+    reason="not downloaded yet",
+)
+QWEN_RYAN = make("qwen3_tts:ryan", "Ryan (male)", "en", "8-bit", "8-bit")
+AIDEN = make("qwen3_tts:aiden", "Aiden (male)", "en-US", "8-bit", "8-bit")
+LESSAC = make("piper:en_US-lessac-medium", "lessac", "en-US", "medium", "medium")
+PIPER_RYAN = make("piper:en_US-ryan-medium", "ryan", "en-US", "medium", "medium")
+JENNY = make("piper:en_GB-jenny_dioco-medium", "jenny_dioco", "en-GB", "medium", "medium")
+LIBRITTS = make("piper:en_US-libritts-high", "libritts", "en-US", "high", "high")
+
+LABELS = [
+    (HEART, "Heart (US, female) · Kokoro · bf16"),
+    (EMMA, "Emma (UK, female) · Kokoro · bf16"),
+    (MICHAEL, "Michael (US, male) · Kokoro · bf16 — not downloaded yet"),
+    (BUILTIN, "Built-in · Chatterbox Turbo · 4-bit — not downloaded yet"),
+    (QWEN_RYAN, "Ryan (male) · Qwen3-TTS · 8-bit"),  # language "en": no region, so no accent
+    (AIDEN, "Aiden (US, male) · Qwen3-TTS · 8-bit"),
+    (LESSAC, "Lessac (US, female) · Piper · medium"),
+    (PIPER_RYAN, "Ryan (US, male) · Piper · medium"),
+    (JENNY, "Jenny Dioco (UK, female) · Piper · medium"),
+    (LIBRITTS, "Libritts (US) · Piper · high"),  # no gender table row: none shown
+]
+
+
+@pytest.fixture
+def macos_genders(monkeypatch):
+    """The macOS gender rows belong to the mac-tts lane; the labels need only the lookup."""
+    rows = MappingProxyType({"samantha": "female", "daniel": "male"})
+    table = MappingProxyType({**voice_meta.ENGINE_GENDERS, "macos": rows})
+    monkeypatch.setattr(voice_meta, "ENGINE_GENDERS", table)
+
+
+@pytest.fixture
+def real_voices(tmp_path, monkeypatch) -> list[VoiceInfo]:
+    """Every engine's own rows, built by its own code and without loading a model."""
+    monkeypatch.setattr(kokoro, "_supported_platform", lambda: True)
+    rows = KokoroEngine(tmp_path / "kokoro", all_voices=True).voices()  # files missing: dimmed
+    folder = tmp_path / "piper"
+    folder.mkdir()
+    for vid in PINNED_PIPER:
+        (folder / f"{vid}.onnx").write_bytes(b"model")
+        config = {"language": {"code": vid.split("-")[0]}, "audio": {"quality": "medium"}}
+        (folder / f"{vid}.onnx.json").write_text(json.dumps(config), encoding="utf-8")
+    rows += scan_installed(folder)
+    engine = SimpleNamespace(model_dir=tmp_path / "models")
+    rows += [Qwen3TtsEngine._voice(engine, vid, installed=True) for vid in qwen3_tts.VOICES]
+    rows.append(ChatterboxTurboEngine._voice(engine, installed=True))
+    return rows
+
+
+def test_every_real_voice_has_a_precision_and_the_label_format(real_voices):
+    assert len(real_voices) == 28 + 5 + 2 + 1
+    for info in real_voices:
+        for shown in (info, dataclasses.replace(info, installed=False, reason="")):
+            parts = LABEL.fullmatch(voice_label(shown))
+            assert parts, voice_label(shown)
+            assert parts["engine"] == engine_title(info.engine)
+            assert parts["precision"] == info.precision != ""
+
+
+def test_labels_are_unique_over_every_engines_real_voices(real_voices):
+    labels = [voice_label(info) for info in real_voices]
+
+    assert len(set(labels)) == len(labels)
+    assert list(unique_labels(real_voices).values()) == labels  # no clash: no id appended
+
+
+def test_no_visible_label_holds_a_grade_letter(real_voices):
+    for info in real_voices:
+        for shown in (info, dataclasses.replace(info, precision="")):  # even without a precision
+            assert not GRADE.search(voice_label(shown)), voice_label(shown)
+            assert not GRADE.search(spoken_label(shown)), spoken_label(shown)
+
+
+def test_only_kokoro_rows_carry_the_grade_and_only_as_the_order_s_input(real_voices):
+    graded = {info.key: info.quality for info in real_voices if info.engine == "kokoro"}
+
+    assert graded["kokoro:af_heart"] == "A"
+    assert all(
+        precision_of(info) != info.quality for info in real_voices if info.engine == "kokoro"
+    )
+
+
+@pytest.mark.parametrize(("info", "label"), LABELS, ids=[i.key for i, _ in LABELS])
+def test_label_examples(info, label):
+    assert voice_label(info) == label
+
+
+def test_macos_labels_carry_the_tier_alone(macos_genders):
+    samantha = make("macos:samantha", "Samantha", "en-US", "Enhanced", "Enhanced")
+    daniel = make("macos:daniel", "Daniel", "en-GB", "Premium", "Premium")
+    fiona = make("macos:fiona", "Fiona", "en-scotland", "Standard", "Standard")
+    zed = make("macos:zed", "Zed", "en", "Standard", "Standard")
+
+    assert voice_label(samantha) == "Samantha (US, female) · macOS · Enhanced"
+    assert voice_label(daniel) == "Daniel (UK, male) · macOS · Premium"
+    assert voice_label(fiona) == "Fiona (Scotland) · macOS · Standard"
+    assert voice_label(zed) == "Zed · macOS · Standard"
+    assert LABEL.fullmatch(voice_label(samantha))
+
+
+def test_a_voice_without_precision_drops_the_field_and_never_shows_the_grade():
+    no_precision = dataclasses.replace(HEART, precision="")
+
+    assert voice_label(no_precision) == "Heart (US, female) · Kokoro"
+    assert precision_of(no_precision) == ""
+    assert precision_of(dataclasses.replace(LESSAC, precision="")) == "medium"  # a tier is no grade
+    assert precision_of(make("macos:x", "X", "en-US", "Enhanced")) == "Enhanced"
+
+
+@pytest.mark.parametrize(
+    ("language", "expected"),
+    [
+        ("en-US", ("US", "American")),
+        ("en_US", ("US", "American")),
+        ("en-GB", ("UK", "British")),
+        ("en_GB", ("UK", "British")),
+        ("en-AU", ("AU", "Australian")),
+        ("en-CA", ("CA", "Canadian")),
+        ("en-IE", ("IE", "Irish")),
+        ("en-IN", ("IN", "Indian")),
+        ("en-NZ", ("NZ", "New Zealand")),
+        ("en-ZA", ("ZA", "South African")),
+        ("en-scotland", ("Scotland", "Scottish")),
+        ("en-SG", ("SG", "SG")),  # a region nobody listed shows its own code
+        ("de-DE", ("DE", "DE")),
+        ("en", None),  # a bare language is no accent: never a guess
+        ("", None),
+        ("english", None),
+    ],
+)
+def test_accent_of(language, expected):
+    assert accent_of(language) == expected
+
+
+@pytest.mark.parametrize(
+    ("info", "name"),
+    [
+        (HEART, "Heart"),
+        (QWEN_RYAN, "Ryan"),
+        (dataclasses.replace(AIDEN, name="Aiden (Male)"), "Aiden"),
+        (LESSAC, "Lessac"),
+        (JENNY, "Jenny Dioco"),
+        (dataclasses.replace(LIBRITTS, name="LibriTTS"), "LibriTTS"),  # mixed case stays
+        (BUILTIN, "Built-in"),  # the engine's only voice, named after the engine
+        (dataclasses.replace(BUILTIN, name="Chatterbox Turbo"), "Chatterbox Turbo"),
+        (dataclasses.replace(LESSAC, name="Piperade"), "Piperade"),  # not the engine's echo
+        (dataclasses.replace(LESSAC, name="piperade"), "Piperade"),
+    ],
+)
+def test_display_name(info, name):
+    assert display_name(info) == name
+
+
+@pytest.mark.parametrize(
+    ("reason", "shown"),
+    [
+        ("", NOT_DOWNLOADED),
+        ("not downloaded yet", "not downloaded yet"),
+        ("x" * ROW_REASON_MAX, "x" * ROW_REASON_MAX),
+        ("offline: not downloaded", "offline: not downloaded"),
+        ("not enough disk space: needs 2.1 GB, 1.5 GB free", "not enough disk space"),
+        ("damaged: SHA-256 mismatch for model.safetensors", "damaged"),
+        ("a" * 40, "a" * (ROW_REASON_MAX - 1) + "…"),
+        ("b" * 40 + ": detail", "b" * (ROW_REASON_MAX - 1) + "…"),
+    ],
+)
+def test_row_reason(reason, shown):
+    assert row_reason(dataclasses.replace(MICHAEL, reason=reason)) == shown
+    assert len(shown) <= ROW_REASON_MAX
+
+
+def test_a_dimmed_label_ends_with_its_short_reason():
+    info = dataclasses.replace(BUILTIN, reason="not enough disk space: needs 2.1 GB, 1.5 GB free")
+
+    assert voice_label(info).endswith(" — not enough disk space")
+
+
+def test_unique_labels_add_the_id_after_a_clash_only():
+    one = make("piper:xx_US-a-medium", "a", "en-US", "medium", "medium")
+    two = make(
+        "piper:yy_US-a-medium", "a", "en-US", "medium", "medium"
+    )  # same label, no gender row
+
+    labels = unique_labels([one, two, HEART])
+
+    assert labels["kokoro:af_heart"] == "Heart (US, female) · Kokoro · bf16"
+    assert labels[one.key] == "A (US) · Piper · medium [xx_US-a-medium]"
+    assert labels[two.key] == "A (US) · Piper · medium [yy_US-a-medium]"
+    assert len(set(labels.values())) == 3
+
+
+@pytest.mark.parametrize(
+    ("info", "spoken"),
+    [
+        (HEART, "Heart, American English, female. Kokoro, bf16."),
+        (EMMA, "Emma, British English, female. Kokoro, bf16."),
+        (QWEN_RYAN, "Ryan, male. Qwen3-TTS, 8-bit."),
+        (LIBRITTS, "Libritts, American English. Piper, high."),
+        (BUILTIN, "Built-in. Chatterbox Turbo, 4-bit. Not available: not downloaded yet."),
+        (
+            MICHAEL,
+            "Michael, American English, male. Kokoro, bf16. Not available: not downloaded yet.",
+        ),
+    ],
+)
+def test_spoken_label(info, spoken):
+    assert spoken_label(info) == spoken
+
+
+@pytest.mark.parametrize(
+    ("info", "phrase"),
+    [
+        (HEART, "Heart (female, Kokoro)"),
+        (QWEN_RYAN, "Ryan (male, Qwen3-TTS)"),
+        (PIPER_RYAN, "Ryan (male, Piper)"),  # two Ryans: the engine tells them apart
+        (LIBRITTS, "Libritts (Piper)"),
+        (BUILTIN, "Chatterbox Turbo"),
+    ],
+)
+def test_voice_phrase_is_name_gender_and_engine(info, phrase):
+    assert voice_phrase(info) == phrase
+
+
+def test_engine_titles_agree_with_the_engine_catalog_and_name_every_engine():
+    for engine, title in engine_catalog.TITLES.items():
+        assert ENGINE_TITLES.get(engine, title) == title  # "voices" is Piper's lock group
+    assert ENGINE_TITLES["piper"] == "Piper"
+    assert ENGINE_TITLES["macos"] == "macOS"
+    assert set(ENGINE_ORDER) <= set(ENGINE_TITLES)
+    assert engine_title("espeak") == "Espeak"
+
+
+def test_the_engine_modules_agree_with_the_table_they_are_labelled_from():
+    assert chatterbox_turbo.TITLE == ENGINE_TITLES["chatterbox_turbo"]
+    assert qwen3_tts.TITLE == ENGINE_TITLES["qwen3_tts"]
 
 
 def test_importing_voice_meta_loads_only_the_stdlib():

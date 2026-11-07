@@ -79,6 +79,36 @@ def kokoro_rows(tmp_path, monkeypatch) -> list[VoiceInfo]:
     return KokoroEngine(tmp_path, all_voices=True).voices()
 
 
+# --- the macOS tier and the precision field -------------------------------------------------------
+
+MAC_PREMIUM = row("macos:daniel", "Premium", name="Daniel", language="en-GB")
+MAC_ENHANCED = row("macos:samantha", "Enhanced", name="Samantha")
+MAC_STANDARD = row("macos:alex", "Standard", name="Alex")
+
+
+def test_macos_tiers_rank_premium_then_enhanced_then_standard():
+    scores = [grade_score(v) for v in (MAC_PREMIUM, MAC_ENHANCED, MAC_STANDARD)]
+
+    assert scores == sorted(scores, reverse=True) and len(set(scores)) == 3
+    assert ordered([MAC_STANDARD, MAC_PREMIUM, MAC_ENHANCED]) == keys(
+        [MAC_PREMIUM, MAC_ENHANCED, MAC_STANDARD]
+    )
+
+
+def test_macos_voices_list_after_every_other_engine():
+    voices = [MAC_PREMIUM, LESSAC, HEART, MAC_STANDARD, RYAN]
+
+    assert ordered(voices) == keys([HEART, RYAN, LESSAC, MAC_PREMIUM, MAC_STANDARD])
+
+
+@pytest.mark.parametrize("voice", [HEART, LESSAC, PIPER_HIGH, MAC_ENHANCED, RYAN])
+def test_the_rank_reads_the_tier_never_the_precision(voice):
+    labelled = dataclasses.replace(voice, precision="bf16 or whatever the label says")
+
+    assert grade_score(labelled) == grade_score(voice)
+    assert voice_sort_key(labelled) == voice_sort_key(voice)
+
+
 # --- the engine order ----------------------------------------------------------------------------
 
 
