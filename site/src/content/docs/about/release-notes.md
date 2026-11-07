@@ -9,7 +9,7 @@ This page records what each Cloudy Reader release changed, with its requirements
 
 ## Version 0.0.3
 
-Released November 6, 2026. Version 0.0.3 fixes how Qwen3-TTS and Chatterbox Turbo say the choice letters.
+Released November 6, 2026. Version 0.0.3 adds the macOS voices and a new look, removes the Paste and Speak Clipboard buttons, and fixes how the choice letters W, X, Y, and Z are spoken.
 
 ### Requirements for 0.0.3
 
@@ -21,7 +21,20 @@ Get the files from [Download Cloudy Reader](/download/). Neither file holds voic
 
 ### What is in 0.0.3
 
-- The choice letters W, X, Y, and Z are now said by name on Qwen3-TTS (Ryan, Aiden) and Chatterbox Turbo, not read as words like "way" or "see". Each letter plays a checked recording made with the same voice.
+- macOS voices: the **Voice** menu has a new **macOS** section with the English voices installed on your Mac, without the novelty voices. They need no download. See [Voices and rotation modes](/manual/reference/voices/).
+- Start voice: the app picks a macOS voice by itself only when no other voice is installed.
+- Letters on macOS voices: the macOS voices say the choice letters W, X, Y, and Z by name. Enhanced and Premium voices were not checked.
+- New look: the window has more space around the controls. **Voice** and **Rotation** share one width. The buttons are **Repeat**, **Stop**, and **Speak**, and **Speak** is the default. See [Main window](/manual/reference/window/).
+- Spoken script: the **Spoken script** sits under the question and is open by default. It fills as you add text, a moment after each change, and it needs no network.
+- Voice menu: every voice shows its name, its accent and gender where known, its engine, and its quality, such as `8-bit` or `Enhanced`. A Kokoro voice shows its published grade, such as `Grade A`. See [Voice labels](/manual/reference/voices/#voice-labels).
+- About panel: a new About panel opens from the app menu. It has no buttons. Escape or Command-W closes it.
+- Status bar: the status bar draws its warning and error icons as lines. While the voices download, "No voice is installed." is information, not a warning.
+- Build check: a release build now stops when the app would carry the home folder, user name, or build folder of the machine that built it.
+- Paste and Speak Clipboard: the **Paste** and **Speak Clipboard** buttons are gone, with the **Speak Clipboard** command (Shift-Command-V). Command-V in the question box still pastes.
+- Clipboard: the app no longer reads the clipboard by itself.
+- Choice letters: the choice letters W, X, Y, and Z are now said by name on Qwen3-TTS (Ryan, Aiden) and Chatterbox Turbo, not read as words like "way" or "see". Each letter plays a checked recording made with the same voice.
+- Voices fixed: Qwen3-TTS has Ryan and Aiden, and Chatterbox Turbo has its built-in voice. The Piper and Kokoro voices said the letters correctly before and are unchanged.
+- Downloads: the first launch downloads the same files as in 0.0.2, about 3.05 GB in all.
 
 ### Known limits in 0.0.3
 
@@ -30,7 +43,7 @@ These limits apply to version 0.0.3:
 - The app runs on a Mac with Apple silicon only. There is no build for an Intel-based Mac.
 - The app is [signed ad hoc](/manual/reference/glossary/#ad-hoc-signature) and is not [notarized](/manual/reference/glossary/#notarized), so the first launch needs a one-time approval. See [Open the app the first time](/manual/tasks/first-open/).
 - The first launch downloads the voices and both engines. See [Manage voices and storage](/manual/tasks/voices-and-storage/) for the size.
-- On a fresh install, a failed first download shows no warning, because the status bar already holds "No voice is installed." The next start tries the missing files again. See [No voice is installed](/manual/troubleshooting/#no-voice-is-installed).
+- On a Mac with no English macOS voice, a failed first download leaves no voice, and **Speak** stays off. The next start tries the missing files again. See [No voice is installed](/manual/troubleshooting/#no-voice-is-installed).
 - The genders of the five Piper voices are a guess that nobody has checked by ear, and **Men only** and **Women only** use them.
 - Some voices add their own silence around each line, so some pauses run longer than others. See [Why pauses differ between voices](/manual/concepts/voice-engines/#why-pauses-differ-between-voices).
 - A failed file starts again from the beginning at the next start. A retry in the same run resumes a partial file.
