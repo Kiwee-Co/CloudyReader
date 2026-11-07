@@ -308,7 +308,7 @@ The sync step needs the network and the public package index. `VERSION` defaults
 
 `make release` runs three commands in order:
 
-1. `scripts/build_app.sh release-preflight` makes four checks. `VERSION` must look like `1.2.3`. The `cloudyreader` package metadata in `.venv` must say `VERSION`, because PyInstaller bundles that metadata and the About box and `--version` read it. A metadata mismatch stops the build and names the sync step. The Python behind `.venv` must live outside your home folder, because PyInstaller bundles the `sysconfig` data of that Python and the data names its install path. `hdiutil` and `diskutil` must be on the `PATH`, because the disk image needs them.
+1. `scripts/build_app.sh release-preflight` makes four checks. `VERSION` must look like `1.2.3`. The `cloudyreader` package metadata in `.venv` must say `VERSION`, because PyInstaller bundles that metadata and the About panel and `--version` read it. A metadata mismatch stops the build and names the sync step. The Python behind `.venv` must live outside your home folder, because PyInstaller bundles the `sysconfig` data of that Python and the data names its install path. `hdiutil` and `diskutil` must be on the `PATH`, because the disk image needs them.
 2. `make app` with `BUNDLE_VOICES=0 OFFLINE=1 ICON=cloud-atom KOKORO=1 START_QUESTIONS=0` and the `ENGINES` value of the recipe builds the lean app with every check from [Build the app](#build-the-app).
 3. `scripts/build_app.sh release` zips the app, builds the disk image, and checks both.
 
