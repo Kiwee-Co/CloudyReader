@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="640" viewBox="0 0 680 640" role="img" aria-labelledby="title desc" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif">
 <title id="title">Cloudy Reader main window</title>
-<desc id="desc">The main window in Light Mode: a pasted toss-up question, the voice lessac, the Rotation row set to No rotation, the spoken script shown, and the status Playing 19.3 s.</desc>
+<desc id="desc">The main window in Light Mode: a pasted toss-up question, the voice Lessac, the Rotation row set to No rotation, the spoken script shown, and the status Playing 19.3 s.</desc>
 <defs><clipPath id="clip1"><rect x="0" y="0" width="680" height="640"/></clipPath><clipPath id="clip2"><rect x="29" y="29" width="622" height="208"/></clipPath><clipPath id="clip3"><rect x="29" y="295" width="622" height="103"/></clipPath><linearGradient id="grad4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2690ff"/><stop offset="1" stop-color="#047dff"/></linearGradient><linearGradient id="grad5" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2690ff"/><stop offset="1" stop-color="#047dff"/></linearGradient></defs>
 <rect x="0" y="0" width="680" height="640" fill="#ececec"/>
 <g clip-path="url(#clip1)">

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="640" viewBox="0 0 680 640" role="img" aria-labelledby="title desc" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif">
 <title id="title">Voice menu</title>
-<desc id="desc">The Voice menu open in Light Mode: the end of the Kokoro list, best first, names with their gender, one voice dimmed because it is not installed, then the Chatterbox Turbo, Qwen3-TTS, Piper, and macOS voices, each under its heading, and a scroll arrow where the list goes on.</desc>
+<desc id="desc">The Voice menu open in Light Mode: the end of the Kokoro list, best first, each row with its accent, gender, engine, and grade, one voice dimmed because it is not installed, then the Chatterbox Turbo, Qwen3-TTS, Piper, and macOS voices, each under its heading, and a scroll arrow where the list goes on.</desc>
 <defs><clipPath id="clip1"><rect x="0" y="0" width="680" height="640"/></clipPath><clipPath id="clip2"><rect x="29" y="29" width="622" height="208"/></clipPath><clipPath id="clip3"><rect x="29" y="295" width="622" height="103"/></clipPath><linearGradient id="grad4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2690ff"/><stop offset="1" stop-color="#047dff"/></linearGradient><linearGradient id="grad5" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2690ff"/><stop offset="1" stop-color="#047dff"/></linearGradient><filter id="blur6" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9"/></filter></defs>
 <rect x="0" y="0" width="680" height="640" fill="#ececec"/>
 <g clip-path="url(#clip1)">
@@ -46,16 +46,16 @@
 <rect x="583" y="560" width="73" height="20" rx="5.5" fill="#077eff"/>
 <text x="619.5" y="574.91" text-anchor="middle" font-size="13" fill="#ffffff" textLength="37.06" lengthAdjust="spacingAndGlyphs">Speak</text>
 </g>
-<rect x="76.5" y="10" width="371.06" height="565.86" rx="8" filter="url(#blur6)" fill="#000000" fill-opacity="0.3"/>
-<rect x="76.5" y="4" width="371.06" height="565.86" rx="8" stroke-width="0.5" fill="#f6f6f6" stroke="#000000" stroke-opacity="0.14"/>
-<text x="97.5" y="56.34" font-size="13" textLength="177.7" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Eric (US, male) · Kokoro · bf16</text>
-<text x="97.5" y="78.34" font-size="13" textLength="210.89" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Jessica (US, female) · Kokoro · bf16</text>
-<text x="97.5" y="100.34" font-size="13" textLength="183.61" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Liam (US, male) · Kokoro · bf16</text>
-<text x="97.5" y="122.34" font-size="13" textLength="186.91" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Lily (UK, female) · Kokoro · bf16</text>
-<text x="97.5" y="144.34" font-size="13" textLength="186.02" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Onyx (US, male) · Kokoro · bf16</text>
-<text x="97.5" y="166.34" font-size="13" textLength="196.42" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">River (US, female) · Kokoro · bf16</text>
-<text x="97.5" y="188.34" font-size="13" textLength="189.19" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Santa (US, male) · Kokoro · bf16</text>
-<text x="97.5" y="210.34" font-size="13" textLength="326.06" lengthAdjust="spacingAndGlyphs" fill="#5e5e63">Adam (US, male) · Kokoro · bf16 — not downloaded yet</text>
+<rect x="76.5" y="10" width="399.84" height="565.86" rx="8" filter="url(#blur6)" fill="#000000" fill-opacity="0.3"/>
+<rect x="76.5" y="4" width="399.84" height="565.86" rx="8" stroke-width="0.5" fill="#f6f6f6" stroke="#000000" stroke-opacity="0.14"/>
+<text x="97.5" y="56.34" font-size="13" textLength="200.45" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Eric (US, male) · Kokoro · Grade D</text>
+<text x="97.5" y="78.34" font-size="13" textLength="233.64" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Jessica (US, female) · Kokoro · Grade D</text>
+<text x="97.5" y="100.34" font-size="13" textLength="206.36" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Liam (US, male) · Kokoro · Grade D</text>
+<text x="97.5" y="122.34" font-size="13" textLength="209.66" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Lily (UK, female) · Kokoro · Grade D</text>
+<text x="97.5" y="144.34" font-size="13" textLength="208.77" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Onyx (US, male) · Kokoro · Grade D</text>
+<text x="97.5" y="166.34" font-size="13" textLength="219.17" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">River (US, female) · Kokoro · Grade D</text>
+<text x="97.5" y="188.34" font-size="13" textLength="217.91" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Santa (US, male) · Kokoro · Grade D-</text>
+<text x="97.5" y="210.34" font-size="13" textLength="354.84" lengthAdjust="spacingAndGlyphs" fill="#5e5e63">Adam (US, male) · Kokoro · Grade F+ — not downloaded yet</text>
 <text x="97.5" y="237.89" font-size="11" font-weight="600" fill="#5e5e63">Chatterbox Turbo</text>
 <text x="97.5" y="258.95" font-size="13" textLength="197.91" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Built-in · Chatterbox Turbo · 4-bit</text>
 <text x="97.5" y="286.5" font-size="11" font-weight="600" fill="#5e5e63">Qwen3-TTS</text>
@@ -72,5 +72,5 @@
 <text x="97.5" y="514.77" font-size="13" textLength="220.52" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Daniel (UK, male) · macOS · Premium</text>
 <text x="97.5" y="536.77" font-size="13" textLength="260.55" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Samantha (US, female) · macOS · Enhanced</text>
 <text x="97.5" y="558.77" font-size="13" textLength="175" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Alex (US) · macOS · Standard</text>
-<path d="M257.03 17.5l5 -5l5 5z" fill="#000000" fill-opacity="0.85"/>
+<path d="M271.42 17.5l5 -5l5 5z" fill="#000000" fill-opacity="0.85"/>
 </svg>

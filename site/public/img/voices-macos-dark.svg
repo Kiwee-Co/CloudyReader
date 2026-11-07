@@ -50,12 +50,12 @@
 <rect x="583" y="560" width="73" height="20" rx="5.5" fill="#1560d2"/>
 <text x="619.5" y="574.91" text-anchor="middle" font-size="13" fill="#ffffff" textLength="37.06" lengthAdjust="spacingAndGlyphs">Speak</text>
 </g>
-<rect x="76.5" y="10" width="371.06" height="473.25" rx="8" filter="url(#blur6)" fill="#000000" fill-opacity="0.55"/>
-<rect x="76.5" y="4" width="371.06" height="473.25" rx="8" stroke-width="0.5" fill="#2b2b2b" stroke="#ffffff" stroke-opacity="0.16"/>
-<text x="97.5" y="51.74" font-size="13" textLength="186.02" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Onyx (US, male) · Kokoro · bf16</text>
-<text x="97.5" y="73.74" font-size="13" textLength="196.42" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">River (US, female) · Kokoro · bf16</text>
-<text x="97.5" y="95.74" font-size="13" textLength="189.19" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Santa (US, male) · Kokoro · bf16</text>
-<text x="97.5" y="117.74" font-size="13" textLength="326.06" lengthAdjust="spacingAndGlyphs" fill="#aeaeb2">Adam (US, male) · Kokoro · bf16 — not downloaded yet</text>
+<rect x="76.5" y="10" width="399.84" height="473.25" rx="8" filter="url(#blur6)" fill="#000000" fill-opacity="0.55"/>
+<rect x="76.5" y="4" width="399.84" height="473.25" rx="8" stroke-width="0.5" fill="#2b2b2b" stroke="#ffffff" stroke-opacity="0.16"/>
+<text x="97.5" y="51.74" font-size="13" textLength="208.77" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Onyx (US, male) · Kokoro · Grade D</text>
+<text x="97.5" y="73.74" font-size="13" textLength="219.17" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">River (US, female) · Kokoro · Grade D</text>
+<text x="97.5" y="95.74" font-size="13" textLength="217.91" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Santa (US, male) · Kokoro · Grade D-</text>
+<text x="97.5" y="117.74" font-size="13" textLength="354.84" lengthAdjust="spacingAndGlyphs" fill="#aeaeb2">Adam (US, male) · Kokoro · Grade F+ — not downloaded yet</text>
 <text x="97.5" y="145.28" font-size="11" font-weight="600" fill="#aeaeb2">Chatterbox Turbo</text>
 <text x="97.5" y="166.34" font-size="13" textLength="197.91" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Built-in · Chatterbox Turbo · 4-bit</text>
 <text x="97.5" y="193.89" font-size="11" font-weight="600" fill="#aeaeb2">Qwen3-TTS</text>
@@ -69,9 +69,9 @@
 <text x="97.5" y="373.56" font-size="13" textLength="195.55" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Ryan (US, male) · Piper · medium</text>
 <text x="97.5" y="401.1" font-size="11" font-weight="600" fill="#aeaeb2">macOS</text>
 <text x="97.5" y="422.16" font-size="13" textLength="220.52" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Daniel (UK, male) · macOS · Premium</text>
-<rect x="81.5" y="428.25" width="361.06" height="22" rx="5" fill="#1c6cdc"/>
+<rect x="81.5" y="428.25" width="389.84" height="22" rx="5" fill="#1c6cdc"/>
 <path d="M84 439.25l3 3l6 -7" fill="none" stroke-width="1.6" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round"/>
 <text x="97.5" y="444.16" font-size="13" textLength="260.55" lengthAdjust="spacingAndGlyphs" fill="#ffffff">Samantha (US, female) · macOS · Enhanced</text>
 <text x="97.5" y="466.16" font-size="13" textLength="175" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Alex (US) · macOS · Standard</text>
-<path d="M257.03 17.5l5 -5l5 5z" fill="#ffffff" fill-opacity="0.85"/>
+<path d="M271.42 17.5l5 -5l5 5z" fill="#ffffff" fill-opacity="0.85"/>
 </svg>
