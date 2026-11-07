@@ -113,11 +113,11 @@ def test_the_rank_reads_the_tier_never_the_precision(voice):
 
 
 def test_engine_order_is_the_owners_and_names_every_engine():
-    assert ENGINE_ORDER == ("kokoro", "chatterbox_turbo", "qwen3_tts", "piper")
+    assert ENGINE_ORDER == ("kokoro", "chatterbox_turbo", "qwen3_tts", "piper", "macos")
     # Drift guard: an engine added to VoiceInfo.engine needs a place in the order.
     engines = typing.get_args(typing.get_type_hints(VoiceInfo)["engine"])
     assert sorted(ENGINE_ORDER) == sorted(engines)
-    assert [engine_rank(engine) for engine in ENGINE_ORDER] == [0, 1, 2, 3]
+    assert [engine_rank(engine) for engine in ENGINE_ORDER] == [0, 1, 2, 3, 4]
     assert engine_rank("espeak") == engine_rank("") == len(ENGINE_ORDER)
 
 

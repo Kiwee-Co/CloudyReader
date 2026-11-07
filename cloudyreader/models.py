@@ -108,7 +108,7 @@ class SpokenScript:
 @dataclass(frozen=True)
 class VoiceInfo:
     key: str  # "piper:en_US-lessac-medium" | "kokoro:af_heart"
-    engine: Literal["piper", "kokoro", "chatterbox_turbo", "qwen3_tts"]
+    engine: Literal["piper", "kokoro", "chatterbox_turbo", "qwen3_tts", "macos"]
     name: str
     language: str  # "en-US"
     quality: str  # "medium" | "high" | ...

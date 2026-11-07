@@ -230,6 +230,7 @@ def _run_preload(preload: Callable[[], None]) -> None:
 
 def build_default_service(settings: Settings | None = None) -> Pipeline:
     """Wire the real components. Their imports stay inside, so a bare Pipeline needs none."""
+    from cloudyreader.engines.macos import MacosEngine
     from cloudyreader.entities import SciEntityDetector
     from cloudyreader.lexicon import Lexicon
     from cloudyreader.normalize import ScriptNormalizer
@@ -260,8 +261,10 @@ def build_default_service(settings: Settings | None = None) -> Pipeline:
             settings=dataclasses.replace(settings, offline=True), **shared
         ),
         normalizer=ScriptNormalizer(lexicon),
+        # The macOS voices on any platform: off macOS the engine reports itself unavailable.
         tts=TtsService(
-            [*_engines(settings), *_optional_engines(settings)], settings.cache_dir / "wav"
+            [*_engines(settings), *_optional_engines(settings), MacosEngine()],
+            settings.cache_dir / "wav",
         ),
         settings=settings,
     )

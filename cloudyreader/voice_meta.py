@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 Gender = Literal["female", "male"]
 
 # The owner's quality order of the engine headings. An engine missing here lists after these.
-ENGINE_ORDER = ("kokoro", "chatterbox_turbo", "qwen3_tts", "piper")
+ENGINE_ORDER = ("kokoro", "chatterbox_turbo", "qwen3_tts", "piper", "macos")
 
 # Kokoro quality is the published grade (A down to F-): letter x 3, plus 1 for "+", minus 1 for "-".
 _GRADE = re.compile(r"([A-DF])([+-]?)")
@@ -56,6 +56,40 @@ ENGINE_GENDERS: Mapping[str, Mapping[str, Gender]] = MappingProxyType(
     }
 )
 
+# UNVERIFIED by ear: the English system voices that read like a person, keyed by the name without
+# its tier or language ("Ava (Premium)" is Ava). The classic and character voices (Fred, Eddy, ...)
+# are left out on purpose: a macOS voice missing here never rotates.
+MACOS_GENDERS: Mapping[str, Gender] = MappingProxyType(
+    {
+        "Allison": "female",
+        "Ava": "female",
+        "Daniel": "male",
+        "Evan": "male",
+        "Fiona": "female",
+        "Isha": "female",
+        "Jamie": "male",
+        "Joelle": "female",
+        "Karen": "female",
+        "Kate": "female",
+        "Lee": "male",
+        "Matilda": "female",
+        "Moira": "female",
+        "Nathan": "male",
+        "Noelle": "female",
+        "Oliver": "male",
+        "Rishi": "male",
+        "Samantha": "female",
+        "Sangeeta": "female",
+        "Serena": "female",
+        "Stephanie": "female",
+        "Susan": "female",
+        "Tessa": "female",
+        "Tom": "male",
+        "Veena": "female",
+        "Zoe": "female",
+    }
+)
+
 # The id shape KokoroEngine accepts. First letter a/b = US/UK English, second f/m = gender.
 _KOKORO_ID = re.compile(r"[ab][fm]_[a-z]+")
 _KOKORO_GENDER: Mapping[str, Gender] = {"f": "female", "m": "male"}
@@ -75,6 +109,8 @@ def profile_of(voice: VoiceInfo) -> VoiceProfile | None:
         gender = _KOKORO_GENDER[vid[1]]
     elif engine == "piper":
         gender = PIPER_GENDERS.get(vid)
+    elif engine == "macos":
+        gender = MACOS_GENDERS.get(vid.partition(" (")[0])
     elif engine in ENGINE_GENDERS:
         gender = ENGINE_GENDERS[engine].get(vid)
     if gender is None:

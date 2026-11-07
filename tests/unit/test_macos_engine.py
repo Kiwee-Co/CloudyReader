@@ -36,7 +36,9 @@ from cloudyreader.engines.mlxkit import EngineError, EngineUnavailable
 from cloudyreader.models import Override, RenderOptions, Segment, SpokenScript, VoiceInfo
 from cloudyreader.normalize import LETTER_PAUSE_MS, ScriptNormalizer
 from cloudyreader.parser import QuestionParser
+from cloudyreader.rotation import RotationMode, VoiceRotator
 from cloudyreader.tts import TtsService
+from cloudyreader.voice_meta import ENGINE_ORDER, MACOS_GENDERS, VoiceProfile, profile_of
 
 ROOT = Path(__file__).resolve().parents[2]
 # `say --voice=?` on macOS 27.0, verbatim: 184 voices, none of them Enhanced or Premium.
@@ -633,6 +635,95 @@ def test_an_interrupted_render_kills_its_child(mac, tmp_path):
     assert not say.synths[0].output().parent.exists()
 
 
+# --- order, genders, the default voice ---------------------------------------------------------
+
+
+class Listing:
+    """A TtsEngine with fixed rows, or only dimmed placeholders while it is unavailable."""
+
+    def __init__(self, key: str, rows=(), *, placeholders=None) -> None:
+        self.key = key
+        self.rows = list(rows)
+        self.placeholders = placeholders
+
+    def available(self) -> bool:
+        return self.placeholders is None
+
+    def voices(self) -> list[VoiceInfo]:
+        return list(self.rows)
+
+    def placeholder_voices(self) -> list[VoiceInfo]:
+        return list(self.placeholders or ())
+
+    def synthesize(self, script, voice, opts, out_wav):
+        raise AssertionError("listing never synthesizes")
+
+
+HEART = VoiceInfo("kokoro:af_heart", "kokoro", "Heart (female)", "en-US", "A", 1, True)
+LESSAC = VoiceInfo("piper:en_US-lessac-medium", "piper", "lessac", "en-US", "medium", 1, True)
+RYAN = VoiceInfo("qwen3_tts:ryan", "qwen3_tts", "Ryan (male)", "en", "8-bit", 1, False)
+DANIEL = voice("Daniel", language="en-GB")
+
+
+def test_macos_lists_last_after_piper(tmp_path):
+    engines = [Listing("macos", [SAMANTHA, DANIEL]), Listing("piper", [LESSAC])]
+
+    listed = TtsService([*engines, Listing("kokoro", [HEART])], tmp_path).voices()
+
+    assert ENGINE_ORDER[-1] == "macos"
+    assert [v.key for v in listed] == [HEART.key, LESSAC.key, DANIEL.key, SAMANTHA.key]
+
+
+@pytest.mark.parametrize(
+    ("engines", "default"),
+    [
+        ([Listing("macos", [SAMANTHA]), Listing("kokoro", [HEART])], HEART.key),
+        ([Listing("macos", [SAMANTHA]), Listing("piper", [LESSAC])], LESSAC.key),
+        ([Listing("macos", [SAMANTHA]), Listing("qwen3_tts", placeholders=[RYAN])], SAMANTHA.key),
+        ([Listing("macos", [SAMANTHA])], SAMANTHA.key),
+    ],
+    ids=["kokoro", "piper", "only-dimmed-neural", "only-macos"],
+)
+def test_the_default_voice_is_neural_when_installed_and_macos_fills_an_empty_menu(
+    tmp_path, engines, default
+):
+    listed = TtsService(engines, tmp_path).voices()
+
+    assert next(v.key for v in listed if v.installed) == default
+
+
+def test_macos_genders_go_by_the_base_name_whatever_the_tier():
+    enhanced = voice("Samantha (Enhanced)", tier="Enhanced")
+
+    assert profile_of(SAMANTHA) == profile_of(enhanced) == VoiceProfile("female", "en-US")
+    assert profile_of(DANIEL) == VoiceProfile("male", "en-GB")
+    assert profile_of(voice("Karen", language="en-AU")) == VoiceProfile("female", "en-AU")
+    assert profile_of(voice("Ava (Premium)", tier="Premium")) == VoiceProfile("female", "en-US")
+    assert profile_of(voice("Nobody")) is None
+    assert profile_of(voice("Samantha", language="it-IT")) is None
+    with pytest.raises(TypeError):
+        MACOS_GENDERS["Nobody"] = "female"
+
+
+def test_a_macos_voice_missing_from_the_table_never_rotates():
+    eddy, fred = voice("Eddy (English (US))"), voice("Fred")  # character and classic voices
+    voices = [SAMANTHA, DANIEL, eddy, fred, HEART]
+
+    assert eddy.name not in MACOS_GENDERS and fred.name not in MACOS_GENDERS
+    for mode in RotationMode:
+        assert {eddy.key, fred.key}.isdisjoint(v.key for v in VoiceRotator(mode).pool(voices))
+    assert [v.key for v in VoiceRotator(RotationMode.MEN_SHUFFLE).pool(voices)] == [DANIEL.key]
+    women = VoiceRotator(RotationMode.WOMEN_SHUFFLE).pool(voices)
+    assert [v.key for v in women] == [SAMANTHA.key, HEART.key]
+
+
+def test_every_gendered_macos_voice_is_a_real_base_name():
+    # A key in the table never carries a tier or language: profile_of drops those first.
+    assert all(" (" not in name and name == name.strip() for name in MACOS_GENDERS)
+    listed = {v.base for v in parse_listing(LISTING) if v.offered}
+    assert {"Samantha", "Daniel", "Karen", "Moira", "Rishi", "Tessa"} <= listed & set(MACOS_GENDERS)
+
+
 # --- no download -------------------------------------------------------------------------------
 
 
@@ -645,6 +736,7 @@ def test_the_macos_engine_adds_no_download_and_no_lock_entry(tmp_path):
     assert KEY not in prefetch.GROUPS and KEY not in prefetch.FETCHED
     assert KEY not in engine_catalog.SPECS
     assert engine_catalog.pinned(settings, KEY) == engine_catalog.Pinned((), "")
+    assert engine_catalog.TITLES[KEY] == "macOS"
     # The first-launch plan, every group ready and room to spare: the lock alone sets its size.
     plan = prefetch.VoicePrefetch(
         settings,

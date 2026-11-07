@@ -1,4 +1,4 @@
-"""Engine data model (P6a): Override.respelling, VoiceInfo.reason and the four engine names."""
+"""Engine data model (P6a): Override.respelling, VoiceInfo.reason and the engine names."""
 
 import dataclasses
 import typing
@@ -83,6 +83,6 @@ def test_voiceinfo_reason_and_precision_trail_with_empty_defaults():
     assert row.path is None
 
 
-def test_voiceinfo_engine_literal_names_four_engines():
+def test_voiceinfo_engine_literal_names_five_engines():
     engines = typing.get_args(typing.get_type_hints(VoiceInfo)["engine"])
-    assert engines == ("piper", "kokoro", "chatterbox_turbo", "qwen3_tts")
+    assert engines == ("piper", "kokoro", "chatterbox_turbo", "qwen3_tts", "macos")

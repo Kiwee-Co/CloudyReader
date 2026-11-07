@@ -178,6 +178,7 @@ def test_titles_cover_every_downloaded_group_in_order() -> None:
         "kokoro": "Kokoro",
         "chatterbox_turbo": "Chatterbox Turbo",
         "qwen3_tts": "Qwen3-TTS",
+        "macos": "macOS",  # downloads nothing: the title heads its section of the Voice menu
     }
     assert all(TITLES[engine] == spec.title for engine, spec in SPECS.items())
 

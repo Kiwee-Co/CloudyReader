@@ -159,8 +159,9 @@ def test_optional_engines_follow_kokoro_on_arm64(arm64, fake_engines, monkeypatc
     monkeypatch.setattr(tts, "TtsService", SpyService)
     service = build_default_service(settings)
 
-    assert registered == ["piper", "kokoro", "chatterbox_turbo", "qwen3_tts"]  # unchanged
-    # The picker order: Kokoro, Chatterbox Turbo, Qwen3-TTS (ungraded: by name), Piper.
+    assert registered == ["piper", "kokoro", "chatterbox_turbo", "qwen3_tts", "macos"]
+    # The picker order: Kokoro, Chatterbox Turbo, Qwen3-TTS (ungraded: by name), Piper. The
+    # conftest gives the macOS engine no say, so it lists nothing here.
     assert keys(service.voices()) == [HEART.key, BUILTIN.key, AIDEN.key, RYAN.key]
 
 

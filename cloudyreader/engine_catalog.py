@@ -28,6 +28,7 @@ TITLES: Mapping[str, str] = MappingProxyType(
         "kokoro": "Kokoro",
         "chatterbox_turbo": "Chatterbox Turbo",
         "qwen3_tts": "Qwen3-TTS",
+        "macos": "macOS",
     }
 )
 # Engine lock entries: these suffixes only; dest .data/models/<engine> or ONE safe sub-folder.
