@@ -1060,5 +1060,6 @@ class MainWindow(QMainWindow):
         # Deleting the pool waits for a running job while holding the GIL, which a Python job
         # needs to finish: drop the queued jobs and wait here, where the wait releases the GIL.
         self._pool.clear()
+        self.hide()  # a first-use reading can take long: the window goes now, not after it
         self._pool.waitForDone()
         super().closeEvent(event)
