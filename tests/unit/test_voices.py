@@ -132,6 +132,7 @@ def test_installed_fills_voice_info_from_the_config(voices_dir):
     )
     assert (voice.num_speakers, voice.installed) == (4, True)
     assert voice.path == voices_dir / "en_GB-multi-high.onnx"
+    assert voice.precision == "high"  # Piper's slot is its tier, the same word as quality
 
 
 def test_installed_falls_back_to_the_file_name_without_language_or_quality(voices_dir):
@@ -140,6 +141,7 @@ def test_installed_falls_back_to_the_file_name_without_language_or_quality(voice
     (voice,) = scan_installed(voices_dir)
 
     assert (voice.language, voice.quality, voice.num_speakers) == ("de-DE", "low", 1)
+    assert voice.precision == "low"
 
 
 def test_installed_skips_a_corrupt_config_and_says_so(voices_dir, caplog):
@@ -173,6 +175,7 @@ def test_catalog_lists_voices_and_marks_the_installed_ones(voices_dir, tmp_path)
     assert (other.installed, other.path) == (False, None)
     assert (other.engine, other.name, other.language) == ("piper", "other", "en-US")
     assert (other.quality, other.num_speakers) == ("high", 3)
+    assert (fake.precision, other.precision) == ("medium", "high")
 
 
 def test_the_live_catalog_has_a_non_ascii_voice_name_and_it_is_usable(voices_dir, tmp_path):

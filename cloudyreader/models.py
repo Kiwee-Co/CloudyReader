@@ -116,6 +116,9 @@ class VoiceInfo:
     installed: bool
     path: Path | None = None
     reason: str = ""  # why `installed` is False, a short phrase; "" when installed
+    # The model's own format, shown in the Voice menu: "bf16", "8-bit", "medium", "Enhanced".
+    # `quality` stays the engine-native tier the listing order reads.
+    precision: str = ""
 
 
 @dataclass(frozen=True)

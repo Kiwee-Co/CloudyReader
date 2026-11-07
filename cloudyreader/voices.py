@@ -106,15 +106,17 @@ def _voice(
     path: Path | None,
 ) -> VoiceInfo:
     stem_language, stem_name, stem_quality = _split_key(key)
+    tier = quality or stem_quality
     return VoiceInfo(
         key=f"{KEY_PREFIX}{key}",
         engine="piper",
         name=name or stem_name,
         language=(language_code or stem_language).replace("_", "-"),
-        quality=quality or stem_quality,
+        quality=tier,
         num_speakers=num_speakers if isinstance(num_speakers, int) and num_speakers > 0 else 1,
         installed=path is not None,
         path=path,
+        precision=tier,  # Piper's tier is the word a person hears
     )
 
 

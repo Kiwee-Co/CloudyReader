@@ -200,9 +200,13 @@ def test_voices_lists_ryan_and_aiden(engine: Qwen3TtsEngine, settings: Settings)
     assert engine.available() is True
     assert engine.unavailable_reason is None
     assert engine.voices() == [
-        VoiceInfo("qwen3_tts:ryan", "qwen3_tts", "Ryan (male)", "en", "8-bit", 1, True, folder),
         VoiceInfo(
-            "qwen3_tts:aiden", "qwen3_tts", "Aiden (male)", "en-US", "8-bit", 1, True, folder
+            "qwen3_tts:ryan", "qwen3_tts", "Ryan (male)", "en", "8-bit", 1, True, folder,
+            precision="8-bit",
+        ),
+        VoiceInfo(
+            "qwen3_tts:aiden", "qwen3_tts", "Aiden (male)", "en-US", "8-bit", 1, True, folder,
+            precision="8-bit",
         ),
     ]
     assert engine.placeholder_voices() == []
@@ -344,6 +348,7 @@ def test_placeholder_rows_carry_the_reason_and_hard_blockers_list_nothing(
         "not downloaded yet",
     )
     assert (aiden.key, aiden.language, aiden.reason) == ("qwen3_tts:aiden", "en-US", ryan.reason)
+    assert (ryan.precision, aiden.precision) == ("8-bit", "8-bit")  # a dimmed row says it too
     assert engine.voices() == []
 
     state["now"] = Assessment("blocked", "Qwen3-TTS needs an Apple Silicon Mac (arm64)", 0, False)

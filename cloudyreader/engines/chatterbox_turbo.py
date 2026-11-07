@@ -296,6 +296,7 @@ class ChatterboxTurboEngine:
             installed=installed,
             path=self.model_dir if installed else None,
             reason=reason,
+            precision="4-bit",
         )
 
     def voices(self) -> list[VoiceInfo]:

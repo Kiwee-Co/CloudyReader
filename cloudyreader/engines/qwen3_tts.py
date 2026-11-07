@@ -360,6 +360,7 @@ class Qwen3TtsEngine:
             installed=installed,
             path=self.model_dir if installed else None,
             reason=reason,
+            precision="8-bit",
         )
 
     def voices(self) -> list[VoiceInfo]:

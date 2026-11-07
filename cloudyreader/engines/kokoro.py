@@ -277,6 +277,7 @@ class KokoroEngine:
             num_speakers=1,
             installed=installed,
             path=path if installed else None,
+            precision="bf16",  # the weights' format: KOKORO_REPO is Kokoro-82M-bf16
         )
 
     # --- rendering ----------------------------------------------------------------------------

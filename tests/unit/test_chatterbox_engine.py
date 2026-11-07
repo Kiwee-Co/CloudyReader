@@ -207,6 +207,7 @@ def test_voices_lists_the_builtin_voice(engine: ChatterboxTurboEngine, settings:
             installed=True,
             path=settings.models_dir / "chatterbox_turbo",
             reason="",
+            precision="4-bit",
         )
     ]
     assert engine.placeholder_voices() == []
@@ -319,11 +320,12 @@ def test_placeholder_rows_carry_the_reason_and_hard_blockers_list_nothing(
     engine = ChatterboxTurboEngine(settings, backend, pinned=pinned, assess=lambda: state["now"])
 
     (row,) = engine.placeholder_voices()
-    assert (row.key, row.installed, row.path, row.reason) == (
+    assert (row.key, row.installed, row.path, row.reason, row.precision) == (
         VOICE_KEY,
         False,
         None,
         "not downloaded yet",
+        "4-bit",
     )
     assert engine.voices() == []
     assert engine.available() is False

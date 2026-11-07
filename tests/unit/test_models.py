@@ -51,6 +51,14 @@ INSTANCES = [
 ]
 
 
+def test_voice_info_precision_comes_last_and_defaults_to_empty():
+    names = [field.name for field in dataclasses.fields(VoiceInfo)]
+
+    assert names[-2:] == ["reason", "precision"]  # old positional and keyword calls stay valid
+    assert VOICE.precision == ""
+    assert dataclasses.replace(VOICE, precision="medium").precision == "medium"
+
+
 @pytest.mark.parametrize("instance", INSTANCES, ids=lambda i: type(i).__name__)
 def test_dataclasses_reject_mutation(instance):
     first_field = dataclasses.fields(instance)[0].name
