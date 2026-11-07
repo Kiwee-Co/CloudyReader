@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="640" viewBox="0 0 680 640" role="img" aria-labelledby="title desc" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif">
 <title id="title">Voice menu</title>
-<desc id="desc">The Voice menu open in Dark Mode: the end of the Kokoro list, best first, each row with its accent, gender, engine, and grade, one voice dimmed because it is not installed, then the Chatterbox Turbo, Qwen3-TTS, Piper, and macOS voices, each under its heading, and a scroll arrow where the list goes on.</desc>
+<desc id="desc">The Voice menu open in Dark Mode: the end of the Kokoro list, best first, each row with its accent, gender, engine, and quality, one voice dimmed because it is not installed, then the Chatterbox Turbo, Qwen3-TTS, Piper, and macOS voices, each under its heading, and a scroll arrow where the list goes on.</desc>
 <defs><clipPath id="clip1"><rect x="0" y="0" width="680" height="640"/></clipPath><clipPath id="clip2"><rect x="29" y="29" width="622" height="208"/></clipPath><clipPath id="clip3"><rect x="29" y="295" width="622" height="103"/></clipPath><linearGradient id="grad4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#177ae4"/><stop offset="1" stop-color="#156fcf"/></linearGradient><linearGradient id="grad5" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#177ae4"/><stop offset="1" stop-color="#156fcf"/></linearGradient><filter id="blur6" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9"/></filter></defs>
 <rect x="0" y="0" width="680" height="640" fill="#323232"/>
 <g clip-path="url(#clip1)">
