@@ -4,19 +4,19 @@
         {
             "n": 1,
             "part": "message",
-            "x": 4.71,
+            "x": 5.29,
             "y": 28.12
         },
         {
             "n": 2,
             "part": "download label",
-            "x": 59.63,
+            "x": 59.04,
             "y": 28.12
         },
         {
             "n": 3,
             "part": "download progress bar",
-            "x": 88.24,
+            "x": 87.65,
             "y": 28.12
         }
     ]

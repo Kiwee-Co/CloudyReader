@@ -4,38 +4,38 @@
 <desc id="desc">A vertical flow of five steps from pasted text to sound: clean up and parse, find names, look up names, build the spoken script, and speak with a local voice. In the lookup step the OPSIN check runs on the Mac; PubChem and UniProt are online and optional.</desc>
 <defs><marker id="arrow1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#ffffff" fill-opacity="0.55"/></marker></defs>
 <rect x="0" y="0" width="460" height="592" rx="16" fill="#1c1c1e"/>
-<text x="32" y="44" font-size="18" font-weight="700" fill="#ffffff" fill-opacity="0.88">From pasted text to sound</text>
+<text x="32" y="44" font-size="18" font-weight="700" fill="#ffffff" opacity="0.88">From pasted text to sound</text>
 <rect x="32" y="60" width="18" height="14" rx="4" stroke-width="1" fill="#2c2c2e" stroke="#ffffff" stroke-opacity="0.22"/>
-<text x="56" y="72" font-size="12" fill="#ffffff" fill-opacity="0.62">on the Mac</text>
+<text x="56" y="72" font-size="12" fill="#ffffff" opacity="0.62">on the Mac</text>
 <rect x="152" y="60" width="18" height="14" rx="4" fill="#10263f" stroke="#409cff" stroke-width="1.2" stroke-dasharray="3 3"/>
-<text x="176" y="72" font-size="12" fill="#ffffff" fill-opacity="0.62">network (HTTPS)</text>
+<text x="176" y="72" font-size="12" fill="#ffffff" opacity="0.62">network (HTTPS)</text>
 <rect x="32" y="92" width="396" height="64" rx="10" fill="#2c2c2e" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1"/>
 <circle cx="56" cy="111" r="11" fill="#409cff"/>
 <text x="56" y="115.5" text-anchor="middle" font-size="13" font-weight="700" fill="#FFFFFF">1</text>
-<text x="76" y="116" font-size="14" font-weight="600" fill="#ffffff" fill-opacity="0.88">Clean up and parse</text>
-<text x="76" y="136" font-size="12" fill="#ffffff" fill-opacity="0.62">find the question, its category, and its choices</text>
+<text x="76" y="116" font-size="14" font-weight="600" fill="#ffffff" opacity="0.88">Clean up and parse</text>
+<text x="76" y="136" font-size="12" fill="#ffffff" opacity="0.62">find the question, its category, and its choices</text>
 <rect x="32" y="182" width="396" height="64" rx="10" fill="#2c2c2e" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1"/>
 <circle cx="56" cy="201" r="11" fill="#409cff"/>
 <text x="56" y="205.5" text-anchor="middle" font-size="13" font-weight="700" fill="#FFFFFF">2</text>
-<text x="76" y="206" font-size="14" font-weight="600" fill="#ffffff" fill-opacity="0.88">Find names</text>
-<text x="76" y="226" font-size="12" fill="#ffffff" fill-opacity="0.62">chemicals, proteins, and genes in the text</text>
+<text x="76" y="206" font-size="14" font-weight="600" fill="#ffffff" opacity="0.88">Find names</text>
+<text x="76" y="226" font-size="12" fill="#ffffff" opacity="0.62">chemicals, proteins, and genes in the text</text>
 <rect x="32" y="272" width="396" height="112" rx="10" fill="#2c2c2e" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1"/>
 <circle cx="56" cy="291" r="11" fill="#409cff"/>
 <text x="56" y="295.5" text-anchor="middle" font-size="13" font-weight="700" fill="#FFFFFF">3</text>
-<text x="76" y="296" font-size="14" font-weight="600" fill="#ffffff" fill-opacity="0.88">Look up names</text>
-<text x="76" y="316" font-size="12" fill="#ffffff" fill-opacity="0.62">the OPSIN check runs on the Mac;</text>
+<text x="76" y="296" font-size="14" font-weight="600" fill="#ffffff" opacity="0.88">Look up names</text>
+<text x="76" y="316" font-size="12" fill="#ffffff" opacity="0.62">the OPSIN check runs on the Mac;</text>
 <rect x="76" y="328" width="336" height="40" rx="10" fill="#10263f" stroke="#409cff" stroke-width="1.2" stroke-dasharray="5 4"/>
 <text x="88" y="353" font-size="12" font-weight="600" fill="#409cff">PubChem and UniProt are online and optional</text>
 <rect x="32" y="410" width="396" height="64" rx="10" fill="#2c2c2e" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1"/>
 <circle cx="56" cy="429" r="11" fill="#409cff"/>
 <text x="56" y="433.5" text-anchor="middle" font-size="13" font-weight="700" fill="#FFFFFF">4</text>
-<text x="76" y="434" font-size="14" font-weight="600" fill="#ffffff" fill-opacity="0.88">Build the spoken script</text>
-<text x="76" y="454" font-size="12" fill="#ffffff" fill-opacity="0.62">formulas, units, symbols, and guides become words</text>
+<text x="76" y="434" font-size="14" font-weight="600" fill="#ffffff" opacity="0.88">Build the spoken script</text>
+<text x="76" y="454" font-size="12" fill="#ffffff" opacity="0.62">formulas, units, symbols, and guides become words</text>
 <rect x="32" y="500" width="396" height="64" rx="10" fill="#2c2c2e" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1"/>
 <circle cx="56" cy="519" r="11" fill="#409cff"/>
 <text x="56" y="523.5" text-anchor="middle" font-size="13" font-weight="700" fill="#FFFFFF">5</text>
-<text x="76" y="524" font-size="14" font-weight="600" fill="#ffffff" fill-opacity="0.88">Speak with a local voice</text>
-<text x="76" y="544" font-size="12" fill="#ffffff" fill-opacity="0.62">Piper or Kokoro, on your Mac</text>
+<text x="76" y="524" font-size="14" font-weight="600" fill="#ffffff" opacity="0.88">Speak with a local voice</text>
+<text x="76" y="544" font-size="12" fill="#ffffff" opacity="0.62">Piper or Kokoro, on your Mac</text>
 <path d="M230 156L230 182" fill="none" stroke-width="1.5" marker-end="url(#arrow1)" stroke="#ffffff" stroke-opacity="0.55"/>
 <path d="M230 246L230 272" fill="none" stroke-width="1.5" marker-end="url(#arrow1)" stroke="#ffffff" stroke-opacity="0.55"/>
 <path d="M230 384L230 410" fill="none" stroke-width="1.5" marker-end="url(#arrow1)" stroke="#ffffff" stroke-opacity="0.55"/>

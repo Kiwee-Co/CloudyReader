@@ -6,10 +6,10 @@
 <rect x="0" y="0" width="680" height="28" fill="#ececec"/>
 <g clip-path="url(#clip1)">
 <path d="M0 0.25H680" stroke-width="0.5" stroke="#838383"/>
-<path d="M28 7L34.6 19H21.4Z" stroke="#ffcc00" stroke-width="2" stroke-linejoin="round" fill="#ffcc00"/>
-<rect x="27.2" y="9.6" width="1.6" height="5.6" rx="0.8" fill="#000000" fill-opacity="0.85"/>
-<circle cx="28" cy="17.2" r="0.95" fill="#000000" fill-opacity="0.85"/>
-<text x="42" y="18.53" font-size="12" style="font-variant-numeric:tabular-nums" textLength="433.36" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Some voices could not be downloaded. They are tried again at the next start.</text>
+<path d="M32 7.2L38.6 18.6L25.4 18.6Z" fill="none" stroke-width="1.5" stroke="#b25f00" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M32 11.2L32 14.4" fill="none" stroke-width="1.5" stroke="#b25f00" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="32" cy="16.5" r="0.95" fill="#b25f00"/>
+<text x="46" y="18.53" font-size="12" style="font-variant-numeric:tabular-nums" textLength="433.36" lengthAdjust="spacingAndGlyphs" fill="#000000" opacity="0.85">Some voices could not be downloaded. They are tried again at the next start.</text>
 </g>
 <rect x="0.25" y="0.25" width="679.5" height="27.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.2"/>
 </svg>

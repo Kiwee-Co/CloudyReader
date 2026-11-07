@@ -1,82 +1,80 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="680" height="620" viewBox="0 0 680 620" role="img" aria-labelledby="title desc" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="640" viewBox="0 0 680 640" role="img" aria-labelledby="title desc" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif">
 <title id="title">Voice menu</title>
-<desc id="desc">The Voice menu open in Dark Mode: the end of the Kokoro list, best first, names with their gender, one voice dimmed because it is not installed, then the Chatterbox Turbo, Qwen3-TTS, and Piper voices, each under its heading, and a scroll arrow where the list goes on.</desc>
-<defs><clipPath id="clip1"><rect x="0" y="0" width="680" height="620"/></clipPath><clipPath id="clip2"><rect x="24" y="24" width="632" height="323"/></clipPath><linearGradient id="grad3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#177ae4"/><stop offset="1" stop-color="#156fcf"/></linearGradient><linearGradient id="grad4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#177ae4"/><stop offset="1" stop-color="#156fcf"/></linearGradient><filter id="blur5" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9"/></filter></defs>
-<rect x="0" y="0" width="680" height="620" fill="#323232"/>
+<desc id="desc">The Voice menu open in Dark Mode: the end of the Kokoro list, best first, names with their gender, one voice dimmed because it is not installed, then the Chatterbox Turbo, Qwen3-TTS, Piper, and macOS voices, each under its heading, and a scroll arrow where the list goes on.</desc>
+<defs><clipPath id="clip1"><rect x="0" y="0" width="680" height="640"/></clipPath><clipPath id="clip2"><rect x="29" y="29" width="622" height="208"/></clipPath><clipPath id="clip3"><rect x="29" y="295" width="622" height="103"/></clipPath><linearGradient id="grad4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#177ae4"/><stop offset="1" stop-color="#156fcf"/></linearGradient><linearGradient id="grad5" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#177ae4"/><stop offset="1" stop-color="#156fcf"/></linearGradient><filter id="blur6" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9"/></filter></defs>
+<rect x="0" y="0" width="680" height="640" fill="#323232"/>
 <g clip-path="url(#clip1)">
-<path d="M0 592.25H680" stroke-width="0.5" stroke="#838383"/>
-<rect x="20.5" y="20.5" width="639" height="330" rx="7.5" fill="#171717" stroke-width="1" stroke="#8e8e93"/>
-<g clip-path="url(#clip2)" font-size="15" fill="#ffffff" opacity="0.85"><text x="32" y="46.5" textLength="63.84" lengthAdjust="spacingAndGlyphs">TOSS-UP</text><text x="32" y="64.5" textLength="606.94" lengthAdjust="spacingAndGlyphs">1) CHEMISTRY Multiple Choice Which gas forms when sodium bicarbonate, NaHCO3, reacts</text><text x="32" y="82.5" textLength="110.03" lengthAdjust="spacingAndGlyphs">with acetic acid?</text><text x="32" y="100.5" textLength="73.81" lengthAdjust="spacingAndGlyphs">W) Oxygen</text><text x="32" y="118.5" textLength="83.78" lengthAdjust="spacingAndGlyphs">X) Hydrogen</text><text x="32" y="136.5" textLength="118.11" lengthAdjust="spacingAndGlyphs">Y) Carbon dioxide</text><text x="32" y="154.5" textLength="75.62" lengthAdjust="spacingAndGlyphs">Z) Nitrogen</text><text x="32" y="172.5" textLength="207.88" lengthAdjust="spacingAndGlyphs">ANSWER: Y) CARBON DIOXIDE</text></g>
-<text x="37" y="388.56" font-size="13" fill="#ffffff" textLength="36.34" lengthAdjust="spacingAndGlyphs" opacity="0.85">Voice:</text>
-<rect x="84.5" y="373.6" width="278" height="20.5" rx="5.5" fill="#000000" fill-opacity="0.25"/>
-<rect x="84.5" y="373" width="278" height="20.5" rx="5.5" fill="#656565"/>
-<rect x="84.75" y="373.25" width="277.5" height="20" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.25"/>
-<path d="M90 373.75H357" stroke-width="0.5" stroke="#ffffff" stroke-opacity="0.14"/>
-<rect x="344" y="375" width="15.5" height="16.5" rx="4" fill="url(#grad3)"/>
-<path d="M348.75 381.75l3 -2.8l3 2.8M348.75 384.75l3 2.8l3 -2.8" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="93.5" y="388.16" font-size="13" textLength="143.53" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">lessac (en-US, medium)</text>
-<text x="20" y="422.56" font-size="13" fill="#ffffff" textLength="53.55" lengthAdjust="spacingAndGlyphs" opacity="0.85">Rotation:</text>
-<rect x="84.5" y="407.6" width="189" height="20.5" rx="5.5" fill="#000000" fill-opacity="0.25"/>
-<rect x="84.5" y="407" width="189" height="20.5" rx="5.5" fill="#656565"/>
-<rect x="84.75" y="407.25" width="188.5" height="20" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.25"/>
-<path d="M90 407.75H268" stroke-width="0.5" stroke="#ffffff" stroke-opacity="0.14"/>
-<rect x="255" y="409" width="15.5" height="16.5" rx="4" fill="url(#grad4)"/>
-<path d="M259.75 415.75l3 -2.8l3 2.8M259.75 418.75l3 2.8l3 -2.8" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="93.5" y="422.16" font-size="13" textLength="66.5" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">No rotation</text>
-<text x="23" y="451.56" font-size="13" fill="#ffffff" textLength="50.53" lengthAdjust="spacingAndGlyphs" opacity="0.85">Options:</text>
-<rect x="81.5" y="439" width="14" height="14" rx="3.5" fill="#000000" fill-opacity="0.25"/>
-<rect x="81.5" y="438.5" width="14" height="14" rx="3.5" fill="#5e5e5e"/>
-<rect x="81.75" y="438.75" width="13.5" height="13.5" rx="3.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.3"/>
-<text x="100" y="450.91" font-size="13" textLength="101.34" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Read answer line</text>
-<rect x="81.5" y="462.5" width="14" height="14" rx="3.5" fill="#1c6cdc"/>
-<path d="M84.9 469.9L87.5 472.5L92.1 466.9" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="100" y="474.91" font-size="13" textLength="88.53" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Online lookups</text>
-<rect x="20" y="500.6" width="63" height="20" rx="5.5" fill="#000000" fill-opacity="0.25"/>
-<rect x="20" y="500" width="63" height="20" rx="5.5" fill="#656565"/>
-<rect x="20.25" y="500.25" width="62.5" height="19.5" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.25"/>
-<path d="M25.5 500.75H77.5" stroke-width="0.5" stroke="#ffffff" stroke-opacity="0.14"/>
-<text x="51.5" y="514.91" text-anchor="middle" font-size="13" fill="#ffffff" textLength="32.81" lengthAdjust="spacingAndGlyphs" opacity="0.85">Paste</text>
-<rect x="95" y="500.6" width="129" height="20" rx="5.5" fill="#000000" fill-opacity="0.25"/>
-<rect x="95" y="500" width="129" height="20" rx="5.5" fill="#656565"/>
-<rect x="95.25" y="500.25" width="128.5" height="19.5" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.25"/>
-<path d="M100.5 500.75H218.5" stroke-width="0.5" stroke="#ffffff" stroke-opacity="0.14"/>
-<text x="159.5" y="514.91" text-anchor="middle" font-size="13" fill="#ffffff" textLength="98.31" lengthAdjust="spacingAndGlyphs" opacity="0.85">Speak Clipboard</text>
-<rect x="417" y="500.6" width="73" height="20" rx="5.5" fill="#000000" fill-opacity="0.25"/>
-<rect x="417" y="500" width="73" height="20" rx="5.5" fill="#4b4b4b"/>
-<rect x="417.25" y="500.25" width="72.5" height="19.5" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.25"/>
-<path d="M422.5 500.75H484.5" stroke-width="0.5" stroke="#ffffff" stroke-opacity="0.14"/>
-<text x="453.5" y="514.91" text-anchor="middle" font-size="13" fill="#ffffff" textLength="42.2" lengthAdjust="spacingAndGlyphs" opacity="0.25">Repeat</text>
-<rect x="502" y="500.6" width="73" height="20" rx="5.5" fill="#000000" fill-opacity="0.25"/>
-<rect x="502" y="500" width="73" height="20" rx="5.5" fill="#4b4b4b"/>
-<rect x="502.25" y="500.25" width="72.5" height="19.5" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.25"/>
-<path d="M507.5 500.75H569.5" stroke-width="0.5" stroke="#ffffff" stroke-opacity="0.14"/>
-<text x="538.5" y="514.91" text-anchor="middle" font-size="13" fill="#ffffff" textLength="27.78" lengthAdjust="spacingAndGlyphs" opacity="0.25">Stop</text>
-<rect x="587" y="500.6" width="73" height="20" rx="5.5" fill="#000000" fill-opacity="0.25"/>
-<rect x="587" y="500" width="73" height="20" rx="5.5" fill="#1560d2"/>
-<text x="623.5" y="514.91" text-anchor="middle" font-size="13" fill="#ffffff" textLength="37.06" lengthAdjust="spacingAndGlyphs">Speak</text>
-<path d="M24.5 556.5L28.5 560L24.5 563.5" fill="none" stroke-width="1.6" stroke="#b2b2b2" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="39" y="564.91" font-size="13" textLength="82.09" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Spoken script</text>
+<path d="M0 612.25H680" stroke-width="0.5" stroke="#838383"/>
+<rect x="24.5" y="24.5" width="631" height="217" rx="9.5" fill="#171717" stroke-width="1" stroke="#858589"/>
+<g clip-path="url(#clip2)" font-size="15" fill="#ffffff" opacity="0.85"><text x="40" y="54.5" textLength="63.84" lengthAdjust="spacingAndGlyphs">TOSS-UP</text><text x="40" y="72.5" textLength="562.89" lengthAdjust="spacingAndGlyphs">1) CHEMISTRY Multiple Choice Which gas forms when sodium bicarbonate, NaHCO3,</text><text x="40" y="90.5" textLength="154.81" lengthAdjust="spacingAndGlyphs">reacts with acetic acid?</text><text x="40" y="108.5" textLength="73.81" lengthAdjust="spacingAndGlyphs">W) Oxygen</text><text x="40" y="126.5" textLength="83.78" lengthAdjust="spacingAndGlyphs">X) Hydrogen</text><text x="40" y="144.5" textLength="118.11" lengthAdjust="spacingAndGlyphs">Y) Carbon dioxide</text><text x="40" y="162.5" textLength="75.62" lengthAdjust="spacingAndGlyphs">Z) Nitrogen</text><text x="40" y="180.5" textLength="207.88" lengthAdjust="spacingAndGlyphs">ANSWER: Y) CARBON DIOXIDE</text></g>
+<path d="M27 268L30.5 272L34 268" fill="none" stroke-width="1.6" stroke="#b2b2b2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="43" y="274.91" font-size="13" font-weight="600" textLength="85.92" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Spoken script</text>
+<rect x="24" y="290" width="632" height="113" rx="10" fill="#3e3e3e"/>
+<g clip-path="url(#clip3)" font-size="12" fill="#aeaeb2"><text x="36" y="313.59" textLength="584.84" lengthAdjust="spacingAndGlyphs">Toss-up number one. Chemistry. Multiple choice. Which gas forms when sodium bicarbonate, N A H C O</text><text x="36" y="328.59" textLength="472.72" lengthAdjust="spacingAndGlyphs">three, reacts with acetic acid? W. Oxygen X. Hydrogen Y. Carbon dioxide Z. Nitrogen</text></g>
+<text x="41" y="444.56" font-size="13" fill="#ffffff" textLength="36.34" lengthAdjust="spacingAndGlyphs" opacity="0.85">Voice:</text>
+<rect x="88.5" y="429.6" width="350" height="20.5" rx="5.5" fill="#000000" fill-opacity="0.25"/>
+<rect x="88.5" y="429" width="350" height="20.5" rx="5.5" fill="#656565"/>
+<rect x="88.75" y="429.25" width="349.5" height="20" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.25"/>
+<path d="M94 429.75H433" stroke-width="0.5" stroke="#ffffff" stroke-opacity="0.14"/>
+<rect x="420" y="431" width="15.5" height="16.5" rx="4" fill="url(#grad4)"/>
+<path d="M424.75 437.75l3 -2.8l3 2.8M424.75 440.75l3 2.8l3 -2.8" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="97.5" y="444.16" font-size="13" textLength="218.89" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Lessac (US, female) · Piper · medium</text>
+<text x="24" y="478.56" font-size="13" fill="#ffffff" textLength="53.55" lengthAdjust="spacingAndGlyphs" opacity="0.85">Rotation:</text>
+<rect x="88.5" y="463.6" width="350" height="20.5" rx="5.5" fill="#000000" fill-opacity="0.25"/>
+<rect x="88.5" y="463" width="350" height="20.5" rx="5.5" fill="#656565"/>
+<rect x="88.75" y="463.25" width="349.5" height="20" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.25"/>
+<path d="M94 463.75H433" stroke-width="0.5" stroke="#ffffff" stroke-opacity="0.14"/>
+<rect x="420" y="465" width="15.5" height="16.5" rx="4" fill="url(#grad5)"/>
+<path d="M424.75 471.75l3 -2.8l3 2.8M424.75 474.75l3 2.8l3 -2.8" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="97.5" y="478.16" font-size="13" textLength="66.5" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">No rotation</text>
+<text x="27" y="507.56" font-size="13" fill="#ffffff" textLength="50.53" lengthAdjust="spacingAndGlyphs" opacity="0.85">Options:</text>
+<rect x="85.5" y="495" width="14" height="14" rx="3.5" fill="#000000" fill-opacity="0.25"/>
+<rect x="85.5" y="494.5" width="14" height="14" rx="3.5" fill="#5e5e5e"/>
+<rect x="85.75" y="494.75" width="13.5" height="13.5" rx="3.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.3"/>
+<text x="104" y="506.91" font-size="13" textLength="101.34" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Read answer line</text>
+<rect x="85.5" y="518.5" width="14" height="14" rx="3.5" fill="#1c6cdc"/>
+<path d="M88.9 525.9L91.5 528.5L96.1 522.9" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="104" y="530.91" font-size="13" textLength="88.53" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Online lookups</text>
+<rect x="413" y="560.6" width="73" height="20" rx="5.5" fill="#000000" fill-opacity="0.25"/>
+<rect x="413" y="560" width="73" height="20" rx="5.5" fill="#4b4b4b"/>
+<rect x="413.25" y="560.25" width="72.5" height="19.5" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.25"/>
+<path d="M418.5 560.75H480.5" stroke-width="0.5" stroke="#ffffff" stroke-opacity="0.14"/>
+<text x="449.5" y="574.91" text-anchor="middle" font-size="13" fill="#ffffff" textLength="42.2" lengthAdjust="spacingAndGlyphs" opacity="0.25">Repeat</text>
+<rect x="498" y="560.6" width="73" height="20" rx="5.5" fill="#000000" fill-opacity="0.25"/>
+<rect x="498" y="560" width="73" height="20" rx="5.5" fill="#4b4b4b"/>
+<rect x="498.25" y="560.25" width="72.5" height="19.5" rx="5.5" fill="none" stroke-width="0.5" stroke="#000000" stroke-opacity="0.25"/>
+<path d="M503.5 560.75H565.5" stroke-width="0.5" stroke="#ffffff" stroke-opacity="0.14"/>
+<text x="534.5" y="574.91" text-anchor="middle" font-size="13" fill="#ffffff" textLength="27.78" lengthAdjust="spacingAndGlyphs" opacity="0.25">Stop</text>
+<rect x="583" y="560.6" width="73" height="20" rx="5.5" fill="#000000" fill-opacity="0.25"/>
+<rect x="583" y="560" width="73" height="20" rx="5.5" fill="#1560d2"/>
+<text x="619.5" y="574.91" text-anchor="middle" font-size="13" fill="#ffffff" textLength="37.06" lengthAdjust="spacingAndGlyphs">Speak</text>
 </g>
-<rect x="72.5" y="10" width="290" height="417.25" rx="8" filter="url(#blur5)" fill="#000000" fill-opacity="0.55"/>
-<rect x="72.5" y="4" width="290" height="417.25" rx="8" stroke-width="0.5" fill="#2b2b2b" stroke="#ffffff" stroke-opacity="0.16"/>
-<text x="93.5" y="44.34" font-size="13" textLength="137.23" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Liam (male) (en-US, D)</text>
-<text x="93.5" y="66.34" font-size="13" textLength="140.62" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Lily (female) (en-GB, D)</text>
-<text x="93.5" y="88.34" font-size="13" textLength="139.64" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Onyx (male) (en-US, D)</text>
-<text x="93.5" y="110.34" font-size="13" textLength="150.05" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">River (female) (en-US, D)</text>
-<text x="93.5" y="132.34" font-size="13" textLength="148.78" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Santa (male) (en-US, D-)</text>
-<text x="93.5" y="154.34" font-size="13" textLength="228.77" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.25">Adam (male) (en-US, F+, not installed)</text>
-<text x="93.5" y="181.89" font-size="11" font-weight="600" fill="#aeaeb2">Chatterbox Turbo</text>
-<text x="93.5" y="202.95" font-size="13" textLength="223.39" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Chatterbox Turbo (built-in) (en, 4-bit)</text>
-<text x="93.5" y="230.5" font-size="11" font-weight="600" fill="#aeaeb2">Qwen3-TTS</text>
-<text x="93.5" y="251.56" font-size="13" textLength="163.22" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Aiden (male) (en-US, 8-bit)</text>
-<text x="93.5" y="273.56" font-size="13" textLength="135.08" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Ryan (male) (en, 8-bit)</text>
-<text x="93.5" y="301.1" font-size="11" font-weight="600" fill="#aeaeb2">Piper</text>
-<text x="93.5" y="322.16" font-size="13" textLength="130.69" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">alan (en-GB, medium)</text>
-<text x="93.5" y="344.16" font-size="13" textLength="130.8" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">amy (en-US, medium)</text>
-<text x="93.5" y="366.16" font-size="13" textLength="177.45" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">jenny_dioco (en-GB, medium)</text>
-<path d="M80 383.25l3 3l6 -7" fill="none" stroke-width="1.6" stroke="#ffffff" stroke-opacity="0.85" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="93.5" y="388.16" font-size="13" textLength="143.53" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">lessac (en-US, medium)</text>
-<text x="93.5" y="410.16" font-size="13" textLength="131.92" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">ryan (en-US, medium)</text>
-<path d="M212.5 17.5l5 -5l5 5z" fill="#ffffff" fill-opacity="0.85"/>
+<rect x="76.5" y="10" width="371.06" height="565.86" rx="8" filter="url(#blur6)" fill="#000000" fill-opacity="0.55"/>
+<rect x="76.5" y="4" width="371.06" height="565.86" rx="8" stroke-width="0.5" fill="#2b2b2b" stroke="#ffffff" stroke-opacity="0.16"/>
+<text x="97.5" y="56.34" font-size="13" textLength="177.7" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Eric (US, male) · Kokoro · bf16</text>
+<text x="97.5" y="78.34" font-size="13" textLength="210.89" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Jessica (US, female) · Kokoro · bf16</text>
+<text x="97.5" y="100.34" font-size="13" textLength="183.61" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Liam (US, male) · Kokoro · bf16</text>
+<text x="97.5" y="122.34" font-size="13" textLength="186.91" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Lily (UK, female) · Kokoro · bf16</text>
+<text x="97.5" y="144.34" font-size="13" textLength="186.02" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Onyx (US, male) · Kokoro · bf16</text>
+<text x="97.5" y="166.34" font-size="13" textLength="196.42" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">River (US, female) · Kokoro · bf16</text>
+<text x="97.5" y="188.34" font-size="13" textLength="189.19" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Santa (US, male) · Kokoro · bf16</text>
+<text x="97.5" y="210.34" font-size="13" textLength="326.06" lengthAdjust="spacingAndGlyphs" fill="#aeaeb2">Adam (US, male) · Kokoro · bf16 — not downloaded yet</text>
+<text x="97.5" y="237.89" font-size="11" font-weight="600" fill="#aeaeb2">Chatterbox Turbo</text>
+<text x="97.5" y="258.95" font-size="13" textLength="197.91" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Built-in · Chatterbox Turbo · 4-bit</text>
+<text x="97.5" y="286.5" font-size="11" font-weight="600" fill="#aeaeb2">Qwen3-TTS</text>
+<text x="97.5" y="307.56" font-size="13" textLength="222.62" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Aiden (US, male) · Qwen3-TTS · 8-bit</text>
+<text x="97.5" y="329.56" font-size="13" textLength="193.89" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Ryan (male) · Qwen3-TTS · 8-bit</text>
+<text x="97.5" y="357.1" font-size="11" font-weight="600" fill="#aeaeb2">Piper</text>
+<text x="97.5" y="378.16" font-size="13" textLength="192.45" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Alan (UK, male) · Piper · medium</text>
+<text x="97.5" y="400.16" font-size="13" textLength="203.83" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Amy (US, female) · Piper · medium</text>
+<text x="97.5" y="422.16" font-size="13" textLength="251.27" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Jenny Dioco (UK, female) · Piper · medium</text>
+<path d="M84 439.25l3 3l6 -7" fill="none" stroke-width="1.6" stroke="#ffffff" stroke-opacity="0.85" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="97.5" y="444.16" font-size="13" textLength="218.89" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Lessac (US, female) · Piper · medium</text>
+<text x="97.5" y="466.16" font-size="13" textLength="195.55" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Ryan (US, male) · Piper · medium</text>
+<text x="97.5" y="493.71" font-size="11" font-weight="600" fill="#aeaeb2">macOS</text>
+<text x="97.5" y="514.77" font-size="13" textLength="220.52" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Daniel (UK, male) · macOS · Premium</text>
+<text x="97.5" y="536.77" font-size="13" textLength="260.55" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Samantha (US, female) · macOS · Enhanced</text>
+<text x="97.5" y="558.77" font-size="13" textLength="175" lengthAdjust="spacingAndGlyphs" fill="#ffffff" opacity="0.85">Alex (US) · macOS · Standard</text>
+<path d="M257.03 17.5l5 -5l5 5z" fill="#ffffff" fill-opacity="0.85"/>
 </svg>
