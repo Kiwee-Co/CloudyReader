@@ -35,6 +35,26 @@ Cloudy Reader reads US DOE National Science Bowl questions aloud on your Mac. It
 
 ## Features
 
+<table>
+  <tr>
+    <td align="center" valign="top" width="33%">
+      <img src="assets/icons/cloud-book/AppIcon.iconset/icon_128x128.png" width="64" height="64" alt="The cloud-book icon: a white cloud over an open book, on a teal rounded square."><br>
+      <strong>Reads pasted questions</strong><br>
+      It handles toss-ups, bonuses, choices, and the answer line.
+    </td>
+    <td align="center" valign="top" width="33%">
+      <img src="assets/icons/cloud-voice/AppIcon.iconset/icon_128x128.png" width="64" height="64" alt="The cloud-voice icon: a white cloud with sound waves, on a blue rounded square."><br>
+      <strong>Local voice engines</strong><br>
+      Speech synthesis and playback run on your Mac.
+    </td>
+    <td align="center" valign="top" width="33%">
+      <img src="assets/icons/cloud-atom/AppIcon.iconset/icon_128x128.png" width="64" height="64" alt="The cloud-atom icon: a white speech-bubble cloud with a purple atom, on a purple rounded square."><br>
+      <strong>Science-aware speech</strong><br>
+      Formulas, units, and Greek letters become words.
+    </td>
+  </tr>
+</table>
+
 - **Reads questions as you paste them.** The parser handles toss-ups and bonuses, multiple choice (W, X, Y, Z), short answer, and the answer line. It cleans PDF leftovers: hard wraps, page footers, round titles, and glued headers.
 - **Two local voice engines.** Piper provides 5 pinned English voices. Kokoro-82M on MLX adds 28 more on Apple Silicon. The project pins 33 voices in all.
 - **Science-aware speech.** Formulas and ions are spelled (`H2O` becomes "H two O"). Units, fractions, scientific notation, exponents, and Greek letters become words. A pasted guide such as `[KREBZ SY-kul]` sets how a word sounds. A built-in lexicon covers hard science terms.
