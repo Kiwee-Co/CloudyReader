@@ -569,7 +569,8 @@ class Canvas:
                 self.widget(child)
 
     def widget(self, w: QWidget) -> None:
-        from cloudyreader.gui.widgets import Card, DisclosureButton, StatusBar
+        from cloudyreader.gui.status import StatusBar
+        from cloudyreader.gui.widgets import Card, DisclosureButton
 
         if isinstance(w, Card):
             self.card(w)
@@ -741,7 +742,7 @@ class Canvas:
                 box.moveCenter(r.center())
                 self.icon_painter(box)
             return
-        from cloudyreader.gui.widgets import ElidedLabel
+        from cloudyreader.gui.status import ElidedLabel
 
         if isinstance(label, ElidedLabel):  # one line, cut at its end when short of room
             text = label.fontMetrics().elidedText(
@@ -1211,7 +1212,7 @@ def fig_download(env: Env, look: Look) -> Svg:
 
 def fig_states(env: Env, look: Look) -> Svg:
     from cloudyreader import prefetch, rotation
-    from cloudyreader.gui.widgets import Tone
+    from cloudyreader.gui.status import Tone
 
     svg = Svg(1, 1, "Status bar states", "")
     y = 0.0
@@ -1430,7 +1431,7 @@ def fig_status_busy(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
 
 
 def fig_status_warning(env: Env, look: Look) -> Svg:
-    from cloudyreader.gui.widgets import Tone
+    from cloudyreader.gui.status import Tone
     from cloudyreader.prefetch import PrefetchResult
 
     partial = PrefetchResult("partial", failed=(f"{MISSING.partition(':')[2]}.safetensors",))
@@ -1563,7 +1564,7 @@ def fig_voice_note(env: Env, look: Look) -> Svg:
 def fig_engine_skip(env: Env, look: Look) -> Svg:
     """An engine download skipped for disk space: a warning at the end of the run."""
     from cloudyreader.engine_catalog import LOW_DISK
-    from cloudyreader.gui.widgets import Tone
+    from cloudyreader.gui.status import Tone
     from cloudyreader.prefetch import PrefetchResult
 
     reason = f"qwen3_tts: {LOW_DISK}: needs 3.2 GB, 1.1 GB free"

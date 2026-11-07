@@ -11,7 +11,7 @@ from PySide6.QtCore import QPoint
 from cloudyreader.gui import tokens
 from cloudyreader.gui.fake_service import FAKE_VOICES, FakeReaderService
 from cloudyreader.gui.main_window import MainWindow, _emit, _Signals
-from cloudyreader.gui.widgets import Tone
+from cloudyreader.gui.status import Tone
 from cloudyreader.prefetch import PrefetchProgress, PrefetchResult
 
 LIBRITTS = "piper:en_US-libritts-high"

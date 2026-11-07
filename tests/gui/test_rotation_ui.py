@@ -10,7 +10,7 @@ from PySide6.QtWidgets import QLabel
 
 from cloudyreader.gui.fake_service import FAKE_VOICES, FakeReaderService
 from cloudyreader.gui.main_window import _voice_label
-from cloudyreader.gui.widgets import Tone
+from cloudyreader.gui.status import Tone
 from cloudyreader.models import VoiceInfo
 from cloudyreader.rotation import RotationMode, VoiceRotator
 

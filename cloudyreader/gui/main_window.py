@@ -54,17 +54,9 @@ from cloudyreader.engine_catalog import TITLES, is_actionable
 from cloudyreader.gui import tokens
 from cloudyreader.gui.motion import reduce_motion
 from cloudyreader.gui.names import APP_NAME, app_version
+from cloudyreader.gui.status import ElidedLabel, StatusBar, Tone
 from cloudyreader.gui.voice_picker import LOADING, VoicePicker
-from cloudyreader.gui.widgets import (
-    Card,
-    DisclosureButton,
-    ElidedLabel,
-    FocusRing,
-    StatusBar,
-    Tone,
-    tabular,
-    text_style,
-)
+from cloudyreader.gui.widgets import Card, DisclosureButton, FocusRing, tabular, text_style
 from cloudyreader.models import AudioPlayer, ReaderService, Reading, RenderOptions, VoiceInfo
 from cloudyreader.rotation import RotationMode, VoiceRotator
 from cloudyreader.voice_meta import profile_of

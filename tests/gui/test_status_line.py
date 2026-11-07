@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QApplication, QToolTip
 
 from cloudyreader.gui import tokens
 from cloudyreader.gui.fake_service import FakeReaderService
-from cloudyreader.gui.widgets import ElidedLabel
+from cloudyreader.gui.status import ElidedLabel
 from cloudyreader.prefetch import PrefetchProgress, PrefetchResult
 
 MB = 10**6

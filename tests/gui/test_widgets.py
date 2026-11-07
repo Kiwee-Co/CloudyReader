@@ -3,7 +3,8 @@ from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import QApplication, QProgressBar
 
 from cloudyreader.gui import tokens
-from cloudyreader.gui.widgets import DisclosureButton, StatusBar, Tone, text_style
+from cloudyreader.gui.status import StatusBar, Tone
+from cloudyreader.gui.widgets import DisclosureButton, text_style
 
 
 @pytest.fixture
@@ -185,3 +186,10 @@ def test_status_bar_paints_every_tone(status, tone):
 
 def test_status_bar_paints_without_a_message(status):
     assert not status.grab().isNull()
+
+
+def test_the_status_bar_classes_live_in_their_own_module():
+    from cloudyreader.gui import status, widgets
+
+    for name in ("Tone", "ElidedLabel", "StatusBar"):
+        assert hasattr(status, name) and not hasattr(widgets, name), name

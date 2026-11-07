@@ -9,8 +9,8 @@ from PySide6.QtWidgets import QWidget
 
 from cloudyreader.engine_catalog import LOW_DISK, NOT_IN_BUILD, NOT_WRITABLE
 from cloudyreader.gui.fake_service import ENGINE_FAKE_VOICES, FAKE_VOICES, FakeReaderService
+from cloudyreader.gui.status import Tone
 from cloudyreader.gui.voice_picker import VoicePicker
-from cloudyreader.gui.widgets import Tone
 from cloudyreader.models import RenderOptions
 from cloudyreader.prefetch import PrefetchProgress, PrefetchResult
 

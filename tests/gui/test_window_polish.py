@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QApplication, QFormLayout, QLabel, QLineEdit, QMes
 
 from cloudyreader.gui import tokens
 from cloudyreader.gui.fake_service import FakeReaderService
-from cloudyreader.gui.widgets import Tone
+from cloudyreader.gui.status import Tone
 
 LIBRITTS = "piper:en_US-libritts-high"
 CTRL = Qt.KeyboardModifier.ControlModifier
