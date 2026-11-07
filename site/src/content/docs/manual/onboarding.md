@@ -35,6 +35,16 @@ If macOS asks for an administrator's name and password, ask the person who manag
 
 [Download Cloudy Reader](/download/) also offers a zip.
 
+## Use AirPods or other Bluetooth headphones
+
+Cloudy Reader plays through the sound output that macOS has set. To hear it in your AirPods and send the sound to another app too, such as a video call:
+
+- **BlackHole + Multi-Output Device** (recommended, free): put **BlackHole 2ch** and your AirPods in one Multi-Output Device, and never make the AirPods the primary device.
+- **Loopback** by Rogue Amoeba: an alternative that the project has not tested.
+- **Automatic Ear Detection**: turn it off if the sound stops when you take the AirPods off.
+
+[Route sound with AirPods and BlackHole](/manual/tasks/route-sound-with-airpods/) has the steps.
+
 ## Next steps
 
 - [Your first week](/manual/first-week/)
