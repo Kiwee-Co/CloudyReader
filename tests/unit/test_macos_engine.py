@@ -259,8 +259,8 @@ def test_voices_are_the_english_voices_without_the_novelty_ones(mac):
 
     assert [v.key for v in voices] == [f"macos:{name}" for name in OFFERED]
     assert {v.name for v in voices}.isdisjoint(NOVELTY)
-    assert {(v.engine, v.quality, v.num_speakers, v.installed) for v in voices} == {
-        ("macos", "Standard", 1, True)
+    assert {(v.engine, v.quality, v.precision, v.num_speakers, v.installed) for v in voices} == {
+        ("macos", "Standard", "Standard", 1, True)
     }
     rows = {v.key: v for v in voices}
     assert (rows["macos:Daniel"].name, rows["macos:Daniel"].language) == ("Daniel", "en-GB")
@@ -303,6 +303,7 @@ def test_enhanced_and_premium_voices_list_with_their_tier(mac):
         ("macos:Lee (Premium)", "Lee", "Premium", "en-AU"),
         ("macos:Fiona (Enhanced)", "Fiona", "Enhanced", "en-scotland"),
     ]
+    assert [v.precision for v in voices] == [v.quality for v in voices]  # the tier alone
 
 
 def test_the_listing_runs_once_with_the_exact_argv_and_a_minimal_environment(mac):

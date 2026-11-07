@@ -152,6 +152,7 @@ def _voice_info(voice: SystemVoice) -> VoiceInfo:
         quality=voice.tier,
         num_speakers=1,
         installed=True,
+        precision=voice.tier,
     )
 
 
