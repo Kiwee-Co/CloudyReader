@@ -7,7 +7,6 @@ import pytest
 
 from cloudyreader.gui import fake_service
 from cloudyreader.gui.fake_service import (
-    FakeClipboard,
     FakePlayer,
     FakeReaderService,
 )
@@ -205,14 +204,6 @@ def test_player_raises_the_configured_error():
         player.play(make_audio())
     with pytest.raises(OSError, match="no output device"):
         player.replay()
-
-
-def test_clipboard_returns_what_was_set():
-    clipboard = FakeClipboard("abc")
-    assert clipboard.text() == "abc"
-
-    clipboard.set_text("def")
-    assert clipboard.text() == "def"
 
 
 # --- prefetch hook ---------------------------------------------------------------------------

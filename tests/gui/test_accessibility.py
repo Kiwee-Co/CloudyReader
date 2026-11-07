@@ -14,8 +14,6 @@ CONTROLS = (
     "rotation_combo",
     "read_answer_check",
     "online_lookups_check",
-    "paste_button",
-    "speak_clipboard_button",
     "repeat_button",
     "stop_button",
     "speak_button",

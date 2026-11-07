@@ -7,7 +7,7 @@ import math
 import threading
 from collections.abc import Callable
 from itertools import pairwise
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import (
     QByteArray,
@@ -74,12 +74,6 @@ _MB = 1_000_000  # decimal megabytes, as Finder counts them
 _DOWNLOADING = "Downloading voices"  # the bar's name for a report that names no group
 _POLITE = QAccessible.AnnouncementPoliteness.Polite
 _POLITENESS = {Tone.ERROR: QAccessible.AnnouncementPoliteness.Assertive, Tone.WARNING: _POLITE}
-
-
-class ClipboardSource(Protocol):
-    """The slice of QClipboard the window reads; tests pass a fake."""
-
-    def text(self) -> str: ...
 
 
 class _Signals(QObject):
@@ -180,7 +174,6 @@ class MainWindow(QMainWindow):
         player: AudioPlayer,
         *,
         settings: QSettings | None = None,
-        clipboard: ClipboardSource | None = None,
         rotator: VoiceRotator | None = None,
         parent: QWidget | None = None,
     ) -> None:
@@ -188,7 +181,6 @@ class MainWindow(QMainWindow):
         self._service = service
         self._player = player
         self._settings = QSettings() if settings is None else settings
-        self._clipboard = QGuiApplication.clipboard() if clipboard is None else clipboard
         self._busy = False
         self._loading_voices = True
         self._has_played = False
@@ -266,9 +258,6 @@ class MainWindow(QMainWindow):
 
         # Ctrl is Cmd on macOS in Qt key sequences.
         self.speak_action = make("Speak", self._on_speak, "Ctrl+Return", "Ctrl+Enter")
-        self.speak_clipboard_action = make(
-            "Speak Clipboard", self._on_speak_clipboard, "Ctrl+Shift+V"
-        )
         self.repeat_action = make("Repeat", self._on_repeat, "Ctrl+R")
         self.stop_action = make("Stop", self._on_stop, "Ctrl+.")
         self.close_action = make("Close Window", self.close, "Ctrl+W")
@@ -318,7 +307,7 @@ class MainWindow(QMainWindow):
         )
         self.edit_menu.aboutToShow.connect(self._update_edit_actions)
         menu = bar.addMenu("Reading")
-        menu.addActions([self.speak_action, self.speak_clipboard_action])
+        menu.addAction(self.speak_action)
         menu.addSeparator()
         menu.addActions([self.repeat_action, self.stop_action])
         bar.addMenu("Window").addActions([self.minimize_action, self.zoom_action])
@@ -353,12 +342,6 @@ class MainWindow(QMainWindow):
             "Look up chemical and protein names on PubChem and UniProt."
         )
 
-        self.paste_button = QPushButton("Paste")
-        self.paste_button.setToolTip("Replace the question with the clipboard text.")
-        self.paste_button.clicked.connect(self._on_paste)
-        self.speak_clipboard_button = self._action_button(
-            self.speak_clipboard_action, "Paste the clipboard and speak it"
-        )
         self.repeat_button = self._action_button(self.repeat_action, "Play the last reading again")
         self.stop_button = self._action_button(self.stop_action, "Stop playback")
         self.speak_button = self._action_button(self.speak_action, "Speak the question")
@@ -400,8 +383,6 @@ class MainWindow(QMainWindow):
         form.addRow("", self.online_lookups_check)  # empty text: Qt adds no label at all
         buttons = QHBoxLayout()
         buttons.setSpacing(tokens.GROUP_SPACING)
-        buttons.addWidget(self.paste_button)
-        buttons.addWidget(self.speak_clipboard_button)
         buttons.addStretch(1)
         buttons.addWidget(self.repeat_button)
         buttons.addWidget(self.stop_button)
@@ -473,8 +454,6 @@ class MainWindow(QMainWindow):
             self.rotation_combo,
             self.read_answer_check,
             self.online_lookups_check,
-            self.paste_button,
-            self.speak_clipboard_button,
             self.repeat_button,
             self.stop_button,
             self.speak_button,
@@ -738,7 +717,6 @@ class MainWindow(QMainWindow):
         can_speak = self.voice_picker.voice_key() is not None and not self._busy
         states = (
             (self.speak_action, self.speak_button, can_speak),
-            (self.speak_clipboard_action, self.speak_clipboard_button, can_speak),
             (self.repeat_action, self.repeat_button, self._has_played and not self._busy),
             (self.stop_action, self.stop_button, self._player.is_playing),
         )
@@ -857,26 +835,8 @@ class MainWindow(QMainWindow):
         else:
             self.showMaximized()
 
-    def _on_paste(self) -> None:
-        text = self._clipboard.text()
-        if not text.strip():
-            self._notify("Clipboard is empty.")
-            return
-        self.question_edit.setPlainText(text)
-        self.question_edit.setFocus()
-
     def _on_speak(self) -> None:
         self._start(self.question_edit.toPlainText())
-
-    def _on_speak_clipboard(self) -> None:
-        if self._busy:
-            return
-        text = self._clipboard.text()
-        if not text.strip():
-            self._notify("Clipboard is empty.")
-            return
-        self.question_edit.setPlainText(text)
-        self._start(text)
 
     def _start(self, raw: str) -> None:
         if self._busy:

@@ -4,7 +4,7 @@ import pytest
 from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QApplication, QStyleFactory
 
-from cloudyreader.gui.fake_service import FakeClipboard, FakePlayer, FakeReaderService
+from cloudyreader.gui.fake_service import FakePlayer, FakeReaderService
 
 # Forced, not defaulted: a GUI test must never open a real window.
 # Qt reads it when the QApplication starts, so setting it after the imports is early enough.
@@ -41,12 +41,7 @@ def player():
 
 
 @pytest.fixture
-def clipboard():
-    return FakeClipboard()
-
-
-@pytest.fixture
-def make_window(qtbot, service, player, settings, clipboard):
+def make_window(qtbot, service, player, settings):
     """Build a shown MainWindow; override any collaborator by keyword."""
 
     def build(
@@ -54,13 +49,12 @@ def make_window(qtbot, service, player, settings, clipboard):
         service=service,
         player=player,
         settings=settings,
-        clipboard=clipboard,
         rotator=None,
         wait_for_voices=True,
     ):
         from cloudyreader.gui.main_window import MainWindow
 
-        win = MainWindow(service, player, settings=settings, clipboard=clipboard, rotator=rotator)
+        win = MainWindow(service, player, settings=settings, rotator=rotator)
         qtbot.addWidget(win)
         win.show()
         if wait_for_voices:  # the list loads on a worker thread

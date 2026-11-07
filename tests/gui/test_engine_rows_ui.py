@@ -246,13 +246,13 @@ def test_the_note_goes_when_the_saved_voice_lands(qtbot, make_window, ryan_saved
 def test_a_landing_voice_leaves_a_newer_message_alone(qtbot, make_window, ryan_saved):
     service = FakeReaderService(voices=ryan_not_ready())
     window = make_window(service=service)
-    window.paste_button.click()  # empty clipboard: its hint replaces the note
+    window.speak_button.click()  # an empty box: its hint replaces the note
 
     service.voice_list = list(ENGINE_FAKE_VOICES)
     refresh(qtbot, window)
 
     assert window.voice_picker.voice_key() == RYAN
-    assert status(window) == "Clipboard is empty."
+    assert status(window) == "Paste a question first."
 
 
 def test_the_note_goes_when_the_user_picks_a_voice(make_window, ryan_saved):
@@ -315,11 +315,11 @@ def test_gate_build_and_other_skips_stay_in_the_picker(window, skip):
 
 
 def test_a_skip_warning_never_covers_a_message_in_the_slot(window):
-    window.paste_button.click()  # empty clipboard: its hint takes the slot
+    window.speak_button.click()  # an empty box: its hint takes the slot
 
     window._on_prefetch_done(PrefetchResult("nothing", skipped=(f"qwen3_tts: {DISK}",)))
 
-    assert status(window) == "Clipboard is empty."
+    assert status(window) == "Paste a question first."
 
 
 def test_a_skip_worth_acting_on_outranks_voices_downloaded(qtbot, window):

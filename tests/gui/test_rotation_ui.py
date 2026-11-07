@@ -5,7 +5,7 @@ import threading
 from dataclasses import replace
 
 import pytest
-from PySide6.QtCore import QSettings
+from PySide6.QtCore import QSettings, Qt
 from PySide6.QtWidgets import QLabel
 
 from cloudyreader.gui.fake_service import FAKE_VOICES, FakeReaderService
@@ -147,14 +147,13 @@ def test_each_shuffle_mode_reads_with_the_rotators_pick(qtbot, make_window, serv
     assert {call.opts.speaker_id for call in service.calls} == {None}
 
 
-def test_both_speak_paths_advance_and_repeat_reuses_the_voice(
-    qtbot, window, service, clipboard, player
+def test_the_button_and_the_shortcut_advance_and_repeat_reuses_the_voice(
+    qtbot, window, service, player
 ):
     choose(window, RotationMode.ROUND_ROBIN)
     speak(qtbot, window)
-    clipboard.set_text("from the clipboard")
     with qtbot.waitSignal(window.reading_played, timeout=5000):
-        window.speak_clipboard_button.click()
+        qtbot.keyClick(window.question_edit, Qt.Key.Key_Return, Qt.KeyboardModifier.ControlModifier)
 
     window.repeat_button.click()
     speak(qtbot, window)
@@ -167,12 +166,10 @@ def test_speaks_that_do_nothing_never_advance_the_rotation(qtbot, window, servic
     choose(window, RotationMode.ROUND_ROBIN)
     window.question_edit.setPlainText("  ")
     window.speak_button.click()  # blank question
-    window.speak_clipboard_button.click()  # empty clipboard
     gate = service.gate = threading.Event()
     window.question_edit.setPlainText("q")
     window.speak_button.click()
     window._on_speak()  # busy: the slot's own guard
-    window._on_speak_clipboard()
     with qtbot.waitSignal(window.reading_played, timeout=5000):
         gate.set()
 

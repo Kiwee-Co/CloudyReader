@@ -65,11 +65,6 @@ def test_in_the_macos_style_the_playback_widths_differ_until_shared(mac_style, m
     check_playback_widths(window)
 
 
-def test_the_input_buttons_keep_their_own_width(window):
-    for button in (window.paste_button, window.speak_clipboard_button):
-        assert button.width() == button.sizeHint().width()
-
-
 def test_the_form_fields_and_labels_share_one_edge(window):
     check_form_edges(window)
 

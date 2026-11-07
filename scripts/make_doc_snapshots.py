@@ -421,7 +421,7 @@ class Env:
 
         voices replaces the full catalog, as at a first launch with nothing downloaded yet.
         """
-        from cloudyreader.gui.fake_service import FakeClipboard, FakePlayer
+        from cloudyreader.gui.fake_service import FakePlayer
         from cloudyreader.gui.main_window import MainWindow
 
         path = self.tmp / f"window{next(self._ids)}.ini"
@@ -431,7 +431,7 @@ class Env:
             settings.setValue("voice_rotation", rotation)
         listed = self.voices if voices is None else list(voices)
         service = self.service_class(voices=listed, **knobs)
-        win = MainWindow(service, FakePlayer(), settings=settings, clipboard=FakeClipboard())
+        win = MainWindow(service, FakePlayer(), settings=settings)
         win.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen)
         win.show()
         try:
@@ -1334,8 +1334,8 @@ def fig_first_launch(env: Env, look: Look) -> Svg:
         env.pump(lambda: win.statusBar().currentMessage() == "No voice is installed.", "no voice")
         desc = (
             f"The main window in {appearance(look.dark)} at its first start: an empty question "
-            "box with its hint, the Voice menu dimmed with No voice installed, Speak and Speak "
-            "Clipboard dimmed, and the status No voice is installed. with a warning icon, beside "
+            "box with its hint, the Voice menu dimmed with No voice installed, Speak dimmed, "
+            "and the status No voice is installed. with a warning icon, beside "
             f"{win.prefetch_label.text()} and its progress bar."
         )
         svg = Svg(win.width(), win.height(), "Cloudy Reader at first start", desc)
@@ -1344,7 +1344,7 @@ def fig_first_launch(env: Env, look: Look) -> Svg:
 
 
 def fig_window_tour(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
-    """The main window during a reading, with markers for its eight parts."""
+    """The main window during a reading, with markers for its seven parts."""
     from cloudyreader.gui import tokens
 
     with env.window(duration_s=SQ1_LESSAC_S) as (win, _service):
@@ -1353,8 +1353,8 @@ def fig_window_tour(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
         env.pump(lambda: win.statusBar().currentMessage() == PLAYING, "playing status")
         desc = (
             f"The main window in {appearance(look.dark)} during a reading: the question box, the "
-            "Voice and Rotation menus, the two options, the Paste and Speak Clipboard buttons, "
-            "the Repeat, Stop, and Speak buttons, the Spoken script, and the status bar."
+            "Voice and Rotation menus, the two options, the Repeat, Stop, and Speak buttons, the "
+            "Spoken script, and the status bar."
         )
         svg = Svg(win.width(), win.height(), "The parts of the Cloudy Reader window", desc)
         draw_content(svg, look, win)
@@ -1365,7 +1365,6 @@ def fig_window_tour(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
         checks = (win.read_answer_check, win.online_lookups_check)
         options_x = max(check_text_right(c, check) for check in checks) + SIDE
         options_y = sum(c.geo(check).center().y() for check in checks) / 2
-        clip = button_rect(c, win.speak_clipboard_button)
         repeat = button_rect(c, win.repeat_button)
         toggle = c.geo(win.script_toggle)
         toggle_text = QFontMetricsF(win.script_toggle.font()).horizontalAdvance(
@@ -1378,11 +1377,10 @@ def fig_window_tour(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
             marker(2, "Voice menu", svg, voice.right() + SIDE, voice.center().y()),
             marker(3, "Rotation menu", svg, rotation.right() + SIDE, rotation.center().y()),
             marker(4, "options", svg, options_x, options_y),
-            # In the empty stretch between the two button groups, beside the group each names.
-            marker(5, "Paste and Speak Clipboard", svg, clip.right() + SIDE, clip.center().y()),
-            marker(6, "Repeat, Stop, and Speak", svg, repeat.left() - SIDE, repeat.center().y()),
-            marker(7, "Spoken script", svg, toggle_x + SIDE, toggle.center().y()),
-            marker(8, "status bar", svg, bar.right() - 32, bar.center().y()),
+            # In the empty stretch at the start of the button row, beside the group it names.
+            marker(5, "Repeat, Stop, and Speak", svg, repeat.left() - SIDE, repeat.center().y()),
+            marker(6, "Spoken script", svg, toggle_x + SIDE, toggle.center().y()),
+            marker(7, "status bar", svg, bar.right() - 32, bar.center().y()),
         ]
     return svg, markers
 
@@ -1719,9 +1717,8 @@ def mac_keys(action: QAction) -> str:
 def fig_reading_menu(env: Env, look: Look) -> Svg:
     """The menu bar with the Reading menu open, drawn from the window's own actions."""
     with env.window() as (win, _service):
-        env.speak(win, sample_question())  # a reading plays: all four commands are on
-        actions = [win.speak_action, win.speak_clipboard_action, None, win.repeat_action]
-        actions.append(win.stop_action)
+        env.speak(win, sample_question())  # a reading plays: all three commands are on
+        actions = [win.speak_action, None, win.repeat_action, win.stop_action]
         font = QFont(win.font())
         bold = QFont(font)
         bold.setBold(True)
@@ -1744,7 +1741,7 @@ def fig_reading_menu(env: Env, look: Look) -> Svg:
         width, height = max(x, menu.right() + 24), menu.bottom() + 24
         desc = (
             f"The menu bar in {appearance(look.dark)} with the Reading menu open: Speak ⌘↩, "
-            "Speak Clipboard ⇧⌘V, then Repeat ⌘R and Stop ⌘."
+            "then Repeat ⌘R and Stop ⌘."
         )
         svg = Svg(width, height, "The Reading menu", desc)
         svg.rect(QRectF(0, 0, width, bar_h), **paint(look.menu))
@@ -1913,7 +1910,7 @@ def fig_pipeline(dark: bool) -> Svg:
         QRectF(760, 32, 18, 14), 4, **paint(ink.net), **paint(ink.net_edge, "stroke"), **legend
     )
     svg.text(784, 44, "network (HTTPS)", font_size=12, **paint(ink.soft))
-    q = d.box(QRectF(32, 70, 160, 78), "Question text", ["pasted, or from", "the clipboard"])
+    q = d.box(QRectF(32, 70, 160, 78), "Question text", ["pasted or typed", "into the window"])
     p = d.box(QRectF(232, 70, 160, 78), "Parser", ["toss-up or bonus,", "category, choices"])
     e = d.box(
         QRectF(432, 70, 200, 78), "Entity detection", ["scispaCy CRAFT model", "plus regexes"]

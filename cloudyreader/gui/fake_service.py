@@ -280,19 +280,6 @@ class FakePlayer:
         self._deadline = time.monotonic() + audio.duration_s if self._real_time else math.inf
 
 
-class FakeClipboard:
-    """Stands in for QClipboard so tests never touch the real pasteboard."""
-
-    def __init__(self, text: str = "") -> None:
-        self._text = text
-
-    def text(self) -> str:
-        return self._text
-
-    def set_text(self, text: str) -> None:
-        self._text = text
-
-
 def main() -> int:  # pragma: no cover - manual dev run
     from cloudyreader.gui.app import run
 

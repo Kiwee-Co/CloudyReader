@@ -344,7 +344,6 @@ def test_the_placeholder_override_leaves_every_other_color_to_the_system(qapp, w
     ("button", "action"),
     [
         ("speak_button", "speak_action"),
-        ("speak_clipboard_button", "speak_clipboard_action"),
         ("repeat_button", "repeat_action"),
         ("stop_button", "stop_action"),
     ],
@@ -355,9 +354,7 @@ def test_button_tooltips_teach_the_shortcut(window, button, action):
     assert shortcut in getattr(window, button).toolTip()
 
 
-@pytest.mark.parametrize(
-    "control", ["paste_button", "read_answer_check", "online_lookups_check", "script_toggle"]
-)
+@pytest.mark.parametrize("control", ["read_answer_check", "online_lookups_check", "script_toggle"])
 def test_controls_without_a_shortcut_still_explain_themselves(window, control):
     widget = getattr(window, control)
 

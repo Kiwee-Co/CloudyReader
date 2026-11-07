@@ -99,12 +99,12 @@ def test_a_re_list_that_finds_a_voice_clears_the_no_voice_warning(qtbot, make_wi
 def test_a_re_list_leaves_a_newer_message_alone(qtbot, make_window):
     service = FakeReaderService(voices=[])
     window = make_window(service=service)
-    window.paste_button.click()  # empty clipboard: its hint replaces the warning
+    window._on_repeat()  # Speak is off with no voice; Repeat's slot still answers
 
     service.voice_list = list(FAKE_VOICES)
     refresh(qtbot, window)
 
-    assert status(window) == "Clipboard is empty."
+    assert status(window) == "Nothing to repeat yet."
 
 
 def test_re_list_requests_coalesce_while_one_is_in_flight(qtbot, window, service):

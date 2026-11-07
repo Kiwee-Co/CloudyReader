@@ -1,15 +1,16 @@
 import importlib.metadata
+import inspect
 import threading
 from dataclasses import replace
 
 import pytest
 from PySide6.QtCore import QPoint, QSettings, Qt, QTimer
-from PySide6.QtGui import QAction, QIcon, QPixmap
-from PySide6.QtWidgets import QApplication, QMessageBox, QWidget
+from PySide6.QtGui import QAction, QGuiApplication, QIcon, QKeySequence, QPixmap
+from PySide6.QtWidgets import QApplication, QMessageBox, QPushButton, QWidget
 
-from cloudyreader.gui import names, tokens
+from cloudyreader.gui import fake_service, main_window, names, tokens
 from cloudyreader.gui.fake_service import FakePlayer, FakeReaderService
-from cloudyreader.gui.main_window import _Job, _Signals
+from cloudyreader.gui.main_window import MainWindow, _Job, _Signals
 from cloudyreader.models import RenderOptions
 
 AMY = "piper:en_US-amy-medium"
@@ -17,6 +18,7 @@ LESSAC = "piper:en_US-lessac-medium"
 LIBRITTS = "piper:en_US-libritts-high"
 HEART = "kokoro:af_heart"
 CTRL = Qt.KeyboardModifier.ControlModifier
+SHIFT_CMD_V = (Qt.Key.Key_V, CTRL | Qt.KeyboardModifier.ShiftModifier)
 
 
 def speak(qtbot, window, text="What is H2O?"):
@@ -36,7 +38,6 @@ def status(window) -> str:
 def test_initial_state(window):
     assert window.windowTitle() == "Cloudy Reader"
     assert window.speak_button.isEnabled()
-    assert window.speak_clipboard_button.isEnabled()
     assert not window.repeat_button.isEnabled()
     assert not window.stop_button.isEnabled()
     assert not window.read_answer_check.isChecked()
@@ -117,18 +118,15 @@ def test_busy_changed_brackets_the_preparation(qtbot, window):
     assert states == [True, False]
 
 
-def test_second_speak_while_busy_is_ignored(qtbot, window, service, clipboard):
+def test_second_speak_while_busy_is_ignored(qtbot, window, service):
     gate = service.gate = threading.Event()
-    clipboard.set_text("other")
     window.question_edit.setPlainText("q")
     window.speak_button.click()
 
     window.speak_button.click()
     window.speak_action.trigger()
-    window.speak_clipboard_action.trigger()
-    # The slots guard themselves too, in case a click was queued before the state changed.
+    # The slot guards itself too, in case a click was queued before the state changed.
     window._on_speak()
-    window._on_speak_clipboard()
     with qtbot.waitSignal(window.reading_played, timeout=5000):
         gate.set()
 
@@ -159,55 +157,70 @@ def test_playing_message_names_the_duration(qtbot, window):
     assert status(window) == "Playing 2.0 s."
 
 
-# --- clipboard -------------------------------------------------------------------------------
+# --- no clipboard commands: Edit > Paste (⌘V) brings the question in -------------------------
 
 
-def test_paste_fills_the_box_from_the_clipboard(window, clipboard):
-    window.question_edit.setPlainText("old")
-    clipboard.set_text("new")
+def test_no_paste_or_speak_clipboard_button_remains(window):
+    buttons = [button.text() for button in window.centralWidget().findChildren(QPushButton)]
 
-    window.paste_button.click()
+    assert sorted(buttons) == ["Repeat", "Speak", "Stop"]
+    assert not hasattr(window, "paste_button")
+    assert not hasattr(window, "speak_clipboard_button")
 
-    assert window.question_edit.toPlainText() == "new"
+
+def test_the_reading_menu_has_no_speak_clipboard_command(window):
+    menu = next(a.menu() for a in window.menuBar().actions() if a.text() == "Reading")
+
+    assert [action.text() for action in menu.actions()] == ["Speak", "", "Repeat", "Stop"]
+    assert not hasattr(window, "speak_clipboard_action")
 
 
-def test_paste_with_an_empty_clipboard_keeps_the_text(window):
+def test_shift_cmd_v_is_no_command_and_speaks_nothing(qtbot, window, service):
+    taken = QKeySequence("Ctrl+Shift+V")
     window.question_edit.setPlainText("keep")
 
-    window.paste_button.click()
+    qtbot.keyClick(window.question_edit, *SHIFT_CMD_V)
 
-    assert window.question_edit.toPlainText() == "keep"
-    assert status(window) == "Clipboard is empty."
-
-
-def test_speak_clipboard_reads_the_clipboard_and_speaks_it(qtbot, window, service, clipboard):
-    clipboard.set_text("Clip text")
-
-    with qtbot.waitSignal(window.reading_played, timeout=5000):
-        window.speak_clipboard_button.click()
-
-    assert service.calls[-1].raw == "Clip text"
-    assert window.question_edit.toPlainText() == "Clip text"
-
-
-def test_speak_clipboard_passes_the_chosen_voice_and_options(qtbot, window, service, clipboard):
-    clipboard.set_text("Clip text")
-    window.voice_picker.select_voice(HEART)
-    window.read_answer_check.setChecked(True)
-
-    with qtbot.waitSignal(window.reading_played, timeout=5000):
-        window.speak_clipboard_button.click()
-
-    call = service.calls[-1]
-    assert call.voice_key == HEART
-    assert call.opts.read_answer is True
-
-
-def test_speak_clipboard_with_an_empty_clipboard_says_so(window, service):
-    window.speak_clipboard_button.click()
-
-    assert status(window) == "Clipboard is empty."
+    assert [a.text() for a in window.findChildren(QAction) if taken in a.shortcuts()] == []
     assert service.calls == []
+    assert window.question_edit.toPlainText() == "keep"
+
+
+def test_no_clipboard_seam_is_left(window):
+    assert "clipboard" not in inspect.signature(MainWindow).parameters
+    assert not hasattr(main_window, "ClipboardSource")
+    assert not hasattr(fake_service, "FakeClipboard")
+    assert not hasattr(window, "_on_paste")
+    assert not hasattr(window, "_on_speak_clipboard")
+
+
+def test_the_window_never_reads_the_clipboard(qtbot, monkeypatch, service, player, settings):
+    reads = []
+    for app in (QGuiApplication, QApplication):
+        monkeypatch.setattr(app, "clipboard", staticmethod(lambda: reads.append("read")))
+    window = MainWindow(service, player, settings=settings)
+    qtbot.addWidget(window)
+    window.show()
+    qtbot.waitUntil(lambda: not window.loading_voices, timeout=5000)
+
+    speak(qtbot, window)
+    window.repeat_button.click()
+    window.stop_button.click()
+    qtbot.keyClick(window.question_edit, *SHIFT_CMD_V)
+
+    assert reads == []
+
+
+def test_edit_paste_still_reaches_the_question_box(window, monkeypatch):
+    pasted = []
+    monkeypatch.setattr(window.question_edit, "paste", lambda: pasted.append(True))  # no pasteboard
+    window.question_edit.setFocus()
+
+    window.paste_action.trigger()
+
+    assert pasted == [True]
+    paste = QKeySequence.keyBindings(QKeySequence.StandardKey.Paste)
+    assert window.paste_action.shortcuts() == paste
 
 
 # --- stop and repeat -------------------------------------------------------------------------
@@ -364,13 +377,13 @@ def test_warnings_outlive_the_playback(qtbot, window, service, player):
 
 
 def test_menu_hover_does_not_wipe_the_status_message(window):
-    window.paste_button.click()
+    window.speak_button.click()  # an empty box: its hint takes the slot
     menu = next(a.menu() for a in window.menuBar().actions() if a.text() == "Reading")
     menu.popup(window.mapToGlobal(QPoint(10, 10)))
 
     menu.setActiveAction(window.speak_action)
 
-    assert status(window) == "Clipboard is empty."
+    assert status(window) == "Paste a question first."
     menu.close()
 
 
@@ -453,7 +466,6 @@ def test_no_installed_voice_disables_speaking(make_window):
     window = make_window(service=FakeReaderService(voices=[]))
 
     assert not window.speak_button.isEnabled()
-    assert not window.speak_clipboard_button.isEnabled()
     assert status(window) == "No voice is installed."
 
 
@@ -485,7 +497,6 @@ def test_voices_load_off_the_ui_thread_and_the_ui_stays_responsive(qtbot, make_w
     assert window.voice_picker.combo.placeholderText() == "Loading voices\u2026"
     assert not window.voice_picker.combo.isEnabled()
     assert not window.speak_button.isEnabled()
-    assert not window.speak_clipboard_button.isEnabled()
     with qtbot.waitSignal(window.voices_settled, timeout=5000):
         gate.set()
     assert not window.loading_voices
@@ -526,12 +537,12 @@ def test_speak_slot_refuses_while_voices_load(qtbot, make_window, service):
 def test_a_message_that_replaced_the_loading_text_survives_the_arrival(qtbot, make_window, service):
     gate = service.voices_gate = threading.Event()
     window = make_window(wait_for_voices=False)
-    window.paste_button.click()  # empty clipboard: its hint replaces "Loading voices..."
+    window._on_repeat()  # Repeat is off while voices load; its slot still answers
 
     with qtbot.waitSignal(window.voices_settled, timeout=5000):
         gate.set()
 
-    assert status(window) == "Clipboard is empty."
+    assert status(window) == "Nothing to repeat yet."
 
 
 def test_a_slow_voice_list_that_fails_ends_the_loading_state(qtbot, make_window, service):
@@ -609,7 +620,6 @@ def test_saved_voice_that_is_gone_falls_back_but_keeps_the_preference(make_windo
     ("action", "keys"),
     [
         ("speak_action", ["Ctrl+Return", "Ctrl+Enter"]),
-        ("speak_clipboard_action", ["Ctrl+Shift+V"]),
         ("repeat_action", ["Ctrl+R"]),
         ("stop_action", ["Ctrl+."]),
     ],
@@ -627,15 +637,6 @@ def test_cmd_return_in_the_text_box_speaks_without_adding_a_newline(qtbot, windo
 
     assert len(service.calls) == 1
     assert window.question_edit.toPlainText() == "q"
-
-
-def test_cmd_shift_v_speaks_the_clipboard(qtbot, window, service, clipboard):
-    clipboard.set_text("from clipboard")
-
-    with qtbot.waitSignal(window.reading_played, timeout=5000):
-        qtbot.keyClick(window.question_edit, Qt.Key.Key_V, CTRL | Qt.KeyboardModifier.ShiftModifier)
-
-    assert service.calls[-1].raw == "from clipboard"
 
 
 def test_cmd_r_repeats_and_cmd_period_stops(qtbot, window, player):
@@ -667,8 +668,6 @@ def test_focus_chain_follows_the_visual_order(window):
         window.rotation_combo,
         window.read_answer_check,
         window.online_lookups_check,
-        window.paste_button,
-        window.speak_clipboard_button,
         window.repeat_button,
         window.stop_button,
         window.speak_button,
@@ -694,8 +693,6 @@ def test_every_interactive_control_has_an_accessible_name(window):
         window.rotation_combo,
         window.read_answer_check,
         window.online_lookups_check,
-        window.paste_button,
-        window.speak_clipboard_button,
         window.repeat_button,
         window.stop_button,
         window.speak_button,
