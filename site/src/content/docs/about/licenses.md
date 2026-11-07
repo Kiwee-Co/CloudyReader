@@ -75,6 +75,8 @@ The engine repositories are:
 - [mlx-community/chatterbox-turbo-4bit](https://huggingface.co/mlx-community/chatterbox-turbo-4bit) at `c63817725071d7b5269c7b558772d6e8cbf59cec` holds the Chatterbox Turbo model. The original model by Resemble AI is licensed MIT, and the card of this mlx-community conversion lists Apache-2.0. The engine catalog in the source lists MIT and credits Resemble AI, with an MLX build by mlx-community.
 - [mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit) at `049ef77fe8816b536193c0c25f9a214d17921282` holds the Qwen3-TTS model. The engine catalog lists its license as Apache-2.0 and credits the Alibaba Qwen team, with an MLX build by mlx-community.
 
+The macOS voices come from your Mac, not from a repository. The app starts the system program `/usr/bin/say`, which reads the voices that macOS has installed. The app downloads, bundles, and redistributes none of them, and they keep the terms that came with macOS.
+
 The voice files, the engine files, and the Kokoro model are third-party works. They are not part of the Cloudy Reader source, and they keep the terms of their publishers. Read the model card of each repository for those terms.
 
 The app carries 12 short recordings of the choice letters W, X, Y, and Z, one for each letter in each of the voices Ryan, Aiden, and Chatterbox Turbo, about 0.4 MB in all. The models made them, so they are neither voice files nor engine files. Qwen3-TTS is licensed Apache-2.0. Chatterbox Turbo is licensed MIT upstream, and the card of the pinned mlx-community conversion lists Apache-2.0. Neither license limits the output audio.
@@ -97,6 +99,7 @@ Cloudy Reader builds on the work of these projects and data sources:
 - [Kokoro-82M](https://huggingface.co/mlx-community/Kokoro-82M-bf16), converted for MLX: the Kokoro model and its voices. The voice grades come from the model's `VOICES.md` file.
 - [Chatterbox Turbo](https://huggingface.co/mlx-community/chatterbox-turbo-4bit), from Resemble AI and converted for MLX by mlx-community: the Chatterbox Turbo voice.
 - [Qwen3-TTS](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit), from the Alibaba Qwen team and converted for MLX by mlx-community: the Aiden and Ryan voices.
+- The macOS speech system, through `/usr/bin/say`: the voices under the **macOS** heading. Your Mac provides them, and the app does not redistribute them.
 - [MLX](https://github.com/ml-explore/mlx) and [mlx-audio](https://github.com/Blaizzy/mlx-audio): they run Kokoro, Chatterbox Turbo, and Qwen3-TTS on Apple silicon.
 - [OPSIN](https://github.com/dan2097/opsin), through [py2opsin](https://github.com/JacksonBurns/py2opsin): the check of systematic chemical names.
 - [scispaCy](https://allenai.github.io/scispacy/): the name-detection model, trained on CRAFT.

@@ -97,8 +97,9 @@ A file that fails the property check dims the engine's voices with the reason `d
 The app touches these parts of your Mac:
 
 - Files: the data folder `~/Library/Application Support/cloudyreader`, the preferences file `~/Library/Preferences/com.cloudyreader.Cloudy Reader.plist`, and temporary files in the system temporary folder. See [Files, settings, and limits](/manual/reference/files-and-settings/).
-- Clipboard: the app reads the clipboard only when you click **Paste** or **Speak Clipboard**, or paste into the question box.
+- Clipboard: the app reads the clipboard only when you paste into its window, with Command-V or **Edit > Paste**. It never reads the clipboard on its own.
 - Sound: the app starts `/usr/bin/afplay` as a child process to play a reading, and stops it when you click **Stop**.
+- Speech: the app starts `/usr/bin/say` as a child process once at launch, to list the macOS voices, and again for each reading with a macOS voice. It passes an argument list, not a shell command, and the environment `PATH=/usr/bin:/bin`. The spoken script goes in on standard input, and `say` writes a WAV file to a private temporary folder. The app deletes the folder after the reading, and it ends `say` when the run goes past its time budget.
 - Java: the app starts its bundled Java runtime for the OPSIN check. It ends the runtime when the check finishes or runs past its time budget.
 - Network: see [Privacy](/about/privacy/) for what the app sends and when.
 

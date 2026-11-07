@@ -15,6 +15,8 @@ Cloudy Reader makes speech on your Mac and has no telemetry, analytics, crash re
 
 Parsing, [name detection](/manual/reference/glossary/#name-detection), the [OPSIN check](/manual/reference/glossary/#opsin-check), the pronunciation rules, speech synthesis, and playback run on your Mac. The name-detection model and a Java runtime for the OPSIN check are part of the app.
 
+A macOS voice needs no download. The app starts the system program `/usr/bin/say` on your Mac, gives it the spoken script, and gets an audio file back.
+
 The audio never leaves the Mac. The only text from your questions that can leave it is the single name in a lookup.
 
 ## What uses the network
@@ -89,24 +91,26 @@ The voice engines load only files that are already on your Mac. Kokoro loads wit
 
 Chatterbox Turbo and Qwen3-TTS load with the Hugging Face and Transformers offline switches on. While they load, the app replaces the download functions of the Hugging Face libraries with stubs. A stub raises the error `snapshot_download is blocked: engine models load only from local files`.
 
+The macOS engine loads no file of its own and opens no network connection. It starts `/usr/bin/say` with the environment `PATH=/usr/bin:/bin`, and `say` speaks voices that macOS already has.
+
 ## What the app never collects
 
 The app has no telemetry, analytics, crash reporting, or update check. It sends no usage data and creates no account or identifier.
 
-The app reads the clipboard only when you click **Paste** or **Speak Clipboard**, or paste into the question box with Command-V. It writes no log file and sets up no logging of its own. Its warning lines go to standard error, and they can quote a word from a question.
+The app reads the clipboard only when you paste into its window, with Command-V or **Edit > Paste**. It never reads the clipboard on its own. It writes no log file and sets up no logging of its own. Its warning lines go to standard error, and they can quote a word from a question.
 
 ## What the app stores on your Mac
 
 The data folder is `~/Library/Application Support/cloudyreader`. A location without a full path is inside it.
 
-| Name             | Location                                                     | What it holds                                                                              |
-| ---------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| Voices           | `voices/` and `models/`                                      | The voice files and the engine files that the voice download fetches                       |
-| Audio cache      | `cache/wav/`                                                 | One WAV file for each distinct reading, named by a SHA-256 value                           |
-| Lookup cache     | `cache/resolutions.sqlite`                                   | Each name handled by a lookup or the OPSIN check, with its status, answer, and expiry time |
-| Download staging | `.prefetch/`                                                 | Partial downloads with the suffix `.part`                                                  |
-| Preferences      | `~/Library/Preferences/com.cloudyreader.Cloudy Reader.plist` | The window position and size, the voice, the rotation mode, and the two checkboxes         |
-| Temporary files  | The system temporary folder                                  | Chemical names for the OPSIN check and self-test output, removed after use                 |
+| Name             | Location                                                     | What it holds                                                                                                     |
+| ---------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Voices           | `voices/` and `models/`                                      | The voice files and the engine files that the voice download fetches                                              |
+| Audio cache      | `cache/wav/`                                                 | One WAV file for each distinct reading, named by a SHA-256 value                                                  |
+| Lookup cache     | `cache/resolutions.sqlite`                                   | Each name handled by a lookup or the OPSIN check, with its status, answer, and expiry time                        |
+| Download staging | `.prefetch/`                                                 | Partial downloads with the suffix `.part`                                                                         |
+| Preferences      | `~/Library/Preferences/com.cloudyreader.Cloudy Reader.plist` | The window position and size, the voice, the rotation mode, and the two checkboxes                                |
+| Temporary files  | The system temporary folder                                  | Chemical names for the OPSIN check, self-test output, and the audio that a macOS voice renders, removed after use |
 
 SQLite may add `-wal` and `-shm` files next to the lookup cache. The app removes expired lookup rows when it starts, and it removes `.part` files older than 24 hours when a download starts.
 
@@ -129,7 +133,7 @@ Quit the app, then run this command in Terminal. Keep Terminal open while the ap
 "/Applications/Cloudy Reader.app/Contents/MacOS/Cloudy Reader" --offline
 ```
 
-In offline mode the app sends no request and creates no download folder. A dimmed row in the **Voice** menu can show the reason `offline: not downloaded`. Download the voices before you go offline: see [Work offline](/manual/tasks/work-offline/).
+In offline mode the app sends no request and creates no download folder. A dimmed row in the **Voice** menu can show the reason `offline: not downloaded`. The macOS voices need no download, so they work offline. Download the other voices before you go offline: see [Work offline](/manual/tasks/work-offline/).
 
 A network that blocks a host also stops the feature that uses it. A blocked lookup fails without a message, and the reading goes on. A network administrator who wants the first launch to work must allow `huggingface.co` and the HTTPS hosts that it redirects to.
 
