@@ -507,6 +507,10 @@ def doc_service_class() -> type:
             script = normalizer.to_script(questions, {}, opts)
             return replace(reading, questions=tuple(questions), script=script)
 
+        def preview_script(self, raw: str, opts: Any) -> Any:
+            super().preview_script(raw, opts)  # the fake's record and knobs
+            return normalizer.to_script(QuestionParser().parse(raw), {}, opts)
+
     return DocService
 
 
@@ -633,6 +637,8 @@ class Canvas:
         svg.path(chevrons, fill="none", stroke="#FFFFFF", stroke_width=1.5, **ROUND)
         text = c.currentText() or c.placeholderText()
         color = look.label if on and c.currentIndex() >= 0 else look.disabled
+        if not on:  # the app inks a dimmed pop-up's placeholder to stay readable on its bezel
+            color = c.palette().color(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText)
         y = baseline(r.top(), r.height(), c.font())
         svg.text(r.left() + 9, y, text, **font_kw(c.font()), **fit(text, c.font()), **paint(color))
 
@@ -850,7 +856,7 @@ class MenuItem:
     text: str
     enabled: bool
     header: QFont | None = None  # a section header's own font; None for a choice
-    ink: QColor | None = None  # a section header's own color
+    ink: QColor | None = None  # the row's own color: a header's, or a dimmed voice's
 
 
 def combo_items(combo: QComboBox) -> list[MenuItem]:
@@ -862,7 +868,7 @@ def combo_items(combo: QComboBox) -> list[MenuItem]:
         font = index.data(Qt.ItemDataRole.FontRole)
         brush = index.data(Qt.ItemDataRole.ForegroundRole)
         header = flags == Qt.ItemFlag.NoItemFlags and isinstance(font, QFont)
-        ink = brush.color() if header and brush is not None else None
+        ink = brush.color() if brush is not None else None
         enabled = bool(flags & Qt.ItemFlag.ItemIsEnabled)
         items.append(MenuItem(combo.itemText(i), enabled, font if header else None, ink))
     return items
@@ -934,7 +940,11 @@ def draw_menu(
         lit = i == hover and item.enabled
         if lit:
             svg.rect(row.adjusted(5, 0, -5, 0), 5, **paint(look.accent))
-        ink = QColor("#FFFFFF") if lit else (look.label if item.enabled else look.disabled)
+        ink = (
+            QColor("#FFFFFF")
+            if lit
+            else (look.label if item.enabled else item.ink or look.disabled)
+        )
         if i == current:
             mark = f"M{pts(row.left() + 7.5, row.center().y())}l3 3l6 -7"
             svg.path(mark, fill="none", stroke_width=1.6, **paint(ink, "stroke"), **ROUND)
@@ -1061,6 +1071,7 @@ def fig_menu(env: Env, look: Look, which: str, *, top: bool = False) -> Svg:
     """A popup menu open over the window. top: the Voice menu at Heart, the first voice listed."""
     with env.window() as (win, _service):
         win.question_edit.setPlainText(sample_question())
+        env.pump(lambda: bool(win.script_view.toPlainText()), "live script")
         if top:
             win.voice_picker.select_voice(HEART)
         env.app.processEvents()
@@ -1449,19 +1460,21 @@ def fig_guide_warning(env: Env, look: Look) -> Svg:
 # --- 0.0.2 engine states: Chatterbox Turbo and Qwen3-TTS (main, from 0.0.2) -------------------
 
 QWEN_RYAN = "qwen3_tts:ryan"
+MACOS_SAMANTHA = "macos:Samantha"
 
 
 def engine_rows(dimmed: Mapping[str, str] | None = None) -> list[Any]:
-    """The engine rows of a build with both engines pinned, as the GUI fake names them.
+    """The engine rows of a build with both engines pinned, and a Mac's own voices, as the GUI
+    fake names them.
 
     dimmed maps an engine to the reason its rows give, as while it still downloads.
     """
-    from cloudyreader.gui.fake_service import ENGINE_FAKE_VOICES, FAKE_VOICES
+    from cloudyreader.gui.fake_service import ENGINE_FAKE_VOICES, FAKE_VOICES, MACOS_FAKE_VOICES
 
     reasons = dimmed or {}
     return [
         replace(v, installed=v.engine not in reasons, reason=reasons.get(v.engine, ""))
-        for v in ENGINE_FAKE_VOICES[len(FAKE_VOICES) :]
+        for v in (*ENGINE_FAKE_VOICES[len(FAKE_VOICES) :], *MACOS_FAKE_VOICES)
     ]
 
 
@@ -1486,6 +1499,7 @@ def fig_voices_engines(env: Env, look: Look) -> Svg:
     catalog = engine_catalog(env, {"chatterbox_turbo": NOT_DOWNLOADED})
     with env.window(voices=catalog, saved_voice=QWEN_RYAN) as (win, _service):
         win.question_edit.setPlainText(sample_question())
+        env.pump(lambda: bool(win.script_view.toPlainText()), "live script")
         env.app.processEvents()
         combo = win.voice_picker.combo
         items, current = combo_items(combo), combo.currentIndex()
@@ -1497,6 +1511,25 @@ def fig_voices_engines(env: Env, look: Look) -> Svg:
             "reason not downloaded yet, the Qwen3-TTS heading with Aiden and Ryan, then Piper."
         )
         svg = Svg(win.width(), win.height(), "Voice menu with the engine groups", desc)
+        bounds = draw_content(svg, look, win)
+        draw_menu(svg, look, menu, items, (current, current), combo.font(), bounds)
+    return svg
+
+
+def fig_voices_macos(env: Env, look: Look) -> Svg:
+    """The Voice menu open at Samantha: the Mac's own voices, last, after Piper."""
+    with env.window(voices=engine_catalog(env), saved_voice=MACOS_SAMANTHA) as (win, _service):
+        win.question_edit.setPlainText(sample_question())
+        env.pump(lambda: bool(win.script_view.toPlainText()), "live script")
+        combo = win.voice_picker.combo
+        items, current = combo_items(combo), combo.currentIndex()
+        probe = Canvas(Svg(1, 1, "", ""), look, win, 0, 0)
+        menu = menu_rect(probe.popup_bezel(combo), items, current, combo.font())
+        desc = (
+            f"The Voice menu open in {appearance(look.dark)} at Samantha: the end of the Piper "
+            "list, then the macOS heading with Daniel, Samantha, and Alex, each with its tier."
+        )
+        svg = Svg(win.width(), win.height(), "Voice menu with the macOS voices", desc)
         bounds = draw_content(svg, look, win)
         draw_menu(svg, look, menu, items, (current, current), combo.font(), bounds)
     return svg
@@ -1599,6 +1632,7 @@ def fig_engine_rows(env: Env, look: Look) -> Svg:
     with env.window(voices=downloading, **download_knobs(engine_event())) as (win, _service):
         env.pump(lambda: not win.prefetch_label.isHidden(), "engine download progress")
         win.question_edit.setPlainText(sample_question())
+        env.pump(lambda: bool(win.script_view.toPlainText()), "live script")
         env.app.processEvents()
         combo = win.voice_picker.combo
         items, current = combo_items(combo), combo.currentIndex()
@@ -1611,6 +1645,7 @@ def fig_engine_rows(env: Env, look: Look) -> Svg:
         if not any(NOT_DOWNLOADED in items[i].text for i in shown):
             raise RuntimeError("no dimmed engine row in view: pick a voice nearer the engines")
         label = win.prefetch_label.shown_text()
+        mac = any(items[i].header is not None and items[i].text == "macOS" for i in shown)
         width, y = win.width(), y + win.height() + GAP
     ready = with_engine_rows(voices)
     with env.window(voices=ready, saved_voice=VOICE_KEY, load_hint=LOAD_HINT) as (win, service):
@@ -1621,7 +1656,8 @@ def fig_engine_rows(env: Env, look: Look) -> Svg:
     svg.desc = (
         f"Two parts in {appearance(look.dark)}. First, the Voice menu open while an engine "
         "downloads: the end of the Kokoro list, the Chatterbox Turbo voice, the two Qwen3-TTS "
-        f"voices dimmed with the reason {NOT_DOWNLOADED}, then the Piper voices; the status bar "
+        f"voices dimmed with the reason {NOT_DOWNLOADED}, then the Piper voices"
+        f"{' and the macOS voices' if mac else ''}; the status bar "
         f"shows {label} with its progress bar. Second, the status bar during the first reading "
         f"with Chatterbox Turbo: {first_use} with the busy bar."
     )
@@ -2135,6 +2171,7 @@ FIGURES = (
     "script-formula",
     "options",
     "voices-engines",
+    "voices-macos",
     "download-engine",
     "status-voice-note",
     "status-engine-skip",
@@ -2188,6 +2225,7 @@ def build(
         "status-rotation-fallback": lambda look: fig_rotation_fallback(env, look),
         "script-formula": lambda look: fig_script_formula(env, look),
         "voices-engines": lambda look: fig_voices_engines(env, look),
+        "voices-macos": lambda look: fig_voices_macos(env, look),
         "download-engine": lambda look: fig_download_engine(env, look),
         "status-voice-note": lambda look: fig_voice_note(env, look),
         "status-engine-skip": lambda look: fig_engine_skip(env, look),

@@ -2,6 +2,7 @@
 
 import importlib.util
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -52,7 +53,7 @@ def test_the_engine_catalog_lists_the_engine_groups_between_kokoro_and_piper(sna
 
     assert [v.key for v in voices] == [v.key for v in sorted(voices, key=voice_sort_key)]
     engines = list(dict.fromkeys(v.engine for v in voices))
-    assert engines == ["kokoro", "chatterbox_turbo", "qwen3_tts", "piper"]
+    assert engines == ["kokoro", "chatterbox_turbo", "qwen3_tts", "piper", "macos"]  # a Mac's last
 
 
 def _needs_groups():
@@ -111,6 +112,7 @@ def test_dimmed_engine_rows_give_their_reason(snapshots):
     assert by_engine == {
         "chatterbox_turbo": (True, ""),
         "qwen3_tts": (False, "not downloaded yet"),
+        "macos": (True, ""),
     }
     assert all(v.installed and not v.reason for v in snapshots.engine_rows())
 
@@ -289,3 +291,82 @@ def test_the_download_label_is_drawn_as_it_shows_in_its_ink(snapshots, qapp):
 
     drawn = re.findall(r'fill="([^"]+)"[^>]*>([^<]+)</text>', svg.xml())
     assert drawn == [(tokens.TEXT_SECONDARY_LIGHT, middle)]
+
+
+# --- the figures draw what the app shows ------------------------------------------------------
+
+DIMMED = "not downloaded yet"
+
+
+LOOKS = [(False, "LIGHT"), (True, "DARK")]
+
+
+def menu_xml(snapshots, items, font, dark: bool) -> str:
+    svg = snapshots.Svg(600, 900, "t", "d")
+    menu = snapshots.QRectF(0, 0, 580, 880)
+    snapshots.draw_menu(svg, snapshots.look_for(dark, None), menu, items, (-1, -1), font, menu)
+    return svg.xml()
+
+
+@pytest.mark.parametrize(("dark", "look"), LOOKS)
+def test_a_dimmed_voice_row_is_drawn_in_the_apps_secondary_ink(snapshots, qapp, dark, look):
+    from cloudyreader.gui import theme
+    from cloudyreader.gui.fake_service import ENGINE_FAKE_VOICES
+    from cloudyreader.gui.voice_picker import VoicePicker
+
+    voices = [
+        replace(v, installed=False, reason=DIMMED) if v.engine == "qwen3_tts" else v
+        for v in ENGINE_FAKE_VOICES
+    ]
+    picker = VoicePicker()
+    picker.set_roles(theme.roles(theme.Appearance(dark=dark)))
+    picker.set_voices(voices)
+    items = snapshots.combo_items(picker.combo)
+    dimmed = [item for item in items if not item.enabled and item.header is None]
+    ink = getattr(tokens, f"TEXT_SECONDARY_{look}")
+
+    xml = menu_xml(snapshots, items, picker.combo.font(), dark)
+
+    assert dimmed and {item.ink.name() for item in dimmed} == {ink}
+    for item in dimmed:  # 5.46:1 light, 5.80:1 dark, where the system's faint gray gave 1.84:1
+        assert f'fill="{ink}">{item.text}</text>' in xml
+
+
+@pytest.mark.parametrize(("dark", "look"), LOOKS)
+def test_a_disabled_pop_up_shows_its_placeholder_in_the_readable_ink(snapshots, qapp, dark, look):
+    from cloudyreader.gui import theme
+    from cloudyreader.gui.voice_picker import VoicePicker
+
+    picker = VoicePicker()
+    picker.set_roles(theme.roles(theme.Appearance(dark=dark)))
+    picker.set_voices([])  # no voice installed: the dimmed pop-up says so
+    picker.combo.resize(362, 32)
+    svg = snapshots.Svg(400, 40, "t", "d")
+
+    snapshots.Canvas(svg, snapshots.look_for(dark, None), picker.combo, 0, 0).popup(picker.combo)
+
+    text, ink = picker.combo.placeholderText(), getattr(tokens, f"FIELD_PLACEHOLDER_{look}")
+    assert not picker.combo.isEnabled() and text
+    assert f'fill="{ink}">{text}</text>' in svg.xml()  # 5.97:1 light, 5.64:1 dark
+
+
+def test_a_menu_figure_shows_the_live_spoken_script(env, snapshots):
+    xml = snapshots.fig_menu(env, env.scheme(False), "voices", top=True).xml()
+
+    assert "The words that are spoken appear here." not in xml  # the empty panel's placeholder
+    assert "Toss-up" in xml  # the genuine script, from the real parser and normalizer
+
+
+def test_the_engine_rows_include_the_macos_voices(snapshots):
+    from cloudyreader.gui.fake_service import MACOS_FAKE_VOICES
+
+    keys = [v.key for v in snapshots.engine_rows()]
+
+    assert [v.key for v in MACOS_FAKE_VOICES] == [k for k in keys if k.startswith("macos:")]
+
+
+def test_the_macos_figure_opens_the_voice_menu_at_samantha(env, snapshots):
+    xml = snapshots.fig_voices_macos(env, env.scheme(False)).xml()
+
+    assert ">macOS voices<" in xml or ">macOS</text>" in xml  # the section header
+    assert "Samantha (US, female) · macOS · Enhanced" in xml
