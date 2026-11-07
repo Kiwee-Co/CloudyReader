@@ -116,6 +116,16 @@ class Pipeline:
             log.warning("load hint for %s failed: %s", voice_key, exc, exc_info=True)
             return None
 
+    def preview_script(self, raw: str, opts: RenderOptions) -> SpokenScript:
+        """The script `prepare` builds with every lookup off: the live Spoken script panel's text.
+
+        Parse and normalize only: no detector, resolver, voice or synthesis, so no network and no
+        model. Blank text, or text with no question, gives an empty script. Blocking: run it on
+        the worker that runs `prepare`, never beside it.
+        """
+        questions = self._parser.parse(raw) if raw.strip() else []
+        return self._normalizer.to_script(questions, {}, opts) if questions else SpokenScript(())
+
     def prepare(self, raw: str, voice_key: str, opts: RenderOptions) -> Reading:
         if not raw.strip():
             raise ValueError("nothing to read")
