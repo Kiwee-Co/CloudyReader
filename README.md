@@ -5,8 +5,11 @@
 # Cloudy Reader
 
 [![CI](https://github.com/Kiwee-Co/CloudyReader/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Kiwee-Co/CloudyReader/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Kiwee-Co/CloudyReader?color=blue)](https://github.com/Kiwee-Co/CloudyReader/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/Kiwee-Co/CloudyReader/total?color=blue)](https://github.com/Kiwee-Co/CloudyReader/releases)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/Kiwee-Co/CloudyReader/blob/main/LICENSE)
 [![Platform: macOS | Apple Silicon](https://img.shields.io/badge/platform-macOS%20%7C%20Apple%20Silicon-lightgrey)](https://kiwee-co.github.io/CloudyReader/manual/getting-started/)
+[![Voice engines: on-device](https://img.shields.io/badge/voice%20engines-on--device-blue)](#offline-and-privacy)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue)](pyproject.toml)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)](https://github.com/astral-sh/ruff)
 [![Docs: GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://kiwee-co.github.io/CloudyReader/)
