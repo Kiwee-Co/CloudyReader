@@ -22,6 +22,7 @@ from cloudyreader.gui import theme, tokens
 from cloudyreader.gui.widgets import tabular, text_style
 
 _LEFT_CENTER = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+_MB, _GB = 10**6, 10**9  # decimal units, as Finder counts them
 
 
 class Tone(enum.Enum):
@@ -66,6 +67,22 @@ def paint_tone_glyph(painter: QPainter, rect: QRect | QRectF, tone: Tone, color:
     painter.restore()
 
 
+def size_text(size: int) -> str:
+    """A byte count as Finder says it: "330 MB", and "2.0 GB" from a thousand megabytes on."""
+    megabytes = round(size / _MB)
+    return f"{size / _GB:.1f} GB" if megabytes >= _GB // _MB else f"{megabytes} MB"
+
+
+def download_variants(title: str, percent: int, done: int, total: int) -> tuple[str, str, str]:
+    """The download label's wordings, longest first: short of room it drops the sizes, then the
+    verb. Under a gigabyte the unit is said once: "139 of 330 MB", else "829 MB of 2.0 GB"."""
+    whole, part = size_text(total), size_text(done)
+    if whole.endswith(" MB"):
+        part = part.removesuffix(" MB")
+    running = f"Downloading {title}… {percent}%"
+    return f"{running} ({part} of {whole})", running, f"{title} {percent}%"
+
+
 def _named(text: str, tone: Tone) -> str:
     """The message as VoiceOver names it: with its tone word, unless the text starts with it."""
     word = _TONE_WORDS.get(tone)
@@ -76,18 +93,43 @@ def _named(text: str, tone: Tone) -> str:
 
 class ElidedLabel(QLabel):
     """A one-line label that gives up width first: short of room it elides at the end, and its
-    tooltip then shows the whole text above the tooltip it was given."""
+    tooltip then shows the whole text above the tooltip it was given.
+
+    set_variants() gives it shorter wordings of its text: it shows the longest that fits whole
+    and elides only the shortest. text() stays the longest; a later setText() drops them.
+    """
+
+    def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
+        super().__init__(text, parent)
+        self._variants: tuple[str, ...] = ()
+
+    def set_variants(self, longest: str, *shorter: str) -> None:
+        super().setText(longest)
+        self._variants = (longest, *shorter)
+
+    def setText(self, text: str) -> None:
+        self._variants = ()  # a plain text has no shorter wordings
+        super().setText(text)
 
     def minimumSizeHint(self) -> QSize:
         return QSize(0, super().minimumSizeHint().height())
 
+    def shown_text(self) -> str:
+        """What the label paints: the longest wording that fits, else the shortest, elided."""
+        room, metrics = self.contentsRect().width(), self.fontMetrics()
+        wordings = self._variants or (self.text(),)
+        # Fit as the painter does: an integer advance can round a slightly wider text down.
+        cuts = [metrics.elidedText(text, Qt.TextElideMode.ElideRight, room) for text in wordings]
+        whole = (cut for cut, text in zip(cuts, wordings, strict=True) if cut == text)
+        return next(whole, cuts[-1])
+
     def is_elided(self) -> bool:
-        return self.fontMetrics().horizontalAdvance(self.text()) > self.contentsRect().width()
+        return self.shown_text() != self.text()
 
     def paintEvent(self, _event: QPaintEvent) -> None:
         painter = QPainter(self)
         rect = self.contentsRect()
-        text = self.fontMetrics().elidedText(self.text(), Qt.TextElideMode.ElideRight, rect.width())
+        text = self.shown_text()
         role = QPalette.ColorRole.WindowText
         align = self.alignment()  # set it right-aligned, and the text stays beside what follows
         self.style().drawItemText(painter, rect, align, self.palette(), True, text, role)

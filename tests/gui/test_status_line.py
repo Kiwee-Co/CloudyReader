@@ -1,12 +1,13 @@
-"""The status line: its height, its inks, one progress bar at a time, and the message's share of
-the line."""
+"""The status line: its height, its inks, one progress bar at a time, the message's share of the
+line, and a download label that drops wording before it elides."""
 
+import math
 import threading
 
 import pytest
 from PySide6.QtCore import QEvent, QPoint, Qt
-from PySide6.QtGui import QColor, QFont, QHelpEvent, QPalette
-from PySide6.QtWidgets import QApplication, QToolTip
+from PySide6.QtGui import QColor, QFont, QFontMetricsF, QHelpEvent, QPalette
+from PySide6.QtWidgets import QApplication, QHBoxLayout, QProgressBar, QToolTip, QWidget
 
 from cloudyreader.gui import theme, tokens
 from cloudyreader.gui.fake_service import FakeReaderService
@@ -19,6 +20,10 @@ ENGINE_LABEL = "Downloading Chatterbox Turbo… 42% (176 of 420 MB)"
 HINT = "loading Chatterbox Turbo (first use only)"  # makes "Preparing…" longer than half a line
 TNUM = QFont.Tag("tnum")
 ELIDE_RIGHT = Qt.TextElideMode.ElideRight
+LONG = "Downloading Kokoro… 42% (139 of 330 MB)"
+MIDDLE = "Downloading Kokoro… 42%"
+SHORT = "Kokoro 42%"
+NOTE = "Michael (male, Kokoro) is not ready: not downloaded yet. Using Heart (female, Kokoro)."
 
 
 def engine_report() -> PrefetchProgress:
@@ -336,6 +341,130 @@ def test_the_accessible_name_follows_a_new_tone_and_a_cleared_line(bar):
     bar.clearMessage()
 
     assert bar.accessibleName() == ""
+
+
+# --- the download label: wordings that drop facts before they elide ----------------------------
+
+
+@pytest.fixture
+def label(qtbot):
+    widget = ElidedLabel()
+    qtbot.addWidget(widget)
+    widget.set_variants(LONG, MIDDLE, SHORT)
+    widget.setToolTip("af_heart.safetensors (all downloads: 48%)")
+    widget.show()
+    return widget
+
+
+def width_of(widget, text: str) -> int:
+    """The whole points text needs: its fractional advance, rounded up."""
+    return math.ceil(QFontMetricsF(widget.font()).horizontalAdvance(text))
+
+
+def give(widget, width: int) -> None:
+    widget.resize(width, widget.sizeHint().height())
+
+
+def test_with_room_the_longest_wording_shows(label):
+    give(label, width_of(label, LONG))
+
+    assert label.shown_text() == LONG
+    assert not label.is_elided()
+
+
+@pytest.mark.parametrize(("room", "shown"), [(LONG, MIDDLE), (MIDDLE, SHORT)])
+def test_short_of_room_the_next_wording_shows_whole(label, room, shown):
+    give(label, width_of(label, room) - 1)
+
+    assert label.shown_text() == shown
+    assert label.is_elided()  # a fact is hidden, so the tooltip shows the whole text
+    assert label.text() == LONG  # the text stays the longest, for VoiceOver too
+
+
+def test_only_the_shortest_wording_elides(label):
+    give(label, width_of(label, SHORT) - 1)
+
+    shown = label.shown_text()
+
+    assert shown.endswith("…")
+    assert SHORT.startswith(shown.removesuffix("…"))
+
+
+def test_no_width_shows_a_cut_longer_wording(label):
+    whole = {LONG, MIDDLE, SHORT}
+    for width in range(width_of(label, LONG) + 2):
+        give(label, width)
+        shown = label.shown_text()
+        assert shown in whole or SHORT.startswith(shown.removesuffix("…")), (width, shown)
+
+
+def test_the_label_paints_the_wording_it_shows(label):
+    give(label, width_of(label, LONG) - 1)  # MIDDLE fits; an elided LONG would fill the label
+    image = label.grab().toImage()
+
+    ink = [
+        x
+        for x in range(image.width())
+        if any(image.pixelColor(x, y).lightness() < 128 for y in range(image.height()))
+    ]
+
+    assert max(ink) <= width_of(label, MIDDLE) + 2  # a glyph's side bearing at most
+
+
+def test_a_shorter_wording_shows_the_whole_text_over_the_tooltip(label):
+    give(label, width_of(label, MIDDLE))
+    point = QPoint(5, 5)
+
+    try:
+        QApplication.sendEvent(
+            label, QHelpEvent(QEvent.Type.ToolTip, point, label.mapToGlobal(point))
+        )
+        assert QToolTip.text() == f"{LONG}\n{label.toolTip()}"
+    finally:
+        QToolTip.hideText()
+
+
+def test_a_later_set_text_drops_the_wordings(label):
+    label.setText(LONG)  # the same text: it has no shorter wordings now
+    give(label, width_of(label, SHORT))
+
+    shown = label.shown_text()
+
+    assert shown.endswith("…")
+    assert LONG.startswith(shown.removesuffix("…"))  # the text itself, cut: not "Kokoro 42%"
+
+
+def test_new_wordings_replace_the_old(label):
+    label.set_variants("Downloading Piper voices… 33% (22 of 66 MB)", "Downloading Piper…", "Piper")
+    give(label, width_of(label, "Piper"))
+
+    assert label.text() == "Downloading Piper voices… 33% (22 of 66 MB)"
+    assert label.shown_text() == "Piper"
+
+
+def test_a_long_message_keeps_half_the_line_and_the_label_drops_its_sizes(qtbot, bar):
+    cluster = QWidget()
+    row = QHBoxLayout(cluster)
+    row.setContentsMargins(0, 0, 0, 0)
+    row.setSpacing(tokens.CONTROL_SPACING)
+    download = ElidedLabel()
+    download.set_variants(LONG, MIDDLE, SHORT)
+    row.addWidget(download, 1)
+    progress = QProgressBar()
+    progress.setFixedWidth(tokens.PROGRESS_BAR_WIDTH)
+    row.addWidget(progress)
+    bar.add_cluster(cluster)
+    bar.resize(tokens.WINDOW_MIN_SIZE[0], tokens.STATUS_LINE_HEIGHT)
+    bar.show_message(NOTE)
+    bar.layout().activate()
+    cluster.layout().activate()
+
+    _icon, text, _elided = bar.message_layout()
+    area = bar.contentsRect()
+
+    assert (text.right() + 1 - area.left()) / area.width() >= tokens.MESSAGE_MIN_SHARE
+    assert download.shown_text() in (MIDDLE, SHORT)  # the sizes go first
+    assert download.text() == LONG
 
 
 def test_the_message_layout_keeps_its_shape_for_the_figure_generator(bar):

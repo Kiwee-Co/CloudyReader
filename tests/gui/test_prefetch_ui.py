@@ -11,12 +11,13 @@ from PySide6.QtCore import QPoint
 from cloudyreader.gui import tokens
 from cloudyreader.gui.fake_service import FAKE_VOICES, FakeReaderService
 from cloudyreader.gui.main_window import MainWindow, _emit, _Signals
-from cloudyreader.gui.status import Tone
+from cloudyreader.gui.status import Tone, download_variants, size_text
 from cloudyreader.prefetch import PrefetchProgress, PrefetchResult
 
 LIBRITTS = "piper:en_US-libritts-high"
 HEART = "kokoro:af_heart"
 LESSAC = "piper:en_US-lessac-medium"
+MB = 10**6
 
 
 def prefetch_threads() -> list[threading.Thread]:
@@ -418,3 +419,40 @@ def test_the_busy_bar_returns_when_the_download_ends_during_a_reading(window):
 
     assert window.busy_bar.isVisible()
     assert right_margin(window, window.busy_bar) == tokens.MARGIN
+
+
+# --- the download label's wording -------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("size", "said"),
+    [
+        (0, "0 MB"),
+        (22 * MB, "22 MB"),
+        (330 * MB, "330 MB"),
+        (999_400_000, "999 MB"),
+        (999_600_000, "1.0 GB"),  # never "1,000 MB": a thousand megabytes read as gigabytes
+        (1_240 * MB, "1.2 GB"),
+        (1_973 * MB, "2.0 GB"),
+    ],
+)
+def test_sizes_read_in_decimal_units_as_finder_counts_them(size, said):
+    assert size_text(size) == said
+
+
+@pytest.mark.parametrize(
+    ("done", "total", "sizes"),
+    [
+        (139 * MB, 330 * MB, "139 of 330 MB"),  # under a gigabyte: one unit, said once
+        (829 * MB, 1_973 * MB, "829 MB of 2.0 GB"),
+        (1_240 * MB, 1_970 * MB, "1.2 GB of 2.0 GB"),
+    ],
+)
+def test_the_download_label_drops_its_sizes_then_its_verb(done, total, sizes):
+    wordings = download_variants("Qwen3-TTS", 42, done, total)
+
+    assert wordings == (
+        f"Downloading Qwen3-TTS… 42% ({sizes})",
+        "Downloading Qwen3-TTS… 42%",
+        "Qwen3-TTS 42%",
+    )
