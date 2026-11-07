@@ -23,7 +23,7 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 ## Start here
 
-<Card title="Onboarding guide">
+<Card title="Onboarding guide" icon="open-book">
 
 1. Download: get Cloudy Reader from the [Download page](/download/).
 2. Install: open the disk image and drag **Cloudy Reader** to **Applications**.
@@ -53,7 +53,7 @@ A pronunciation guide in brackets sets how the app says a word.
 
 <CardGrid>
 
-<Card title="Students">
+<Card title="Students" icon="pencil">
 
 Select **Read answer line**, hear a question, answer in the 5-second pause, then hear the answer. Choose a rotation mode to hear a different voice each time you press **Speak**.
 
@@ -61,7 +61,7 @@ Select **Read answer line**, hear a question, answer in the 5-second pause, then
 
 </Card>
 
-<Card title="Coaches">
+<Card title="Coaches" icon="list-format">
 
 Read toss-ups and bonuses from the keyboard: copy a question, switch to Cloudy Reader, and press Command-Shift-V. The voices play on your Mac, so a venue with no network works after setup.
 
@@ -69,7 +69,7 @@ Read toss-ups and bonuses from the keyboard: copy a question, switch to Cloudy R
 
 </Card>
 
-<Card title="Moderators">
+<Card title="Moderators" icon="comment-alt">
 
 Hear how hard terms and formulas sound before you read them in a round. Add a pronunciation guide in brackets when a word sounds wrong.
 
@@ -81,9 +81,27 @@ Hear how hard terms and formulas sound before you read them in a round. Add a pr
 
 ## What stays on your Mac
 
-- Voices and reading run on your Mac, and the audio never leaves it.
-- **Online lookups** is on by default. It can send one detected chemical, protein, or gene name at a time to PubChem or UniProt, never the text around it. You can deselect it.
-- The app has no telemetry, analytics, crash reports, or update checks.
+<CardGrid>
+
+<Card title="Voices on your Mac" icon="laptop">
+
+Voices and reading run on your Mac, and the audio never leaves it.
+
+</Card>
+
+<Card title="Online lookups" icon="magnifier">
+
+**Online lookups** is on by default. It can send one detected chemical, protein, or gene name at a time to PubChem or UniProt, never the text around it. You can deselect it.
+
+</Card>
+
+<Card title="No telemetry" icon="padlock">
+
+The app has no telemetry, analytics, crash reports, or update checks.
+
+</Card>
+
+</CardGrid>
 
 Read the full statement in [Privacy](/about/privacy/).
 

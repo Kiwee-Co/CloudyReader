@@ -67,3 +67,30 @@
 .cr-site-footer p {
 	margin: 0.5rem 0 0;
 }
+
+/* Cards (Starlight's Card and CardGrid): every icon takes the accent, not a color by position. On
+   a page with a sidebar the column is narrow, so a card pads less and a file name fits a line. */
+.card {
+	--sl-card-border: var(--sl-color-accent);
+	--sl-card-bg: var(--sl-color-accent-low);
+}
+.card .icon {
+	color: var(--sl-color-text-accent);
+}
+:root[data-has-sidebar] .card {
+	padding: 1.25rem 1.5rem;
+}
+/* An odd last card spans the row, and three cards share one row on a wide screen. */
+@media (min-width: 50rem) {
+	.card-grid > .card:last-child:nth-child(odd) {
+		grid-column: 1 / -1;
+	}
+}
+@media (min-width: 72rem) {
+	.card-grid:has(> .card:nth-child(3):last-child) {
+		grid-template-columns: repeat(3, 1fr);
+	}
+	.card-grid:has(> .card:nth-child(3):last-child) > .card {
+		grid-column: auto;
+	}
+}
