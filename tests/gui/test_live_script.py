@@ -17,6 +17,7 @@ from cloudyreader.models import RenderOptions
 
 DEBOUNCE_MS = 25
 BURST_MS = 300  # typing and pasting finish well inside it, even on a busy machine
+KEYSTROKE_MS = 10  # a fast typist: each change comes this long after the last
 SETTLE_MS = 6 * DEBOUNCE_MS  # long enough that a second update, had one been coming, is in
 WAIT_MS = 5000
 PLAIN = RenderOptions()
@@ -132,6 +133,32 @@ def test_a_burst_of_changes_gives_one_job_and_one_update(qtbot, make_live):
 
     assert texts(emitted) == ["script of What"]
     assert [call.raw for call in compute.calls] == ["What"]
+
+
+def test_changes_that_keep_coming_keep_the_pause_open(qtbot, make_live):
+    compute = Computer()
+    live, emitted = make_live(compute, debounce_ms=BURST_MS)
+
+    for number in range(40):  # 400 ms of typing: longer than the pause, so a pause that ran on
+        live.schedule(f"q{number}", PLAIN)  # from the first change would end in the middle of it
+        qtbot.wait(KEYSTROKE_MS)
+
+    assert compute.calls == []
+    qtbot.waitUntil(lambda: bool(emitted), timeout=WAIT_MS)
+    qtbot.wait(SETTLE_MS)
+    assert [call.raw for call in compute.calls] == ["q39"]
+    assert texts(emitted) == ["script of q39"]
+
+
+def test_every_change_starts_the_pause_over(qtbot, make_live):
+    live, _ = make_live(Computer(), debounce_ms=BURST_MS)
+    timer = live.findChild(QTimer)
+    live.schedule("a", PLAIN)
+    qtbot.wait(BURST_MS // 2)  # half the pause has gone
+
+    live.schedule("b", PLAIN)
+
+    assert timer.remainingTime() > BURST_MS * 3 // 4
 
 
 def test_changes_a_pause_apart_are_each_updated(qtbot, make_live):
