@@ -6,17 +6,24 @@ sidebar:
   order: 2
 ---
 
-import { LinkButton, Steps } from '@astrojs/starlight/components';
+import { Card, LinkButton, Steps } from '@astrojs/starlight/components';
+import Badges from '../../components/Badges.astro';
+
+<Badges names={['platform', 'voice-engines', 'voice-download', 'license']} />
 
 Cloudy Reader 0.0.3 comes as a disk image and as a zip. Both hold the same app for a Mac with Apple silicon. This page has the file details, the requirements, the SHA-256 values, and the install steps.
 
 ## Download version 0.0.3
+
+<Card title="Disk image and zip" icon="download">
 
 - Version: 0.0.3
 - Release date: November 6, 2026
 - Disk image (recommended): `Cloudy-Reader-0.0.3-macos-arm64.dmg`, 432 MB
 - Zip: `Cloudy-Reader-0.0.3-macos-arm64.zip`, 460 MB
 - Size on disk after install: 1.06 GB
+
+</Card>
 
 Both files hold the app and no voices. At the first launch, the app downloads its voices, so keep the Mac online. Make sure your Mac meets the requirements below before you download.
 
