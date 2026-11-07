@@ -295,6 +295,49 @@ def test_the_message_is_painted_in_its_ink(bar, monkeypatch):
     assert any(tinted(x, y) for x in xs for y in ys)
 
 
+# --- the accessible name ---------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "tone", "name"),
+    [
+        ("Stopped.", Tone.INFO, "Stopped."),
+        (
+            "Warning: no pronunciation for 'xyz'",
+            Tone.WARNING,
+            "Warning: no pronunciation for 'xyz'",
+        ),
+        ("2 warnings: first; second", Tone.WARNING, "2 warnings: first; second"),
+        (
+            "No installed voice matches “Men only”; using the selected voice.",
+            Tone.WARNING,
+            "Warning: No installed voice matches “Men only”; using the selected voice.",
+        ),
+        ("No voice is installed.", Tone.WARNING, "Warning: No voice is installed."),
+        ("No voice is installed.", Tone.INFO, "No voice is installed."),
+        ("Error: voice file missing", Tone.ERROR, "Error: voice file missing"),
+        ("voice file missing", Tone.ERROR, "Error: voice file missing"),
+    ],
+)
+def test_the_accessible_name_holds_the_tone_word_once(bar, text, tone, name):
+    bar.show_message(text, tone)
+
+    assert bar.accessibleName() == name
+    word = {Tone.WARNING: "warning", Tone.ERROR: "error"}.get(tone)
+    if word is not None:
+        assert bar.accessibleName().casefold().count(word) == 1
+
+
+def test_the_accessible_name_follows_a_new_tone_and_a_cleared_line(bar):
+    bar.show_message("No voice is installed.")
+    bar.show_message("No voice is installed.", Tone.WARNING)
+    assert bar.accessibleName() == "Warning: No voice is installed."
+
+    bar.clearMessage()
+
+    assert bar.accessibleName() == ""
+
+
 def test_the_message_layout_keeps_its_shape_for_the_figure_generator(bar):
     bar.show_message("Error: boom", Tone.ERROR)
 

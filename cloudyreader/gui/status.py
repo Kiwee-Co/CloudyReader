@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import enum
+import re
 
 from PySide6.QtCore import QEvent, QPointF, QRect, QRectF, QSize, Qt
 from PySide6.QtGui import (
@@ -32,6 +33,7 @@ class Tone(enum.Enum):
 
 
 _GLYPH_TONES = frozenset({Tone.WARNING, Tone.ERROR})  # information shows no glyph
+_TONE_WORDS = {Tone.WARNING: "Warning", Tone.ERROR: "Error"}
 
 
 def paint_tone_glyph(painter: QPainter, rect: QRect | QRectF, tone: Tone, color: QColor) -> None:
@@ -62,6 +64,14 @@ def paint_tone_glyph(painter: QPainter, rect: QRect | QRectF, tone: Tone, color:
     painter.setBrush(color)
     painter.drawEllipse(QPointF(*dot), tokens.GLYPH_DOT_RADIUS, tokens.GLYPH_DOT_RADIUS)
     painter.restore()
+
+
+def _named(text: str, tone: Tone) -> str:
+    """The message as VoiceOver names it: with its tone word, unless the text starts with it."""
+    word = _TONE_WORDS.get(tone)
+    if word is None or not text or re.match(rf"(\d+ )?{word}s?\b", text, re.IGNORECASE):
+        return text  # "Warning: …" and "2 warnings: …" say it already
+    return f"{word}: {text}"
 
 
 class ElidedLabel(QLabel):
@@ -162,12 +172,14 @@ class StatusBar(QStatusBar):
         self._tone = tone
         self.showMessage(text)
         self._cap_cluster()  # a tone glyph needs room too
+        self.setAccessibleName(_named(text, tone))  # the same text in a new tone sends no signal
         self.update()  # showMessage() repaints only when the text itself changes
 
     def _on_message_changed(self, text: str) -> None:
         if not text:
             self._tone = Tone.INFO
         self._cap_cluster()
+        self.setAccessibleName(_named(text, self._tone))
 
     def message_layout(self) -> tuple[QRect, QRect, str]:
         """The icon rect (null for INFO), the text rect, and the message elided to fit it."""
