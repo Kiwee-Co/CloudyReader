@@ -5,6 +5,7 @@ from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QColor, QGuiApplication, QPalette
 
 from cloudyreader.gui import theme, tokens
+from cloudyreader.gui.status import Tone
 
 ROLE = QPalette.ColorRole
 CONTRAST = Qt.ContrastPreference
@@ -140,3 +141,47 @@ def test_a_scheme_switch_keeps_increased_contrast(window, monkeypatch):
     QGuiApplication.styleHints().colorSchemeChanged.emit(Qt.ColorScheme.Dark)
 
     assert surfaces(window) == surface_tokens(dark=True, high=True)
+
+
+def status_inks(window) -> dict[str, str]:
+    """The inks the window gives the status line and the Voice menu, read from the live parts."""
+    bar, combo = window.statusBar(), window.voice_picker.combo
+    bar.show_message("Stopped.")
+    information = bar.ink().name()
+    glyphs = {}
+    for tone in (Tone.WARNING, Tone.ERROR):
+        bar.show_message("Some status text", tone)
+        glyphs[f"{tone.value} glyph"] = bar.glyph_color().name()
+    return {
+        "information": information,
+        "download label": window.prefetch_label.palette().color(ROLE.WindowText).name(),
+        **glyphs,
+        "voice menu headers": combo.model().item(0).foreground().color().name(),
+        "disabled pop-up placeholder": combo.palette()
+        .color(QPalette.ColorGroup.Disabled, ROLE.ButtonText)
+        .name(),
+    }
+
+
+def status_tokens(dark: bool, high: bool) -> dict[str, str]:
+    look = LOOKS[(dark, high)]
+    return {
+        "information": token("TEXT_SECONDARY", look),
+        "download label": token("TEXT_SECONDARY", look),
+        "warning glyph": token("TONE_WARNING", look),
+        "error glyph": token("TONE_ERROR", look),
+        "voice menu headers": token("TEXT_SECONDARY", look),
+        "disabled pop-up placeholder": token("FIELD_PLACEHOLDER", look),
+    }
+
+
+@pytest.mark.parametrize(("dark", "high"), list(LOOKS), ids=list(LOOKS.values()))
+def test_a_contrast_switch_retunes_the_status_line_and_the_voice_menu(
+    window, monkeypatch, dark, high
+):
+    monkeypatch.setattr(theme, "current", lambda hints=None: theme.Appearance(dark, high))
+    hints = QGuiApplication.styleHints().accessibility()
+
+    hints.contrastPreferenceChanged.emit(CONTRAST.HighContrast if high else CONTRAST.NoPreference)
+
+    assert status_inks(window) == status_tokens(dark, high)

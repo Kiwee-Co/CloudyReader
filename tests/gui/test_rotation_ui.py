@@ -9,7 +9,6 @@ from PySide6.QtCore import QSettings, Qt
 from PySide6.QtWidgets import QLabel
 
 from cloudyreader.gui.fake_service import FAKE_VOICES, FakeReaderService
-from cloudyreader.gui.main_window import _voice_label
 from cloudyreader.gui.status import Tone
 from cloudyreader.models import VoiceInfo
 from cloudyreader.rotation import RotationMode, VoiceRotator
@@ -246,8 +245,8 @@ def test_the_status_names_the_rotated_voice(qtbot, window, service):
     with qtbot.waitSignal(window.reading_played, timeout=5000):
         gate.set()
 
-    assert preparing == "Preparing with Lessac (female)…"
-    assert status(window) == "Playing 2.0 s with Lessac (female)."
+    assert preparing == "Preparing with Lessac (female, Piper)…"
+    assert status(window) == "Playing 2.0 s with Lessac (female, Piper)."
 
 
 # --- real voice names --------------------------------------------------------------------------
@@ -256,13 +255,6 @@ def test_the_status_names_the_rotated_voice(qtbot, window, service):
 
 REAL_LESSAC = VoiceInfo("piper:en_US-lessac-medium", "piper", "lessac", "en-US", "medium", 1, True)
 REAL_HEART = VoiceInfo("kokoro:af_heart", "kokoro", "Heart (female)", "en-US", "A", 1, True)
-
-
-@pytest.mark.parametrize(
-    ("voice", "label"), [(REAL_HEART, "Heart (female)"), (REAL_LESSAC, "lessac (female)")]
-)
-def test_the_rotated_voice_label_names_the_gender_once(voice, label):
-    assert _voice_label(voice) == label
 
 
 def test_the_status_names_a_real_kokoro_voice_without_doubling_its_gender(qtbot, make_window):
@@ -277,14 +269,14 @@ def test_the_status_names_a_real_kokoro_voice_without_doubling_its_gender(qtbot,
     with qtbot.waitSignal(window.reading_played, timeout=5000):
         gate.set()
 
-    assert preparing == "Preparing with Heart (female)…"
-    assert status(window) == "Playing 2.0 s with Heart (female)."
+    assert preparing == "Preparing with Heart (female, Kokoro)…"
+    assert status(window) == "Playing 2.0 s with Heart (female, Kokoro)."
 
 
-def test_the_status_names_a_real_piper_voice_as_the_picker_does(qtbot, make_window):
+def test_the_status_names_a_real_piper_voice_by_its_display_name(qtbot, make_window):
     window = make_window(service=FakeReaderService(voices=[REAL_LESSAC]))
     choose(window, RotationMode.ROUND_ROBIN)
 
     speak(qtbot, window)
 
-    assert status(window) == "Playing 2.0 s with lessac (female)."
+    assert status(window) == "Playing 2.0 s with Lessac (female, Piper)."

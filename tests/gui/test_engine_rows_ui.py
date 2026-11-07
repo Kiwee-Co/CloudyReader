@@ -24,7 +24,7 @@ MB = 10**6
 DISK = f"{LOW_DISK}: needs 3.2 GB, 1.1 GB free"
 GATE = "waiting for a Qwen3 decoder fix"
 HINT = "loading Chatterbox Turbo (first use only)"
-NOTE = "Ryan (male) is not ready: not downloaded yet. Using Lessac."
+NOTE = "Ryan (male, Qwen3-TTS) is not ready: not downloaded yet. Using Lessac (female, Piper)."
 PARTIAL = "Some voices could not be downloaded. They are tried again at the next start."
 
 
@@ -78,7 +78,7 @@ def headers(picker) -> list[str]:
 def test_a_group_report_names_the_engine_its_percent_and_its_megabytes(window):
     window._on_prefetch_progress(report("qwen3_tts", 829, 1_973))  # private on purpose: no thread
 
-    assert window.prefetch_label.text() == "Downloading Qwen3-TTS… 42% (829 of 1,973 MB)"
+    assert window.prefetch_label.text() == "Downloading Qwen3-TTS… 42% (829 MB of 2.0 GB)"
     assert window.prefetch_label.toolTip() == "model.safetensors (all downloads: 48%)"
     assert window.prefetch_bar.value() == 42  # the group's percent, floored, as in the label
     assert window.prefetch_bar.accessibleName() == "Downloading Qwen3-TTS"

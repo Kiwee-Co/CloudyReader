@@ -231,3 +231,61 @@ def test_the_download_strip_describes_the_label_it_draws(env, snapshots):
     desc = re.search(r"<desc[^>]*>([^<]*)</desc>", xml).group(1)
     assert len(drawn) == 1
     assert drawn[0] in desc  # the description names the label the strip shows
+
+
+# --- the status bar as the app draws it ------------------------------------------------------
+
+
+def status_strip(snapshots, text: str, tone_name: str = "info"):
+    """A light status bar with one message, drawn into a figure; returns the figure's XML."""
+    from cloudyreader.gui import theme
+    from cloudyreader.gui.status import StatusBar, Tone
+
+    bar = StatusBar()
+    bar.set_roles(theme.roles(theme.Appearance()))
+    bar.resize(400, tokens.STATUS_LINE_HEIGHT)
+    bar.show_message(text, Tone(tone_name))
+    svg = snapshots.Svg(400, tokens.STATUS_LINE_HEIGHT, "t", "d")
+    snapshots.Canvas(svg, snapshots.look_for(False, None), bar, 0, 0).status_bar(bar)
+    return svg.xml()
+
+
+def test_the_status_strip_draws_information_in_the_secondary_ink(snapshots, qapp):
+    xml = status_strip(snapshots, "Stopped.")
+
+    assert f'fill="{tokens.TEXT_SECONDARY_LIGHT}">Stopped.</text>' in xml
+    assert "<circle" not in xml  # information has no glyph
+
+
+@pytest.mark.parametrize(
+    ("tone_name", "role"), [("warning", "TONE_WARNING_LIGHT"), ("error", "TONE_ERROR_LIGHT")]
+)
+def test_the_tone_glyph_is_the_apps_line_drawing_in_its_role(snapshots, qapp, tone_name, role):
+    xml = status_strip(snapshots, "Some status text", tone_name)
+
+    color = getattr(tokens, role)
+    assert f'fill="none" stroke-width="{tokens.STATUS_GLYPH_STROKE:g}" stroke="{color}"' in xml
+    assert f'r="{tokens.GLYPH_DOT_RADIUS:g}" fill="{color}"/>' in xml  # the exclamation mark's dot
+    assert f'fill="{tokens.TEXT_SECONDARY_LIGHT}">Some status text' not in xml  # primary ink
+
+
+def test_the_download_label_is_drawn_as_it_shows_in_its_ink(snapshots, qapp):
+    import re
+
+    from PySide6.QtGui import QPalette
+
+    from cloudyreader.gui.status import ElidedLabel, download_variants
+
+    longest, middle, shortest = download_variants("Kokoro", 42, 139 * 10**6, 330 * 10**6)
+    label = ElidedLabel()
+    label.set_variants(longest, middle, shortest)
+    quiet = QPalette()
+    quiet.setColor(QPalette.ColorRole.WindowText, QColor(tokens.TEXT_SECONDARY_LIGHT))
+    label.setPalette(quiet)
+    label.resize(label.fontMetrics().horizontalAdvance(longest) - 1, 20)  # the sizes no longer fit
+    svg = snapshots.Svg(label.width(), 20, "t", "d")
+
+    snapshots.Canvas(svg, snapshots.look_for(False, None), label, 0, 0).label(label)
+
+    drawn = re.findall(r'fill="([^"]+)"[^>]*>([^<]+)</text>', svg.xml())
+    assert drawn == [(tokens.TEXT_SECONDARY_LIGHT, middle)]

@@ -56,12 +56,12 @@ from cloudyreader.gui.about import AboutPanel
 from cloudyreader.gui.live_script import LiveScript
 from cloudyreader.gui.motion import reduce_motion
 from cloudyreader.gui.names import APP_NAME, app_version
-from cloudyreader.gui.status import ElidedLabel, StatusBar, Tone
+from cloudyreader.gui.status import ElidedLabel, StatusBar, Tone, download_variants
 from cloudyreader.gui.voice_picker import LOADING, VoicePicker
 from cloudyreader.gui.widgets import Card, DisclosureButton, FocusRing, tabular, text_style
 from cloudyreader.models import AudioPlayer, ReaderService, Reading, RenderOptions, VoiceInfo
 from cloudyreader.rotation import RotationMode, VoiceRotator
-from cloudyreader.voice_meta import profile_of
+from cloudyreader.voice_meta import voice_phrase
 
 if TYPE_CHECKING:
     from cloudyreader.prefetch import PrefetchProgress
@@ -131,15 +131,6 @@ def _skip_line(entry: str) -> tuple[str, bool]:
     return f"{title} not downloaded: {reason}", is_actionable(reason)
 
 
-def _voice_label(voice: VoiceInfo) -> str:
-    """The picker's name and the gender rotation chose the voice by, said once: Kokoro names
-    already end in it ("Heart (female)"), Piper names do not ("lessac" gets " (female)")."""
-    profile = profile_of(voice)
-    if profile is None or voice.name.endswith(f"({profile.gender})"):
-        return voice.name
-    return f"{voice.name} ({profile.gender})"
-
-
 def _card_height(view: QPlainTextEdit, lines: int, padding: int) -> int:
     """The least height of a card that shows this many lines of its view inside padding."""
     return math.ceil(lines * QFontMetricsF(view.font()).lineSpacing() + 2 * padding)
@@ -201,6 +192,7 @@ class MainWindow(QMainWindow):
         self._fallback: str | None = None  # its empty-pool warning, when rotation found none
         self._prefetch_cancel = threading.Event()
         self._prefetch_thread: threading.Thread | None = None
+        self._prefetch_over = False  # the download ran to its end: no voice now is a fault
         self._prefetch_files_done = 0
         self._prefetch_group = ""  # the lock group of the latest download report
         self._voice_note: str | None = None  # why the saved voice is not the selected one
@@ -516,10 +508,14 @@ class MainWindow(QMainWindow):
         self.script_view.setPalette(script)
         outline = None if roles.panel_border is None else QColor(roles.panel_border)
         self.script_panel.set_colors(QColor(roles.panel_fill), outline)
-        self.voice_picker.set_dark(look.dark)
+        self.voice_picker.set_roles(roles)  # increased contrast too: headers, dimmed rows
         self._focus_ring.set_dark(look.dark)
         if self._about_box is not None:
             self._about_box.set_secondary(QColor(roles.secondary_text))
+        self._status.set_roles(roles)
+        quiet = QPalette()  # the download label is information: the message's secondary ink
+        quiet.setColor(QPalette.ColorRole.WindowText, QColor(roles.secondary_text))
+        self.prefetch_label.setPalette(quiet)
 
     def _on_contrast_changed(self, _preference: Qt.ContrastPreference) -> None:
         self._apply_appearance()
@@ -606,7 +602,7 @@ class MainWindow(QMainWindow):
         self._end_loading()
         key = self.voice_picker.voice_key()
         if key is None:
-            self._notify(_NO_VOICE, tone=Tone.WARNING)
+            self._notify(_NO_VOICE, tone=self._no_voice_tone(), announce=True)
         else:
             self._note_fallback(saved, key)
         self.voices_settled.emit()
@@ -618,8 +614,8 @@ class MainWindow(QMainWindow):
         wanted = voices.get(saved)
         if wanted is None or wanted.installed or not wanted.reason:
             return  # nothing saved, the saved voice is selected, or no reason: quiet, as before
-        using = voices[key].name
-        self._voice_note = f"{wanted.name} is not ready: {wanted.reason}. Using {using}."
+        wanted_said, using = voice_phrase(wanted), voice_phrase(voices[key])
+        self._voice_note = f"{wanted_said} is not ready: {wanted.reason}. Using {using}."
         self._notify(self._voice_note)
 
     def _drop_voice_note(self, _key: str = "") -> None:
@@ -668,9 +664,7 @@ class MainWindow(QMainWindow):
             title = TITLES.get(progress.group, progress.group)
             done, total = progress.group_done_bytes, progress.group_total_bytes
             percent = _percent(done, total)
-            self.prefetch_label.setText(
-                f"Downloading {title}… {percent}% ({done / _MB:,.0f} of {total / _MB:,.0f} MB)"
-            )
+            self.prefetch_label.set_variants(*download_variants(title, percent, done, total))
             self.prefetch_label.setToolTip(f"{progress.file} (all downloads: {run}%)")
             self.prefetch_bar.setValue(percent)
             self.prefetch_bar.setAccessibleName(f"Downloading {title}")
@@ -698,6 +692,7 @@ class MainWindow(QMainWindow):
     def _on_prefetch_done(self, result: object) -> None:
         if self._closing:
             return
+        self._prefetch_over = True
         for widget in self._prefetch_widgets:
             widget.hide()
         self._update_busy_bar()
@@ -715,7 +710,22 @@ class MainWindow(QMainWindow):
             self._notify_if_idle("Voices downloaded.", announce=True)
         if getattr(result, "files", 0) > 0:
             self._refresh_voices()
+        self._settle_no_voice()
         self.prefetch_finished.emit(result)
+
+    def _no_voice_tone(self) -> Tone:
+        """No voice while voices still download is a normal first launch: information. With no
+        download to come, it is a fault: a warning."""
+        hook = getattr(self._service, "prefetch_voices", None)
+        return Tone.INFO if callable(hook) and not self._prefetch_over else Tone.WARNING
+
+    def _settle_no_voice(self) -> None:
+        """Turn the first launch's note into a warning once the download, and the re-list it
+        asked for, end with no voice: never before, so it never flashes."""
+        if self._closing or self._refreshing or not self._prefetch_over:
+            return
+        if self.voice_picker.voice_key() is None and self._status.currentMessage() == _NO_VOICE:
+            self._notify(_NO_VOICE, tone=Tone.WARNING)
 
     def _notify_if_idle(
         self,
@@ -764,6 +774,7 @@ class MainWindow(QMainWindow):
         if self._refresh_again and not self._closing:
             self._refresh_again = False
             self._refresh_voices()
+        self._settle_no_voice()
 
     # --- state -------------------------------------------------------------------------------
 
@@ -900,7 +911,7 @@ class MainWindow(QMainWindow):
             if self._loading_voices:
                 self._notify(LOADING)
             else:
-                self._notify(_NO_VOICE, tone=Tone.WARNING)
+                self._notify(_NO_VOICE, tone=self._no_voice_tone(), announce=True)
             return
         if not raw.strip():
             self._notify("Paste a question first.")
@@ -912,7 +923,7 @@ class MainWindow(QMainWindow):
         preparing, tone = "Preparing…", Tone.INFO
         if picked is not None:
             voice_key, speaker_id = picked.key, None  # rotation only picks single-speaker voices
-            self._picked_label = _voice_label(picked)
+            self._picked_label = voice_phrase(picked)
             preparing = f"Preparing with {self._picked_label}…"
         elif self._rotator.mode is not RotationMode.NONE:
             label = self._rotator.mode.label

@@ -7,6 +7,7 @@ from dataclasses import replace
 import pytest
 import shiboken6
 from PySide6.QtCore import QPoint
+from PySide6.QtGui import QAccessible
 
 from cloudyreader.gui import tokens
 from cloudyreader.gui.fake_service import FAKE_VOICES, FakeReaderService
@@ -455,3 +456,121 @@ def test_the_download_label_drops_its_sizes_then_its_verb(done, total, sizes):
         "Downloading Qwen3-TTS… 42%",
         "Qwen3-TTS 42%",
     )
+
+
+# --- the first launch: no voice yet while the download runs -----------------------------------
+
+NO_VOICE = "No voice is installed."
+NOT_YET = [replace(v, installed=False, reason="not downloaded yet") for v in FAKE_VOICES]
+POLITE = QAccessible.AnnouncementPoliteness.Polite
+
+
+@pytest.fixture
+def heard(monkeypatch):
+    """Every announcement the window posts, as (text, politeness)."""
+    events: list[tuple[str, QAccessible.AnnouncementPoliteness]] = []
+
+    def spy(event) -> None:
+        if event.type() == QAccessible.Event.Announcement:
+            events.append((event.message(), event.politeness()))
+
+    monkeypatch.setattr(QAccessible, "updateAccessibility", spy)
+    return events
+
+
+def first_launch(make_window, request, **knobs):
+    """No voice installed yet and the download held at its gate: a fresh install's first minute."""
+    gate = threading.Event()
+    request.addfinalizer(gate.set)
+    knobs = {"voices": NOT_YET, "prefetch_result": PrefetchResult("nothing"), **knobs}
+    return make_window(service=FakeReaderService(prefetch_gate=gate, **knobs)), gate
+
+
+def tone_line(window) -> tuple[str, Tone]:
+    return status(window), window.statusBar().tone
+
+
+def test_no_voice_while_the_download_runs_is_information_said_once(make_window, request, heard):
+    window, _gate = first_launch(make_window, request)
+
+    assert tone_line(window) == (NO_VOICE, Tone.INFO)  # a normal first run, not a fault
+    assert heard == [(NO_VOICE, POLITE)]
+
+
+def test_no_voice_without_a_download_hook_is_a_warning(make_window, heard):
+    window = make_window(service=FakeReaderService(voices=NOT_YET))
+
+    assert tone_line(window) == (NO_VOICE, Tone.WARNING)
+    assert heard == [(NO_VOICE, POLITE)]
+
+
+@pytest.mark.parametrize("outcome", ["nothing", "offline", "partial", "cancelled"])
+def test_a_download_that_ends_with_no_voice_turns_it_into_a_warning(
+    qtbot, make_window, request, heard, outcome
+):
+    window, gate = first_launch(make_window, request, prefetch_result=PrefetchResult(outcome))
+    heard.clear()
+
+    with qtbot.waitSignal(window.prefetch_finished, timeout=5000):
+        gate.set()
+
+    assert tone_line(window) == (NO_VOICE, Tone.WARNING)
+    assert heard == [(NO_VOICE, POLITE)]
+
+
+def test_files_that_bring_a_voice_clear_it_without_a_warning_first(
+    qtbot, make_window, request, heard
+):
+    result = PrefetchResult("complete", files=1)
+    # Lessac lands as the run starts, and with no report nothing re-lists before the end.
+    knobs = {"prefetch_result": result, "prefetch_installs": [LESSAC]}
+    window, gate = first_launch(make_window, request, **knobs)
+    heard.clear()
+
+    with qtbot.waitSignals([window.prefetch_finished, window.voices_refreshed], timeout=5000):
+        gate.set()
+
+    assert tone_line(window) == ("", Tone.INFO)
+    assert heard == []  # never a warning while the re-list that finds the voice was due
+
+
+def test_files_that_bring_no_voice_warn_once_the_re_list_finds_none(qtbot, make_window, request):
+    window, gate = first_launch(
+        make_window, request, prefetch_result=PrefetchResult("complete", files=1)
+    )
+
+    with qtbot.waitSignals([window.prefetch_finished, window.voices_refreshed], timeout=5000):
+        gate.set()
+
+    assert tone_line(window) == (NO_VOICE, Tone.WARNING)
+
+
+def test_speak_with_no_voice_during_the_download_stays_information(make_window, request):
+    window, _gate = first_launch(make_window, request)
+    window.question_edit.setPlainText("What is H2O?")
+
+    window._on_speak()  # private on purpose: Speak and its shortcut are dimmed with no voice
+
+    assert tone_line(window) == (NO_VOICE, Tone.INFO)
+
+
+def test_a_window_with_a_voice_says_nothing_while_it_downloads(make_window, request):
+    window, _gate = first_launch(make_window, request, voices=FAKE_VOICES)
+
+    assert tone_line(window) == ("", Tone.INFO)
+
+
+def test_a_group_report_gives_the_label_its_three_wordings(qtbot, window):
+    window._on_prefetch_progress(  # private on purpose: a report, no thread
+        PrefetchProgress("model.safetensors", 0, 1, 0, 1, "qwen3_tts", 829 * MB, 1_973 * MB)
+    )
+    window.resize(tokens.WINDOW_MIN_SIZE[0], window.height())
+    qtbot.waitUntil(lambda: window.width() == tokens.WINDOW_MIN_SIZE[0])
+    window._notify(  # private on purpose: a long message takes its half of the line
+        "Ryan (male, Qwen3-TTS) is not ready: not downloaded yet. Using Lessac (female, Piper)."
+    )
+    window.statusBar().layout().activate()
+
+    long, middle, short = download_variants("Qwen3-TTS", 42, 829 * MB, 1_973 * MB)
+    assert window.prefetch_label.text() == long == "Downloading Qwen3-TTS… 42% (829 MB of 2.0 GB)"
+    assert window.prefetch_label.shown_text() in (middle, short)

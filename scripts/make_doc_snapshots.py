@@ -275,13 +275,11 @@ class Look:
     menu_edge: QColor
     window_edge: QColor
     shadow: QColor
-    warning: QColor
-    error: QColor
     ink: QColor  # captions outside the app's own chrome
 
 
-# Sampled from 2x native renders of this window (light, then dark); errors and warnings are the
-# system red and yellow.
+# Sampled from 2x native renders of this window (light, then dark). The status bar's own inks and
+# tone glyphs come from the live bar, which reads them from the theme roles.
 _SAMPLED = {
     False: {
         "field_edge": QColor("#B6B6B6"),
@@ -304,8 +302,6 @@ _SAMPLED = {
         "menu_edge": rgba("#000000", 0.14),
         "window_edge": rgba("#000000", 0.2),
         "shadow": rgba("#000000", 0.3),
-        "warning": QColor("#FFCC00"),
-        "error": QColor("#FF3B30"),
     },
     True: {
         "field_edge": QColor("#101010"),
@@ -328,8 +324,6 @@ _SAMPLED = {
         "menu_edge": rgba("#FFFFFF", 0.16),
         "window_edge": rgba("#FFFFFF", 0.14),
         "shadow": rgba("#000000", 0.55),
-        "warning": QColor("#FFD60A"),
-        "error": QColor("#FF453A"),
     },
 }
 
@@ -743,15 +737,15 @@ class Canvas:
             return
         from cloudyreader.gui.status import ElidedLabel
 
-        if isinstance(label, ElidedLabel):  # one line, cut at its end when short of room
-            text = label.fontMetrics().elidedText(
-                label.text(), Qt.TextElideMode.ElideRight, label.contentsRect().width()
-            )
-            self.paragraph(text, label.font(), r, label.alignment(), False)
+        if isinstance(label, ElidedLabel):  # the wording that fits, in the ink it was given
+            ink = label.palette().color(QPalette.ColorRole.WindowText)
+            self.paragraph(label.shown_text(), label.font(), r, label.alignment(), False, ink)
         elif label.text():
             self.paragraph(label.text(), label.font(), r, label.alignment(), label.wordWrap())
 
-    def paragraph(self, text: str, font: QFont, r: QRectF, align: Any, wrap: bool) -> None:
+    def paragraph(
+        self, text: str, font: QFont, r: QRectF, align: Any, wrap: bool, ink: QColor | None = None
+    ) -> None:
         """Text laid out by Qt, one <text> per line, placed as QLabel aligns it."""
         rows: list[tuple[str, float, float]] = []  # text, line top, ascent
         height = 0.0
@@ -777,7 +771,7 @@ class Canvas:
             anchor, x = "end", r.right()
         elif align & flag.AlignHCenter:
             anchor, x = "middle", r.center().x()
-        kw = {"text_anchor": anchor, **font_kw(font), **paint(self.look.label)}
+        kw = {"text_anchor": anchor, **font_kw(font), **paint(ink or self.look.label)}
         for chunk, top, ascent in rows:
             self.svg.text(x, y0 + top + ascent, chunk, **kw, **fit(chunk, font))
 
@@ -805,31 +799,32 @@ class Canvas:
             return
         icon, text_rect, elided = bar.message_layout()
         if icon.isValid():
-            self.tone_icon(QRectF(icon).translated(g.topLeft()), bar.tone.value)
+            self.tone_icon(QRectF(icon).translated(g.topLeft()), bar.tone.value, bar.glyph_color())
         t = QRectF(text_rect).translated(g.topLeft())
         y = baseline(t.top(), t.height(), bar.font())
         font = bar.font()
-        svg.text(t.left(), y, elided, **font_kw(font), **fit(elided, font), **paint(look.label))
+        svg.text(t.left(), y, elided, **font_kw(font), **fit(elided, font), **paint(bar.ink()))
 
-    def tone_icon(self, r: QRectF, tone: str) -> None:
-        """The status bar's warning triangle or error disc, drawn as the system alert badges."""
-        x, y, svg = r.left(), r.top(), self.svg
+    def tone_icon(self, r: QRectF, tone: str, color: QColor) -> None:
+        """The status bar's tone glyph as the app draws it: lines on the tokens.py geometry."""
+        from cloudyreader.gui import tokens
+
+        svg, scale = self.svg, r.width() / tokens.GLYPH_BOX
+
+        def at(x: float, y: float) -> tuple[float, float]:
+            return r.left() + x * scale, r.top() + y * scale
+
+        width = tokens.STATUS_GLYPH_STROKE * scale
+        line = {"fill": "none", "stroke_width": width, **paint(color, "stroke"), **ROUND}
         if tone == "warning":
-            color = self.look.warning
-            triangle = f"M{pts(x + 8, y + 2)}L{pts(x + 14.6, y + 14)}H{num(x + 1.4)}Z"
-            svg.path(
-                triangle,
-                stroke=color.name(),
-                stroke_width=2,
-                stroke_linejoin="round",
-                **paint(color),
-            )
-            ink = rgba("#000000", 0.85)
+            corners = [pts(*at(*point)) for point in tokens.GLYPH_WARNING_OUTLINE]
+            svg.path(f"M{'L'.join(corners)}Z", **line)
+            bar, dot = tokens.GLYPH_WARNING_BAR, tokens.GLYPH_WARNING_DOT
         else:
-            svg.circle(x + 8, y + 8, 7.5, **paint(self.look.error))
-            ink = QColor("#FFFFFF")
-        svg.rect(QRectF(x + 7.2, y + 4.6, 1.6, 5.6), 0.8, **paint(ink))
-        svg.circle(x + 8, y + 12.2, 0.95, **paint(ink))
+            svg.circle(*at(*tokens.GLYPH_ERROR_CENTER), tokens.GLYPH_ERROR_RADIUS * scale, **line)
+            bar, dot = tokens.GLYPH_ERROR_BAR, tokens.GLYPH_ERROR_DOT
+        svg.path(f"M{pts(*at(*bar[0]))}L{pts(*at(*bar[1]))}", **line)
+        svg.circle(*at(*dot), tokens.GLYPH_DOT_RADIUS * scale, **paint(color))
 
 
 # --- window content and menus -----------------------------------------------------------------
@@ -1334,8 +1329,8 @@ def fig_first_launch(env: Env, look: Look) -> Svg:
         desc = (
             f"The main window in {appearance(look.dark)} at its first start: an empty question "
             "box with its hint, the Voice menu dimmed with No voice installed, Speak dimmed, "
-            "and the status No voice is installed. with a warning icon, beside "
-            f"{win.prefetch_label.text()} and its progress bar."
+            "and the status No voice is installed. in secondary text with no icon, beside "
+            f"{win.prefetch_label.shown_text()} and its progress bar."
         )
         svg = Svg(win.width(), win.height(), "Cloudy Reader at first start", desc)
         draw_content(svg, look, win)
@@ -1396,7 +1391,7 @@ def fig_download_progress(env: Env, look: Look) -> Svg:
         env.pump(lambda: not win.prefetch_label.isHidden(), "download progress")
         desc = (
             f"The status bar in {appearance(look.dark)} during the voice download: "
-            f"{win.prefetch_label.text()} and a progress bar."
+            f"{win.prefetch_label.shown_text()} and a progress bar."
         )
         return fig_strip(look, win, "Voice download progress", desc)
 
@@ -1409,8 +1404,8 @@ def fig_status_busy(env: Env, look: Look) -> tuple[Svg, list[Marker]]:
         env.hold_reading(win, service)
         desc = (
             f"The status bar in {appearance(look.dark)} while a reading is prepared during the "
-            f"voice download: Preparing… on the left, then {win.prefetch_label.text()} with its "
-            "progress bar on the right."
+            "voice download: Preparing… on the left, then "
+            f"{win.prefetch_label.shown_text()} with its progress bar on the right."
         )
         svg = fig_strip(look, win, "A busy status bar", desc, band=CALLOUT_BAND)
         bar = win.statusBar()
@@ -1541,7 +1536,7 @@ def fig_download_engine(env: Env, look: Look) -> Svg:
         env.pump(lambda: not win.prefetch_label.isHidden(), "engine download progress")
         desc = (
             f"The status bar in {appearance(look.dark)} while an engine downloads: "
-            f"{win.prefetch_label.text()} and the group's progress bar."
+            f"{win.prefetch_label.shown_text()} and the group's progress bar."
         )
         return fig_strip(look, win, "Engine download progress", desc)
 
@@ -1615,7 +1610,7 @@ def fig_engine_rows(env: Env, look: Look) -> Svg:
         svg.add("</g>")
         if not any(NOT_DOWNLOADED in items[i].text for i in shown):
             raise RuntimeError("no dimmed engine row in view: pick a voice nearer the engines")
-        label = win.prefetch_label.text()
+        label = win.prefetch_label.shown_text()
         width, y = win.width(), y + win.height() + GAP
     ready = with_engine_rows(voices)
     with env.window(voices=ready, saved_voice=VOICE_KEY, load_hint=LOAD_HINT) as (win, service):
