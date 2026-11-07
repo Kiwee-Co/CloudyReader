@@ -2,6 +2,7 @@ import importlib.metadata
 import inspect
 import threading
 from dataclasses import replace
+from functools import reduce
 
 import pytest
 from PySide6.QtCore import QPoint, QSettings, Qt, QTimer
@@ -682,6 +683,52 @@ def test_focus_chain_follows_the_visual_order(window):
             break
 
     assert chain == expected
+
+
+# Design spec 5.8, with every control enabled: a reading has played, so Repeat and Stop take focus.
+TAB_ORDER = (
+    "question_edit",
+    "script_toggle",
+    "script_view",
+    "voice_picker.combo",
+    "rotation_combo",
+    "read_answer_check",
+    "online_lookups_check",
+    "repeat_button",
+    "stop_button",
+    "speak_button",
+)
+
+
+def tab_walk(qtbot, window, modifier=Qt.KeyboardModifier.NoModifier) -> list[str]:
+    """Where Tab, or Shift-Tab, takes the focus from the question box until it comes back."""
+    names = {reduce(getattr, path.split("."), window): path for path in TAB_ORDER}
+    window.activateWindow()
+    qtbot.waitUntil(window.isActiveWindow)
+    window.question_edit.setFocus(Qt.FocusReason.TabFocusReason)
+    qtbot.waitUntil(window.question_edit.hasFocus)
+    walk = []
+    for _ in range(2 * len(TAB_ORDER)):  # a broken cycle never comes back: stop after two laps
+        qtbot.keyClick(QApplication.focusWidget(), Qt.Key.Key_Tab, modifier)
+        widget = QApplication.focusWidget()
+        walk.append(names.get(widget, type(widget).__name__))
+        if widget is window.question_edit:
+            break
+    return walk
+
+
+def test_tab_visits_every_control_in_the_visual_order_and_wraps(qtbot, window):
+    speak(qtbot, window)  # Repeat and Stop are enabled now
+
+    assert tab_walk(qtbot, window) == [*TAB_ORDER[1:], "question_edit"]
+
+
+def test_shift_tab_walks_the_same_cycle_backwards(qtbot, window):
+    speak(qtbot, window)
+
+    backward = tab_walk(qtbot, window, Qt.KeyboardModifier.ShiftModifier)
+
+    assert backward == [*reversed(TAB_ORDER[1:]), "question_edit"]
 
 
 def test_every_interactive_control_has_an_accessible_name(window):

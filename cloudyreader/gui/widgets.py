@@ -8,6 +8,7 @@ from PySide6.QtCore import QEvent, QObject, QPoint, QPointF, QRect, QRectF, QSiz
 from PySide6.QtGui import (
     QColor,
     QFont,
+    QMouseEvent,
     QPainter,
     QPainterPath,
     QPaintEvent,
@@ -197,7 +198,9 @@ class Card(QWidget):
         layout.setContentsMargins(inset, inset, inset, inset)
         layout.addWidget(view)
         view.document().setDocumentMargin(padding - inset)
-        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)  # a click on the padding edits too
+        # Never a Tab stop of its own: Qt tabs into a proxied widget wherever the chain holds
+        # it, which wrapped Tab from Speak into the script, so a click forwards instead.
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setFocusProxy(view)
         if view.isHidden():
             self.hide()
@@ -216,6 +219,10 @@ class Card(QWidget):
     def set_colors(self, fill: QColor | None, border: QColor | None = None) -> None:
         self._fill, self._border = fill, border
         self.update()
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        self.view.setFocus(Qt.FocusReason.MouseFocusReason)  # a click on the padding edits too
+        super().mousePressEvent(event)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if watched is self.view and event.type() in _SHOWN:

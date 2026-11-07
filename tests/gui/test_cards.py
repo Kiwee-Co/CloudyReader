@@ -62,11 +62,20 @@ def test_the_card_keeps_the_question_stretch(window):
     assert layout.stretch(layout.indexOf(window.question_card)) == 3
 
 
-def test_a_click_on_the_padding_reaches_the_question(window):
-    card = window.question_card
+@pytest.mark.parametrize(
+    ("surface", "text"), [("question_card", "question_edit"), ("script_panel", "script_view")]
+)
+def test_a_click_on_the_padding_or_the_text_focuses_the_view(qtbot, window, surface, text):
+    card, view = getattr(window, surface), getattr(window, text)
+    window.activateWindow()
+    qtbot.waitUntil(window.isActiveWindow)
 
-    assert card.focusProxy() is window.question_edit
-    assert card.focusPolicy() == Qt.FocusPolicy.ClickFocus  # never a stop of its own on Tab
+    assert card.focusProxy() is view
+    assert card.focusPolicy() == Qt.FocusPolicy.NoFocus  # never a Tab stop of its own
+    for target, where in ((card, QPoint(1, card.height() // 2)), (view.viewport(), QPoint(4, 4))):
+        window.speak_button.setFocus()
+        qtbot.mouseClick(target, Qt.MouseButton.LeftButton, pos=where)
+        assert view.hasFocus(), target
 
 
 @pytest.mark.parametrize(("scheme", "look"), LOOKS)
