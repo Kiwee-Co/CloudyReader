@@ -20,12 +20,12 @@ Set the Mac's volume before you start. The app has no volume control.
 
 ## Paste a question
 
-The question box sits at the top of the window. Below it are the **Voice** and **Rotation** menus, the **Read answer line** and **Online lookups** checkboxes, and a row of buttons. The **Spoken script** control and the status bar are at the bottom.
+The question box sits at the top of the window, and the **Spoken script** view sits under it. Below them are the **Voice** and **Rotation** menus, the **Read answer line** and **Online lookups** checkboxes, and the **Repeat**, **Stop**, and **Speak** buttons. The status bar is at the bottom.
 
 <Figure
   src="window-light.svg"
   dark="window-dark.svg"
-  alt="The Cloudy Reader window with a pasted toss-up question, the voice lessac, rotation off, the spoken script open, and the status Playing 19.3 s."
+  alt="The Cloudy Reader window with the sample toss-up in the question box, the spoken script under it, the voice Lessac, rotation off, and the status Playing 19.3 s."
   caption="The window while the sample question plays; the playing time on your screen differs."
   frame="window"
 />
@@ -45,13 +45,11 @@ ANSWER: Y) CARBON DIOXIDE
 <Steps>
 
 1. Select the question above and press Command-C.
-2. Click **Paste** in the Cloudy Reader window.
+2. Click the question box in the Cloudy Reader window, press Command-A, then press Command-V.
 
-   The question box shows the text, starting with TOSS-UP. **Paste** replaces any text that was in the box, so the box holds the question once.
+   The question box shows the text, starting with TOSS-UP. Command-A selects the old text first, so the box holds the question once. Command-V alone adds the text at the cursor and leaves the old text in the box.
 
 </Steps>
-
-To paste with the keyboard instead, click the question box, press Command-A to select its text, and press Command-V. Command-V alone adds the text at the cursor and leaves the old text in the box.
 
 ## Listen and control playback
 
@@ -79,9 +77,9 @@ The "Playing" message clears when the sound ends. Each of these shortcuts has a 
 
 <Steps>
 
-1. If the **Spoken script** view is closed, click **Spoken script**.
+1. Find the **Spoken script** view under the question box.
 
-   The view is open below the buttons.
+   The view is open when the app starts. It filled with the spoken script when you pasted the question.
 
 2. Read the text in the view.
 
@@ -89,10 +87,12 @@ The "Playing" message clears when the sound ends. Each of these shortcuts has a 
 
 </Steps>
 
+While you type or paste, the view shows a preview. The preview skips name detection and online lookups, so the wording of a chemical name can change when you press **Speak**. After a reading, the view shows the final script.
+
 <Figure
   src="script-formula-light.svg"
   dark="script-formula-dark.svg"
-  alt="The Spoken script after a reading, with NaHCO3 written as N A H C O three."
+  alt="The Spoken script view with the sample question, with NaHCO3 written as N A H C O three."
   caption="The script spells the formula letter by letter."
 />
 
@@ -109,11 +109,11 @@ Compare the script with the question you pasted:
 
 1. Select **Read answer line**.
 
-   The checkbox shows selected.
+   The checkbox shows selected, and the **Spoken script** ends with "Answer. Y. Carbon Dioxide."
 
 2. Press Command-Return.
 
-   After the last choice, the app is silent for 5 seconds. Then you hear "Answer. Y. Carbon Dioxide." The **Spoken script** now ends with that sentence.
+   After the last choice, the app is silent for 5 seconds. Then you hear "Answer. Y. Carbon Dioxide."
 
 </Steps>
 
@@ -138,27 +138,31 @@ ANSWER: 9
 1. Deselect **Read answer line**.
 2. Select the two questions above and press Command-C.
 3. Switch to Cloudy Reader with Command-Tab, or click its window.
-4. Press Command-Shift-V.
+4. Click the question box, press Command-A, then press Command-V.
 
-   The question box now holds both questions. The status bar shows "Preparing…", then "Playing _n_ s."
+   The question box holds both questions.
 
-5. Look at the **Spoken script**.
+5. Press Command-Return.
+
+   The status bar shows "Preparing…", then "Playing _n_ s."
+
+6. Look at the **Spoken script**.
 
    It shows the toss-up first, beginning "Toss-up number two. Physics. Short answer." The unit `m/s` became "meters per second". The bonus follows, beginning "Bonus number two. Physics. Short answer." The app pauses 1.5 seconds between the two questions.
 
 </Steps>
 
 :::tip
-Command-Shift-V is **Speak Clipboard**. It replaces the question with the clipboard text and speaks it in one step.
+The **Spoken script** shows both questions right after you paste them, so you can check the text before you press **Speak**.
 :::
 
 ## What you learned
 
 - Command-Return speaks the question, Command-Period (.) stops the sound, and Command-R plays the last reading again.
-- The **Spoken script** shows the words the voice receives, such as a formula spelled out letter by letter.
+- The **Spoken script** fills as you paste and shows the words the voice receives, such as a formula spelled out letter by letter.
 - **Read answer line** adds the answer after a pause of 5 seconds.
 - One paste can hold several questions. The app reads them in order.
-- Command-Shift-V pastes the clipboard and speaks it in one step.
+- Command-A, then Command-V, replaces the text in the question box.
 
 ## Next steps
 

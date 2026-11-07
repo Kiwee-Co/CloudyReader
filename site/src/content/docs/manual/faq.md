@@ -42,11 +42,11 @@ No: only the local OPSIN check can change how a chemical name sounds, and the ap
 
 ## Which voice should I use?
 
-Start with the first voice in the **Voice** menu and try others. Each voice shows a quality label in the menu, and a label does not say which voice suits your room or your ears. See [Voices and voice engines](/manual/concepts/voice-engines/).
+Start with the first voice in the **Voice** menu and try others. A label shows the engine and precision, plus the accent and gender where known. None of these facts says which voice suits your room or your ears. See [Voices and voice engines](/manual/concepts/voice-engines/).
 
 ## Why are some voices dimmed?
 
-A dimmed voice cannot play yet, and its row ends with the reason, such as "not installed" or "not downloaded yet". Every reason except "not installed" is also the tooltip of the row. See [Voices from one engine are missing](/manual/troubleshooting/#voices-from-one-engine-are-missing) for the reasons and the fixes.
+A dimmed voice cannot play yet, and its row ends with the reason, such as "not downloaded yet". The tooltip of a row with a reason holds the whole reason. See [Voices from one engine are missing](/manual/troubleshooting/#voices-from-one-engine-are-missing) for the reasons and the fixes.
 
 ## Can I change the speaking speed?
 

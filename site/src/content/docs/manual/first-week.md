@@ -14,7 +14,7 @@ Five short sessions take you from your first sound to practice that matches how 
 
 This session takes about 10 minutes.
 
-Paste any question, such as the toss-up from Get started, and press Command-Return to speak it. Press Command-Period (.) to stop it and Command-R to repeat it. Click **Spoken script** to read the words the voice received. Then select **Read answer line** and speak the question again.
+Paste any question, such as the toss-up from Get started, and press Command-Return to speak it. Press Command-Period (.) to stop it and Command-R to repeat it. Read the **Spoken script** view under the question box to check the words the voice received. Then select **Read answer line** and speak the question again.
 
 The status bar shows "Stopped." after you stop and "Repeating." after you repeat. You can now speak, stop, and repeat a question, check the spoken script, and hear the answer.
 
@@ -36,7 +36,7 @@ This session takes about 10 minutes.
 
 Wait for the voice download to finish, as [Let the voices download](/manual/getting-started/#let-the-voices-download) describes. The **Voice** menu then lists every voice. Choose **Round robin** in the **Rotation** menu and speak a question. Speak another question to hear the next voice.
 
-The status bar names the voice for each reading, for example "Playing _n_ s with _name_ (_gender_)." You can now hear a different voice each time you speak a question.
+The status bar names the voice for each reading, for example "Playing _n_ s with _name_ (_gender_, _engine_)." You can now hear a different voice each time you speak a question.
 
 Start with the tutorial [Practice with voice rotation](/manual/tutorials/voice-rotation/). If the **Voice** menu lists voices from only one engine, see [Voices from one engine are missing](/manual/troubleshooting/#voices-from-one-engine-are-missing).
 

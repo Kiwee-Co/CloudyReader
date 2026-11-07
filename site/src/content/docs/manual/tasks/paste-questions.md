@@ -12,14 +12,15 @@ Use this page when your practice questions are in a PDF or on a web page. You co
 1. In your PDF viewer, select one question. Start at the header, `TOSS-UP` or `BONUS`, and end after the `ANSWER:` line.
 2. Press Command-C.
 3. Press Command-Tab to switch to Cloudy Reader.
-4. Press Command-Shift-V. **Speak Clipboard** pastes the clipboard into the question box and reads it.
+4. Click the question box, press Command-A to select its text, and press Command-V.
+5. Press Command-Return.
 
 The status bar shows "Preparing…", then "Playing _n_ s." You hear the question. The app does not read the answer line unless **Read answer line** is selected.
 
 You do not need to clean up the text first. The app removes rule lines, round titles such as `ROUND ROBIN 2`, page footers such as `PAGE 4`, and omission notes. It joins lines that the PDF wrapped. It also joins a word that a line break split at a hyphen, and it keeps the hyphen in compounds such as `half-life`. For the full list, see [Question format and reading order](/manual/reference/question-format/).
 
 :::tip
-To paste without reading, click **Paste**. **Paste** replaces the question box with the clipboard text. Press **Speak** when you are ready.
+To check the words before you listen, read the **Spoken script** view under the question box. It fills as you paste, and pasting never starts a reading.
 :::
 
 Copy from a web page the same way. The question box holds plain text, so fonts, colors, and images do not come along. Formulas copy in different forms, and the app reads them alike: `SO4 2-`, `SO₄²⁻`, and `SO42-` all become "S O four two minus", and `H 2 O` becomes "H two O".
@@ -30,10 +31,10 @@ You can paste one question or many. The app reads them in order.
 
 1. In your PDF or web page, select several questions in one drag. Include each header, such as `TOSS-UP` or `BONUS`, and each number.
 2. Press Command-C.
-3. In Cloudy Reader, click the question box and press Command-V. Or click **Paste**.
+3. In Cloudy Reader, click the question box and press Command-V.
 4. Press Command-Return.
 
-Command-V inserts the text at the cursor, so you can paste one question after another. **Paste** replaces the whole question box.
+Command-V inserts the text at the cursor, so you can paste one question after another. To replace the text in the box, press Command-A first.
 
 This sample holds a toss-up and a bonus. Paste it to try the steps:
 
@@ -53,11 +54,14 @@ Rotation picks one voice for each reading, so a paste with several questions is 
 
 ## Check what the app understood
 
-Open the **Spoken script** view to see the words that the voice receives. These words are the [spoken script](/manual/reference/glossary/#spoken-script). A word that has a [pronunciation guide](/manual/reference/glossary/#pronunciation-guide) appears as printed, and the voice gets its sounds separately.
+The **Spoken script** view under the question box shows the words that the voice receives. These words are the [spoken script](/manual/reference/glossary/#spoken-script). A word that has a [pronunciation guide](/manual/reference/glossary/#pronunciation-guide) appears as printed, and the voice gets its sounds separately.
 
-1. Paste a question and press **Speak**. Wait until the status bar shows "Playing _n_ s."
-2. Click **Spoken script**. The view starts closed each time the app starts.
-3. Read the script and compare it with the question.
+1. Paste a question into the question box.
+2. Read the **Spoken script** view. It fills about 150 milliseconds after the last change.
+3. Compare the script with the question.
+4. Press **Speak** to hear the question. The view then shows the final script.
+
+The view shows a preview while you type. The preview skips name detection and online lookups, so the wording of a chemical name can change when you press **Speak**. For a text of more than 20,000 characters, the view shows its placeholder until you press **Speak**.
 
 For example, paste this question:
 
@@ -84,7 +88,7 @@ A correct script shows these things:
 - Formulas, units, and symbols appear as words. `NaHCO3` becomes "N A H C O three".
 - The answer appears only when **Read answer line** is selected. For the sample, the script then ends with "Answer. Y. Carbon Dioxide."
 
-If the script is wrong, press **Stop**, fix the text in the question box, and press **Speak** again. If a word sounds wrong, see [Pronunciation guides](/manual/reference/pronunciation-guides/).
+If the script is wrong, fix the text in the question box and press **Speak** again. Press **Stop** first if the reading is still playing. If a word sounds wrong, see [Pronunciation guides](/manual/reference/pronunciation-guides/).
 
 ## Fix common paste problems
 
@@ -93,7 +97,6 @@ This table lists what you see, why it happens, and what to do.
 | Symptom                                               | Cause                                                                                       | Fix                                                                                 |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | The status bar shows "Paste a question first."        | The question box is empty or holds only blank text.                                         | Paste or type a question, then press **Speak**.                                     |
-| The status bar shows "Clipboard is empty."            | **Paste** or **Speak Clipboard** found no text on the clipboard.                            | Copy the question again.                                                            |
 | The status bar shows "Error: nothing to read"         | The paste has no question, for example only a round title, a page footer, or a bare header. | Copy the question itself, from its header to its last choice or answer line.        |
 | The script keeps `W)`, `X)`, and `Y)` in the question | One of the four choices W, X, Y, and Z is missing, so the app does not split the choices.   | Copy the question again with all four choices, or type the missing choice.          |
 | You do not hear "Toss-up number" before the question  | The paste has no header or no number.                                                       | Add a line with `TOSS-UP` or `BONUS` and a number such as `3)` before the question. |

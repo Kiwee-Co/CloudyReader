@@ -18,7 +18,7 @@ If macOS asks for an administrator's name and password, ask the person who manag
    - Choose **Apple menu > System Settings**, click **Privacy & Security**, and scroll to **Security**.
    - Click **Open Anyway**. Confirm with your password or Touch ID.
    - Open the app again and click **Open**.
-4. Keep the window open and the Mac online. The app downloads its voices, which read questions aloud, about 3.05 GB. The first voice usually arrives in under a minute. The **Voice** menu then shows it, and **Speak** is no longer dimmed while the rest downloads. If no voice arrives, see [No voice is installed](/manual/troubleshooting/#no-voice-is-installed).
+4. Keep the window open and the Mac online. The app downloads its voices, which read questions aloud, about 3.05 GB. A Mac with English system voices can speak at once with a **macOS** voice. The first downloaded voice usually arrives in under a minute, and the **Voice** menu then shows it. If no voice arrives, see [No voice is installed](/manual/troubleshooting/#no-voice-is-installed).
 5. Copy this toss-up:
 
    ```text wrap
