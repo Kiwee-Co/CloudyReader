@@ -465,6 +465,18 @@ def mounted_under(root: Path) -> list[str]:
     return [line for line in table.splitlines() if str(root) in line]
 
 
+def assert_ejected_from_private_tmp(codesign_args: Path) -> None:
+    """check_dmg mounted under /private/tmp (the codesign stub logged the app it verified there),
+    left nothing mounted and removed its empty mount folder."""
+    mounts = set(
+        re.findall(r"(/private/tmp/cloudyreader-dmg-mount\.[^/\s]+)/", codesign_args.read_text())
+    )
+    assert mounts
+    for mnt in mounts:
+        assert not mounted_under(Path(mnt))
+        assert not Path(mnt).exists()
+
+
 def test_release_names_the_dmg_beside_the_zip(root):
     snippet = 'APP_NAME="Cloudy Reader"; release_name 0.0.1 dmg && echo && release_name 0.0.1'
 
@@ -506,14 +518,14 @@ def test_release_writes_a_dmg_of_the_zips_app_and_checks_it(root, real_dmg_host)
         "and matches the zip's copy" in out
     )
     assert re.search(rf"release: {re.escape(str(root / 'dist' / DMG))} \([\d.]+ MB\)", out)
-    assert any("/build/dmg-mount." in line for line in args.read_text().splitlines())
+    assert_ejected_from_private_tmp(args)
     assert not mounted_under(root)
 
 
 @pytest.mark.slow
 def test_check_dmg_fails_and_still_ejects_the_volume(root, real_dmg_host):
     fake_app(root)
-    path, _ = stub_codesign(root)
+    path, args = stub_codesign(root)
     snippet = (
         'APP_NAME="Cloudy Reader"; app="$ROOT/dist/Cloudy Reader.app"; '
         'make_dmg "$app" "$ROOT/dist/t.dmg" && '
@@ -525,13 +537,14 @@ def test_check_dmg_fails_and_still_ejects_the_volume(root, real_dmg_host):
 
     assert result.returncode == 1
     assert "t.dmg: its app differs from the zip's copy" in result.stderr
+    assert_ejected_from_private_tmp(args)
     assert not mounted_under(root)
 
 
 @pytest.mark.slow
 def test_the_dmg_falls_back_to_hdiutil_where_diskutil_has_no_image_verb(root, real_dmg_host):
     fake_app(root)
-    path, _ = stub_codesign(root)
+    path, args = stub_codesign(root)
     old = root / "bin" / "old-diskutil"
     old.write_text('#!/bin/bash\n[[ ${1:-} == image ]] && exit 1\nexec /usr/sbin/diskutil "$@"\n')
     old.chmod(0o755)
@@ -545,6 +558,7 @@ def test_the_dmg_falls_back_to_hdiutil_where_diskutil_has_no_image_verb(root, re
 
     assert result.returncode == 0, result.stderr
     assert "release: t.dmg made with hdiutil (this macOS has no diskutil image)" in result.stdout
+    assert_ejected_from_private_tmp(args)
     assert not mounted_under(root)
 
 
@@ -679,6 +693,28 @@ def test_check_dmg_retries_hdiutil_verify_on_eagain_alone(root, plan, tries, ver
     else:
         assert VERIFY_SAYS[plan[tries - 1]] in result.stderr  # the tail of the verify log
         assert "t.dmg: hdiutil verify failed (log: build/dmg-verify.log)" in result.stderr
+
+
+@pytest.mark.parametrize(
+    ("macos", "diskutil", "verb"),
+    [
+        ("15.7.1", MACOS_15_DISKUTIL, "hdiutil attach "),
+        ("26.1", '[[ " $* " == *" --help "* ]] && exit 0\nexit 1\n', "diskutil image attach "),
+    ],
+    ids=["hdiutil", "diskutil-image"],
+)
+def test_check_dmg_mounts_under_private_tmp_never_in_the_build_tree(root, macos, diskutil, verb):
+    # A build tree on a volume with owners disabled (an external disk) refuses any mount point.
+    env, calls = fake_dmg_tools(root, macos, diskutil, "[[ $1 == verify ]] && exit 0\nexit 1\n")
+
+    result = bash_fn(root, 'check_dmg "$1" copy 0.0.1 data', str(root / "dist" / "t.dmg"), **env)
+
+    assert result.returncode == 1  # the fake tools attach nothing
+    assert "t.dmg: cannot attach it" in result.stderr
+    attach = [line for line in calls.read_text().splitlines() if line.startswith(verb)]
+    mnt = re.search(r"-(?:mountpoint|-mountPoint) (\S+) ", attach[0]).group(1)
+    assert mnt.startswith("/private/tmp/cloudyreader-dmg-mount."), mnt
+    assert not Path(mnt).exists()  # its empty mount folder goes, however check_dmg ends
 
 
 FAKE_DISKUTIL = r"""#!/bin/bash

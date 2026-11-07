@@ -772,6 +772,9 @@ eject_dmg() {
       "$HDIUTIL" detach -force "$DMG_DEVICE" >/dev/null 2>&1 || true
     DMG_DEVICE=
   fi
+  # rmdir: only the empty mount folder goes, never a volume that is still mounted on it.
+  if [[ -n ${DMG_MOUNT:-} ]]; then rmdir -- "$DMG_MOUNT" 2>/dev/null || true; fi
+  DMG_MOUNT=
 }
 
 # The whole-disk device in attach output $1, once diskutil confirms that it is a disk image.
@@ -826,7 +829,9 @@ check_dmg() {
   local dmg=$1 copy=$2 version=$3 data=$4 name mnt out app printed
   name=$(basename -- "$dmg")
   verify_dmg "$dmg"
-  mnt=$(fresh_dir dmg-mount)
+  # Not in the build tree: a volume with owners disabled (an external disk) refuses mount points.
+  DMG_MOUNT=$(mktemp -d /private/tmp/cloudyreader-dmg-mount.XXXXXX)
+  mnt=$DMG_MOUNT
   trap eject_dmg EXIT
   trap 'exit 130' INT TERM
   if has_diskutil_image; then
