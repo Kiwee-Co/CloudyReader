@@ -11,43 +11,40 @@ This page lists every control in the Cloudy Reader window, when each button is a
 
 ## Window layout
 
-The window uses the native macOS look and follows the light or dark appearance of the system. The figure numbers its parts from top to bottom.
+The window uses the native macOS look. It follows the light or dark appearance and the Increase contrast setting of the system. The figure numbers its parts from top to bottom.
 
 <Figure
   src="window-tour-light.svg"
   dark="window-tour-dark.svg"
-  alt="The Cloudy Reader window with a pasted question. Numbered markers point to its eight parts, listed below the figure."
-  caption="The eight parts of the main window."
+  alt="The Cloudy Reader window with a pasted question. Numbered markers point to its seven parts, listed below the figure."
+  caption="The seven parts of the main window."
   frame="window"
   callouts="window-tour"
 />
 
 1. Question box: holds the text to read.
-2. **Voice**: a pop-up menu that chooses the voice.
-3. **Rotation**: a pop-up menu that chooses how **Speak** picks the next voice.
-4. **Options**: the checkboxes **Read answer line** and **Online lookups**.
-5. **Paste** and **Speak Clipboard**: bring in the clipboard text.
+2. **Spoken script**: shows the words that the voice speaks, and fills as you add text.
+3. **Voice**: a pop-up menu that chooses the voice.
+4. **Rotation**: a pop-up menu that chooses how **Speak** picks the next voice.
+5. **Options**: the checkboxes **Read answer line** and **Online lookups**.
 6. **Repeat**, **Stop**, and **Speak**: play a reading again, stop the sound, and start a reading.
-7. **Spoken script**: shows the words that the voice speaks.
-8. Status bar: shows messages, the download progress, and a busy bar that hides during a download or while the macOS setting Reduce Motion is on.
+7. Status bar: shows messages, the download progress, and a busy bar that hides during a download or while the macOS setting Reduce Motion is on.
 
-The question box takes plain text. While it is empty, it shows the placeholder "Paste a National Science Bowl question, then press ⌘↵ to hear it." Tab moves focus out of the box instead of typing a tab.
+The question box takes plain text. While it is empty, it shows the placeholder "Paste a National Science Bowl question, then press ⌘↵ to hear it." Tab moves focus out of the box instead of typing a tab. To replace the text, click the box, press Command-A, and press Command-V.
 
 The window has no speed control and no volume control. Every reading uses the voice's normal speed, and the sound plays at the macOS output volume.
 
 ## Buttons and when they are available
 
-**Paste** and **Speak Clipboard** sit at the left of the button row. **Repeat**, **Stop**, and **Speak** sit at the right. **Speak** is the default button. The Reading menu commands of the same names are available under the same conditions.
+**Repeat**, **Stop**, and **Speak** sit at the right of the window, with the same width. **Speak** is the default button, so it has the accent color while the window is active. The Reading menu commands of the same names are available under the same conditions.
 
-| Button              | What it does                                                                       | Available when                                         | Tooltip                                       |
-| ------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------ | --------------------------------------------- |
-| **Paste**           | Replaces the question with the clipboard text and moves focus to the question box. | Always.                                                | Replace the question with the clipboard text. |
-| **Speak Clipboard** | Replaces the question with the clipboard text, then speaks it.                     | A voice is selected and no reading is in preparation.  | Paste the clipboard and speak it (⇧⌘V)        |
-| **Repeat**          | Plays the last reading again. It does not prepare a reading.                       | A reading has played and no reading is in preparation. | Play the last reading again (⌘R)              |
-| **Stop**            | Stops the sound.                                                                   | Sound is playing.                                      | Stop playback (⌘.)                            |
-| **Speak**           | Speaks the question box.                                                           | A voice is selected and no reading is in preparation.  | Speak the question (⌘↵)                       |
+| Button     | What it does                                                 | Available when                                         | Tooltip                          |
+| ---------- | ------------------------------------------------------------ | ------------------------------------------------------ | -------------------------------- |
+| **Repeat** | Plays the last reading again. It does not prepare a reading. | A reading has played and no reading is in preparation. | Play the last reading again (⌘R) |
+| **Stop**   | Stops the sound.                                             | Sound is playing.                                      | Stop playback (⌘.)               |
+| **Speak**  | Speaks the question box.                                     | A voice is selected and no reading is in preparation.  | Speak the question (⌘↵)          |
 
-Before a voice is installed, and while the app lists the voices, only **Paste** is available. If the clipboard holds no text, **Paste** and **Speak Clipboard** show "Clipboard is empty." If the question box has no text, **Speak** shows "Paste a question first."
+Before a voice is installed, and while the app lists the voices, the three buttons are dimmed. If the question box has no text, **Speak** shows "Paste a question first."
 
 A reading that becomes ready while a sound still plays replaces that sound. For the keys of each button, see [Keyboard shortcuts](/manual/reference/keyboard-shortcuts/).
 
@@ -57,9 +54,11 @@ A reading that becomes ready while a sound still plays replaces that sound. For 
 
 | Control      | What it holds                                                                                                                                 | Notes                                                                                                                                                                                                                                                                                                                                                                          |
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Voice**    | The voices, under one heading for each voice engine.                                                                                          | The headings are labels, not choices. A voice that cannot run is dimmed and cannot be chosen, and its row ends with the reason: see [Dimmed voices and their reasons](/manual/reference/voices/#dimmed-voices-and-their-reasons). For the rows, the order, and the default voice, see [Voices and rotation modes](/manual/reference/voices/#menu-order-and-the-default-voice). |
+| **Voice**    | The voices, under one heading for each voice engine. The macOS voices come last.                                                              | The headings are labels, not choices. A voice that cannot run is dimmed and cannot be chosen, and its row ends with the reason: see [Dimmed voices and their reasons](/manual/reference/voices/#dimmed-voices-and-their-reasons). For the rows, the order, and the default voice, see [Voices and rotation modes](/manual/reference/voices/#menu-order-and-the-default-voice). |
 | **Speaker**  | A number box on its own row under **Voice**.                                                                                                  | It shows only for a voice with more than one speaker, and none of the supported voices has more than one. It counts from 0 and returns to 0 when you change the voice.                                                                                                                                                                                                         |
 | **Rotation** | The six rotation modes: **No rotation**, **Round robin**, **Random shuffle**, **US only (random shuffle)**, **Men only**, and **Women only**. | The tooltip reads "How Speak picks the next voice." For the rules of each mode, see [Rotation modes](/manual/reference/voices/#rotation-modes).                                                                                                                                                                                                                                |
+
+**Voice** and **Rotation** have the same width. The closed **Voice** menu shows the label of the chosen voice: the name, the accent and gender where known, the voice engine, and the precision. [Voice labels](/manual/reference/voices/#voice-labels) explains each field.
 
 The **Voice** menu is dimmed in three states. It then shows one of these texts.
 
@@ -82,13 +81,13 @@ Clearing **Online lookups** is not [offline mode](/manual/reference/glossary/#of
 
 ## Spoken script
 
-The **Spoken script** button shows or hides a read-only view of the words that the voice receives.
+The **Spoken script** view sits under the question box. It is a read-only view of the words that the voice receives, and it fills as you add text. The view shows the [spoken script](/manual/reference/glossary/#spoken-script) for the text in the box about 150 milliseconds after the last change to the box or to **Read answer line**. The preview is offline: it uses no name detection and no online lookups, so the wording of a chemical name can change when **Speak** runs.
 
-| Part                     | Detail                                                                                                                                                                                                                                          |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Spoken script** button | Shows or hides the view. The view is closed at every start, because the app does not save the open or closed state.                                                                                                                             |
-| **Spoken script** view   | Read-only. Shows the [spoken script](/manual/reference/glossary/#spoken-script) of the last reading, with the parts joined by single spaces. A word with a custom pronunciation shows as printed, and the voice receives its sounds separately. |
-| Placeholder              | "The words that are spoken appear here." shows until the first reading.                                                                                                                                                                         |
+| Part                     | Detail                                                                                                                                                                                                                                                  |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Spoken script** button | Shows or hides the view. Click the arrow or the title to toggle it; Space does the same while the button has focus. The view is open at every start, because the app does not save the open or closed state.                                            |
+| **Spoken script** view   | Read-only. Shows the spoken script of the question box, with the parts joined by single spaces. After **Speak** it shows the script of that reading. A word with a custom pronunciation shows as printed, and the voice receives its sounds separately. |
+| Placeholder              | "The words that are spoken appear here." shows while the question box is empty or holds no question. It also shows for a text of more than 20,000 characters until you press **Speak**.                                                                 |
 
 For how the app builds the script, see [How a question becomes speech](/manual/concepts/how-reading-works/).
 
@@ -105,17 +104,17 @@ The status bar sits at the bottom of the window. The figure numbers its parts du
 />
 
 1. Message: one message at a time.
-2. Download label: the download of one voice engine, as a percentage and megabytes.
+2. Download label: the download of one voice engine, as a percentage and sizes.
 3. Download progress bar: the same percentage, as a bar.
 
 The table gives the place and the content of each part. The figure has no busy bar, because the busy bar hides during a download.
 
-| Part                  | Where                   | What it shows                                                                                                                                                                                                                                                                                                                      |
-| --------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Message               | Left                    | One message at a time. A warning or an error has an icon before the text. The app cuts long text with an ellipsis, and the tooltip holds the full text.                                                                                                                                                                            |
-| Download label        | Right                   | "Downloading _engine_… _N_% (_x_ of _y_ MB)" while a voice engine's files download. _N_ and the megabytes count only those files. Its tooltip shows the file in progress and the percentage of all downloads. Failed files count as done in the label and in the tooltip, so check the **Voice** menu for the voices that arrived. |
-| Download progress bar | Right, beside the label | A bar from 0 to 100 percent for the engine that downloads. It shows the same percentage as the label.                                                                                                                                                                                                                              |
-| Busy bar              | Far right               | A bar without a percentage. It shows while the app prepares a reading and while it lists the voices. It hides during a download, and while the macOS setting Reduce Motion is on.                                                                                                                                                  |
+| Part                  | Where                   | What it shows                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Message               | Left                    | One message at a time. A warning or an error has an icon before the text, and an information message has none. The app cuts long text with an ellipsis, and the tooltip holds the full text.                                                                                                                                                                                                                                                                                 |
+| Download label        | Right                   | "Downloading _engine_… _N_% (_x_ of _y_ MB)" while a voice engine's files download. _N_ and the sizes count only those files. A group over 1 GB reads in GB, as in "829 MB of 2.0 GB". In a narrow window the label drops its sizes, then its verb, and reads "Kokoro 42%". Its tooltip shows the file in progress and the percentage of all downloads. Failed files count as done in the label and in the tooltip, so check the **Voice** menu for the voices that arrived. |
+| Download progress bar | Right, beside the label | A bar from 0 to 100 percent for the engine that downloads. It shows the same percentage as the label.                                                                                                                                                                                                                                                                                                                                                                        |
+| Busy bar              | Far right               | A bar without a percentage. It shows while the app prepares a reading and while it lists the voices. It hides during a download, and while the macOS setting Reduce Motion is on.                                                                                                                                                                                                                                                                                            |
 
 The label and the bar stay until all downloads end. The **Voice** menu adds the voices of an engine when that engine's download ends.
 
@@ -147,15 +146,15 @@ The app has no View menu and no Voice menu, and no command opens this manual. Th
 <Figure
   src="menu-reading-light.svg"
   dark="menu-reading-dark.svg"
-  alt="The menu bar with the Reading menu open: Speak, Speak Clipboard, Repeat, and Stop, each with its keyboard shortcut."
-  caption="The Reading menu lists the four reading commands and their keys."
+  alt="The menu bar with the Reading menu open: Speak, then Repeat and Stop, each with its keyboard shortcut."
+  caption="The Reading menu lists the three reading commands and their keys."
 />
 
 The table lists every command that the app defines, the menu where it appears, and when it is available.
 
 | Command                 | Menu          | What it does                                                                                   | Available when                                      |
 | ----------------------- | ------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| **About Cloudy Reader** | Cloudy Reader | Opens the About box.                                                                           | Always.                                             |
+| **About Cloudy Reader** | Cloudy Reader | Opens the About panel.                                                                         | Always.                                             |
 | **Quit Cloudy Reader**  | Cloudy Reader | Does the same as **Close Window**.                                                             | Always.                                             |
 | **Close Window**        | File          | Closes the window and ends the app. Playback stops, and a running voice download is cancelled. | Always.                                             |
 | **Undo**                | Edit          | Undoes the last edit.                                                                          | The focused field has an edit to undo.              |
@@ -165,13 +164,14 @@ The table lists every command that the app defines, the menu where it appears, a
 | **Paste**               | Edit          | Inserts the clipboard text at the cursor.                                                      | The field is editable and the clipboard holds text. |
 | **Select All**          | Edit          | Selects all the text in the field.                                                             | The field is not empty.                             |
 | **Speak**               | Reading       | Same as the **Speak** button.                                                                  | As the button.                                      |
-| **Speak Clipboard**     | Reading       | Same as the **Speak Clipboard** button.                                                        | As the button.                                      |
 | **Repeat**              | Reading       | Same as the **Repeat** button.                                                                 | As the button.                                      |
 | **Stop**                | Reading       | Same as the **Stop** button.                                                                   | As the button.                                      |
 | **Minimize**            | Window        | Minimizes the window.                                                                          | Always.                                             |
 | **Zoom**                | Window        | Switches the window between the maximized and the normal size.                                 | Always.                                             |
 
-The Edit commands act on the question box, the **Spoken script** view, or the **Speaker** box, whichever has focus. With focus on any other control, all six are dimmed. The **Spoken script** view is read-only, so only **Copy** and **Select All** can act there. The **Paste** command in the Edit menu inserts the clipboard text at the cursor, while the **Paste** button replaces the whole question.
+While a reading is in preparation, **Close Window** and **Quit Cloudy Reader** hide the window at once. The app quits when the preparation ends, and that reading does not play.
+
+The Edit commands act on the question box, the **Spoken script** view, or the **Speaker** box, whichever has focus. With focus on any other control, all six are dimmed. The **Spoken script** view is read-only, so only **Copy** and **Select All** can act there. To replace the whole question, select all with Command-A, then paste with Command-V.
 
 macOS adds items that the app does not define, so the table omits them. The Edit menu gains **AutoFill**, **Start Dictation**, and **Emoji & Symbols**. The **Cloudy Reader** menu gains **Services**, **Hide Cloudy Reader** (Command-H), **Hide Others** (Option-Command-H), and **Show All**.
 
@@ -191,22 +191,22 @@ The app does not save the **Speaker** number, the rotation deck and the last voi
 
 ## About Cloudy Reader
 
-The About box shows the app icon, the name, the version, and a one-line description.
+The About panel shows the app icon, the name, the version, and a one-line description. It has no buttons.
 
 <Figure
   src="about-light.svg"
   dark="about-dark.svg"
-  alt="The About box with the app icon, the name Cloudy Reader, the line Version 0.0.3, the line Reads National Science Bowl questions aloud, and an OK button."
-  caption="The About box shows the version of the app."
+  alt="The About panel with the app icon, the name Cloudy Reader, the line Version 0.0.3, and the line Reads National Science Bowl questions aloud. The panel has no buttons."
+  caption="The About panel shows the version of the app."
   frame="window"
 />
 
-| Item       | Detail                                                                                                                                  |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Opens with | The **About Cloudy Reader** command in the **Cloudy Reader** menu.                                                                      |
-| Text       | "Cloudy Reader", then "Version 0.0.3", then "Reads National Science Bowl questions aloud."                                              |
-| Button     | **OK** closes the box.                                                                                                                  |
-| Behavior   | The box does not block the main window. One About box opens at a time, and choosing the command again brings the open box to the front. |
+| Item        | Detail                                                                                                                                        |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Opens with  | The **About Cloudy Reader** command in the **Cloudy Reader** menu.                                                                            |
+| Text        | "Cloudy Reader", then "Version 0.0.3", then "Reads National Science Bowl questions aloud."                                                    |
+| Closes with | The close button, Escape, or Command-W.                                                                                                       |
+| Behavior    | The panel does not block the main window. One About panel opens at a time, and choosing the command again brings the open panel to the front. |
 
 ## Window size
 
@@ -214,5 +214,5 @@ The window has a default size and a minimum size.
 
 | Size    | Width by height |
 | ------- | --------------- |
-| Default | 680 by 620      |
+| Default | 680 by 640      |
 | Minimum | 560 by 480      |

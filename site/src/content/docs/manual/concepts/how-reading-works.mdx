@@ -26,7 +26,7 @@ The app runs five steps each time you start a reading. Only step 3 can use the n
 4. **Build the spoken script.** The app applies your guides first, then fractions, units and symbols, formulas and notation, and the [lexicon](/manual/reference/glossary/#lexicon). This step also sets the silent pause after each part of the question.
 5. **Speak.** A [voice engine](/manual/reference/glossary/#voice-engine) turns the script and any exact pronunciations into audio, and the app plays the audio. The voice you chose decides which engine runs.
 
-Click **Spoken script** to open the view of the words that step 4 builds. The view does not show guides or exact pronunciations, because they travel with a word and not as text. See [Question format and reading order](/manual/reference/question-format/) for the order of the parts and every pause.
+The **Spoken script** view under the question box shows the words that step 4 builds. It fills as you type or paste. The preview skips steps 2 and 3, so the wording of a chemical name can change when you press **Speak**. The view does not show guides or exact pronunciations, because they travel with a word and not as text. See [Question format and reading order](/manual/reference/question-format/) for the order of the parts and every pause.
 
 ## How a word sounds, never which word
 
@@ -37,7 +37,7 @@ The figure shows the spoken script for the sample question in [Get started](/man
 <Figure
   src="script-formula-light.svg"
   dark="script-formula-dark.svg"
-  alt="The Spoken script view after a reading of the sample question. The text starts with the spoken header and format and ends with the four choices, W through Z."
+  alt="The Spoken script view with the sample question. The text starts with the spoken header and format and ends with the four choices, W through Z."
   caption="The spoken script spells NaHCO3 as N A H C O three and adds the header and the format."
 />
 
@@ -83,7 +83,7 @@ The lexicon is a built-in table of 553 hard science words, such as `abiotic`, `a
 
 For a systematic chemical name such as `2-methylpropan-1-ol`, the app builds the sound from the parts of the name. A table of 153 name parts supplies the sounds, and the name gets one main stress. The app does this only when the OPSIN check parses the name and the table knows every part.
 
-OPSIN runs on your Mac with a Java runtime that is part of the app, so the check works offline. Without a lexicon entry, a guide, or a checked name, the voice engine decides how a word sounds. The **Spoken script** view shows a checked name as written, because its pronunciation travels with the word and not as text.
+OPSIN runs on your Mac with a Java runtime that is part of the app, so the check works offline. Without a lexicon entry, a guide, or a checked name, the voice engine decides how a word sounds. After a reading, the **Spoken script** view shows a checked name as written, because its pronunciation travels with the word and not as text.
 
 Some voice engines take no [IPA](/manual/reference/glossary/#ipa), the phonetic symbols that carry an exact pronunciation. [Voices and voice engines](/manual/concepts/voice-engines/) names them. These engines say a respelled word from its respelling, in lower case. They say a lexicon word or a checked chemical name as printed.
 
