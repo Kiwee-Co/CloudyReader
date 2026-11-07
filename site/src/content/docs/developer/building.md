@@ -353,13 +353,13 @@ The app in the image is a copy of the app that the build extracted from the zip.
 The build checks the image in this order:
 
 1. `hdiutil verify` accepts the image. Only a failure with "Resource temporarily unavailable" (EAGAIN) gets a retry, up to 3 tries in all and 2 seconds apart. Any other failure, or a third failure, stops the build and prints the last 20 lines of `build/dmg-verify.log`.
-2. The build attaches the image read-only and hidden.
+2. The build attaches the image read-only and hidden, at a fresh folder under `/private/tmp`. The folder is outside the build tree, because a volume with owners disabled, such as an external disk, refuses a mount point.
 3. The volume name is `Cloudy Reader`. The volume holds an `Applications` link to `/Applications` and no entry beyond those named above.
 4. The app in the image passes `codesign --verify --deep --strict`.
 5. The app prints `Cloudy Reader <VERSION>` for `--version`.
 6. The voice audit passes.
 7. One digest over every file, folder mode, and link of the app equals the digest of the app in the zip.
-8. The build ejects the image, however the checks end. It ejects only a device that `diskutil info` confirms is a disk image.
+8. The build ejects the image, however the checks end. It ejects only a device that `diskutil info` confirms is a disk image. Then it removes the mount folder with `rmdir`, so a folder that still holds a volume stays.
 
 `scripts/build_app.sh figures VERSION FILE` writes key=value lines to `FILE`, among them `APP_BYTES`, `ZIP_BYTES`, `SHA256`, `DMG_BYTES`, and `DMG_SHA256`. `APP_BYTES` sums the regular files of the app in `dist/`. The command writes the file only after the zip and the disk image each match their `.sha256` file.
 
