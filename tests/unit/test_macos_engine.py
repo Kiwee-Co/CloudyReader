@@ -465,6 +465,21 @@ def test_overrides_say_their_respelling_and_ipa_only_words_are_reported():
     assert made.script_warnings(script, SAMANTHA) == tuple(warnings)
 
 
+def test_a_reading_reports_the_text_prep_notes_in_last_warnings(mac, tmp_path):
+    lost = Override("Larynx", "ˈlæɹɪŋks", "respelling", respelling="LAIR-ingks")
+    trachea = Override("Trachea", "ˈtɹeɪkiə", "lexicon")
+    script = SpokenScript((Segment("Trachea and Trachea", 300, (trachea, lost)),))
+    made = engine(FakeSay())
+
+    synthesize(made, tmp_path / "out.wav", script)
+
+    assert made.last_warnings == [
+        "macOS cannot take IPA: 1 hard word uses the printed spelling (Trachea)",
+        "macOS: override for 'Larynx' not found in the segment text",
+    ]
+    assert tuple(made.last_warnings) == made.script_warnings(script, SAMANTHA)
+
+
 @pytest.mark.parametrize(
     ("speed", "rate"), [(1.0, None), (2.0, "--rate=350"), (0.8, "--rate=140"), (3.0, "--rate=350")]
 )
