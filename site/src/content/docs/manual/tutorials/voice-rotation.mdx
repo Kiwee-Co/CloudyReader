@@ -18,13 +18,13 @@ Set the Mac's volume before you start. The app has no volume control.
 
 ## Choose a voice
 
-The **Voice** menu groups voices under a heading for each [voice engine](/manual/reference/glossary/#voice-engine). The headings are labels, not choices, and a dimmed row is a voice that cannot play yet. Each row shows the voice's name, its language, and a quality label.
+The **Voice** menu groups voices under a heading for each [voice engine](/manual/reference/glossary/#voice-engine). The headings are labels, not choices, and a dimmed row is a voice that cannot play yet. Each row is a voice label: the name, the accent and gender where known, the engine, and the precision.
 
 <Figure
   src="voices-top-light.svg"
   dark="voices-top-dark.svg"
-  alt="The Voice menu open at the top: the Kokoro heading, then the highest-graded voices, starting with Heart (female) (en-US, A)."
-  caption="The Voice menu lists voices under an engine heading, and each row ends with its language and quality label."
+  alt="The Voice menu open at the top, under the Kokoro heading. Heart (US, female) · Kokoro · bf16 is selected, and Bella, Emma, and more Kokoro voices follow."
+  caption="The Voice menu lists voices under an engine heading, and each row shows the name, the engine, and the precision of a voice."
   frame="window"
 />
 
@@ -43,15 +43,16 @@ ANSWER: Y) CARBON DIOXIDE
 <Steps>
 
 1. Select the question above and press Command-C.
-2. Click **Paste** in the Cloudy Reader window.
+2. Click the question box in the Cloudy Reader window.
+3. Press Command-A, then press Command-V.
 
    The question box shows the question, starting with TOSS-UP.
 
-3. Open the **Voice** menu and choose a voice that is not dimmed and differs from the one it shows.
+4. Open the **Voice** menu and choose a voice that is not dimmed and differs from the one it shows.
 
    The **Voice** menu shows the voice you chose.
 
-4. Press Command-Return.
+5. Press Command-Return.
 
    The status bar shows "Preparing…", then "Playing _n_ s." You hear the question in the voice you chose.
 
@@ -79,7 +80,7 @@ The app saves your choice and selects the same voice at the next start.
 
 2. Press Command-Return.
 
-   The status bar shows "Preparing with _voice_…", then "Playing _n_ s with _voice_." The _voice_ is a name and a gender. When you have not used rotation since the app started, it is the first voice in the **Voice** menu that rotation can use. Otherwise it is the voice after the last one that rotation used.
+   The status bar shows "Preparing with _voice_…", then "Playing _n_ s with _voice_." The _voice_ is a name with its gender and engine in brackets, such as "Heart (female, Kokoro)". When you have not used rotation since the app started, it is the first voice in the **Voice** menu that rotation can use. Otherwise it is the voice after the last one that rotation used.
 
 3. When the sound starts, press Command-Return again.
 
@@ -129,17 +130,17 @@ Three modes deal from a smaller group of voices: **Men only**, **Women only**, a
 
 2. Press Command-Return.
 
-   The status bar names a voice followed by "(male)", for example "Daniel (male)".
+   The status bar names a voice with "male" in its brackets, for example "Daniel (male, Kokoro)".
 
 3. When the sound starts, press Command-Return again.
 
-   The status bar names another voice followed by "(male)".
+   The status bar names another voice with "male" in its brackets.
 
 </Steps>
 
-Choose **Women only** and repeat the steps to see "(female)".
+Choose **Women only** and repeat the steps to see "female" in the brackets.
 
-The status bar does not show an accent. To check **US only (random shuffle)**, look up the voice name in the **Voice** menu: every row it deals from says en-US.
+The status bar does not show an accent. To check **US only (random shuffle)**, look up the voice in the **Voice** menu: every row it deals from shows US in its brackets.
 
 :::note
 The gender labels come from the voice data, and the project has not verified every label by ear. [Voices and voice engines](/manual/concepts/voice-engines/) explains the labels.
@@ -192,7 +193,7 @@ The app saves the rotation mode and restores it at the next start. It does not s
 
 ## What you learned
 
-- The **Voice** menu groups voices under a heading for each voice engine, and each row shows a quality label.
+- The **Voice** menu groups voices under a heading for each voice engine. Each row shows the accent, gender, engine, and precision of a voice.
 - **Round robin** takes the next voice in menu order. **Random shuffle** deals every voice in the deck once before any voice repeats.
 - **Men only**, **Women only**, and **US only (random shuffle)** deal from a smaller group.
 - The status bar names the voice of each rotation reading while the sound plays.

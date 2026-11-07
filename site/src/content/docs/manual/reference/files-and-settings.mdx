@@ -59,6 +59,8 @@ Each location below is relative to the data folder.
 | Lookup cache           | `cache/resolutions.sqlite` | The results of name lookups, kept for 30 days when a name is found and 1 day when it is not. The app creates it at every start, even in offline mode. |
 | Download staging       | `.prefetch/`               | Partial downloads with the suffix `.part`.                                                                                                            |
 
+The macOS voices are not in the data folder, because macOS keeps them.
+
 ### Sizes
 
 The sizes below are decimal, as Finder shows them.
@@ -81,12 +83,12 @@ To free disk space, see [Free disk space](/manual/tasks/voices-and-storage/#free
 
 The app itself and its preferences live elsewhere.
 
-| Item            | Location                                                                             | Content                                                                                        |
-| --------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| App             | The folder where you moved it, usually `/Applications/Cloudy Reader.app`             | The app's code, the name-detection model, and the Java runtime for the OPSIN check.            |
-| Preferences     | `~/Library/Preferences/com.cloudyreader.Cloudy Reader.plist`                         | The five saved keys. See [Preferences](#preferences).                                          |
-| Temporary files | The system temporary folder, in `cloudyreader-opsin-*` and `cloudyreader-selftest-*` | A names file for the OPSIN check and the audio of a self-test. The app removes them after use. |
-| Logs            | None                                                                                 | The app writes no log file.                                                                    |
+| Item            | Location                                                                                                    | Content                                                                                                                           |
+| --------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| App             | The folder where you moved it, usually `/Applications/Cloudy Reader.app`                                    | The app's code, the name-detection model, and the Java runtime for the OPSIN check.                                               |
+| Preferences     | `~/Library/Preferences/com.cloudyreader.Cloudy Reader.plist`                                                | The five saved keys. See [Preferences](#preferences).                                                                             |
+| Temporary files | The system temporary folder, in `cloudyreader-opsin-*`, `cloudyreader-selftest-*`, and `cloudyreader-say-*` | A names file for the OPSIN check, the audio of a self-test, and the speech file of a macOS voice. The app removes them after use. |
+| Logs            | None                                                                                                        | The app writes no log file.                                                                                                       |
 
 ## Preferences
 
@@ -98,13 +100,13 @@ defaults read "com.cloudyreader.Cloudy Reader"
 
 The app writes a checkbox, voice, or rotation key when you change it, and `geometry` when the window closes.
 
-| Key              | Type    | Default | What it stores                                                                                           |
-| ---------------- | ------- | ------- | -------------------------------------------------------------------------------------------------------- |
-| `voice`          | Text    | Empty   | The key of the voice you last chose, such as `kokoro:af_heart` or `piper:en_GB-alan-medium`.             |
-| `voice_rotation` | Text    | `none`  | The rotation mode, as an id from the next table. An unknown value reads as `none` and stays in the file. |
-| `read_answer`    | Boolean | `false` | The **Read answer line** checkbox.                                                                       |
-| `online_lookups` | Boolean | `true`  | The **Online lookups** checkbox.                                                                         |
-| `geometry`       | Binary  | None    | The window size and position.                                                                            |
+| Key              | Type    | Default | What it stores                                                                                                  |
+| ---------------- | ------- | ------- | --------------------------------------------------------------------------------------------------------------- |
+| `voice`          | Text    | Empty   | The key of the voice you last chose, such as `kokoro:af_heart`, `piper:en_GB-alan-medium`, or `macos:Samantha`. |
+| `voice_rotation` | Text    | `none`  | The rotation mode, as an id from the next table. An unknown value reads as `none` and stays in the file.        |
+| `read_answer`    | Boolean | `false` | The **Read answer line** checkbox.                                                                              |
+| `online_lookups` | Boolean | `true`  | The **Online lookups** checkbox.                                                                                |
+| `geometry`       | Binary  | None    | The window size and position.                                                                                   |
 
 The `voice_rotation` key holds one of these ids.
 
@@ -166,11 +168,13 @@ A failed check skips the download of that engine. For the messages, see [Status 
 
 These limits apply to a reading and its audio.
 
-| Limit                                          | Value                                                                                                          |
-| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Speaking speed                                 | 1.0, with no speed control in the window                                                                       |
-| Audio cache size                               | No limit                                                                                                       |
-| Paste length                                   | No limit; name detection uses pattern matching alone for a text over 1,000,000 characters                      |
-| Reading length, Chatterbox Turbo and Qwen3-TTS | At most 8,000 characters of spoken script in one reading. A reading covers every question in the question box. |
+| Limit                                          | Value                                                                                                                 |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Speaking speed                                 | 1.0, with no speed control in the window                                                                              |
+| Audio cache size                               | No limit                                                                                                              |
+| Paste length                                   | No limit; name detection uses pattern matching alone for a text over 1,000,000 characters                             |
+| Reading length, Chatterbox Turbo and Qwen3-TTS | At most 8,000 characters of spoken script in one reading. A reading covers every question in the question box.        |
+| Reading time, macOS voices                     | 30 seconds plus 0.01 second for each character of the spoken script. A reading that takes longer stops with an error. |
+| Spoken script preview                          | Up to 20,000 characters in the question box. A longer text shows the placeholder until you press **Speak**.           |
 
-A reading over the length limit shows an error. See [Status messages](/manual/reference/status-messages/).
+A reading over the length limit or the time limit shows an error. See [Status messages](/manual/reference/status-messages/).

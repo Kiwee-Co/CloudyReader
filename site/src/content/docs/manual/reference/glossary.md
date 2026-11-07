@@ -85,7 +85,7 @@ One run of **Speak**: the spoken script and its audio.
 
 ### Spoken script
 
-The words that the voice receives after the app converts the question. The **Spoken script** view shows them, without the pronunciation overrides. See [How a question becomes speech](/manual/concepts/how-reading-works/).
+The words that the voice receives after the app converts the question. The **Spoken script** view shows them and fills as the question changes, without the pronunciation overrides. See [How a question becomes speech](/manual/concepts/how-reading-works/).
 
 ### Status bar
 
@@ -103,23 +103,31 @@ A status message that starts with "Warning:" or "_n_ warnings:". The reading goe
 
 ### Chatterbox Turbo
 
-A voice engine whose built-in voice shows in the **Voice** menu as `Chatterbox Turbo (built-in)`. It needs a Mac with Apple silicon and takes no IPA. See [Voices and voice engines](/manual/concepts/voice-engines/).
+A voice engine with one built-in voice, which the **Voice** menu shows as `Built-in · Chatterbox Turbo · 4-bit`. It needs a Mac with Apple silicon and takes no IPA. See [Voices and voice engines](/manual/concepts/voice-engines/).
 
 ### Grade
 
-The mark that the **Voice** menu shows after the language of a voice. A Kokoro voice has a letter grade from the model, from A at the top to F+ at the bottom. A Piper voice has a quality label, such as `medium`. A Chatterbox Turbo voice shows `4-bit` and a Qwen3-TTS voice shows `8-bit` in place of a grade. The label names the MLX build of the model that the app uses. See [Voices and voice engines](/manual/concepts/voice-engines/).
+The mark that ranks the voices of one engine in the **Voice** menu. A Kokoro voice has a letter grade from the model, from A at the top to F+ at the bottom. Its row shows the grade in a tooltip. A Piper voice has a quality tier, such as `medium`, and a macOS voice has a tier: `Premium`, `Enhanced`, or `Standard`. A Chatterbox Turbo voice and a Qwen3-TTS voice have no grade. See [Voices and voice engines](/manual/concepts/voice-engines/).
 
 ### Kokoro
 
-A voice engine whose voices show a letter grade in the **Voice** menu. It needs a Mac with Apple silicon.
+A voice engine whose voices have a letter grade. It needs a Mac with Apple silicon.
+
+### macOS voice
+
+A voice that your Mac already has. The **macOS** heading of the **Voice** menu lists the English ones. A macOS voice needs no download and takes no IPA. See [Voices and voice engines](/manual/concepts/voice-engines/#macos-voices).
 
 ### Piper
 
-A voice engine whose voices have lower-case names in the **Voice** menu, such as `lessac`.
+A voice engine whose voices show a quality tier, such as `medium`, as their precision.
+
+### Precision
+
+The last part of a voice label. It names the format of the model, such as `bf16`, `4-bit`, or `8-bit`, or the tier of a Piper voice or a macOS voice. See [Voice labels](/manual/reference/voices/#voice-labels).
 
 ### Qwen3-TTS
 
-A voice engine whose voices are ready-made presets with fixed names, such as `Aiden (male)`. It needs a Mac with Apple silicon and takes no IPA. See [Voices and voice engines](/manual/concepts/voice-engines/).
+A voice engine whose voices are ready-made presets with fixed names, such as `Aiden`. It needs a Mac with Apple silicon and takes no IPA. See [Voices and voice engines](/manual/concepts/voice-engines/).
 
 ### Rotation
 
@@ -139,11 +147,15 @@ The voices that the app downloads and checks. See [Voices and rotation modes](/m
 
 ### Voice
 
-One entry that you can choose in the **Voice** menu, such as "Heart (female)".
+One entry that you can choose in the **Voice** menu, such as "Heart (US, female) · Kokoro · bf16".
 
 ### Voice engine
 
 The speech software that makes a set of voices, such as Piper. See [Voices and rotation modes](/manual/reference/voices/) for every engine and [Voices and voice engines](/manual/concepts/voice-engines/) for how the engines differ.
+
+### Voice label
+
+The text of one row in the **Voice** menu: _name_ (_accent_, _gender_) · _engine_ · _precision_. The closed menu shows the same label for the voice that you chose. See [Voice labels](/manual/reference/voices/#voice-labels).
 
 ## Pronunciation
 

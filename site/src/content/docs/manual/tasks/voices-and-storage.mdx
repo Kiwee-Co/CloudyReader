@@ -18,16 +18,15 @@ To open the data folder, choose **Go > Go to Folder** in Finder, paste the path,
 
 The app downloads and checks the supported voices. [Voices and rotation modes](/manual/reference/voices/) lists them and the menu order.
 
-The menu groups the voices under the name of their [voice engine](/manual/reference/glossary/#voice-engine). The engine headings are labels, not choices.
+The menu groups the voices under the name of their [voice engine](/manual/reference/glossary/#voice-engine). The engine headings are labels, not choices. The **macOS** heading lists the English voices that macOS has. The app downloads nothing for them, and the data folder holds none of their files.
 
-A row reads _name_ (_language_, _quality_). A dimmed row cannot be chosen yet, and it adds its reason after the quality.
+A row reads like "Lessac (US, female) · Piper · medium". It holds the name, the accent and gender where known, the engine, and the precision. [Voice labels](/manual/reference/voices/#voice-labels) explains each part. A dimmed row cannot be chosen yet, and it adds a dash and its reason after the precision.
 
 If the menu cuts a reason short, point to the row to read the whole reason. When every voice is ready, no row is dimmed.
 
 These are the reasons and the fix for each:
 
-- "not installed": the voice file is missing. Retry the download, as [Download missing voices](#download-missing-voices) describes.
-- "not downloaded yet": the download has not reached the files of this voice. Wait for it, or retry it.
+- "not downloaded yet": the download has not reached the files of this voice, or the file of a Kokoro voice is missing. Wait for the download, or retry it as [Download missing voices](#download-missing-voices) describes.
 - "offline: not downloaded": offline mode skipped the download. Quit the app and open it with the network on.
 - "not enough disk space: needs _x_ GB, _y_ GB free": the Mac has too little room for the missing files. [Free disk space](#free-disk-space), then quit the app and open it again.
 - "the models folder is not writable": the app cannot save files in the `models` folder. Make sure your account can write to that folder.
@@ -40,7 +39,7 @@ The menu shows placeholder text when it has no voice to list:
 - "No voice installed": no voice is on the Mac, and the menu is dimmed.
 - "Voices unavailable": the app could not list the voices, and the status bar shows an error.
 
-If the voice you saved is dimmed at the start, the app selects the first installed voice in the menu. Unless the row reads "not installed", the status bar names the reason. See [The voice changes by itself](/manual/troubleshooting/#the-voice-changes-by-itself).
+If the voice you saved is dimmed at the start, the app selects the first installed voice in the menu. For a Chatterbox Turbo or Qwen3-TTS voice, the status bar also names the reason. See [The voice changes by itself](/manual/troubleshooting/#the-voice-changes-by-itself).
 
 If the voices of one engine are missing from the menu, see [Troubleshooting](/manual/troubleshooting/#voices-from-one-engine-are-missing).
 
@@ -48,28 +47,28 @@ If the voices of one engine are missing from the menu, see [Troubleshooting](/ma
 
 The app downloads missing supported voices by itself, once each time it starts. It does not fetch a file that is already present.
 
-The app downloads one engine at a time. When an engine finishes, its voices join the **Voice** menu while the next engine downloads. On a Mac with no voice, the first voice joins when it arrives. You can read with an installed voice while the download runs.
+The app downloads one engine at a time. When an engine finishes, its voices join the **Voice** menu while the next engine downloads. The macOS voices need no download, so you can read with one of them while the first engine downloads. On a Mac that lists no voice, the first downloaded voice joins when it arrives.
 
 To retry a download that failed or stopped:
 
 1. Connect the Mac to the network.
 2. Quit Cloudy Reader with Command-Q.
 3. Open Cloudy Reader from **Applications**. Offline mode stops the download, so do not use the `--offline` option.
-4. Watch the status bar for a progress bar and a label that names the engine. The label reads "Downloading _engine_… _N_% (_x_ of _y_ MB)".
+4. Watch the status bar for a progress bar and a label that names the engine. The label reads "Downloading _engine_… _N_% (_x_ of _y_ MB)", or "(_x_ MB of _y_ GB)" for an engine over 1 GB.
 5. When the label and the bar leave the status bar, open the **Voice** menu and check the list.
 
 <Figure
   src="download-progress-light.svg"
   dark="download-progress-dark.svg"
-  alt="The status bar while Kokoro downloads: a label that reads Downloading Kokoro with a percentage and a size in megabytes, and a progress bar."
+  alt="The status bar while Kokoro downloads. A label reads Downloading Kokoro with a percentage and the megabytes done and in total, and a progress bar follows."
   caption="The percentage counts a file as finished when its tries end."
 />
 
-The percentage and the megabytes count the files of the engine that downloads. Point to the label to see the file in progress and the percentage of all downloads. A file whose tries all failed still counts, so a rising percentage does not show that voices arrived.
+The percentage and the megabytes count the files of the engine that downloads. In a narrow window, the label drops its sizes first and then the word "Downloading". Point to the label to see the file in progress and the percentage of all downloads. A file whose tries all failed still counts, so a rising percentage does not show that voices arrived.
 
 Check the **Voice** menu, not the percentage. [The voice download does not progress](/manual/troubleshooting/#the-voice-download-does-not-progress) explains why.
 
-The percentage and the bar leave the status bar when the download ends, whatever the result. After a complete download, the status bar shows "Voices downloaded." if it has no other message. If no voice arrived, the status bar keeps "No voice is installed." and shows no warning; see [No voice is installed](/manual/troubleshooting/#no-voice-is-installed).
+The percentage and the bar leave the status bar when the download ends, whatever the result. After a complete download, the status bar shows "Voices downloaded." if it has no other message. On a Mac with no macOS voice, the status bar keeps "No voice is installed." as a warning if no voice arrived, and it shows no message about the failed files; see [No voice is installed](/manual/troubleshooting/#no-voice-is-installed).
 
 Some engines have large model files. Before it downloads such an engine, the app checks that the Mac has room for the missing files, with a margin. It also checks that the `models` folder is writable. If a check fails, the app skips that engine and downloads the rest.
 
@@ -118,7 +117,7 @@ If the removed voice was your selected voice, the app selects the first installe
 
 ## Copy voices to another Mac
 
-Copy the voices to skip the download on the other Mac. Copy from a Mac where the voices work, because the app does not detect a damaged Piper file that has the right size.
+Copy the voices to skip the download on the other Mac. Copy from a Mac where the voices work, because the app does not detect a damaged Piper file that has the right size. The copy covers the voices that the app downloads. The macOS voices belong to macOS, so each Mac lists its own.
 
 The `voices` folder holds the Piper voices. The `models` folder holds one folder for each other engine that has model files.
 
