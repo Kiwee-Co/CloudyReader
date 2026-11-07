@@ -86,6 +86,19 @@ class PrepareCall:
     thread: threading.Thread
 
 
+@dataclass(frozen=True)
+class PreviewCall:
+    raw: str
+    opts: RenderOptions
+    thread: threading.Thread
+
+
+def _echo(raw: str) -> SpokenScript:
+    """One segment per non-blank line: the fake's whole idea of a spoken script."""
+    lines = [line.strip() for line in raw.splitlines() if line.strip()]
+    return SpokenScript(tuple(Segment(text=line) for line in lines))
+
+
 class FakeReaderService:
     """ReaderService that echoes the paste back as a script. Knobs are plain attributes."""
 
@@ -108,6 +121,8 @@ class FakeReaderService:
         prefetch_error: Exception | None = None,
         prefetch_installs: Sequence[str] = (),
         load_hint: str | None = None,
+        preview_error: Exception | None = None,
+        preview_gate: threading.Event | None = None,
     ) -> None:
         self.voice_list = list(voices)
         self.delay_s = delay_s
@@ -127,8 +142,11 @@ class FakeReaderService:
         self.prefetch_installs = tuple(prefetch_installs)  # keys installed as the run starts
         self.load_hint_text = load_hint  # said until prepare() succeeds once with that voice
         self.load_hint_calls: list[tuple[str, threading.Thread]] = []
+        self.preview_error = preview_error
+        self.preview_gate = preview_gate  # preview_script() blocks until set, like `gate`
         self._prepared: set[str] = set()
         self.calls: list[PrepareCall] = []
+        self.preview_calls: list[PreviewCall] = []
         self.voices_threads: list[threading.Thread] = []
         self.prefetch_threads: list[threading.Thread] = []
 
@@ -149,10 +167,16 @@ class FakeReaderService:
         if self.error is not None:
             raise self.error
         self._prepared.add(voice_key)  # its model is resident now
-        lines = [line.strip() for line in raw.splitlines() if line.strip()]
-        script = SpokenScript(tuple(Segment(text=line) for line in lines))
         audio = Audio(_FAKE_WAV, 22_050, self.duration_s, cache_hit=False)
-        return Reading((), script, (), {}, audio, warnings=self.warnings)
+        return Reading((), _echo(raw), (), {}, audio, warnings=self.warnings)
+
+    def preview_script(self, raw: str, opts: RenderOptions) -> SpokenScript:
+        self.preview_calls.append(PreviewCall(raw, opts, threading.current_thread()))
+        if self.preview_gate is not None and not self.preview_gate.wait(_GATE_TIMEOUT_S):
+            raise TimeoutError("fake preview gate was never released")
+        if self.preview_error is not None:
+            raise self.preview_error
+        return _echo(raw)
 
     @property
     def load_hint(self) -> Callable[[str], str | None] | None:

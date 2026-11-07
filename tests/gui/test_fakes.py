@@ -114,6 +114,50 @@ def test_an_unreleased_voices_gate_fails_instead_of_hanging(monkeypatch):
         service.voices()
 
 
+def test_preview_records_the_call_and_builds_a_script_per_line():
+    service = FakeReaderService()
+    opts = RenderOptions(read_answer=True)
+
+    script = service.preview_script("one\n\n two \n", opts)
+
+    (call,) = service.preview_calls
+    assert (call.raw, call.opts) == ("one\n\n two \n", opts)
+    assert call.thread is threading.current_thread()
+    assert script.text() == "one two"
+
+
+def test_preview_raises_the_configured_error():
+    service = FakeReaderService(preview_error=ValueError("bad paste"))
+
+    with pytest.raises(ValueError, match="bad paste"):
+        service.preview_script("text", RenderOptions())
+
+    assert len(service.preview_calls) == 1
+
+
+def test_preview_blocks_until_the_preview_gate_opens():
+    gate = threading.Event()
+    service = FakeReaderService(preview_gate=gate)
+    worker = threading.Thread(target=service.preview_script, args=("a", RenderOptions()))
+
+    worker.start()
+    worker.join(0.1)
+    assert worker.is_alive()
+    gate.set()
+    worker.join(2)
+
+    assert not worker.is_alive()
+    assert service.preview_calls[0].thread is worker
+
+
+def test_an_unreleased_preview_gate_fails_instead_of_hanging(monkeypatch):
+    monkeypatch.setattr(fake_service, "_GATE_TIMEOUT_S", 0.05)
+    service = FakeReaderService(preview_gate=threading.Event())
+
+    with pytest.raises(TimeoutError, match="gate"):
+        service.preview_script("a", RenderOptions())
+
+
 def test_player_replay_is_false_before_any_play():
     player = FakePlayer()
 
