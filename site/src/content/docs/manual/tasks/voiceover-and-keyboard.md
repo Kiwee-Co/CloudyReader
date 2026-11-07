@@ -32,7 +32,7 @@ Details about these controls:
 - Space selects or deselects a focused checkbox, and it shows or hides the **Spoken script** view when its button has focus.
 - The question box and the **Spoken script** view use their placeholder text as the description.
 - The **Voice** menu has the description "Choose the voice that reads the question." The **Speaker** box has the description "Choose a speaker of this voice." followed by the range of speaker numbers.
-- Each row of the open **Voice** menu has a spoken form, such as "Heart, American English, female. Kokoro, bf16." A dimmed row adds "Not available:" and its reason. The closed menu shows the written label.
+- Each row of the open **Voice** menu has a spoken form, such as "Heart, American English, female. Kokoro, Grade A." A dimmed row adds "Not available:" and its reason. The closed menu shows the written label.
 - The headings in the **Voice** menu are section headers, not choices. VoiceOver reads each heading as the engine name followed by "voices".
 - The **Spoken script** button has the description "Show or hide the text that is spoken".
 - The question box and the **Spoken script** view show a two-tone focus ring: a thin contrast line, then a thicker ring in the accent color. The contrast line is dark in light appearance and light in dark appearance. Every other control, including the **Spoken script** button, draws the macOS focus ring.

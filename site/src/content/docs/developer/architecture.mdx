@@ -80,20 +80,20 @@ Each row names a module or folder under `cloudyreader/`.
 
 `models.py` defines these types:
 
-| Type            | Holds                                                                                                                                                            |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Question`      | Kind, number, category, format, stem, choices, answer, raw text, and the guides found in the stem.                                                               |
-| `Choice`        | A letter (`W`, `X`, `Y`, or `Z`), its text, and the guides found in the text.                                                                                    |
-| `Respelling`    | A guide: the printed `surface`, the guide text, and a `kind` of `phonetic`, `spoken`, or `spell`.                                                                |
-| `EntitySpan`    | A detected name: offsets, text, a label, and a source of `ner` or `regex`.                                                                                       |
-| `Resolution`    | The answer to a lookup: query, kind, canonical name, ids, source, and a status of `ok`, `not_found`, `timeout`, `offline`, or `error`.                           |
-| `Override`      | An exact pronunciation: a `surface`, neutral General American IPA, and a source of `respelling`, `lexicon`, or `iupac`.                                          |
-| `Segment`       | Text, a pause after it in milliseconds, and its overrides.                                                                                                       |
-| `SpokenScript`  | Segments and warnings. `text()` joins the segment text.                                                                                                          |
-| `VoiceInfo`     | Key, engine, name, language, quality, speaker count, installed flag, path, the reason a voice is not installed, and the precision that the **Voice** menu shows. |
-| `RenderOptions` | `read_answer`, `speed`, `online_lookups`, and `speaker_id`.                                                                                                      |
-| `Audio`         | The WAV path, sample rate, duration, and a cache-hit flag.                                                                                                       |
-| `Reading`       | Questions, script, entities, resolutions, audio, and warnings.                                                                                                   |
+| Type            | Holds                                                                                                                                                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Question`      | Kind, number, category, format, stem, choices, answer, raw text, and the guides found in the stem.                                                                                                                             |
+| `Choice`        | A letter (`W`, `X`, `Y`, or `Z`), its text, and the guides found in the text.                                                                                                                                                  |
+| `Respelling`    | A guide: the printed `surface`, the guide text, and a `kind` of `phonetic`, `spoken`, or `spell`.                                                                                                                              |
+| `EntitySpan`    | A detected name: offsets, text, a label, and a source of `ner` or `regex`.                                                                                                                                                     |
+| `Resolution`    | The answer to a lookup: query, kind, canonical name, ids, source, and a status of `ok`, `not_found`, `timeout`, `offline`, or `error`.                                                                                         |
+| `Override`      | An exact pronunciation: a `surface`, neutral General American IPA, and a source of `respelling`, `lexicon`, or `iupac`.                                                                                                        |
+| `Segment`       | Text, a pause after it in milliseconds, and its overrides.                                                                                                                                                                     |
+| `SpokenScript`  | Segments and warnings. `text()` joins the segment text.                                                                                                                                                                        |
+| `VoiceInfo`     | Key, engine, name, language, quality, speaker count, installed flag, path, the reason a voice is not installed, and the model precision that the **Voice** menu shows. A Kokoro voice has none, and its label shows its grade. |
+| `RenderOptions` | `read_answer`, `speed`, `online_lookups`, and `speaker_id`.                                                                                                                                                                    |
+| `Audio`         | The WAV path, sample rate, duration, and a cache-hit flag.                                                                                                                                                                     |
+| `Reading`       | Questions, script, entities, resolutions, audio, and warnings.                                                                                                                                                                 |
 
 The protocols `Parser`, `EntityDetector`, `Resolver`, `Normalizer`, `TtsEngine`, `AudioPlayer`, and `ReaderService` describe what each part needs from the others.
 
@@ -128,7 +128,7 @@ A voice can add its own silence around a line. Piper and Kokoro call `trim_lette
 
 The voice picker selects the first installed voice when no saved voice applies.
 
-The menu shows one label for each voice, built by `voice_label` in `voice_meta.py`. A label joins the name, the accent and gender where known, the engine, and the precision. It reads `Lessac (US, female) · Piper · medium`. A voice that is not installed adds `—` and its reason, and the tooltip of the row holds the whole reason. The tooltip of a Kokoro row names its published grade. `spoken_label` writes the same facts for VoiceOver, and `unique_labels` adds the voice id in brackets when two labels match.
+The menu shows one label for each voice, built by `voice_label` in `voice_meta.py`. A label joins the name, the accent and gender where known, the engine, and the quality: the precision of the model, the tier, or for Kokoro the published grade. It reads `Lessac (US, female) · Piper · medium` or `Heart (US, female) · Kokoro · Grade A`. A voice that is not installed adds `—` and its reason, and the tooltip of the row holds the whole reason. The tooltip of a Kokoro row names its published grade. `spoken_label` writes the same facts for VoiceOver, and `unique_labels` adds the voice id in brackets when two labels match.
 
 `build_default_service` always registers Piper. It registers Kokoro only when `platform.machine()` is `arm64` and the module imports. Then `_optional_engines` imports each module of `_OPTIONAL_ENGINES`, on Apple silicon only. A module that is missing or broken is skipped with a log line, so the other engines still work. It registers `MacosEngine` last, on every platform: off macOS the engine reports itself unavailable and lists no voice. Bump `_RENDER_REVISION` in the module of an engine, or the `+r` suffix of `KokoroEngine.version`, when rendering changes, so old cached WAV files stop matching.
 

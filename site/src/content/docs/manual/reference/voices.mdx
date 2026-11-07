@@ -13,52 +13,52 @@ This page lists every voice, how a voice label reads, the menu order, why a voic
 
 A [voice engine](/manual/reference/glossary/#voice-engine) makes a set of voices on your Mac. This table compares the engines in menu order. For what the engines are and how to choose a voice, see [Voices and voice engines](/manual/concepts/voice-engines/).
 
-| Engine           | Voices        | Key prefix         | Name in the label                                             | Precision in the label                                                                        |
-| ---------------- | ------------- | ------------------ | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Kokoro           | 28            | `kokoro`           | The part of the id after the underscore, such as Heart        | `bf16`. A letter grade from the model's `VOICES.md` file ranks the voices, from A down to F+. |
-| Chatterbox Turbo | 1             | `chatterbox_turbo` | Built-in                                                      | `4-bit`. The voice has no grade.                                                              |
-| Qwen3-TTS        | 2             | `qwen3_tts`        | The preset name, such as Aiden                                | `8-bit`. The voices have no grade.                                                            |
-| Piper            | 5             | `piper`            | The name part of the file name, with capitals, such as Lessac | The quality in the voice's config file: `medium` for every voice                              |
-| macOS            | Varies by Mac | `macos`            | The name that macOS gives the voice, such as Samantha         | The tier of the voice: `Standard`, `Enhanced`, or `Premium`                                   |
+| Engine           | Voices        | Key prefix         | Name in the label                                             | Quality in the label                                                                                                       |
+| ---------------- | ------------- | ------------------ | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Kokoro           | 28            | `kokoro`           | The part of the id after the underscore, such as Heart        | The published grade, such as `Grade A`. It comes from the model's `VOICES.md` file and ranks the voices from A down to F+. |
+| Chatterbox Turbo | 1             | `chatterbox_turbo` | Built-in                                                      | `4-bit`. The voice has no grade.                                                                                           |
+| Qwen3-TTS        | 2             | `qwen3_tts`        | The preset name, such as Aiden                                | `8-bit`. The voices have no grade.                                                                                         |
+| Piper            | 5             | `piper`            | The name part of the file name, with capitals, such as Lessac | The quality in the voice's config file: `medium` for every voice                                                           |
+| macOS            | Varies by Mac | `macos`            | The name that macOS gives the voice, such as Samantha         | The tier of the voice: `Standard`, `Enhanced`, or `Premium`                                                                |
 
 The key of a voice is the key prefix of its engine, a colon, and the id of the voice, as in `kokoro:af_heart`. The id of a macOS voice is its name in macOS, with its tier when it has one, as in `macos:Ava (Premium)`. Error messages and the saved voice setting use the key.
 
 ## Voice labels
 
-A voice label is the text of one row in the **Voice** menu. The closed menu shows the same label for the voice that you chose. A label reads _name_ (_accent_, _gender_) · _engine_ · _precision_, with a middle dot between the parts.
+A voice label is the text of one row in the **Voice** menu. The closed menu shows the same label for the voice that you chose. A label reads _name_ (_accent_, _gender_) · _engine_ · _quality_, with a middle dot between the parts.
 
 This table explains each part.
 
-| Part      | What it shows                                               | Where it comes from                                                                                                                                               |
-| --------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Name      | The name of the voice, such as Heart or Lessac.             | The engine's name for the voice, without a gender suffix. A Piper name gets capital letters, and the one voice of Chatterbox Turbo shows Built-in.                |
-| Accent    | US, UK, AU, CA, IE, IN, NZ, ZA, or Scotland.                | The region of the language code: `en-US` shows US, and `en-GB` shows UK. Another region shows its own code. A code with no region, such as `en`, shows no accent. |
-| Gender    | female or male                                              | The gender label of the voice. A voice with no known gender shows none.                                                                                           |
-| Engine    | Kokoro, Chatterbox Turbo, Qwen3-TTS, Piper, or macOS.       | The voice engine that makes the voice.                                                                                                                            |
-| Precision | `bf16`, `4-bit`, `8-bit`, a Piper quality, or a macOS tier. | The format of the model for Kokoro, Chatterbox Turbo, and Qwen3-TTS. The quality in the config file for Piper. The tier that macOS names for a macOS voice.       |
+| Part    | What it shows                                                  | Where it comes from                                                                                                                                                                |
+| ------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Name    | The name of the voice, such as Heart or Lessac.                | The engine's name for the voice, without a gender suffix. A Piper name gets capital letters, and the one voice of Chatterbox Turbo shows Built-in.                                 |
+| Accent  | US, UK, AU, CA, IE, IN, NZ, ZA, or Scotland.                   | The region of the language code: `en-US` shows US, and `en-GB` shows UK. Another region shows its own code. A code with no region, such as `en`, shows no accent.                  |
+| Gender  | female or male                                                 | The gender label of the voice. A voice with no known gender shows none.                                                                                                            |
+| Engine  | Kokoro, Chatterbox Turbo, Qwen3-TTS, Piper, or macOS.          | The voice engine that makes the voice.                                                                                                                                             |
+| Quality | `Grade A`, `4-bit`, `8-bit`, a Piper quality, or a macOS tier. | The published grade for Kokoro. The format of the model for Chatterbox Turbo and Qwen3-TTS. The quality in the config file for Piper. The tier that macOS names for a macOS voice. |
 
-The brackets after the name hold only what the app knows: (US, female), (male), or (US). A voice with neither fact shows no brackets. A Kokoro grade never appears in a label. A voice that is not ready adds a dash and its reason after the precision: see [Dimmed voices and their reasons](#dimmed-voices-and-their-reasons).
+The brackets after the name hold only what the app knows: (US, female), (male), or (US). A voice with neither fact shows no brackets. A voice that is not ready adds a dash and its reason after the quality: see [Dimmed voices and their reasons](#dimmed-voices-and-their-reasons).
 
 These rows are examples of each case.
 
 | Row                                             | Example                                                  |
 | ----------------------------------------------- | -------------------------------------------------------- |
-| An installed Kokoro voice                       | Heart (US, female) · Kokoro · bf16                       |
-| A Kokoro voice with a British accent            | Emma (UK, female) · Kokoro · bf16                        |
+| An installed Kokoro voice                       | Heart (US, female) · Kokoro · Grade A                    |
+| A Kokoro voice with a British accent            | Emma (UK, female) · Kokoro · Grade B-                    |
 | An installed Piper voice                        | Lessac (US, female) · Piper · medium                     |
 | An installed Qwen3-TTS voice                    | Aiden (US, male) · Qwen3-TTS · 8-bit                     |
 | A Qwen3-TTS voice with no region                | Ryan (male) · Qwen3-TTS · 8-bit                          |
 | An installed Chatterbox Turbo voice             | Built-in · Chatterbox Turbo · 4-bit                      |
 | A macOS voice with a known gender               | Daniel (UK, male) · macOS · Standard                     |
 | A macOS voice with no known gender              | Fred (US) · macOS · Standard                             |
-| A Kokoro voice that is not downloaded           | Adam (US, male) · Kokoro · bf16 — not downloaded yet     |
+| A Kokoro voice that is not downloaded           | Adam (US, male) · Kokoro · Grade F+ — not downloaded yet |
 | A Chatterbox Turbo voice that is not downloaded | Built-in · Chatterbox Turbo · 4-bit — not downloaded yet |
 
-Point to a row to read more. The tooltip of a dimmed Chatterbox Turbo or Qwen3-TTS row holds its whole reason. The tooltip of an installed Kokoro row gives the grade, as in "Published grade A". The tooltip of the closed menu says the label in words, as in "Heart, American English, female. Kokoro, bf16."
+Point to a row to read more. The tooltip of a dimmed Chatterbox Turbo or Qwen3-TTS row holds its whole reason. The tooltip of an installed Kokoro row gives the grade, as in "Published grade A". The tooltip of the closed menu says the label in words, as in "Heart, American English, female. Kokoro, Grade A."
 
 ## Kokoro voices
 
-The first letter of an id gives the language: a is en-US, and b is en-GB. The second letter gives the gender: f is female, and m is male. This table lists the voices in menu order. The Voice column gives the start of the label in the menu.
+The first letter of an id gives the language: a is en-US, and b is en-GB. The second letter gives the gender: f is female, and m is male. This table lists the voices in menu order. The Voice column gives the start of the label in the menu, and the Grade column gives its end.
 
 | Voice                 | Id            | Language | Grade |
 | --------------------- | ------------- | -------- | ----- |
@@ -140,7 +140,7 @@ This table gives the rules that the app follows.
 | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Which voices   | The English voices that macOS lists, without the novelty voices such as Albert, Bubbles, Cellos, and Whisper. A voice in another language never appears. |
 | Name           | The name that macOS gives the voice, without its tier.                                                                                                   |
-| Precision      | The tier in the macOS name: Premium or Enhanced. A voice with no tier in its name is Standard.                                                           |
+| Quality        | The tier in the macOS name: Premium or Enhanced. A voice with no tier in its name is Standard.                                                           |
 | Order          | Premium voices first, then Enhanced, then Standard. Voices of one tier sort by name.                                                                     |
 | Gender         | Known only for the voices on a list of names inside the app, such as Samantha and Daniel. Any other macOS voice shows no gender and never rotates.       |
 | Voices you add | The app reads the list once, at launch. A voice that you add in **System Settings** appears after you quit the app and open it again.                    |
@@ -160,7 +160,7 @@ Each voice engine has a heading in the **Voice** menu. The headings are labels, 
 <Figure
   src="voices-top-light.svg"
   dark="voices-top-dark.svg"
-  alt="The Voice menu open at the top, under the Kokoro heading. Heart (US, female) · Kokoro · bf16 is selected, and Bella, Emma, Nicole, and the other Kokoro voices follow in grade order."
+  alt="The Voice menu open at the top, under the Kokoro heading. Heart (US, female) · Kokoro · Grade A is selected, and Bella, Emma, Nicole, and the other Kokoro voices follow in grade order."
   caption="The top of the Voice menu: Kokoro first, the best grades first."
   frame="window"
 />
@@ -170,8 +170,8 @@ A voice that cannot run is dimmed, cannot be chosen, and adds its reason to its 
 <Figure
   src="voices-light.svg"
   dark="voices-dark.svg"
-  alt="The Voice menu scrolled to the end of the Kokoro list, with Adam (US, male) · Kokoro · bf16 — not downloaded yet dimmed. The Chatterbox Turbo, Qwen3-TTS, and Piper headings follow, each with its voices, and Lessac is selected."
-  caption="The end of the Kokoro list, with its last voice dimmed, then the Chatterbox Turbo, Qwen3-TTS, and Piper voices."
+  alt="The Voice menu scrolled to its end. Adam (US, male) · Kokoro · Grade F+ — not downloaded yet is dimmed. The Chatterbox Turbo, Qwen3-TTS, Piper, and macOS headings follow, and Lessac is selected."
+  caption="The end of the Voice menu: the last Kokoro voice is dimmed, then the Chatterbox Turbo, Qwen3-TTS, Piper, and macOS voices."
   frame="window"
 />
 
@@ -183,7 +183,7 @@ At each start, the app selects the voice that you chose last, if it is installed
 | -------------------------------------------------------------- | ------------------------------------------------------ |
 | You chose a voice before, and it is installed                  | That voice                                             |
 | You chose a voice before, and it is not installed              | The first installed voice in the menu                  |
-| No saved choice, and every voice is installed                  | Heart (US, female) · Kokoro · bf16                     |
+| No saved choice, and every voice is installed                  | Heart (US, female) · Kokoro · Grade A                  |
 | No saved choice, and only Piper and macOS voices are installed | Alan (UK, male) · Piper · medium                       |
 | No saved choice, and only macOS voices are installed           | The first macOS voice in the menu: the best tier first |
 
@@ -234,7 +234,7 @@ The last column counts the Kokoro, Qwen3-TTS, and Piper voices in the pool when 
 | **Men only**                 | The next voice from a shuffled deck of the voices labeled male.                         | 17                 |
 | **Women only**               | The next voice from a shuffled deck of the voices labeled female.                       | 18                 |
 
-**Round robin** takes the first voice of the pool when no voice was used yet, or when the last voice left the pool. With every voice installed, that voice is the first voice in the menu, Heart (US, female) · Kokoro · bf16.
+**Round robin** takes the first voice of the pool when no voice was used yet, or when the last voice left the pool. With every voice installed, that voice is the first voice in the menu, Heart (US, female) · Kokoro · Grade A.
 
 The four shuffle modes deal a deck, which is the pool voices in random order. No voice repeats until the deck is empty. Each deck opens with a voice other than the one used last, when the pool has two or more voices.
 

@@ -107,7 +107,7 @@ A voice engine with one built-in voice, which the **Voice** menu shows as `Built
 
 ### Grade
 
-The mark that ranks the voices of one engine in the **Voice** menu. A Kokoro voice has a letter grade from the model, from A at the top to F+ at the bottom. Its row shows the grade in a tooltip. A Piper voice has a quality tier, such as `medium`, and a macOS voice has a tier: `Premium`, `Enhanced`, or `Standard`. A Chatterbox Turbo voice and a Qwen3-TTS voice have no grade. See [Voices and voice engines](/manual/concepts/voice-engines/).
+The mark that ranks the voices of one engine in the **Voice** menu. A Kokoro voice has a letter grade from the model, from A at the top to F+ at the bottom. Its label ends with the grade, as in `Grade A`, and a tooltip says "Published grade A". A Piper voice has a quality tier, such as `medium`, and a macOS voice has a tier: `Premium`, `Enhanced`, or `Standard`. A Chatterbox Turbo voice and a Qwen3-TTS voice have no grade. See [Voices and voice engines](/manual/concepts/voice-engines/).
 
 ### Kokoro
 
@@ -119,11 +119,15 @@ A voice that your Mac already has. The **macOS** heading of the **Voice** menu l
 
 ### Piper
 
-A voice engine whose voices show a quality tier, such as `medium`, as their precision.
+A voice engine whose voices show a quality tier, such as `medium`, in the label.
 
 ### Precision
 
-The last part of a voice label. It names the format of the model, such as `bf16`, `4-bit`, or `8-bit`, or the tier of a Piper voice or a macOS voice. See [Voice labels](/manual/reference/voices/#voice-labels).
+The format of a voice's model, such as `4-bit` or `8-bit`. The label of a Chatterbox Turbo voice or a Qwen3-TTS voice ends with it. See [Voice labels](/manual/reference/voices/#voice-labels).
+
+### Quality
+
+The last part of a voice label. It is the grade of a Kokoro voice, the tier of a Piper voice or a macOS voice, or the precision of a Chatterbox Turbo voice or a Qwen3-TTS voice. See [Voice labels](/manual/reference/voices/#voice-labels).
 
 ### Qwen3-TTS
 
@@ -147,7 +151,7 @@ The voices that the app downloads and checks. See [Voices and rotation modes](/m
 
 ### Voice
 
-One entry that you can choose in the **Voice** menu, such as "Heart (US, female) · Kokoro · bf16".
+One entry that you can choose in the **Voice** menu, such as "Heart (US, female) · Kokoro · Grade A".
 
 ### Voice engine
 
@@ -155,7 +159,7 @@ The speech software that makes a set of voices, such as Piper. See [Voices and r
 
 ### Voice label
 
-The text of one row in the **Voice** menu: _name_ (_accent_, _gender_) · _engine_ · _precision_. The closed menu shows the same label for the voice that you chose. See [Voice labels](/manual/reference/voices/#voice-labels).
+The text of one row in the **Voice** menu: _name_ (_accent_, _gender_) · _engine_ · _quality_. The closed menu shows the same label for the voice that you chose. See [Voice labels](/manual/reference/voices/#voice-labels).
 
 ## Pronunciation
 

@@ -42,7 +42,7 @@ No: only the local OPSIN check can change how a chemical name sounds, and the ap
 
 ## Which voice should I use?
 
-Start with the first voice in the **Voice** menu and try others. A label shows the engine and precision, plus the accent and gender where known. None of these facts says which voice suits your room or your ears. See [Voices and voice engines](/manual/concepts/voice-engines/).
+Start with the first voice in the **Voice** menu and try others. A label shows the engine and quality, plus the accent and gender where known. None of these facts says which voice suits your room or your ears. See [Voices and voice engines](/manual/concepts/voice-engines/).
 
 ## Why are some voices dimmed?
 

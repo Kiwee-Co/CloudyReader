@@ -42,8 +42,9 @@ Use the canonical term. Do not use the banned variants in prose. A banned varian
 
 - **reading**: One run of **Speak**: the spoken script and its audio. Do not use `playback`, which means the sound playing, `utterance`, or `job`.
 - **spoken script**: The words the voice receives after conversion, shown in the **Spoken script** view. The view fills as you type or paste, and it shows the final words after **Speak**. Do not use `transcript`, `normalized text`, or `TTS text`.
-- **voice**: One entry you can choose in the **Voice** menu, such as "Lessac (US, female) · Piper · medium". A label shows the name, the accent and gender where known, the engine, and the precision. Do not use `speaker`, `narrator`, or `model`.
-- **precision**: The last field of a voice label. It is the model format, such as `bf16` or `8-bit`, or the tier of a Piper or macOS voice.
+- **voice**: One entry you can choose in the **Voice** menu, such as "Lessac (US, female) · Piper · medium". A label shows the name, the accent and gender where known, the engine, and the quality. Do not use `speaker`, `narrator`, or `model`.
+- **quality**: The last field of a voice label: the grade of a Kokoro voice, such as `Grade A`, the tier of a Piper or macOS voice, or the precision of a model, such as `8-bit`.
+- **precision**: The format of a model, such as `4-bit` or `8-bit`.
 - **macOS voices**: The English voices that macOS has installed, without the novelty voices. The **Voice** menu lists them under the **macOS** heading, and they need no download.
 - **speaker**: The number in the **Speaker** box of a voice with several speakers. Do not use `voice ID`.
 - **voice engine** (**engine** after the first use): The speech software that makes a set of voices, such as Piper. The page Voices and rotation modes lists every engine. Do not use `library`, `TTS library`, `TTS engine` (except in quoted error text), `backend`, or `synthesizer`.

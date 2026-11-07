@@ -17,13 +17,13 @@ The menu groups the voices under one heading for each engine. The headings are l
 
 The four engines that the app downloads run on your Mac. The table compares them. The [macOS voices](#macos-voices) come from the system, so the table leaves them out.
 
-| Aspect                 | Piper                                       | Kokoro                                                  | Chatterbox Turbo                 | Qwen3-TTS                        |
-| ---------------------- | ------------------------------------------- | ------------------------------------------------------- | -------------------------------- | -------------------------------- |
-| Name in the label      | A file name with capitals, such as `Lessac` | A name, such as `Heart`                                 | `Built-in`                       | A name, such as `Aiden`          |
-| Precision in the label | A tier from the voice's own configuration   | `bf16`                                                  | `4-bit`                          | `8-bit`                          |
-| Rank in the menu       | The best tier first                         | A letter grade from the model's `VOICES.md`, best first | No grade; the menu sorts by name | No grade; the menu sorts by name |
-| Files on disk          | 63.2 MB for each voice                      | 327.1 MB for the model and 0.52 MB for each voice       | 0.42 GB                          | 1.97 GB                          |
-| Sample rate (Hz)       | 22,050 for the supported voices             | 24,000                                                  | 24,000                           | 24,000                           |
+| Aspect               | Piper                                       | Kokoro                                                  | Chatterbox Turbo                 | Qwen3-TTS                        |
+| -------------------- | ------------------------------------------- | ------------------------------------------------------- | -------------------------------- | -------------------------------- |
+| Name in the label    | A file name with capitals, such as `Lessac` | A name, such as `Heart`                                 | `Built-in`                       | A name, such as `Aiden`          |
+| Quality in the label | A tier from the voice's own configuration   | The grade, such as `Grade A`                            | `4-bit`                          | `8-bit`                          |
+| Rank in the menu     | The best tier first                         | A letter grade from the model's `VOICES.md`, best first | No grade; the menu sorts by name | No grade; the menu sorts by name |
+| Files on disk        | 63.2 MB for each voice                      | 327.1 MB for the model and 0.52 MB for each voice       | 0.42 GB                          | 1.97 GB                          |
+| Sample rate (Hz)     | 22,050 for the supported voices             | 24,000                                                  | 24,000                           | 24,000                           |
 
 Together, the Piper and Kokoro voice files take 0.66 GB, and the first launch downloads them first. Chatterbox Turbo and Qwen3-TTS download after them, each in its own group. See [Manage voices and storage](/manual/tasks/voices-and-storage/) for the download steps.
 
@@ -72,7 +72,7 @@ A Mac with 24 GiB or more keeps both loaded. The limit counts only these two eng
 
 The macOS voices are the voices that your Mac already has. The app asks macOS for its English voices when it starts, and it lists them under the **macOS** heading, after the other engines. These voices need no download, and the engine uses no network, so you can read with one while the other voices download.
 
-The app leaves out the novelty voices, such as Albert, Bubbles, and Cellos, and every voice in another language. A row shows the tier of the voice as its precision: `Premium`, `Enhanced`, or `Standard`. A voice with no tier in its macOS name is `Standard`, and the menu lists the best tier first.
+The app leaves out the novelty voices, such as Albert, Bubbles, and Cellos, and every voice in another language. A row shows the tier of the voice as its quality: `Premium`, `Enhanced`, or `Standard`. A voice with no tier in its macOS name is `Standard`, and the menu lists the best tier first.
 
 To add a voice, open **System Settings** and search for Spoken Content. Add the voice there, and then quit and open Cloudy Reader again. The app reads the list once, when it starts, so a voice that you add appears at the next start.
 
@@ -82,11 +82,11 @@ The app reads the whole question in one run of the `say` command that comes with
 
 ## What grades, tiers, and precision mean
 
-A voice label ends with the precision of the voice: the format of its model, or its tier. For Kokoro, Chatterbox Turbo, and Qwen3-TTS, the precision is the model format and does not rank a voice. For Piper and macOS, it is the tier, and the menu lists the best tier first. [Voices and rotation modes](/manual/reference/voices/#voice-labels) explains every part of a label.
+A voice label ends with the quality of the voice: a grade, a tier, or the format of its model. Kokoro shows its published grade, as in `Grade A`. Piper and macOS show their tier, and the menu lists the best tier first. Chatterbox Turbo and Qwen3-TTS show the precision of the model, which does not rank a voice. [Voices and rotation modes](/manual/reference/voices/#voice-labels) explains every part of a label.
 
-Each Kokoro voice has a letter grade, and the menu lists the best grade first. The grades come from the model's `VOICES.md` file. The label does not show the grade: point to a Kokoro row to read it, as in "Published grade A". The app does not test or change a grade. The precision of every Kokoro voice is `bf16`, the format of the model's weights.
+Each Kokoro voice has a letter grade, and the menu lists the best grade first. The grades come from the model's `VOICES.md` file. The label shows the grade, as in `Grade A`, and a tooltip on the row says "Published grade A". The app does not test or change a grade.
 
-A Piper voice shows the quality tier from its own configuration file as its precision: `x_low`, `low`, `medium`, or `high`. The supported Piper voices are all `medium`.
+A Piper voice shows the quality tier from its own configuration file: `x_low`, `low`, `medium`, or `high`. The supported Piper voices are all `medium`.
 
 A macOS voice shows its tier, which macOS names: `Premium`, `Enhanced`, or `Standard`.
 
