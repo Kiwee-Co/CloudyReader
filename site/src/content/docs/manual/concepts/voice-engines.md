@@ -74,7 +74,7 @@ The macOS voices are the voices that your Mac already has. The app asks macOS fo
 
 The app leaves out the novelty voices, such as Albert, Bubbles, and Cellos, and every voice in another language. A row shows the tier of the voice as its precision: `Premium`, `Enhanced`, or `Standard`. A voice with no tier in its macOS name is `Standard`, and the menu lists the best tier first.
 
-To add a voice, open **System Settings > Accessibility > Spoken Content**, add the voice there, and then quit and open Cloudy Reader again. The app reads the list once, when it starts, so a voice that you add appears at the next start.
+To add a voice, open **System Settings** and search for Spoken Content. Add the voice there, and then quit and open Cloudy Reader again. The app reads the list once, when it starts, so a voice that you add appears at the next start.
 
 A macOS voice takes no IPA. The app says a respelled word from its respelling, and a lexicon word or a checked chemical name as printed. The status bar warns that macOS cannot take IPA and names the words. See [Hard words and chemical names](/manual/concepts/how-reading-works/#hard-words-and-chemical-names).
 
