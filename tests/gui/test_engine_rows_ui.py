@@ -155,42 +155,42 @@ def test_engine_groups_follow_piper_and_kokoro_under_their_titles(picker):
 def test_a_dimmed_row_ends_with_its_reason_and_holds_it_in_a_tooltip(picker):
     item = row(picker, CHATTERBOX)
 
-    assert item.text() == "Chatterbox Turbo (built-in) (en, 4-bit, not downloaded yet)"
+    assert item.text() == "Built-in · Chatterbox Turbo · 4-bit — not downloaded yet"
     assert item.toolTip() == "not downloaded yet"
     assert not item.isEnabled()
     assert not picker.select_voice(CHATTERBOX)
 
 
 @pytest.mark.parametrize(
-    "reason",
+    ("reason", "shown"),
     [
-        GATE,
-        DISK,
-        "offline: not downloaded",
-        NOT_WRITABLE,
-        "damaged: SHA-256 mismatch for model.safetensors",
+        (GATE, GATE),
+        (DISK, "not enough disk space"),  # the row keeps the part before the colon
+        ("offline: not downloaded", "offline: not downloaded"),
+        (NOT_WRITABLE, NOT_WRITABLE),
+        ("damaged: SHA-256 mismatch for model.safetensors", "damaged"),
     ],
 )
-def test_every_reason_reads_in_the_row_and_its_tooltip(picker, reason):
+def test_every_reason_reads_in_the_row_and_the_whole_of_it_in_the_tooltip(picker, reason, shown):
     picker.set_voices(with_ryan(installed=False, reason=reason))
     item = row(picker, RYAN)
 
-    assert item.text() == f"Ryan (male) (en, 8-bit, {reason})"
+    assert item.text() == f"Ryan (male) · Qwen3-TTS · 8-bit — {shown}"
     assert item.toolTip() == reason
     assert not item.isEnabled()
 
 
-def test_a_row_without_a_reason_still_says_not_installed_and_has_no_tooltip(picker):
+def test_a_row_without_a_reason_says_it_is_not_downloaded_yet_and_has_no_tooltip(picker):
     item = row(picker, MICHAEL)
 
-    assert item.text() == "Michael (en-US, high, not installed)"
+    assert item.text() == "Michael (US, male) · Kokoro · bf16 — not downloaded yet"
     assert item.toolTip() == ""
 
 
 def test_an_installed_engine_voice_is_a_plain_choice(picker):
     item = row(picker, AIDEN)
 
-    assert item.text() == "Aiden (male) (en-US, 8-bit)"
+    assert item.text() == "Aiden (US, male) · Qwen3-TTS · 8-bit"
     assert item.toolTip() == ""
     assert picker.select_voice(AIDEN)
 

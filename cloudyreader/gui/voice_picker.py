@@ -5,7 +5,15 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from PySide6.QtCore import QModelIndex, QObject, QPersistentModelIndex, QSize, Qt, Signal
-from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QStandardItem, QStandardItemModel
+from PySide6.QtGui import (
+    QBrush,
+    QColor,
+    QFont,
+    QPainter,
+    QPalette,
+    QStandardItem,
+    QStandardItemModel,
+)
 from PySide6.QtWidgets import (
     QAbstractItemDelegate,
     QComboBox,
@@ -16,25 +24,23 @@ from PySide6.QtWidgets import (
     QStyleOptionViewItem,
 )
 
-from cloudyreader.engine_catalog import TITLES
-from cloudyreader.gui import tokens
+from cloudyreader.gui import theme, tokens
 from cloudyreader.gui.widgets import text_style
 from cloudyreader.models import VoiceInfo
+from cloudyreader.voice_meta import engine_title, spoken_label, unique_labels
 
 _KEY_ROLE = Qt.ItemDataRole.UserRole
-_ENGINE_TITLES = {**TITLES, "piper": "Piper"}  # TITLES names Piper's lock group, "voices"
 _NO_VOICE = "No voice installed"
 LOADING = "Loading voices…"
 _UNAVAILABLE = "Voices unavailable"
 _Index = QModelIndex | QPersistentModelIndex
 
 
-def _label(voice: VoiceInfo) -> str:
-    details = [voice.language, voice.quality]
+def _tooltip(voice: VoiceInfo) -> str:
+    """What the row's text does not say: a dimmed row's whole reason, Kokoro's published grade."""
     if not voice.installed:
-        # Text, not only a dimmed row: never color alone. The reason says why, when it is known.
-        details.append(voice.reason or "not installed")
-    return f"{voice.name} ({', '.join(d for d in details if d)})"
+        return voice.reason
+    return f"Published grade {voice.quality}" if voice.engine == "kokoro" and voice.quality else ""
 
 
 def _gap(index: _Index) -> int:
@@ -50,8 +56,8 @@ class _SectionHeader(QStyledItemDelegate):
     """
 
     def __init__(self, combo: QComboBox) -> None:
+        self._combo = combo  # first: Qt may ask sizeHint() while the base is still being built
         super().__init__(combo)
-        self._combo = combo
 
     def _menu(self) -> QAbstractItemDelegate:
         # Asked for at every call and never kept: a kept wrapper of an object Qt made can go
@@ -82,9 +88,11 @@ class VoicePicker(QObject):
         super().__init__(parent)
         self._voices: dict[str, VoiceInfo] = {}
         self._rows: dict[str, int] = {}  # installed voices only
+        self._header_rows: list[int] = []
+        self._dim_rows: list[int] = []  # listed, but not installed: they cannot be chosen
         self._header_font = text_style(tokens.TEXT_SECTION_PT)
         self._header_font.setWeight(QFont.Weight.DemiBold)
-        self._header_ink = QBrush(QColor(tokens.TEXT_SECONDARY_LIGHT))
+        self._ink = QBrush()  # headers and dimmed rows, set by set_roles()
 
         self.combo = QComboBox()
         self._model = QStandardItemModel(self.combo)
@@ -97,7 +105,6 @@ class VoicePicker(QObject):
         )
         self.combo.setMinimumContentsLength(tokens.VOICE_COMBO_MIN_CHARS)
         self._section_header = _SectionHeader(self.combo)
-        self._header_rows: list[int] = []
         self.speaker_spin = QSpinBox()
         self.speaker_spin.setAccessibleName("Speaker")
         self.speaker_spin.setAccessibleDescription("Choose a speaker of this voice.")
@@ -110,26 +117,36 @@ class VoicePicker(QObject):
             widget.hide()
 
         self.combo.currentIndexChanged.connect(self._on_index_changed)
+        self.set_roles(theme.roles(theme.Appearance()))
 
     def add_rows(self, form: QFormLayout) -> None:
         form.addRow(self.label, self.combo)
         form.addRow(self.speaker_label, self.speaker_spin)  # hidden, it takes no room
 
+    def set_roles(self, roles: theme.Roles) -> None:
+        """Ink the engine headers and the dimmed rows, and the placeholder of a disabled pop-up."""
+        self._ink = QBrush(QColor(roles.secondary_text))
+        for row in (*self._header_rows, *self._dim_rows):
+            self._model.item(row).setForeground(self._ink)
+        # An empty list's placeholder ("Loading voices…") is a state, not a dimmed control: the
+        # bezel stays dimmed, the words read at 4.5:1. A fresh palette sets nothing else.
+        palette = QPalette()
+        for role in (QPalette.ColorRole.ButtonText, QPalette.ColorRole.Text):
+            palette.setColor(QPalette.ColorGroup.Disabled, role, QColor(roles.field_placeholder))
+        self.combo.setPalette(palette)
+
     def set_dark(self, dark: bool) -> None:
-        """Give the engine headers the secondary text color of the appearance."""
-        secondary = tokens.TEXT_SECONDARY_DARK if dark else tokens.TEXT_SECONDARY_LIGHT
-        self._header_ink = QBrush(QColor(secondary))
-        for row in self._header_rows:
-            self._model.item(row).setForeground(self._header_ink)
+        """The standard-contrast roles of one appearance; the window passes full roles instead."""
+        self.set_roles(theme.roles(theme.Appearance(dark=dark)))
 
     def _header(self, engine: str) -> QStandardItem:
         """A section header: no choice, so the keyboard skips it; the menu draws it in its own
         font and color, and VoiceOver hears "<engine> voices"."""
-        title = _ENGINE_TITLES.get(engine, engine.title())
+        title = engine_title(engine)
         header = QStandardItem(title)
         header.setFlags(Qt.ItemFlag.NoItemFlags)
         header.setFont(self._header_font)
-        header.setForeground(self._header_ink)
+        header.setForeground(self._ink)
         header.setData(f"{title} voices", Qt.ItemDataRole.AccessibleTextRole)
         return header
 
@@ -140,6 +157,7 @@ class VoicePicker(QObject):
         groups: dict[str, list[VoiceInfo]] = {}
         for voice in voices:
             groups.setdefault(voice.engine, []).append(voice)
+        labels = unique_labels(voices)
 
         view = self.combo.view()
         for row in self._header_rows:  # the last list's headers sat in other rows
@@ -148,16 +166,21 @@ class VoicePicker(QObject):
         self._model.clear()
         self._rows.clear()
         self._header_rows = []
+        self._dim_rows = []
         for engine, members in groups.items():
             self._header_rows.append(self._model.rowCount())
             self._model.appendRow(self._header(engine))
             for voice in members:
-                item = QStandardItem(_label(voice))
+                item = QStandardItem(labels[voice.key])
                 item.setData(voice.key, _KEY_ROLE)
-                item.setToolTip(voice.reason)  # the whole reason, should the popup cut the row
+                item.setData(spoken_label(voice), Qt.ItemDataRole.AccessibleTextRole)
+                item.setToolTip(_tooltip(voice))
                 item.setEnabled(voice.installed)
                 if voice.installed:
                     self._rows[voice.key] = self._model.rowCount()
+                else:  # the reason is text a person reads: the secondary ink, not the faint gray
+                    item.setForeground(self._ink)
+                    self._dim_rows.append(self._model.rowCount())
                 self._model.appendRow(item)
         for row in self._header_rows:
             view.setItemDelegateForRow(row, self._section_header)
@@ -165,7 +188,7 @@ class VoicePicker(QObject):
         self.combo.setCurrentIndex(self._rows.get(preferred or "", first_installed))
         self.combo.setEnabled(bool(self._rows))
         self.combo.blockSignals(False)
-        self._sync_speaker()
+        self._sync_selection()
 
     def set_loading(self) -> None:
         """An empty, disabled list that says so, until set_voices() delivers the real one."""
@@ -192,17 +215,25 @@ class VoicePicker(QObject):
         return None if self.speaker_spin.isHidden() else self.speaker_spin.value()
 
     def _on_index_changed(self, _index: int) -> None:
-        self._sync_speaker()
+        self._sync_selection()
         key = self.voice_key()
         if key is not None:
             self.voice_changed.emit(key)
 
-    def _sync_speaker(self) -> None:
-        key = self.voice_key()
-        voice = self._voices.get(key) if key is not None else None
+    def _sync_selection(self) -> None:
+        voice = self._voices.get(self.voice_key() or "")
+        self.combo.setToolTip("" if voice is None else spoken_label(voice))
+        self._sync_speaker(voice)
+
+    def _sync_speaker(self, voice: VoiceInfo | None) -> None:
         multi = voice is not None and voice.num_speakers > 1
-        if multi:
-            self.speaker_spin.setRange(0, voice.num_speakers - 1)
+        if voice is not None and multi:
+            last = voice.num_speakers - 1
+            self.speaker_spin.setRange(0, last)
             self.speaker_spin.setValue(0)
+            self.speaker_spin.setToolTip(f"Speakers are numbered 0 to {last}.")
+            self.speaker_spin.setAccessibleDescription(
+                f"Choose a speaker of this voice. 0 to {last}."
+            )
         for widget in (self.speaker_label, self.speaker_spin):
             widget.setVisible(multi)

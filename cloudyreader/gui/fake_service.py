@@ -14,12 +14,34 @@ from cloudyreader.models import Audio, Reading, RenderOptions, Segment, SpokenSc
 from cloudyreader.prefetch import PrefetchProgress, PrefetchResult
 
 FAKE_VOICES: tuple[VoiceInfo, ...] = (
-    VoiceInfo("piper:en_US-lessac-medium", "piper", "Lessac", "en-US", "medium", 1, True),
-    VoiceInfo("piper:en_US-amy-medium", "piper", "Amy", "en-US", "medium", 1, True),
-    VoiceInfo("piper:en_GB-alan-medium", "piper", "Alan", "en-GB", "medium", 1, True),
-    VoiceInfo("piper:en_US-libritts-high", "piper", "LibriTTS", "en-US", "high", 904, True),
-    VoiceInfo("kokoro:af_heart", "kokoro", "Heart", "en-US", "high", 1, True),
-    VoiceInfo("kokoro:am_michael", "kokoro", "Michael", "en-US", "high", 1, False),
+    VoiceInfo(
+        "piper:en_US-lessac-medium",
+        "piper",
+        "Lessac",
+        "en-US",
+        "medium",
+        1,
+        True,
+        precision="medium",
+    ),
+    VoiceInfo(
+        "piper:en_US-amy-medium", "piper", "Amy", "en-US", "medium", 1, True, precision="medium"
+    ),
+    VoiceInfo(
+        "piper:en_GB-alan-medium", "piper", "Alan", "en-GB", "medium", 1, True, precision="medium"
+    ),
+    VoiceInfo(
+        "piper:en_US-libritts-high",
+        "piper",
+        "LibriTTS",
+        "en-US",
+        "high",
+        904,
+        True,
+        precision="high",
+    ),
+    VoiceInfo("kokoro:af_heart", "kokoro", "Heart", "en-US", "A", 1, True, precision="bf16"),
+    VoiceInfo("kokoro:am_michael", "kokoro", "Michael", "en-US", "C+", 1, False, precision="bf16"),
 )
 # The engine rows a Mac with Apple Silicon lists: one dimmed row that says why, two ready voices.
 ENGINE_FAKE_VOICES: tuple[VoiceInfo, ...] = (
@@ -33,9 +55,22 @@ ENGINE_FAKE_VOICES: tuple[VoiceInfo, ...] = (
         1,
         False,
         reason="not downloaded yet",
+        precision="4-bit",
     ),
-    VoiceInfo("qwen3_tts:ryan", "qwen3_tts", "Ryan (male)", "en", "8-bit", 1, True),
-    VoiceInfo("qwen3_tts:aiden", "qwen3_tts", "Aiden (male)", "en-US", "8-bit", 1, True),
+    VoiceInfo(
+        "qwen3_tts:ryan", "qwen3_tts", "Ryan (male)", "en", "8-bit", 1, True, precision="8-bit"
+    ),
+    VoiceInfo(
+        "qwen3_tts:aiden", "qwen3_tts", "Aiden (male)", "en-US", "8-bit", 1, True, precision="8-bit"
+    ),
+)
+# The macOS system voices: nothing to download, a tier for a precision, listed after every engine.
+MACOS_FAKE_VOICES: tuple[VoiceInfo, ...] = (
+    VoiceInfo("macos:daniel", "macos", "Daniel", "en-GB", "Premium", 1, True, precision="Premium"),
+    VoiceInfo(
+        "macos:samantha", "macos", "Samantha", "en-US", "Enhanced", 1, True, precision="Enhanced"
+    ),
+    VoiceInfo("macos:alex", "macos", "Alex", "en-US", "Standard", 1, True, precision="Standard"),
 )
 
 _FAKE_WAV = Path(tempfile.gettempdir()) / "cloudyreader-fake.wav"  # never opened
