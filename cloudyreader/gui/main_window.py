@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import logging
 import math
 import threading
@@ -51,7 +52,7 @@ from PySide6.QtWidgets import (
 )
 
 from cloudyreader.engine_catalog import TITLES, is_actionable
-from cloudyreader.gui import tokens
+from cloudyreader.gui import theme, tokens
 from cloudyreader.gui.motion import reduce_motion
 from cloudyreader.gui.names import APP_NAME, app_version
 from cloudyreader.gui.status import ElidedLabel, StatusBar, Tone
@@ -230,8 +231,11 @@ class MainWindow(QMainWindow):
         self._build_actions()
         self._build_ui()
         self._apply_appearance()
-        # The system switches light and dark at runtime; the custom-painted parts follow it.
-        QGuiApplication.styleHints().colorSchemeChanged.connect(self._apply_appearance)
+        # The system switches light, dark and increased contrast at runtime; the custom-painted
+        # parts follow it.
+        hints = QGuiApplication.styleHints()
+        hints.colorSchemeChanged.connect(self._apply_appearance)
+        hints.accessibility().contrastPreferenceChanged.connect(self._on_contrast_changed)
         self._restore_settings()
         self._load_voices()
         self._refresh_controls()
@@ -488,36 +492,32 @@ class MainWindow(QMainWindow):
         return button
 
     def _apply_appearance(self, scheme: Qt.ColorScheme | None = None) -> None:
-        """Give the custom-painted parts the tokens of the current appearance.
+        """Give the custom-painted parts the roles of the current appearance.
 
-        Placeholders get their AA token, the question card its outline, the script panel its fill
-        and secondary text, the Voice menu headers theirs, and the focus ring its inner stroke;
-        every other color stays native.
+        Placeholders get their AA token, the question card its outline, the script panel its fill,
+        secondary text and, under increased contrast, an outline, the Voice menu headers theirs,
+        and the focus ring its inner stroke; every other color stays native.
         """
-        if scheme is None:
-            scheme = QGuiApplication.styleHints().colorScheme()
-        if scheme == Qt.ColorScheme.Unknown:  # no word from the platform: judge the background
-            # The application's: a child's palette can update after this window hears of it.
-            base = QGuiApplication.palette().color(QPalette.ColorRole.Base)
-            scheme = Qt.ColorScheme.Dark if base.lightness() < 128 else Qt.ColorScheme.Light
-        dark = scheme == Qt.ColorScheme.Dark
+        look = theme.current()
+        if scheme is not None and scheme != Qt.ColorScheme.Unknown:  # the signal names the scheme
+            look = dataclasses.replace(look, dark=scheme == Qt.ColorScheme.Dark)
+        roles = theme.roles(look)
         question = QPalette()  # sets no role yet, so every other role keeps following the system
-        question.setColor(
-            QPalette.ColorRole.PlaceholderText,
-            QColor(tokens.PLACEHOLDER_DARK if dark else tokens.PLACEHOLDER_LIGHT),
-        )
+        question.setColor(QPalette.ColorRole.PlaceholderText, QColor(roles.placeholder))
         self.question_edit.setPalette(question)
-        border = tokens.CARD_BORDER_DARK if dark else tokens.CARD_BORDER_LIGHT
-        self.question_card.set_colors(None, QColor(border))  # filled with the system's Base
+        self.question_card.set_colors(None, QColor(roles.card_border))  # the system's Base fill
         # On the panel fill the placeholder tokens fall under 4.5:1, so the hint is secondary too.
-        secondary = QColor(tokens.TEXT_SECONDARY_DARK if dark else tokens.TEXT_SECONDARY_LIGHT)
         script = QPalette()
         for role in (QPalette.ColorRole.Text, QPalette.ColorRole.PlaceholderText):
-            script.setColor(role, secondary)
+            script.setColor(role, QColor(roles.secondary_text))
         self.script_view.setPalette(script)
-        self.script_panel.set_colors(QColor(tokens.PANEL_DARK if dark else tokens.PANEL_LIGHT))
-        self.voice_picker.set_dark(dark)
-        self._focus_ring.set_dark(dark)
+        outline = None if roles.panel_border is None else QColor(roles.panel_border)
+        self.script_panel.set_colors(QColor(roles.panel_fill), outline)
+        self.voice_picker.set_dark(look.dark)
+        self._focus_ring.set_dark(look.dark)
+
+    def _on_contrast_changed(self, _preference: Qt.ContrastPreference) -> None:
+        self._apply_appearance()
 
     def _restore_settings(self) -> None:
         saved = self._settings

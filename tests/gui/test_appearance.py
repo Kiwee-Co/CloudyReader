@@ -1,11 +1,16 @@
 """Live appearance: the custom-painted parts follow light and dark at once, with no restart."""
 
+import pytest
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QColor, QGuiApplication, QPalette
 
-from cloudyreader.gui import tokens
+from cloudyreader.gui import theme, tokens
 
 ROLE = QPalette.ColorRole
+CONTRAST = Qt.ContrastPreference
+# (dark, increased contrast): the suffix of that appearance's color tokens
+LOOKS = {(False, False): "LIGHT", (True, False): "DARK", (False, True): "HC_LIGHT"}
+LOOKS[(True, True)] = "HC_DARK"
 
 
 def token(name: str, look: str) -> str:
@@ -49,7 +54,6 @@ def drawn(window) -> dict[str, str]:
 
 
 def test_a_scheme_switch_repaints_every_custom_part_without_a_restart(window):
-    window.script_toggle.click()
     hints = QGuiApplication.styleHints()
 
     for scheme, look in ((Qt.ColorScheme.Dark, "DARK"), (Qt.ColorScheme.Light, "LIGHT")):
@@ -91,3 +95,48 @@ def test_a_new_system_palette_alone_reapplies_the_tokens(make_window, qapp):
         qapp.processEvents()
 
     assert painted(window) == expected("LIGHT")
+
+
+def surfaces(window) -> dict[str, str | None]:
+    """The colors the window gives its two text surfaces, the parts every appearance retunes."""
+    script, border = window.script_view.palette(), window.script_panel.border
+    return {
+        "question placeholder": window.question_edit.palette().color(ROLE.PlaceholderText).name(),
+        "card outline": window.question_card.border.name(),
+        "panel fill": window.script_panel.fill.name(),
+        "panel outline": None if border is None else border.name(),
+        "script text": script.color(ROLE.Text).name(),
+        "script placeholder": script.color(ROLE.PlaceholderText).name(),
+        "focus ring inner stroke": window._focus_ring.inner_color.name(),  # private: an overlay
+    }
+
+
+def surface_tokens(dark: bool, high: bool) -> dict[str, str | None]:
+    look = LOOKS[(dark, high)]
+    return {
+        "question placeholder": token("PLACEHOLDER", look),
+        "card outline": token("CARD_BORDER", look),
+        "panel fill": token("PANEL", look),
+        "panel outline": token("CARD_BORDER", look) if high else None,  # outlined only then
+        "script text": token("TEXT_SECONDARY", look),
+        "script placeholder": token("TEXT_SECONDARY", look),
+        "focus ring inner stroke": token("FOCUS_INNER", "DARK" if dark else "LIGHT"),
+    }
+
+
+@pytest.mark.parametrize(("dark", "high"), list(LOOKS), ids=list(LOOKS.values()))
+def test_a_contrast_switch_retunes_both_surfaces(window, monkeypatch, dark, high):
+    monkeypatch.setattr(theme, "current", lambda hints=None: theme.Appearance(dark, high))
+    hints = QGuiApplication.styleHints().accessibility()
+
+    hints.contrastPreferenceChanged.emit(CONTRAST.HighContrast if high else CONTRAST.NoPreference)
+
+    assert surfaces(window) == surface_tokens(dark, high)
+
+
+def test_a_scheme_switch_keeps_increased_contrast(window, monkeypatch):
+    monkeypatch.setattr(theme, "current", lambda hints=None: theme.Appearance(False, True))
+
+    QGuiApplication.styleHints().colorSchemeChanged.emit(Qt.ColorScheme.Dark)
+
+    assert surfaces(window) == surface_tokens(dark=True, high=True)
