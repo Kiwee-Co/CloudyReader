@@ -303,6 +303,50 @@ def test_the_next_change_after_a_failure_previews_again(qtbot, make_live):
     assert texts(emitted) == ["", "script of good"]
 
 
+# --- the length cap ----------------------------------------------------------------------------
+# The normalizer is quadratic in one long token: a big paste would hold the worker for minutes.
+
+
+@pytest.mark.parametrize("size", [19_999, 20_000])
+def test_text_up_to_the_cap_still_previews(qtbot, make_live, size):
+    compute = Computer()
+    live, emitted = make_live(compute)
+
+    live.schedule("x" * size, PLAIN)
+    qtbot.waitUntil(lambda: bool(emitted), timeout=WAIT_MS)
+
+    assert [len(call.raw) for call in compute.calls] == [size]
+    assert texts(emitted) == ["script of " + "x" * size]
+
+
+@pytest.mark.parametrize("size", [20_001, 200_000])
+def test_text_past_the_cap_starts_no_job_and_shows_the_blank_result(qtbot, make_live, size):
+    compute = Computer()
+    live, emitted = make_live(compute)
+
+    live.schedule("x" * size, PLAIN)
+    qtbot.waitUntil(lambda: bool(emitted), timeout=WAIT_MS)
+    qtbot.wait(SETTLE_MS)
+
+    assert texts(emitted) == [""]
+    assert compute.calls == []
+
+
+def test_a_big_paste_outdates_the_result_still_in_flight(qtbot, make_live, gate):
+    compute = Computer(gate=gate)
+    live, emitted = make_live(compute)
+    live.schedule("short", PLAIN)
+    qtbot.waitUntil(compute.started.is_set, timeout=WAIT_MS)
+
+    live.schedule("x" * 200_000, PLAIN)  # replaces the text while "short" is previewing
+    gate.set()
+    qtbot.waitUntil(lambda: bool(emitted), timeout=WAIT_MS)
+    qtbot.wait(SETTLE_MS)
+
+    assert texts(emitted) == [""]
+    assert [call.raw for call in compute.calls] == ["short"]
+
+
 # --- cancel ------------------------------------------------------------------------------------
 
 

@@ -17,6 +17,9 @@ from cloudyreader.models import RenderOptions
 log = logging.getLogger(__name__)
 
 _QUEUED = Qt.ConnectionType.QueuedConnection
+# The normalizer is quadratic in one long token: a bigger paste would hold the worker for minutes,
+# and Speak and Quit wait behind it. Past this the panel shows the blank result instead.
+MAX_PREVIEW_CHARS = 20_000
 
 
 class _Latest:
@@ -105,8 +108,8 @@ class LiveScript(QObject):
 
     def _fire(self) -> None:
         raw, opts = self._request
-        if not raw.strip():
-            self.script_ready.emit("")  # nothing to build: the placeholder shows at once
+        if len(raw) > MAX_PREVIEW_CHARS or not raw.strip():
+            self.script_ready.emit("")  # nothing to build, or too much: the placeholder shows
             return
         self._pool.start(_Preview(self._latest, self._compute, raw, opts, self._built.done))
 
