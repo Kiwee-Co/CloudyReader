@@ -201,11 +201,25 @@ def test_voices_lists_ryan_and_aiden(engine: Qwen3TtsEngine, settings: Settings)
     assert engine.unavailable_reason is None
     assert engine.voices() == [
         VoiceInfo(
-            "qwen3_tts:ryan", "qwen3_tts", "Ryan (male)", "en", "8-bit", 1, True, folder,
+            "qwen3_tts:ryan",
+            "qwen3_tts",
+            "Ryan (male)",
+            "en",
+            "8-bit",
+            1,
+            True,
+            folder,
             precision="8-bit",
         ),
         VoiceInfo(
-            "qwen3_tts:aiden", "qwen3_tts", "Aiden (male)", "en-US", "8-bit", 1, True, folder,
+            "qwen3_tts:aiden",
+            "qwen3_tts",
+            "Aiden (male)",
+            "en-US",
+            "8-bit",
+            1,
+            True,
+            folder,
             precision="8-bit",
         ),
     ]
