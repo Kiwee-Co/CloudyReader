@@ -1,4 +1,18 @@
+<div align="center">
+
+<img src="assets/icons/cloud-atom/AppIcon.iconset/icon_256x256.png" width="128" height="128" alt="The Cloudy Reader app icon: a white speech-bubble cloud with a purple atom, on a purple rounded square.">
+
 # Cloudy Reader
+
+[![CI](https://github.com/Kiwee-Co/CloudyReader/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Kiwee-Co/CloudyReader/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/Kiwee-Co/CloudyReader/blob/main/LICENSE)
+[![Platform: macOS | Apple Silicon](https://img.shields.io/badge/platform-macOS%20%7C%20Apple%20Silicon-lightgrey)](https://kiwee-co.github.io/CloudyReader/manual/getting-started/)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue)](pyproject.toml)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)](https://github.com/astral-sh/ruff)
+[![Docs: GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://kiwee-co.github.io/CloudyReader/)
+[![Coverage gate: >= 75%](https://img.shields.io/badge/coverage%20gate-%3E%3D_75%25-informational)](https://kiwee-co.github.io/CloudyReader/developer/testing/)
+
+</div>
 
 Cloudy Reader reads US DOE National Science Bowl questions aloud on your Mac. It uses local text-to-speech voices and says chemistry and biology terms with science-aware pronunciation.
 
@@ -10,14 +24,6 @@ Cloudy Reader reads US DOE National Science Bowl questions aloud on your Mac. It
 - Neither file holds voices or engines. The app downloads them at the first launch, so keep the Mac online.
 - The app is ad-hoc signed and not notarized. The first launch needs a one-time approval in **System Settings > Privacy & Security**.
 - Check the SHA-256 on the release page before you open the app.
-
-[![CI](https://github.com/Kiwee-Co/CloudyReader/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Kiwee-Co/CloudyReader/actions/workflows/ci.yml)
-[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/Kiwee-Co/CloudyReader/blob/main/LICENSE)
-[![Platform: macOS | Apple Silicon](https://img.shields.io/badge/platform-macOS%20%7C%20Apple%20Silicon-lightgrey)](https://kiwee-co.github.io/CloudyReader/manual/getting-started/)
-[![Python 3.12](https://img.shields.io/badge/python-3.12-blue)](pyproject.toml)
-[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)](https://github.com/astral-sh/ruff)
-[![Docs: GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://kiwee-co.github.io/CloudyReader/)
-[![Coverage gate: >= 75%](https://img.shields.io/badge/coverage%20gate-%3E%3D_75%25-informational)](https://kiwee-co.github.io/CloudyReader/developer/testing/)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="site/public/img/window-dark.svg">
