@@ -41,8 +41,10 @@ Use the canonical term. Do not use the banned variants in prose. A banned varian
 ### Reading and voices
 
 - **reading**: One run of **Speak**: the spoken script and its audio. Do not use `playback`, which means the sound playing, `utterance`, or `job`.
-- **spoken script**: The words the voice receives after conversion, shown in the **Spoken script** view. Do not use `transcript`, `normalized text`, or `TTS text`.
-- **voice**: One entry you can choose in the **Voice** menu, such as "lessac (en-US, medium)". Do not use `speaker`, `narrator`, or `model`.
+- **spoken script**: The words the voice receives after conversion, shown in the **Spoken script** view. The view fills as you type or paste, and it shows the final words after **Speak**. Do not use `transcript`, `normalized text`, or `TTS text`.
+- **voice**: One entry you can choose in the **Voice** menu, such as "Lessac (US, female) · Piper · medium". A label shows the name, the accent and gender where known, the engine, and the precision. Do not use `speaker`, `narrator`, or `model`.
+- **precision**: The last field of a voice label. It is the model format, such as `bf16` or `8-bit`, or the tier of a Piper or macOS voice.
+- **macOS voices**: The English voices that macOS has installed, without the novelty voices. The **Voice** menu lists them under the **macOS** heading, and they need no download.
 - **speaker**: The number in the **Speaker** box of a voice with several speakers. Do not use `voice ID`.
 - **voice engine** (**engine** after the first use): The speech software that makes a set of voices, such as Piper. The page Voices and rotation modes lists every engine. Do not use `library`, `TTS library`, `TTS engine` (except in quoted error text), `backend`, or `synthesizer`.
 - **supported voices**: The voices the app downloads and checks at first launch. [Voices and rotation modes](/manual/reference/voices/) lists them. Do not use `built-in voices` or `bundled voices`. Use `pinned voices` on developer pages only.
@@ -102,11 +104,11 @@ Click a button. Choose a menu item or a pop-up menu value. Select or deselect a 
 
 ### UI labels, menus, and keys
 
-- Write a UI label exactly as the app shows it, in bold, without a trailing colon: **Voice**, **Rotation**, **Read answer line**, **Online lookups**, **Paste**, **Speak Clipboard**, **Repeat**, **Stop**, **Speak**, **Spoken script**.
+- Write a UI label exactly as the app shows it, in bold, without a trailing colon: **Voice**, **Rotation**, **Read answer line**, **Online lookups**, **Repeat**, **Stop**, **Speak**, **Spoken script**.
 - Write a menu path in bold, with " > " between levels: **Reading > Speak**, **System Settings > Privacy & Security**.
 - The rotation modes are UI labels: **No rotation**, **Round robin**, **Random shuffle**, **US only (random shuffle)**, **Men only**, **Women only**.
 - Quote a status message exactly in prose, with the app's ellipsis character (…). Write variables in italics, as in "Playing _n_ s." Do not bold or code-format a status message.
-- In text and steps, spell key names and join them with hyphens, as Mac documentation does: Command-Return, Command-Shift-V, Command-R, Command-Period (.), Command-W, Command-Q. Never write `Cmd`, `Cmd+`, or a bare `⌘` in prose.
+- In text and steps, spell key names and join them with hyphens, as Mac documentation does: Command-Return, Command-Shift-Z, Command-R, Command-Period (.), Command-W, Command-Q. Never write `Cmd`, `Cmd+`, or a bare `⌘` in prose.
 - Glyphs appear only on the keyboard shortcuts page and inside quoted tooltip or placeholder text. The keyboard shortcuts page adds a **Tooltip shows** column with the glyphs inside `kbd` elements, because the app prints those glyphs in its tooltips and in the question box placeholder. macOS draws the native menus and may show a different Return glyph, so do not describe the glyphs of the menus. The words column comes first, so screen readers read the words first.
 
 ### Code, paths, numbers, units, and dates
@@ -127,7 +129,7 @@ Use the Markdown syntax, such as `:::note`. The four types are:
 | Type      | Use for                                                                      | Example                                                  |
 | --------- | ---------------------------------------------------------------------------- | -------------------------------------------------------- |
 | `note`    | Context the reader may skip without harm                                     | The dialog wording differs between macOS versions.       |
-| `tip`     | A faster or better optional way                                              | Command-Shift-V pastes and speaks in one step.           |
+| `tip`     | A faster or better optional way                                              | Command-Return speaks without the mouse.                 |
 | `caution` | A security trade-off, data loss, or a confusing failure                      | Removing the quarantine flag skips the Gatekeeper check. |
 | `danger`  | Disabling a macOS protection for all apps, or deleting data with no recovery | Expected on no page. Ask the editor first.               |
 
@@ -291,7 +293,8 @@ An FAQ entry is an H2 question, then an answer of at most three sentences. End t
 - Write a caption of one sentence that ends with a period and says what to notice.
 - Convey no meaning by color alone.
 - Place a figure after the paragraph that introduces it, never as the first element of a page.
-- Draw the app figures from the live window with `scripts/make_doc_snapshots.py`. Put no caption inside an image, and use no motion.
+- Draw the app figures from the live window with `scripts/make_doc_snapshots.py`. Put no caption inside an image, and use no motion. Add `--engines` to list all four download engines in the **Voice** menu figures, and `--app-version` to set the version in the About figure.
+- Draw the system accent color only where macOS does: on **Speak**, the focus ring, pop-up arrows, checked checkboxes, progress bars, and the selected menu row. The brand violet belongs to the app icon, the About panel, the disk image, and the site, never to a control.
 - Never redraw macOS system UI, such as Gatekeeper or Finder, as app UI. Use steps, a schematic diagram, or real screenshots.
 
 ## Checks

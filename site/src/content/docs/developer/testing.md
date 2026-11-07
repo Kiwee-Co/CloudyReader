@@ -73,18 +73,18 @@ uv run --frozen --offline python -I -m pytest tests/unit/test_parser.py -k "answ
 
 Each folder under `tests/` holds one kind of test.
 
-| Folder                      | Content                                                                                                                                                             |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tests/unit/`               | Parser, normalizer, formulas, units, fractions, respelling, lexicon, entities, voice engines, rotation, the download, the CI checks, and the pin and smoke scripts. |
-| `tests/unit/resolvers/`     | HTTP, cache, PubChem, UniProt, OPSIN, and the chain.                                                                                                                |
-| `tests/gui/`                | Qt tests with `pytest-qt`: the main window, the voice picker, widgets, tokens, names, the app, the icon, rotation, the download, and the engine rows.               |
-| `tests/integration/`        | The pipeline with fakes, the command line and self-test, and corpus guards. Some need a voice and a model.                                                          |
-| `tests/smoke/`              | Environment checks and the asset fetcher.                                                                                                                           |
-| `tests/packaging/`          | The build script, the engine switch and its probe, the engine targets, the release step, and the bundle metadata and version.                                       |
-| `tests/data/`               | Checks on the lexicon data.                                                                                                                                         |
-| `tests/golden/`             | YAML files hold parse, spoken-script, and respelling cases, and ambiguous inputs. A `corpus/` folder holds TSV and text files.                                      |
-| `tests/fixtures/questions/` | 63 sample questions that mirror real paste shapes.                                                                                                                  |
-| `tests/engines_real/`       | Run by hand on installed engine files: each engine voice renders a letter and a sentence.                                                                           |
+| Folder                      | Content                                                                                                                                                                                                                                                                             |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/unit/`               | Parser, normalizer, formulas, units, fractions, respelling, lexicon, entities, voice engines, voice labels and order, rotation, the download, the CI checks, and the pin and smoke scripts.                                                                                         |
+| `tests/unit/resolvers/`     | HTTP, cache, PubChem, UniProt, OPSIN, and the chain.                                                                                                                                                                                                                                |
+| `tests/gui/`                | Qt tests with `pytest-qt`: the main window, the voice picker and its labels, the status bar, the live **Spoken script**, the About panel, widgets, tokens, theme, names, the app, the icon, rotation, the download, the engine rows, and the golden images in `tests/gui/goldens/`. |
+| `tests/integration/`        | The pipeline with fakes, the command line and self-test, and corpus guards. Some need a voice and a model.                                                                                                                                                                          |
+| `tests/smoke/`              | Environment checks and the asset fetcher.                                                                                                                                                                                                                                           |
+| `tests/packaging/`          | The build script, the engine switch and its probe, the engine targets, the release step, and the bundle metadata and version.                                                                                                                                                       |
+| `tests/data/`               | Checks on the lexicon data.                                                                                                                                                                                                                                                         |
+| `tests/golden/`             | YAML files hold parse, spoken-script, and respelling cases, and ambiguous inputs. A `corpus/` folder holds TSV and text files.                                                                                                                                                      |
+| `tests/fixtures/questions/` | 63 sample questions that mirror real paste shapes.                                                                                                                                                                                                                                  |
+| `tests/engines_real/`       | Run by hand on installed engine files: each engine voice renders a letter and a sentence.                                                                                                                                                                                           |
 
 ### Add a question fixture
 
@@ -95,8 +95,9 @@ Each folder under `tests/` holds one kind of test.
 
 - `tests/conftest.py` sets `QT_QPA_PLATFORM` to `offscreen` unless the shell sets it. `tests/gui/conftest.py` forces `offscreen`, so no window opens.
 - In `tests/gui/`, an autouse fixture points the default `QSettings` at a temporary folder. No GUI test writes your preferences.
-- The `make_window` fixture builds a `MainWindow` with `FakeReaderService`, `FakePlayer`, and `FakeClipboard`. It waits for the voice list.
-- The fake service takes knobs: a delay, a gate, an error, warnings, and download events. Use the gate to hold a reading in flight.
+- The `make_window` fixture builds a `MainWindow` with `FakeReaderService` and `FakePlayer`. It waits for the voice list.
+- The fake service takes knobs: a delay, a gate, an error, warnings, download events, and a gate or an error for the live **Spoken script**. Use the gate to hold a reading in flight. A closing window waits for its worker, so `make_window` opens every gate before it closes the window.
+- The golden images in `tests/gui/goldens/` cover the cards, the focus ring, and the status glyphs at 2x. Each has four appearances: light and dark, with standard and increased contrast. A golden passes when at most 1 percent of its pixels differ by more than 8 levels. After a change that moves pixels on purpose, run `CLOUDYREADER_UPDATE_GOLDENS=1 uv run --frozen --offline python -I -m pytest tests/gui/test_goldens.py tests/gui/test_status_glyph.py`, then look at the changed PNG files.
 
 ### Write engine tests
 
@@ -105,6 +106,8 @@ The two optional engines take their parts as arguments, so a test can run withou
 - `ChatterboxTurboEngine(settings, backend, pinned=..., assess=..., slot=...)` and `Qwen3TtsEngine` take a `TextBackend` that turns one chunk of text into audio, the `Pinned` files, and an `assess` function. `Qwen3TtsEngine` also takes a `decoder` function for the decoder gate. A test passes fakes.
 - A test of `MlxChatterboxBackend` or `MlxQwenBackend` puts fake `mlx.core` and `mlx_audio.tts.utils` modules into `sys.modules`.
 - Real audio comes only from the by-hand workflow in [Test the engines by hand](#test-the-engines-by-hand).
+
+`MacosEngine(say=..., popen=...)` takes the path of `say` and a `popen` function. Its tests in `tests/unit/test_macos_engine.py` run over a fake `subprocess.Popen` and the recorded listing in `tests/fixtures/say/voices.txt`, so no gate test runs the real `say`. One slow test runs it when you set `CR_LIVE_SAY=1` on a Mac.
 
 A test that needs `mlx` or `mlx_audio` itself skips when `find_spec` finds the package missing.
 

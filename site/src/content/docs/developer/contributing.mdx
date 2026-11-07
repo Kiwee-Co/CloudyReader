@@ -177,7 +177,7 @@ This figure uses `frame="window"`:
   src="window-light.svg"
   dark="window-dark.svg"
   frame="window"
-  alt="The Cloudy Reader window with a pasted toss-up question, the voice lessac, the rotation set to No rotation, the spoken script shown, and the status Playing 19.3 s."
+  alt="The Cloudy Reader window with a pasted toss-up question, the Spoken script open below it, the voice Lessac, rotation set to No rotation, and the status Playing 19.3 s."
   caption="A window snapshot inside the window frame that the component draws."
 />
 
@@ -186,6 +186,12 @@ This figure uses `frame="window"`:
 ```bash
 uv run --frozen --offline --project . python scripts/make_doc_snapshots.py --out site/public/img
 ```
+
+The script never shows a window. On a Mac it lays out the window on the `cocoa` platform, which gives the native sizes and fonts. `--platform offscreen` uses the Qt offscreen platform instead. These options matter for a release:
+
+- `--engines` adds the rows of the two voice engines beyond Kokoro and Piper to the **Voice** menu figures.
+- `--app-version X.Y.Z` sets the version that the About figure shows. Without it, the figure shows the version of the installed package.
+- `--only NAME ...` redraws only the named figures.
 
 ### Follow the content rules
 
