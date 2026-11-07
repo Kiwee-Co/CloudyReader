@@ -53,7 +53,7 @@ def test_asdict_includes_respelling_so_the_cache_key_changes():
     assert key(GUIDED) == key(Override("Pharynx", IPA, "respelling", respelling="far-ingks"))
 
 
-def test_voiceinfo_reason_trails_with_an_empty_default():
+def test_voiceinfo_reason_and_precision_trail_with_empty_defaults():
     names = [f.name for f in dataclasses.fields(VoiceInfo)]
     assert names == [
         "key",
@@ -65,8 +65,9 @@ def test_voiceinfo_reason_trails_with_an_empty_default():
         "installed",
         "path",
         "reason",
+        "precision",
     ]
-    assert VOICE.reason == ""
+    assert VOICE.reason == "" and VOICE.precision == ""
     row = VoiceInfo(
         "qwen3_tts:ryan",
         "qwen3_tts",
