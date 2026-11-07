@@ -109,6 +109,18 @@ def test_a_change_starts_one_single_shot_timer_of_the_given_interval(make_live):
     assert (timer.isActive(), timer.isSingleShot(), timer.interval()) == (True, True, DEBOUNCE_MS)
 
 
+def test_nothing_is_built_before_the_pause(qtbot, make_live):
+    compute = Computer()
+    live, emitted = make_live(compute, debounce_ms=BURST_MS)
+
+    live.schedule("q", PLAIN)
+    qtbot.wait(DEBOUNCE_MS)  # a fraction of the pause
+
+    assert compute.calls == [] and emitted == []
+    qtbot.waitUntil(lambda: bool(emitted), timeout=WAIT_MS)
+    assert texts(emitted) == ["script of q"]
+
+
 def test_a_burst_of_changes_gives_one_job_and_one_update(qtbot, make_live):
     compute = Computer()
     live, emitted = make_live(compute)
@@ -178,6 +190,23 @@ def test_a_queued_job_that_a_newer_change_outdated_never_runs(qtbot, make_live, 
 
     assert [call.raw for call in compute.calls] == ["second"]
     assert texts(emitted) == ["script of second"]
+
+
+def test_a_result_already_queued_for_the_ui_thread_loses_to_a_newer_change(
+    qtbot, make_live, pool, gate
+):
+    compute = Computer(gate=gate)
+    live, emitted = make_live(compute)
+    live.schedule("old", PLAIN)
+    qtbot.waitUntil(compute.started.is_set, timeout=WAIT_MS)
+    gate.set()
+    assert pool.waitForDone(WAIT_MS)  # "old" is done and its result waits in the event queue
+
+    live.schedule("new", PLAIN)  # before the UI thread has looked at that result
+    qtbot.waitUntil(lambda: bool(emitted), timeout=WAIT_MS)
+    qtbot.wait(SETTLE_MS)
+
+    assert texts(emitted) == ["script of new"]
 
 
 def test_a_change_after_a_slow_preview_still_gets_its_own_update(qtbot, make_live, gate):
