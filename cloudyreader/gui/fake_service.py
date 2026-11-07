@@ -66,11 +66,11 @@ ENGINE_FAKE_VOICES: tuple[VoiceInfo, ...] = (
 )
 # The macOS system voices: nothing to download, a tier for a precision, listed after every engine.
 MACOS_FAKE_VOICES: tuple[VoiceInfo, ...] = (
-    VoiceInfo("macos:daniel", "macos", "Daniel", "en-GB", "Premium", 1, True, precision="Premium"),
+    VoiceInfo("macos:Daniel", "macos", "Daniel", "en-GB", "Premium", 1, True, precision="Premium"),
     VoiceInfo(
-        "macos:samantha", "macos", "Samantha", "en-US", "Enhanced", 1, True, precision="Enhanced"
+        "macos:Samantha", "macos", "Samantha", "en-US", "Enhanced", 1, True, precision="Enhanced"
     ),
-    VoiceInfo("macos:alex", "macos", "Alex", "en-US", "Standard", 1, True, precision="Standard"),
+    VoiceInfo("macos:Alex", "macos", "Alex", "en-US", "Standard", 1, True, precision="Standard"),
 )
 
 _FAKE_WAV = Path(tempfile.gettempdir()) / "cloudyreader-fake.wav"  # never opened

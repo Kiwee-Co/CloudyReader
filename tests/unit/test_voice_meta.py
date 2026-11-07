@@ -9,7 +9,6 @@ import subprocess
 import sys
 import typing
 from pathlib import Path
-from types import MappingProxyType
 
 import pytest
 
@@ -233,10 +232,16 @@ LABELS = [
 
 @pytest.fixture
 def macos_genders(monkeypatch):
-    """The macOS gender rows belong to the mac-tts lane; the labels need only the lookup."""
-    rows = MappingProxyType({"samantha": "female", "daniel": "male"})
-    table = MappingProxyType({**voice_meta.ENGINE_GENDERS, "macos": rows})
-    monkeypatch.setattr(voice_meta, "ENGINE_GENDERS", table)
+    """The macOS gender table is mac-tts's: the labels need only what profile_of answers."""
+    known = {"Samantha": "female", "Daniel": "male"}
+    real = voice_meta.profile_of
+
+    def profile_of(info):
+        if info.engine == "macos" and info.name in known:
+            return VoiceProfile(known[info.name], info.language)
+        return real(info)
+
+    monkeypatch.setattr(voice_meta, "profile_of", profile_of)
 
 
 @pytest.fixture(name="real_voices")
@@ -283,10 +288,10 @@ def test_label_examples(info, label):
 
 
 def test_macos_labels_carry_the_tier_alone(macos_genders):
-    samantha = make("macos:samantha", "Samantha", "en-US", "Enhanced", "Enhanced")
-    daniel = make("macos:daniel", "Daniel", "en-GB", "Premium", "Premium")
-    fiona = make("macos:fiona", "Fiona", "en-scotland", "Standard", "Standard")
-    zed = make("macos:zed", "Zed", "en", "Standard", "Standard")
+    samantha = make("macos:Samantha", "Samantha", "en-US", "Enhanced", "Enhanced")
+    daniel = make("macos:Daniel", "Daniel", "en-GB", "Premium", "Premium")
+    fiona = make("macos:Fiona", "Fiona", "en-scotland", "Standard", "Standard")
+    zed = make("macos:Zed", "Zed", "en", "Standard", "Standard")
 
     assert voice_label(samantha) == "Samantha (US, female) · macOS · Enhanced"
     assert voice_label(daniel) == "Daniel (UK, male) · macOS · Premium"
@@ -301,7 +306,7 @@ def test_a_voice_without_precision_drops_the_field_and_never_shows_the_grade():
     assert voice_label(no_precision) == "Heart (US, female) · Kokoro"
     assert precision_of(no_precision) == ""
     assert precision_of(dataclasses.replace(LESSAC, precision="")) == "medium"  # a tier is no grade
-    assert precision_of(make("macos:x", "X", "en-US", "Enhanced")) == "Enhanced"
+    assert precision_of(make("macos:X", "X", "en-US", "Enhanced")) == "Enhanced"
 
 
 @pytest.mark.parametrize(

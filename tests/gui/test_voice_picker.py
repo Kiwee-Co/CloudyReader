@@ -329,7 +329,7 @@ def test_typing_a_name_jumps_to_that_voice_and_never_to_a_header_or_a_dimmed_row
     picker.select_voice(LESSAC)
 
     qtbot.keyClicks(picker.combo, "Sam")
-    assert picker.voice_key() == "macos:samantha"
+    assert picker.voice_key() == "macos:Samantha"
 
     picker.select_voice(LESSAC)
     for typed in ("Mich", "Chatter", "Kok"):  # a dimmed row, a dimmed row, a header
@@ -341,7 +341,7 @@ def test_macos_voices_list_under_their_own_header_after_the_others(picker):
     picker.set_voices([*ENGINE_FAKE_VOICES, *MACOS_FAKE_VOICES])
 
     assert [h.text() for h in headers(picker)][-2:] == ["Qwen3-TTS", "macOS"]
-    assert row(picker, "macos:samantha").text() == "Samantha (US) · macOS · Enhanced"
+    assert row(picker, "macos:Samantha").text() == "Samantha (US) · macOS · Enhanced"
     assert headers(picker)[-1].data(Qt.ItemDataRole.AccessibleTextRole) == "macOS voices"
 
 

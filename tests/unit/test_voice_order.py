@@ -81,9 +81,9 @@ def kokoro_rows(tmp_path, monkeypatch) -> list[VoiceInfo]:
 
 # --- the macOS tier and the precision field -------------------------------------------------------
 
-MAC_PREMIUM = row("macos:daniel", "Premium", name="Daniel", language="en-GB")
-MAC_ENHANCED = row("macos:samantha", "Enhanced", name="Samantha")
-MAC_STANDARD = row("macos:alex", "Standard", name="Alex")
+MAC_PREMIUM = row("macos:Daniel", "Premium", name="Daniel", language="en-GB")
+MAC_ENHANCED = row("macos:Samantha", "Enhanced", name="Samantha")
+MAC_STANDARD = row("macos:Alex", "Standard", name="Alex")
 
 
 def test_macos_tiers_rank_premium_then_enhanced_then_standard():
